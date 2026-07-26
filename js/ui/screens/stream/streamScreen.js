@@ -62,6 +62,29 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function getChipVisibilityScrollLeft(chipTrack, chip, padding = 24) {
+  if (!chipTrack || !chip) {
+    return null;
+  }
+  const scrollLeft = Number(chipTrack.scrollLeft || 0);
+  const clientWidth = Number(chipTrack.clientWidth || 0);
+  const scrollWidth = Number(chipTrack.scrollWidth || 0);
+  if (!clientWidth || scrollWidth <= clientWidth) {
+    return scrollLeft;
+  }
+  const left = Number(chip.offsetLeft || 0);
+  const right = left + Number(chip.offsetWidth || 0);
+  const viewRight = scrollLeft + clientWidth;
+  const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+  if (right > viewRight - padding) {
+    return clamp(right - clientWidth + padding, 0, maxScrollLeft);
+  }
+  if (left < scrollLeft + padding) {
+    return clamp(left - padding, 0, maxScrollLeft);
+  }
+  return scrollLeft;
+}
+
 function escapeHtml(value = "") {
   return String(value || "")
     .replaceAll("&", "&amp;")
@@ -1555,17 +1578,9 @@ export const StreamScreen = {
     }
 
     const chipTrack = target.closest(".stream-route-chip-track");
-    if (chipTrack) {
-      const left = target.offsetLeft;
-      const right = left + target.offsetWidth;
-      const viewLeft = chipTrack.scrollLeft;
-      const viewRight = viewLeft + chipTrack.clientWidth;
-      const pad = 24;
-      if (right > viewRight - pad) {
-        chipTrack.scrollLeft = Math.max(0, right - chipTrack.clientWidth + pad);
-      } else if (left < viewLeft + pad) {
-        chipTrack.scrollLeft = Math.max(0, left - pad);
-      }
+    const chipScrollLeft = getChipVisibilityScrollLeft(chipTrack, target);
+    if (chipScrollLeft !== null) {
+      chipTrack.scrollLeft = chipScrollLeft;
     }
 
     const listNode = target.closest(".stream-route-list");
@@ -2234,6 +2249,12 @@ export const StreamScreen = {
     ScreenUtils.indexFocusables(this.container);
     this.restoreScrollPosition();
     this.applyFocus();
+    const selectedChip = this.container.querySelector(".stream-route-chip.selected");
+    const chipTrack = selectedChip?.closest(".stream-route-chip-track");
+    const chipScrollLeft = getChipVisibilityScrollLeft(chipTrack, selectedChip);
+    if (chipScrollLeft !== null) {
+      chipTrack.scrollLeft = chipScrollLeft;
+    }
     this.bindListScrollState();
     this.hasRenderedStreamRouteShell = true;
   },
