@@ -102,6 +102,7 @@ async function syncBuild(targetAppDir, envSourcePath) {
   ]);
 
   await cp(path.join(distDir, "app.bundle.js"), path.join(targetAppDir, "app.bundle.js"));
+  await cp(path.join(distDir, "core-js.bundle.js"), path.join(targetAppDir, "core-js.bundle.js"));
   await cp(path.join(distDir, "boot-guard.js"), path.join(targetAppDir, "boot-guard.js"));
   await cp(path.join(distDir, "youtube-proxy.html"), path.join(targetAppDir, "youtube-proxy.html"));
   if (envSourcePath) {
@@ -137,6 +138,7 @@ function buildIndexHtml() {
 </head>
 <body>
   <script src="boot-guard.js"></script>
+  <script src="core-js.bundle.js" onerror="window.NuvioBootGuard &amp;&amp; window.NuvioBootGuard.scriptFailed(this.src)"></script>
   <script defer src="main.js" onerror="window.NuvioBootGuard &amp;&amp; window.NuvioBootGuard.scriptFailed(this.src)"></script>
 </body>
 </html>

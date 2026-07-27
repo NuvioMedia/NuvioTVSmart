@@ -57,6 +57,10 @@
   </head>
   <body>
     <script src="boot-guard.js"></script>
+    <script
+      src="core-js.bundle.js"
+      onerror="window.NuvioBootGuard && window.NuvioBootGuard.scriptFailed(this.src)"
+    ></script>
     <script src="nuvio.env.js"></script>
 
     <script src="assets/libs/qrcode-generator.js"></script>

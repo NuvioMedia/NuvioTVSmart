@@ -95,6 +95,7 @@ function buildIndexHtml() {
 </head>
 <body>
   <script src="boot-guard.js"></script>
+  <script src="core-js.bundle.js" onerror="window.NuvioBootGuard &amp;&amp; window.NuvioBootGuard.scriptFailed(this.src)"></script>
   <script defer src="main.js" onerror="window.NuvioBootGuard &amp;&amp; window.NuvioBootGuard.scriptFailed(this.src)"></script>
 </body>
 </html>
@@ -195,6 +196,7 @@ async function stagePackage({ appId, packageId, version, envSourcePath }) {
     copyDistFolder("css"),
     copyDistFolder("res"),
     cp(path.join(distDir, "app.bundle.js"), path.join(stagingDir, "app.bundle.js")),
+    cp(path.join(distDir, "core-js.bundle.js"), path.join(stagingDir, "core-js.bundle.js")),
     cp(path.join(distDir, "boot-guard.js"), path.join(stagingDir, "boot-guard.js")),
     cp(path.join(distDir, "youtube-proxy.html"), path.join(stagingDir, "youtube-proxy.html")),
     cp(path.join(rootDir, "assets", "images", "tizenIcon.png"), path.join(stagingDir, "icon.png")),

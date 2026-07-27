@@ -1,10 +1,10 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { build } from "esbuild";
+import { build, transform } from "esbuild";
+import coreJsBuilder from "core-js-builder";
 import postcssGlobalData from "@csstools/postcss-global-data";
 import postcss from "postcss";
-import cssnano from "cssnano";
 import autoprefixer from "autoprefixer";
 import { readAppMetadata, syncVersionFiles } from "./appMetadata.mjs";
 import { compatibilityPolicy } from "./compatibilityPolicy.mjs";
@@ -14,10 +14,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const distDir = path.join(rootDir, "dist");
 const bundleFileName = "app.bundle.js";
+const coreJsBundleFileName = "core-js.bundle.js";
 const requireConfiguredRuntimeEnv = /^(1|true|yes|on)$/i.test(
   String(process.env.NUVIO_REQUIRE_LOCAL_PROPERTIES || "")
 );
 const debugBundle = /^(1|true|yes|on)$/i.test(String(process.env.NUVIO_DEBUG_BUNDLE || ""));
+const coreJsModules = ["core-js/stable"];
 const legacyViewport = {
   width: 1920,
   height: 1080,
@@ -388,12 +390,18 @@ async function buildCSS() {
       }),
       legacyDeclarationFallbackPlugin(),
       unsupportedSelectorFallbackPlugin(),
-      flexGapFallbackPlugin(),
-      cssnano()
+      flexGapFallbackPlugin()
     ]).process(css, { from: cssPath, to: outPath });
 
+    const minified = await transform(result.css, {
+      loader: "css",
+      minify: true,
+      target: [`chrome${compatibilityPolicy.chromiumVersion}`],
+      legalComments: "none"
+    });
+
     await mkdir(path.dirname(outPath), { recursive: true });
-    await writeFile(outPath, result.css);
+    await writeFile(outPath, minified.code);
   }
 }
 
@@ -425,11 +433,35 @@ async function copyOptionalRootFile(fileName, { fallback = null, defaultContents
   return "generated-default";
 }
 
+async function buildCoreJsBundle() {
+  console.log("building core-js bundle...");
+  const coreJsEntry = await coreJsBuilder({
+    modules: coreJsModules,
+    targets: { chrome: String(compatibilityPolicy.chromiumVersion) },
+    format: "esm"
+  });
+  const coreJsResult = await build({
+    stdin: { contents: coreJsEntry, resolveDir: rootDir, sourcefile: "core-js.generated.js" },
+    outfile: path.join(distDir, coreJsBundleFileName),
+    bundle: true,
+    minify: !debugBundle,
+    format: "iife",
+    sourcemap: debugBundle,
+    target: [`chrome${compatibilityPolicy.chromiumVersion}`],
+    metafile: true
+  });
+  if (
+    !Object.keys(coreJsResult.metafile.inputs).some((input) => input.includes("node_modules/core-js/"))
+  ) {
+    throw new Error("Generated core-js bundle contains no core-js modules.");
+  }
+}
+
 async function buildBundle() {
   const { version } = await readAppMetadata();
 
   console.log("starting bundle build...");
-  await build({
+  const result = await build({
     entryPoints: [path.join(rootDir, "js/app.js")],
     outfile: path.join(distDir, bundleFileName),
     bundle: true,
@@ -437,11 +469,15 @@ async function buildBundle() {
     format: "iife",
     sourcemap: debugBundle,
     target: [`chrome${compatibilityPolicy.chromiumVersion}`],
+    metafile: true,
     define: {
       "process.env.NODE_ENV": '"production"',
       __NUVIO_APP_VERSION__: JSON.stringify(version)
     }
   });
+  if (Object.keys(result.metafile.inputs).some((input) => input.includes("node_modules/core-js/"))) {
+    throw new Error("Application bundle must not contain core-js modules.");
+  }
   console.log("bundle build complete");
 }
 async function runBuild() {
@@ -462,6 +498,7 @@ async function runBuild() {
       cp(path.join(rootDir, "boot-guard.js"), path.join(distDir, "boot-guard.js")),
       cp(path.join(rootDir, "docs", "youtube-proxy.html"), path.join(distDir, "youtube-proxy.html"))
     ]);
+    await buildCoreJsBundle();
     await Promise.all([
       cp(
         path.join(rootDir, "node_modules", "hls.js", "dist", "hls.min.js"),
