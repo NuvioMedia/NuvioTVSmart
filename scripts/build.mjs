@@ -1,10 +1,11 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { build, transform } from "esbuild";
-import coreJsBuilder from "core-js-builder";
+import { build } from "esbuild";
+import coreJsCompat from "core-js-compat";
 import postcssGlobalData from "@csstools/postcss-global-data";
 import postcss from "postcss";
+import cssnano from "cssnano";
 import autoprefixer from "autoprefixer";
 import { readAppMetadata, syncVersionFiles } from "./appMetadata.mjs";
 import { compatibilityPolicy } from "./compatibilityPolicy.mjs";
@@ -387,18 +388,12 @@ async function buildCSS() {
       }),
       legacyDeclarationFallbackPlugin(),
       unsupportedSelectorFallbackPlugin(),
-      flexGapFallbackPlugin()
+      flexGapFallbackPlugin(),
+      cssnano()
     ]).process(css, { from: cssPath, to: outPath });
 
-    const minified = await transform(result.css, {
-      loader: "css",
-      minify: true,
-      target: [`chrome${compatibilityPolicy.chromiumVersion}`],
-      legalComments: "none"
-    });
-
     await mkdir(path.dirname(outPath), { recursive: true });
-    await writeFile(outPath, minified.code);
+    await writeFile(outPath, result.css);
   }
 }
 
@@ -432,17 +427,28 @@ async function copyOptionalRootFile(fileName, { fallback = null, defaultContents
 
 async function buildCoreJsBundle() {
   console.log("building core-js bundle...");
-  const bundled = await coreJsBuilder({
+  const { list: requiredModules } = coreJsCompat({
     modules: ["core-js/stable"],
     targets: { chrome: String(compatibilityPolicy.chromiumVersion) }
   });
-  const { code } = await transform(bundled, {
-    loader: "js",
+  if (requiredModules.length === 0) {
+    throw new Error("Core-js compatibility query returned no required modules.");
+  }
+  await build({
+    stdin: {
+      contents: requiredModules
+        .map((moduleName) => `import "core-js/modules/${moduleName}.js";`)
+        .join("\n"),
+      resolveDir: rootDir,
+      sourcefile: "core-js-entry.js"
+    },
+    outfile: path.join(distDir, "core-js.bundle.js"),
+    bundle: true,
+    format: "iife",
     minify: !debugBundle,
     target: [`chrome${compatibilityPolicy.chromiumVersion}`],
     legalComments: "none"
   });
-  await writeFile(path.join(distDir, "core-js.bundle.js"), code, "utf8");
 }
 
 async function buildBundle() {
