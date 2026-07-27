@@ -37,7 +37,6 @@ const TERMS = {
   bluray: "BLURAY",
   bdrip: "BLURAY",
   brrip: "BLURAY",
-  web: "WEB",
   webdl: "WEB_DL",
   webrip: "WEBRIP",
   hdrip: "HDRIP",
@@ -188,12 +187,6 @@ export function resolutionFromText(text = "") {
 }
 
 export function qualityFromText(text = "") {
-  // Keep HD-Rip distinct from HDRip. Token compaction intentionally makes
-  // separator variants equivalent for most tags, but these two labels have
-  // different meanings and therefore need the separator to remain semantic.
-  if (/(^|[^a-z0-9])hd[\s._-]+rip([^a-z0-9]|$)/i.test(String(text || ""))) {
-    return "HD_RIP";
-  }
   return firstTag(tagsIn(text), QUALITY_PRECEDENCE);
 }
 
@@ -220,13 +213,7 @@ export function visualTagsFromText(parsedHdr = [], search = "") {
 }
 
 export function audioTagsFromText(parsedAudio = [], search = "") {
-  const text = [...(Array.isArray(parsedAudio) ? parsedAudio : []), search].join(" ");
-  const found = tagsIn(text);
-  // Android historically exposes the generic DD tag alongside the explicit
-  // "Dolby Digital Plus" label, while compact DDP/EAC3 remain DD_PLUS only.
-  if (/(^|[^a-z0-9])dolby[\s._-]+digital[\s._-]+plus([^a-z0-9]|$)/i.test(text)) {
-    found.add("DD");
-  }
+  const found = tagsIn([...(Array.isArray(parsedAudio) ? parsedAudio : []), search].join(" "));
   if (found.has("DTS_HD_MA")) found.add("DTS_HD");
   if (["DTS_X", "DTS_HD_MA", "DTS_HD", "DTS_ES"].some((tag) => found.has(tag))) found.add("DTS");
   return orderedTags(found, AUDIO_TAG_ORDER);

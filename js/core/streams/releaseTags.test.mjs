@@ -189,18 +189,6 @@ test("real low-quality releases are still detected", () => {
   assert.equal(qualityFromText("Movie.2021.1080p.TS.x264"), "TS");
 });
 
-test("HD-Rip stays distinct from HDRip", () => {
-  assert.equal(qualityFromText("Movie.2021.1080p.HD-Rip.x264"), "HD_RIP");
-  assert.equal(qualityFromText("Movie.2021.1080p.HD.Rip.x264"), "HD_RIP");
-  assert.equal(qualityFromText("Movie.2021.1080p.HDRip.x264"), "HDRIP");
-});
-
-test("separator variants retain the Android TV tag contract", () => {
-  assert.deepEqual(audioTagsFromText([], "Movie.Dolby.Digital.Plus.5.1"), ["DD_PLUS", "DD"]);
-  assert.equal(encodeFromText(null, "Movie.1080p.H.264"), "AVC");
-  assert.equal(encodeFromText(null, "Movie.2160p.H.265"), "HEVC");
-});
-
 test("languages", () => {
   assert.deepEqual(languagesFromText([], "movie.2021.1080p.multi.en.fr"), ["EN", "FR", "MULTI"]);
   assert.deepEqual(languagesFromText([], "movie.2021.1080p.pt-br.web-dl"), ["PT_BR"], "pt-br > pt");

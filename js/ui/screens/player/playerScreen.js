@@ -16936,7 +16936,7 @@ export const PlayerScreen = {
         else if (has("P720")) score += 20;
         else if (has("P480")) score += 10;
 
-        if (has("WEB") || has("WEB_DL") || has("WEBRIP")) score += 8;
+        if (has("WEB_DL") || has("WEBRIP")) score += 8;
         if (has("BLURAY") || has("BLURAY_REMUX")) score += 8;
         if (has("CAM")) score -= 70;
         if (has("TS")) score -= 40;
