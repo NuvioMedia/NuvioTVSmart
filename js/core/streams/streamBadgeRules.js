@@ -211,12 +211,12 @@ function mergeStreamBadges(existing = [], matched = []) {
   return Array.from(merged.values());
 }
 
-function badgeMatchText(stream = {}) {
+function badgeMatchCandidates(stream = {}) {
   const resolve = stream.clientResolve || stream.raw?.clientResolve || {};
   const raw = resolve.stream?.raw || stream.raw || {};
   const parsed = raw.parsed || {};
   const presentation = stream.streamPresentation || stream.raw?.streamPresentation || {};
-  const lines = [
+  const candidates = [
     raw.filename,
     resolve.filename,
     stream.behaviorHints?.filename,
@@ -256,7 +256,7 @@ function badgeMatchText(stream = {}) {
         array.findIndex((entry) => entry.toLowerCase() === value.toLowerCase()) === index
     );
 
-  return lines.join(" ");
+  return candidates.length <= 1 ? candidates : [...candidates, candidates.join(" ")];
 }
 
 function stableStringify(value) {
@@ -317,7 +317,11 @@ function compileStreamBadgeFilters(rules = {}) {
                 textColor: filter.textColor,
                 borderColor: filter.borderColor
               },
-              regex: new RegExp(source, flags)
+              regex: new RegExp(source, flags),
+              // Negative assertions describe the whole release context. Running
+              // them against isolated metadata fragments makes exclusions pass
+              // as soon as any unrelated fragment omits the excluded token.
+              fullContextOnly: source.includes("(?!") || source.includes("(?<!")
             };
           } catch {
             return null;
@@ -335,14 +339,16 @@ export function matchStreamBadges(stream = {}, rules = {}) {
   if (!filters.length) {
     return [];
   }
-  const text = badgeMatchText(stream);
-  if (!text) {
+  const candidates = badgeMatchCandidates(stream);
+  if (!candidates.length) {
     return [];
   }
+  const fullContext = candidates[candidates.length - 1];
 
   const matched = new Map();
   filters.forEach((filter) => {
-    if (filter.regex.test(text)) {
+    const matchCandidates = filter.fullContextOnly ? [fullContext] : candidates;
+    if (matchCandidates.some((candidate) => filter.regex.test(candidate))) {
       const key = streamBadgeDedupeKey(filter.badge);
       if (!key || matched.has(key)) {
         return;
@@ -409,7 +415,7 @@ export function getStreamBadgePreviewSections(importItem = {}) {
   return sections;
 }
 
-export function formatStreamBadgeImportSummary(importItem = {}, index = 0) {
+export function formatStreamBadgeImportSummary(importItem = {}, _index = 0) {
   const enabledFilterCount = Array.isArray(importItem.filters)
     ? importItem.filters.filter((filter) => filter?.isEnabled !== false).length
     : 0;
