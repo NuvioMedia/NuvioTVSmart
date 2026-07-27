@@ -1,32 +1,17 @@
 import { DebridSettingsStore } from "../../data/local/debridSettingsStore.js";
-import { DEBRID_PROVIDER_IDS, DebridProviders } from "./debridProviders.js";
+import {
+  audioChannelsFromText,
+  audioTagsFromText,
+  buildLanguageTerms,
+  encodeFromText,
+  qualityFromText,
+  resolutionFromText,
+  tagsIn,
+  visualTagsFromText
+} from "../streams/releaseTags.js";
+import { DebridProviders } from "./debridProviders.js";
 import { DebridStreamTemplateEngine } from "./debridStreamTemplateEngine.js";
 
-const RESOLUTION_RANK = {
-  P2160: 700,
-  P1440: 600,
-  P1080: 500,
-  P720: 400,
-  P576: 300,
-  P480: 200,
-  P360: 100,
-  UNKNOWN: 0
-};
-const QUALITY_RANK = {
-  BLURAY_REMUX: 1200,
-  BLURAY: 1100,
-  WEB_DL: 1000,
-  WEBRIP: 900,
-  HDRIP: 800,
-  HD_RIP: 700,
-  DVDRIP: 600,
-  HDTV: 500,
-  CAM: 100,
-  TS: 90,
-  TC: 80,
-  SCR: 70,
-  UNKNOWN: 0
-};
 const RESOLUTION_LABELS = {
   P2160: "2160p",
   P1440: "1440p",
@@ -244,166 +229,20 @@ function searchText(stream = {}) {
     .toLowerCase();
 }
 
-function resolutionFromText(text = "") {
-  if (/\b(2160p?|4k|uhd)\b/i.test(text)) return "P2160";
-  if (/\b(1440p?|2k)\b/i.test(text)) return "P1440";
-  if (/\b(1080p?|fhd)\b/i.test(text)) return "P1080";
-  if (/\b(720p?|hd)\b/i.test(text)) return "P720";
-  if (/\b576p?\b/i.test(text)) return "P576";
-  if (/\b(480p?|sd)\b/i.test(text)) return "P480";
-  if (/\b360p?\b/i.test(text)) return "P360";
-  return "UNKNOWN";
-}
-
-function qualityFromText(text = "") {
-  const value = String(text || "").toLowerCase();
-  if (value.includes("remux")) return "BLURAY_REMUX";
-  if (
-    value.includes("blu-ray") ||
-    value.includes("bluray") ||
-    value.includes("bdrip") ||
-    value.includes("brrip")
-  )
-    return "BLURAY";
-  if (value.includes("web-dl") || value.includes("webdl")) return "WEB_DL";
-  if (value.includes("webrip") || value.includes("web-rip")) return "WEBRIP";
-  if (value.includes("hdrip")) return "HDRIP";
-  if (value.includes("hd-rip") || value.includes("hcrip")) return "HD_RIP";
-  if (value.includes("dvdrip")) return "DVDRIP";
-  if (value.includes("hdtv")) return "HDTV";
-  if (/\bcam\b/.test(value)) return "CAM";
-  if (/\bts\b/.test(value)) return "TS";
-  if (/\btc\b/.test(value)) return "TC";
-  if (/\bscr\b/.test(value)) return "SCR";
-  return "UNKNOWN";
-}
-
-function hasToken(text = "", token = "") {
-  return new RegExp(
-    `(^|[^a-z0-9])${String(token || "")
-      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-      .toLowerCase()}([^a-z0-9]|$)`,
-    "i"
-  ).test(String(text || ""));
-}
-
-function isDolbyVisionToken(value = "") {
-  const normalized = String(value || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-  return normalized === "dv" || normalized === "dovi" || normalized === "dolbyvision";
-}
-
-function isHdrToken(value = "") {
-  const normalized = String(value || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9+]/g, "");
-  return (
-    normalized === "hdr" ||
-    normalized === "hdr10" ||
-    normalized === "hdr10+" ||
-    normalized === "hdr10plus" ||
-    normalized === "hlg"
-  );
-}
-
-function visualTagsFromText(parsedHdr = [], search = "") {
-  const parsed = Array.isArray(parsedHdr) ? parsedHdr : [];
-  const text = [...parsed, search].join(" ").toLowerCase();
-  const tags = [];
-  const hasDv =
-    parsed.some(isDolbyVisionToken) ||
-    /(^|[^a-z0-9])(dv|dovi|dolby[ ._-]?vision)([^a-z0-9]|$)/i.test(search);
-  const hasHdr =
-    parsed.some(isHdrToken) ||
-    /(^|[^a-z0-9])(hdr|hdr10|hdr10plus|hdr10\+|hlg)([^a-z0-9]|$)/i.test(search);
-  if (hasDv && hasHdr) tags.push("HDR_DV");
-  if (hasDv && !hasHdr) tags.push("DV_ONLY");
-  if (hasHdr && !hasDv) tags.push("HDR_ONLY");
-  if (text.includes("hdr10+") || text.includes("hdr10plus")) tags.push("HDR10_PLUS");
-  if (text.includes("hdr10")) tags.push("HDR10");
-  if (hasDv) tags.push("DV");
-  if (hasHdr) tags.push("HDR");
-  if (hasToken(text, "hlg")) tags.push("HLG");
-  if (text.includes("10bit") || text.includes("10 bit")) tags.push("TEN_BIT");
-  if (hasToken(text, "3d")) tags.push("THREE_D");
-  if (hasToken(text, "imax")) tags.push("IMAX");
-  if (hasToken(text, "ai")) tags.push("AI");
-  if (hasToken(text, "sdr")) tags.push("SDR");
-  if (text.includes("h-ou")) tags.push("H_OU");
-  if (text.includes("h-sbs")) tags.push("H_SBS");
-  return Array.from(new Set(tags)).length ? Array.from(new Set(tags)) : ["UNKNOWN"];
-}
-
-function audioTagsFromText(parsedAudio = [], search = "") {
-  const text = [...(Array.isArray(parsedAudio) ? parsedAudio : []), search].join(" ").toLowerCase();
-  const tags = [];
-  if (hasToken(text, "atmos")) tags.push("ATMOS");
-  if (text.includes("dd+") || text.includes("ddp") || text.includes("dolby digital plus"))
-    tags.push("DD_PLUS");
-  if (hasToken(text, "dd") || text.includes("ac3") || text.includes("dolby digital"))
-    tags.push("DD");
-  if (text.includes("dts:x") || text.includes("dtsx")) tags.push("DTS_X");
-  if (text.includes("dts-hd ma") || text.includes("dtshd ma")) tags.push("DTS_HD_MA");
-  if (text.includes("dts-hd") || text.includes("dtshd")) tags.push("DTS_HD");
-  if (text.includes("dts-es") || text.includes("dtses")) tags.push("DTS_ES");
-  if (hasToken(text, "dts")) tags.push("DTS");
-  if (text.includes("truehd") || text.includes("true hd")) tags.push("TRUEHD");
-  if (hasToken(text, "opus")) tags.push("OPUS");
-  if (hasToken(text, "flac")) tags.push("FLAC");
-  if (hasToken(text, "aac")) tags.push("AAC");
-  return Array.from(new Set(tags)).length ? Array.from(new Set(tags)) : ["UNKNOWN"];
-}
-
-function audioChannelsFromText(parsedChannels = [], search = "") {
-  const text = [...(Array.isArray(parsedChannels) ? parsedChannels : []), search]
-    .join(" ")
-    .toLowerCase();
-  const channels = [];
-  if (hasToken(text, "7.1")) channels.push("CH_7_1");
-  if (hasToken(text, "6.1")) channels.push("CH_6_1");
-  if (hasToken(text, "5.1") || hasToken(text, "6ch")) channels.push("CH_5_1");
-  if (hasToken(text, "2.0")) channels.push("CH_2_0");
-  return Array.from(new Set(channels)).length ? Array.from(new Set(channels)) : ["UNKNOWN"];
-}
-
-function encodeFromText(parsedCodec, search = "") {
-  const text = [parsedCodec, search].filter(Boolean).join(" ").toLowerCase();
-  if (hasToken(text, "av1")) return "AV1";
-  if (hasToken(text, "hevc") || hasToken(text, "h265") || hasToken(text, "x265")) return "HEVC";
-  if (hasToken(text, "avc") || hasToken(text, "h264") || hasToken(text, "x264")) return "AVC";
-  if (hasToken(text, "xvid")) return "XVID";
-  if (hasToken(text, "divx")) return "DIVX";
-  return "UNKNOWN";
-}
-
-function languageFor(value = "") {
-  const normalized = String(value || "").toLowerCase();
-  const compact = normalized.replace(/[^a-z0-9]/g, "");
-  return (
-    Object.entries(LANGUAGE_LABELS).find(([, [code, label]]) => {
-      const normalizedCode = String(code || "").toLowerCase();
-      const normalizedLabel = String(label || "").toLowerCase();
-      return (
-        normalized === normalizedCode ||
-        normalized === normalizedLabel ||
-        (compact && compact === normalizedCode.replace(/[^a-z0-9]/g, ""))
-      );
-    })?.[0] || null
-  );
-}
+// Language terms reuse the shared parser: both the code ("pt-br") and the
+// label ("Brazilian Portuguese") resolve to the language key.
+const LANGUAGE_TERMS = buildLanguageTerms(LANGUAGE_LABELS);
+const LANGUAGE_ORDER = Object.keys(LANGUAGE_LABELS);
 
 function languagesFromText(parsedLanguages = [], search = "") {
-  const fromParsed = (Array.isArray(parsedLanguages) ? parsedLanguages : [])
-    .map(languageFor)
-    .filter(Boolean);
-  if (fromParsed.length) {
-    return fromParsed;
-  }
-  const matches = Object.entries(LANGUAGE_LABELS)
-    .filter(([, [code]]) => hasToken(search, code))
-    .map(([key]) => key);
-  return matches.includes("PT_BR") ? matches.filter((key) => key !== "PT") : matches;
+  const parsed = Array.isArray(parsedLanguages) ? parsedLanguages : [];
+  // Trust parsed languages when they name something recognisable, else scan the
+  // release name.
+  const fromParsed = tagsIn(parsed.join(" "), LANGUAGE_TERMS);
+  const found = fromParsed.size ? fromParsed : tagsIn(search, LANGUAGE_TERMS);
+  // "pt-br" also contains "pt"; the specific tag wins.
+  if (found.has("PT_BR")) found.delete("PT");
+  return LANGUAGE_ORDER.filter((key) => found.has(key));
 }
 
 function releaseGroupFromText(text = "") {
@@ -439,8 +278,6 @@ function facts(stream = {}) {
     resolution,
     quality,
     size: streamSize(stream),
-    hasDolbyVision: /\b(dolby.?vision|dv)\b/i.test(text),
-    hasHdr: /\b(hdr10\+?|hdr|hlg)\b/i.test(text),
     codec,
     visualTags,
     audioTags,
@@ -1008,6 +845,8 @@ function formatManagedStream(stream = {}, fact, settings = DebridSettingsStore.g
     }
   };
 }
+
+export const StreamTagParser = { languagesFromText };
 
 export const DebridStreamPresentation = {
   apply(groups = [], settings = DebridSettingsStore.get()) {
