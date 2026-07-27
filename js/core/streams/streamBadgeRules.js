@@ -211,12 +211,12 @@ function mergeStreamBadges(existing = [], matched = []) {
   return Array.from(merged.values());
 }
 
-function badgeMatchText(stream = {}) {
+function badgeMatchCandidates(stream = {}) {
   const resolve = stream.clientResolve || stream.raw?.clientResolve || {};
   const raw = resolve.stream?.raw || stream.raw || {};
   const parsed = raw.parsed || {};
   const presentation = stream.streamPresentation || stream.raw?.streamPresentation || {};
-  const lines = [
+  const candidates = [
     raw.filename,
     resolve.filename,
     stream.behaviorHints?.filename,
@@ -256,7 +256,10 @@ function badgeMatchText(stream = {}) {
         array.findIndex((entry) => entry.toLowerCase() === value.toLowerCase()) === index
     );
 
-  return lines.join(" ");
+  if (candidates.length <= 1) {
+    return candidates;
+  }
+  return [...candidates, candidates.join(" ")];
 }
 
 function stableStringify(value) {
@@ -335,14 +338,14 @@ export function matchStreamBadges(stream = {}, rules = {}) {
   if (!filters.length) {
     return [];
   }
-  const text = badgeMatchText(stream);
-  if (!text) {
+  const candidates = badgeMatchCandidates(stream);
+  if (!candidates.length) {
     return [];
   }
 
   const matched = new Map();
   filters.forEach((filter) => {
-    if (filter.regex.test(text)) {
+    if (candidates.some((candidate) => filter.regex.test(candidate))) {
       const key = streamBadgeDedupeKey(filter.badge);
       if (!key || matched.has(key)) {
         return;

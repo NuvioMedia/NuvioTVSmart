@@ -37,7 +37,6 @@ import { StreamBadgeSettingsStore } from "../../../data/local/streamBadgeSetting
 import { TorrentSettingsStore } from "../../../data/local/torrentSettingsStore.js";
 import { WebOsAudioCompatibilityStore } from "../../../data/local/webOsAudioCompatibilityStore.js";
 import { matchStreamBadges } from "../../../core/streams/streamBadgeRules.js";
-import { audioChannelsFromText, HDR_TAGS, tagsIn } from "../../../core/streams/releaseTags.js";
 import { selectAutoPlayStream } from "../../../core/streams/streamAutoPlaySelector.js";
 import { metaRepository } from "../../../data/repository/metaRepository.js";
 import { I18n } from "../../../i18n/index.js";
@@ -16924,62 +16923,58 @@ export const PlayerScreen = {
           stream.url,
           stream.externalUrl,
           stream.infoHash
-        ].filter(Boolean).join(" ");
-        // Tag-based, not substring-based: "Camp Rock" must not read as CAM and
-        // "The Lights" must not read as TS.
-        const tags = tagsIn(text);
-        const has = (tag) => tags.has(tag);
+        ].filter(Boolean).join(" ").toLowerCase();
         let score = 0;
 
-        if (has("P2160")) score += 60;
-        else if (has("P1080")) score += 40;
-        else if (has("P720")) score += 20;
-        else if (has("P480")) score += 10;
+        if (text.includes("2160") || text.includes("4k")) score += 60;
+        else if (text.includes("1080")) score += 40;
+        else if (text.includes("720")) score += 20;
+        else if (text.includes("480")) score += 10;
 
-        if (has("WEB_DL") || has("WEBRIP")) score += 8;
-        if (has("BLURAY") || has("BLURAY_REMUX")) score += 8;
-        if (has("CAM")) score -= 70;
-        if (has("TS")) score -= 40;
+        if (text.includes("web")) score += 8;
+        if (text.includes("bluray")) score += 8;
+        if (text.includes("cam")) score -= 70;
+        if (text.includes("ts")) score -= 40;
 
-        if (has("HEVC")) {
+        if (text.includes("hevc") || text.includes("h265") || text.includes("x265")) {
           score += supports("mp4Hevc", true) || supports("mp4HevcMain10", true) ? 12 : -90;
         }
-        if (has("AV1")) {
+        if (text.includes("av1")) {
           score += supports("mp4Av1", true) ? 10 : -80;
         }
-        if (has("VP9")) {
+        if (text.includes("vp9")) {
           score += supports("webmVp9", true) ? 8 : -50;
         }
-        if (has("MKV")) {
+        if (text.includes(".mkv") || text.includes("matroska")) {
           score += supports("mkvH264", true) ? 8 : -120;
           if (isWebOsRuntime && !supports("mkvH264", false)) score -= 220;
         }
-        if (has("WEBM")) {
+        if (text.includes(".webm")) {
           score += supports("webmVp9", true) ? 6 : -45;
         }
 
-        if (HDR_TAGS.some(has)) {
+        if (text.includes("hdr") || text.includes("hdr10") || text.includes("hlg")) {
           score += supports("hdrLikely", true) ? 16 : -35;
         }
-        if (has("DV")) {
+        if (text.includes("dolby vision") || text.includes(" dv ")) {
           score += supports("dolbyVision", true) ? 18 : -45;
         }
-        if (has("ATMOS") || has("DD_PLUS")) {
+        if (text.includes("atmos") || text.includes("eac3") || text.includes("ec-3")) {
           score += supports("atmosLikely", true) || supports("audioEac3", true) ? 14 : -30;
         }
-        if (has("AAC")) {
+        if (/\b(aac|mp4a)\b/.test(text)) {
           score += 16;
         }
-        if (has("DD") && !has("DD_PLUS") && !has("ATMOS")) {
+        if (/\b(ac3|dolby digital)\b/.test(text) && !/\b(eac3|ec-3|ddp|atmos)\b/.test(text)) {
           score += 10;
         }
-        if (has("DD_PLUS") || has("ATMOS")) {
+        if (/\b(eac3|ec-3|ddp|atmos)\b/.test(text)) {
           score += isWebOsRuntime ? -70 : -18;
         }
-        if (has("TRUEHD") || has("DTS")) {
+        if (/\b(truehd|dts-hd|dts:x|dts)\b/.test(text)) {
           score += isWebOsRuntime ? -85 : -40;
         }
-        if (audioChannelsFromText([], text).includes("CH_2_0")) {
+        if (/\b(stereo|2\.0|2ch)\b/.test(text)) {
           score += isWebOsRuntime ? 10 : 4;
         }
 

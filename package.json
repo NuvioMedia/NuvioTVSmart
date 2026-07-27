@@ -5,7 +5,6 @@
   "version": "0.3.25",
   "scripts": {
     "build": "node ./scripts/build.mjs",
-    "test": "node --test \"**/*.test.mjs\"",
     "build:on-release": "node ./scripts/release-build-poller.mjs",
     "install:webos": "node ./scripts/ares-install-webos.mjs",
     "inspect:webos": "node ./scripts/ares-inspect-webos.mjs",
