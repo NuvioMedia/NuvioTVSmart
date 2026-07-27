@@ -19,7 +19,7 @@ const requireConfiguredRuntimeEnv = /^(1|true|yes|on)$/i.test(
   String(process.env.NUVIO_REQUIRE_LOCAL_PROPERTIES || "")
 );
 const debugBundle = /^(1|true|yes|on)$/i.test(String(process.env.NUVIO_DEBUG_BUNDLE || ""));
-const coreJsModules = ["core-js/stable"];
+const chromeTarget = `chrome${compatibilityPolicy.chromiumVersion}`;
 const legacyViewport = {
   width: 1920,
   height: 1080,
@@ -396,7 +396,7 @@ async function buildCSS() {
     const minified = await transform(result.css, {
       loader: "css",
       minify: true,
-      target: [`chrome${compatibilityPolicy.chromiumVersion}`],
+      target: [chromeTarget],
       legalComments: "none"
     });
 
@@ -435,26 +435,17 @@ async function copyOptionalRootFile(fileName, { fallback = null, defaultContents
 
 async function buildCoreJsBundle() {
   console.log("building core-js bundle...");
-  const coreJsEntry = await coreJsBuilder({
-    modules: coreJsModules,
-    targets: { chrome: String(compatibilityPolicy.chromiumVersion) },
-    format: "esm"
+  const bundled = await coreJsBuilder({
+    modules: ["core-js/stable"],
+    targets: { chrome: String(compatibilityPolicy.chromiumVersion) }
   });
-  const coreJsResult = await build({
-    stdin: { contents: coreJsEntry, resolveDir: rootDir, sourcefile: "core-js.generated.js" },
-    outfile: path.join(distDir, coreJsBundleFileName),
-    bundle: true,
+  const { code } = await transform(bundled, {
+    loader: "js",
     minify: !debugBundle,
-    format: "iife",
-    sourcemap: debugBundle,
-    target: [`chrome${compatibilityPolicy.chromiumVersion}`],
-    metafile: true
+    target: [chromeTarget],
+    legalComments: "none"
   });
-  if (
-    !Object.keys(coreJsResult.metafile.inputs).some((input) => input.includes("node_modules/core-js/"))
-  ) {
-    throw new Error("Generated core-js bundle contains no core-js modules.");
-  }
+  await writeFile(path.join(distDir, coreJsBundleFileName), code, "utf8");
 }
 
 async function buildBundle() {
@@ -468,7 +459,7 @@ async function buildBundle() {
     minify: !debugBundle,
     format: "iife",
     sourcemap: debugBundle,
-    target: [`chrome${compatibilityPolicy.chromiumVersion}`],
+    target: [chromeTarget],
     metafile: true,
     define: {
       "process.env.NODE_ENV": '"production"',
