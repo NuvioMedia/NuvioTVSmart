@@ -13,13 +13,10 @@ import { writeRuntimeEnvScriptFile } from "./envProperties.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const distDir = path.join(rootDir, "dist");
-const bundleFileName = "app.bundle.js";
-const coreJsBundleFileName = "core-js.bundle.js";
 const requireConfiguredRuntimeEnv = /^(1|true|yes|on)$/i.test(
   String(process.env.NUVIO_REQUIRE_LOCAL_PROPERTIES || "")
 );
 const debugBundle = /^(1|true|yes|on)$/i.test(String(process.env.NUVIO_DEBUG_BUNDLE || ""));
-const chromeTarget = `chrome${compatibilityPolicy.chromiumVersion}`;
 const legacyViewport = {
   width: 1920,
   height: 1080,
@@ -396,7 +393,7 @@ async function buildCSS() {
     const minified = await transform(result.css, {
       loader: "css",
       minify: true,
-      target: [chromeTarget],
+      target: [`chrome${compatibilityPolicy.chromiumVersion}`],
       legalComments: "none"
     });
 
@@ -442,10 +439,10 @@ async function buildCoreJsBundle() {
   const { code } = await transform(bundled, {
     loader: "js",
     minify: !debugBundle,
-    target: [chromeTarget],
+    target: [`chrome${compatibilityPolicy.chromiumVersion}`],
     legalComments: "none"
   });
-  await writeFile(path.join(distDir, coreJsBundleFileName), code, "utf8");
+  await writeFile(path.join(distDir, "core-js.bundle.js"), code, "utf8");
 }
 
 async function buildBundle() {
@@ -454,12 +451,12 @@ async function buildBundle() {
   console.log("starting bundle build...");
   const result = await build({
     entryPoints: [path.join(rootDir, "js/app.js")],
-    outfile: path.join(distDir, bundleFileName),
+    outfile: path.join(distDir, "app.bundle.js"),
     bundle: true,
     minify: !debugBundle,
     format: "iife",
     sourcemap: debugBundle,
-    target: [chromeTarget],
+    target: [`chrome${compatibilityPolicy.chromiumVersion}`],
     metafile: true,
     define: {
       "process.env.NODE_ENV": '"production"',
