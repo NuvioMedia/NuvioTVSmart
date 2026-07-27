@@ -19358,8 +19358,7 @@ html.legacy-webos .debug-console-log-frame {
 }
 
 .stream-route-card.skeleton {
-  display: block;
-  min-height: 160px;
+  pointer-events: none;
 }
 
 .stream-route-card-copy {
@@ -19624,22 +19623,24 @@ html.legacy-webos .debug-console-log-frame {
   );
   background-size: 220% 100%;
   animation: streamRouteSkeletonShimmer 2.2s ease-in-out infinite;
-  margin-bottom: 14px;
+  margin-top: 12px;
 }
 
-.stream-route-skeleton-line.wide {
+/* Widths/heights mirror the real card rows: heading, quality, then two lines. */
+.stream-route-skeleton-line:first-child {
   width: 34%;
   height: 22px;
+  margin-top: 0;
 }
 
-.stream-route-skeleton-line.short {
+.stream-route-skeleton-line:nth-child(2) {
   width: 12%;
   height: 18px;
+  margin-top: 14px;
 }
 
 .stream-route-skeleton-line:last-child {
   width: 56%;
-  margin-bottom: 0;
 }
 
 @keyframes streamRoutePanelEnter {

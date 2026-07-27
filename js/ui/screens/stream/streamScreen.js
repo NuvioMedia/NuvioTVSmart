@@ -2133,19 +2133,18 @@ export const StreamScreen = {
   },
 
   renderLoadingCards(count = 3) {
-    const safeCount = Math.max(1, Number(count || 0));
-    return Array.from({ length: safeCount })
-      .map(
-        () => `
-      <div class="stream-route-card skeleton">
-        <div class="stream-route-skeleton-line wide"></div>
-        <div class="stream-route-skeleton-line short"></div>
-        <div class="stream-route-skeleton-line"></div>
-        <div class="stream-route-skeleton-line"></div>
+    return `
+      <div class="stream-route-card-row">
+        <div class="stream-route-card skeleton">
+          <div class="stream-route-card-copy">
+            <div class="stream-route-skeleton-line"></div>
+            <div class="stream-route-skeleton-line"></div>
+            <div class="stream-route-skeleton-line"></div>
+            <div class="stream-route-skeleton-line"></div>
+          </div>
+        </div>
       </div>
-    `
-      )
-      .join("");
+    `.repeat(count);
   },
 
   render() {
