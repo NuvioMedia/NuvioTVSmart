@@ -45,10 +45,23 @@ import {
 } from "../../../core/streams/streamBadgeRules.js";
 import { normalizeMathematicalAlphanumericSymbols } from "../../../core/streams/streamDisplayText.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
+import {
+  VIRTUAL_LIST_FALLBACK_VIEWPORT_PX,
+  buildRowOffsets,
+  computeVirtualRange,
+  deriveRowStrides,
+  estimateRowHeight,
+  projectScrollForRow,
+  virtualRangeNeedsRefresh
+} from "./streamVirtualList.js";
 
 const STREAM_BADGE_LIMIT = 9;
 const WEBOS_STREAM_BADGE_OVERSCAN_RATIO = 0.35;
 const WEBOS_STREAM_BADGE_MIN_OVERSCAN_PX = 180;
+// Virtual list. Row geometry maths lives in streamVirtualList.js so it can be
+// tested without a DOM; everything here is the DOM half.
+const WEBOS_VIRTUAL_LIST_MIN_ROWS = 24;
+const WEBOS_VIRTUAL_VISIBILITY_PAD_PX = 16;
 const WEBOS_NATIVE_PLAYER_APP_IDS = [
   "com.webos.app.mediadiscovery",
   "com.webos.app.photovideo",
@@ -708,6 +721,15 @@ export const StreamScreen = {
     }
   },
 
+  // Every cache below is keyed to the markup or the stream arrays that render()
+  // is about to replace, so drop them all in one place.
+  invalidateStreamRouteCaches() {
+    this.filteredStreamsCache = null;
+    this.cardRowsCache = null;
+    this.chipNodesCache = null;
+    this.focusedNode = null;
+  },
+
   requestRender({ delayMs = 0 } = {}) {
     if (!this.container || Router.getCurrent() !== "stream") {
       return;
@@ -934,6 +956,9 @@ export const StreamScreen = {
     this.addonLogoLookup = {};
     this.addonFilter = "all";
     this.hasRenderedStreamRouteShell = false;
+    this.invalidateStreamRouteCaches();
+    this.virtualGeometryKey = "";
+    this.resetVirtualGeometry();
     // Returning here from the player is a back navigation, not a fresh open, so
     // do not auto-resume or auto-play again. Otherwise exiting the player drops
     // back onto the stream list and immediately relaunches, looping forever.
@@ -1050,6 +1075,9 @@ export const StreamScreen = {
     this.addonLogoLookup = {};
 
     this.sourceChips = [];
+    this.invalidateStreamRouteCaches();
+    this.virtualGeometryKey = "";
+    this.resetVirtualGeometry();
     if (!this.hasRenderedStreamRouteShell) {
       this.requestRender();
     }
@@ -1523,12 +1551,32 @@ export const StreamScreen = {
     return getOrderedFilterNames(this.sourceChips, this.streams);
   },
 
+  // Two full sorts of the stream array. This runs on every badge-hydration pass,
+  // i.e. every scroll frame, so memoise it against the source identities. Both
+  // arrays are always reassigned rather than mutated in place, and render()
+  // drops the cache so settings changes are picked up.
   getFilteredStreams(filter = this.addonFilter) {
-    const orderedStreams = sortStreamsByAddonOrder(this.streams, this.sourceChips);
-    if (filter === "all") {
-      return DebridStreamPresentation.sortForDisplay(orderedStreams, DebridSettingsStore.get());
+    const cached = this.filteredStreamsCache;
+    if (
+      cached &&
+      cached.streams === this.streams &&
+      cached.sourceChips === this.sourceChips &&
+      cached.filter === filter
+    ) {
+      return cached.result;
     }
-    return orderedStreams.filter((stream) => stream.addonName === filter);
+    const orderedStreams = sortStreamsByAddonOrder(this.streams, this.sourceChips);
+    const result =
+      filter === "all"
+        ? DebridStreamPresentation.sortForDisplay(orderedStreams, DebridSettingsStore.get())
+        : orderedStreams.filter((stream) => stream.addonName === filter);
+    this.filteredStreamsCache = {
+      streams: this.streams,
+      sourceChips: this.sourceChips,
+      filter,
+      result
+    };
+    return result;
   },
 
   hasPendingSourceLoads(filter = this.addonFilter) {
@@ -1572,16 +1620,93 @@ export const StreamScreen = {
     return row.play || row.native || null;
   },
 
+  // One querySelectorAll plus two scoped queries per row. On a few hundred
+  // sources that is a few hundred DOM queries per keypress, so hold the result
+  // until the next render replaces the markup. Keyed by the absolute row index
+  // from data-stream-row, which stays stable when only a window is rendered.
   getCardRows() {
-    return Array.from(
+    const cached = this.cardRowsCache;
+    if (cached && this.container?.contains(cached.anchor)) {
+      return cached.byIndex;
+    }
+    const byIndex = new Map();
+    let anchor = null;
+    Array.from(
       this.container?.querySelectorAll(".stream-route-card-row[data-stream-row]") || []
-    )
-      .map((rowNode) => ({
+    ).forEach((rowNode) => {
+      const entry = {
         row: Number(rowNode.dataset.streamRow || 0),
+        node: rowNode,
         play: rowNode.querySelector('[data-card-action="play"]'),
         native: rowNode.querySelector('[data-card-action="native"]')
-      }))
-      .filter((row) => row.play || row.native);
+      };
+      if (!entry.play && !entry.native) {
+        return;
+      }
+      byIndex.set(entry.row, entry);
+      anchor = anchor || rowNode;
+    });
+    this.cardRowsCache = anchor ? { byIndex, anchor } : null;
+    return byIndex;
+  },
+
+  getCardRow(index) {
+    return this.getCardRows().get(Number(index)) || null;
+  },
+
+  // The authoritative row count is the stream list, not the DOM, because the DOM
+  // only holds a window of it.
+  getVisibleStreamCount() {
+    return this.getFilteredStreams().length;
+  },
+
+  isVirtualListEnabled() {
+    return Environment.isWebOS() && this.getVisibleStreamCount() >= WEBOS_VIRTUAL_LIST_MIN_ROWS;
+  },
+
+  getRowHeight(index) {
+    const measured = this.rowHeights?.[index];
+    return measured > 0 ? measured : estimateRowHeight(this.rowHeights || []);
+  },
+
+  ensureRowOffsets(total) {
+    const count = Math.max(0, Number(total || 0));
+    if (!this.rowOffsets || this.rowOffsets.length !== count + 1) {
+      this.rowOffsets = buildRowOffsets(
+        this.rowHeights || [],
+        count,
+        estimateRowHeight(this.rowHeights || [])
+      );
+    }
+    return this.rowOffsets;
+  },
+
+  getRowOffset(index, total) {
+    const offsets = this.ensureRowOffsets(total);
+    return offsets[clamp(Number(index || 0), 0, offsets.length - 1)] || 0;
+  },
+
+  getListViewportHeight(listNode) {
+    const measured = Number(listNode?.clientHeight || 0);
+    if (measured > 0) {
+      this.lastListViewportHeight = measured;
+      return measured;
+    }
+    return Number(this.lastListViewportHeight || 0) || VIRTUAL_LIST_FALLBACK_VIEWPORT_PX;
+  },
+
+  computeVirtualRange(scrollTop, viewportHeight, total, focusRow) {
+    return computeVirtualRange({
+      offsets: this.ensureRowOffsets(total),
+      scrollTop,
+      viewportHeight,
+      total,
+      focusRow
+    });
+  },
+
+  virtualRangeNeedsRefresh(range, total) {
+    return virtualRangeNeedsRefresh({ current: this.virtualRange, next: range, total });
   },
 
   isCardActionFocused(rowIndex, action) {
@@ -1592,18 +1717,50 @@ export const StreamScreen = {
     );
   },
 
+  // Clearing the marker used to touch every .focusable in the list, which on a
+  // few hundred cards is a few hundred style invalidations per D-pad step. Track
+  // the focused node instead and only sweep when the pointer is stale (i.e. once
+  // after each render, which rebuilds the list markup).
+  clearFocusedMarker(nextTarget) {
+    const previous = this.focusedNode;
+    if (previous === nextTarget) {
+      return;
+    }
+    if (previous && this.container?.contains(previous)) {
+      previous.classList.remove("focused");
+      return;
+    }
+    this.container?.querySelectorAll(".focused")?.forEach((node) => {
+      if (node !== nextTarget) {
+        node.classList.remove("focused");
+      }
+    });
+  },
+
   focusElement(target) {
     if (!target) {
       return false;
     }
-    this.container
-      .querySelectorAll(".focusable")
-      .forEach((node) => node.classList.remove("focused"));
+    this.clearFocusedMarker(target);
+    this.focusedNode = target;
     target.classList.add("focused");
+    const listNode = target.closest(".stream-route-list");
     try {
       target.focus({ preventScroll: true });
     } catch (_) {
       target.focus();
+    }
+    // webOS below Chromium 64 ignores preventScroll and natively scrolls the
+    // list, which fights the manual transform. Snap the native offset back.
+    if (
+      listNode?.classList?.contains("manual-scroll") &&
+      Number(listNode.scrollTop || 0) !== 0
+    ) {
+      try {
+        listNode.scrollTop = 0;
+      } catch (_) {
+        // Manual transform stays authoritative.
+      }
     }
 
     const chipTrack = target.closest(".stream-route-chip-track");
@@ -1620,11 +1777,10 @@ export const StreamScreen = {
       }
     }
 
-    const listNode = target.closest(".stream-route-list");
     if (listNode) {
-      this.ensureListItemVisible(listNode, target);
+      const measured = this.ensureListItemVisible(listNode, target);
       this.listScrollTop = this.getListScrollTop(listNode);
-      this.scheduleFocusedListItemVisibilityCheck(listNode, target);
+      this.scheduleFocusedListItemVisibilityCheck(listNode, target, measured);
     }
     return true;
   },
@@ -1665,14 +1821,30 @@ export const StreamScreen = {
     return Number(listNode.scrollTop || 0);
   },
 
+  // The whole card list rides on a single wrapper so a manual scroll step is one
+  // transform write instead of one per card. webOS 3.x has no CSS custom
+  // properties, so the offset is applied inline rather than through a variable.
+  getListTrack(listNode) {
+    const track = listNode?.firstElementChild;
+    return track?.classList?.contains("stream-route-list-track") ? track : null;
+  },
+
   updateManualListScrollTransform(listNode, scrollTop) {
     if (!listNode) {
       return;
     }
     const normalized = Math.max(0, Number(scrollTop || 0));
     const transform = normalized > 0 ? `translateY(${-normalized}px)` : "";
+    const track = this.getListTrack(listNode);
+    if (track) {
+      if (track.style.transform !== transform) {
+        track.style.transform = transform;
+      }
+      return;
+    }
+    // Defensive fallback for markup rendered before the track wrapper existed.
     Array.from(listNode.children || []).forEach((child) => {
-      if (child instanceof HTMLElement) {
+      if (child instanceof HTMLElement && child.style.transform !== transform) {
         child.style.transform = transform;
       }
     });
@@ -1683,26 +1855,37 @@ export const StreamScreen = {
       return;
     }
     const normalized = Math.max(0, Number(scrollTop || 0));
-    listNode.classList.add("manual-scroll");
+    if (!listNode.classList.contains("manual-scroll")) {
+      listNode.classList.add("manual-scroll");
+    }
     listNode.dataset.manualScrollTop = String(normalized);
-    listNode.style.setProperty("--stream-route-manual-scroll", `${-normalized}px`);
-    try {
-      listNode.scrollTop = 0;
-    } catch (_) {
-      // Ignore webOS scrollTop assignment failures; the manual transform is authoritative.
+    if (Number(listNode.scrollTop || 0) !== 0) {
+      try {
+        listNode.scrollTop = 0;
+      } catch (_) {
+        // Ignore webOS scrollTop assignment failures; the manual transform is authoritative.
+      }
     }
     this.updateManualListScrollTransform(listNode, normalized);
     this.listScrollTop = normalized;
   },
 
-  setListScrollTop(listNode, nextScrollTop) {
+  // maxScrollOverride exists because scrollHeight is not usable once the track
+  // is transformed: Chromium's scrollable overflow includes transformed
+  // descendants, so translating the track up shrinks scrollHeight toward
+  // clientHeight and the ceiling collapses as you scroll. Callers that know the
+  // real content height from the geometry model pass it in.
+  setListScrollTop(listNode, nextScrollTop, maxScrollOverride = null) {
     if (!listNode) {
       return;
     }
-    const maxScrollTop = Math.max(
-      0,
-      Number(listNode.scrollHeight || 0) - Number(listNode.clientHeight || 0)
-    );
+    const maxScrollTop =
+      Number(maxScrollOverride) >= 0
+        ? Number(maxScrollOverride)
+        : Math.max(
+            0,
+            Number(listNode.scrollHeight || 0) - Number(listNode.clientHeight || 0)
+          );
     const normalized = clamp(Number(nextScrollTop || 0), 0, maxScrollTop);
     if (listNode.classList?.contains("manual-scroll")) {
       this.applyManualListScroll(listNode, normalized);
@@ -1733,9 +1916,61 @@ export const StreamScreen = {
     this.listScrollTop = Number(applied || normalized || 0);
   },
 
+  // Total content height straight from the geometry model, plus the trailing
+  // loader card when sources are still arriving. Independent of scrollHeight,
+  // which is unreliable under the manual-scroll transform.
+  getVirtualContentHeight(listNode, total) {
+    let height = this.getRowOffset(total, total);
+    const loader = listNode?.querySelector?.(
+      ".stream-route-card-row:not([data-stream-row])"
+    );
+    if (loader) {
+      height += Number(loader.offsetHeight || 0) + Number(this.rowGapPx || 0);
+    }
+    return height;
+  },
+
+  getVirtualMaxScroll(listNode, total, viewport) {
+    return Math.max(0, this.getVirtualContentHeight(listNode, total) - viewport);
+  },
+
+  // Keeps the focused row pinned to whichever edge it is leaving, so holding a
+  // direction scrolls the list underneath a focus marker that never leaves the
+  // screen. All in model coordinates, which are exact for rendered rows.
+  scrollVirtualRowIntoView(listNode, row) {
+    const total = this.getVisibleStreamCount();
+    if (!total) {
+      return true;
+    }
+    const viewport = this.getListViewportHeight(listNode);
+    const current = this.getListScrollTop(listNode);
+    const maxScroll = this.getVirtualMaxScroll(listNode, total, viewport);
+    const next = projectScrollForRow({
+      offsets: this.ensureRowOffsets(total),
+      row,
+      scrollTop: current,
+      viewportHeight: viewport,
+      pad: WEBOS_VIRTUAL_VISIBILITY_PAD_PX,
+      maxScroll
+    });
+    if (next !== current) {
+      this.setListScrollTop(listNode, next, maxScroll);
+    }
+    return true;
+  },
+
   ensureListItemVisible(listNode, target) {
     if (!listNode || !target) {
       return;
+    }
+    // Under virtualisation the model is the coordinate system the spacers are
+    // built from, so use it rather than rects — mixing the two is what let the
+    // scroll position and the model drift apart.
+    if (this.isVirtualListEnabled()) {
+      const row = Number(target.dataset?.streamRow ?? -1);
+      if (row >= 0) {
+        return this.scrollVirtualRowIntoView(listNode, row);
+      }
     }
     const viewTop = this.getListScrollTop(listNode);
     let itemTop = Number(target.offsetTop || 0);
@@ -1758,7 +1993,7 @@ export const StreamScreen = {
     }
     const viewHeight = Number(listNode.clientHeight || 0);
     if (!viewHeight) {
-      return;
+      return false;
     }
     const viewBottom = viewTop + viewHeight;
     const pad = 16;
@@ -1767,9 +2002,13 @@ export const StreamScreen = {
     } else if (itemTop < viewTop + pad) {
       this.setListScrollTop(listNode, itemTop - pad);
     }
+    return true;
   },
 
-  scheduleFocusedListItemVisibilityCheck(listNode, target) {
+  // Only re-measure when the first pass could not (the list had no box yet,
+  // which happens on the render right after the route mounts). Re-running it
+  // unconditionally cost a second forced layout of the whole list per keypress.
+  scheduleFocusedListItemVisibilityCheck(listNode, target, measured = false) {
     if (!listNode || !target) {
       return;
     }
@@ -1778,7 +2017,9 @@ export const StreamScreen = {
       if (!this.container || !root?.contains?.(listNode) || !root?.contains?.(target)) {
         return;
       }
-      this.ensureListItemVisible(listNode, target);
+      if (!measured) {
+        this.ensureListItemVisible(listNode, target);
+      }
       this.requestStreamBadgeHydration();
     };
     if (typeof requestAnimationFrame === "function") {
@@ -1788,23 +2029,48 @@ export const StreamScreen = {
     setTimeout(run, 0);
   },
 
+  getChipNodes() {
+    const cached = this.chipNodesCache;
+    if (cached?.length && this.container?.contains(cached[0])) {
+      return cached;
+    }
+    const chips = Array.from(
+      this.container?.querySelectorAll(".stream-route-chip.focusable") || []
+    );
+    this.chipNodesCache = chips;
+    return chips;
+  },
+
+  // rowCount comes from the stream list rather than the DOM: under
+  // virtualisation the DOM only holds a window, so DOM length is not the
+  // navigable range and DOM position is not the row index.
   getFocusLists() {
-    const chips = Array.from(this.container.querySelectorAll(".stream-route-chip.focusable"));
-    const rows = this.getCardRows();
-    return { chips, rows };
+    return {
+      chips: this.getChipNodes(),
+      rowCount: this.getCardRows().size ? this.getVisibleStreamCount() : 0
+    };
   },
 
   applyFocus() {
-    const { chips, rows } = this.getFocusLists();
-    if (!chips.length && !rows.length) {
+    const { chips, rowCount } = this.getFocusLists();
+    if (!chips.length && !rowCount) {
       return;
     }
-    const zone = this.focusState?.zone || (rows.length ? "card" : "filter");
+    const zone = this.focusState?.zone || (rowCount ? "card" : "filter");
     const index = Number(this.focusState?.index || 0);
-    if (zone === "card" && rows.length) {
-      const rowIndex = clamp(Number(this.focusState?.row || 0), 0, rows.length - 1);
+    if (zone === "card" && rowCount) {
+      const rowIndex = clamp(Number(this.focusState?.row || 0), 0, rowCount - 1);
       const preferredAction = String(this.focusState?.action || "play");
-      const target = this.resolveCardActionForRow(rows[rowIndex], preferredAction);
+      this.syncVirtualWindowForRow(rowIndex);
+      let target = this.resolveCardActionForRow(this.getCardRow(rowIndex), preferredAction);
+      if (!target) {
+        // syncVirtualWindowForRow is supposed to guarantee the row is resident.
+        // If it somehow is not, rebuild the window centred on it rather than
+        // leaving the focus marker on a card that no longer exists — that is
+        // what strands the list with nothing visibly focused.
+        this.forceVirtualWindowOnRow(rowIndex);
+        target = this.resolveCardActionForRow(this.getCardRow(rowIndex), preferredAction);
+      }
       const resolvedAction = target?.dataset?.cardAction || "play";
       this.focusState = { zone: "card", row: rowIndex, action: resolvedAction };
       this.focusElement(target);
@@ -1819,7 +2085,14 @@ export const StreamScreen = {
     if (!list) {
       return;
     }
-    this.setListScrollTop(list, Number(this.listScrollTop || 0));
+    const max = this.isVirtualListEnabled()
+      ? this.getVirtualMaxScroll(
+          list,
+          this.getVisibleStreamCount(),
+          this.getListViewportHeight(list)
+        )
+      : null;
+    this.setListScrollTop(list, Number(this.listScrollTop || 0), max);
   },
 
   getHeaderMeta() {
@@ -2133,8 +2406,15 @@ export const StreamScreen = {
   renderStreamCard(stream, index, streamBadgesEnabled = true, badgeSettings = null) {
     const headline = getStreamHeadline(stream);
     const quality = getStreamQuality(stream);
+    // Lazy badges exist to bound how many badge images live in the DOM. The
+    // virtual list already bounds that to the rendered window, and hydrating
+    // after a card is measured would change its height behind the geometry
+    // model's back — which desynchronises the model from the real scroll
+    // position. Render them inline whenever the window is doing the bounding.
     const lazyBadges =
-      Environment.isWebOS() && hasStreamBadges(stream, streamBadgesEnabled, badgeSettings);
+      Environment.isWebOS() &&
+      !this.isVirtualListEnabled() &&
+      hasStreamBadges(stream, streamBadgesEnabled, badgeSettings);
     const badges = lazyBadges
       ? `<div class="stream-route-card-badges stream-route-card-badges-lazy" data-lazy-stream-badges data-stream-badge-row="${index}" data-badges-hydrated="false" aria-label="${escapeHtml(t("settings_stream_badges_section", {}, "Fusion Style"))}"></div>`
       : renderStreamBadges(stream, streamBadgesEnabled, badgeSettings);
@@ -2189,6 +2469,292 @@ export const StreamScreen = {
     `;
   },
 
+  isRowRendered(index) {
+    return this.getCardRows().has(Number(index));
+  },
+
+  resetVirtualGeometry() {
+    this.rowHeights = [];
+    this.rowOffsets = null;
+    this.rowGapPx = 0;
+    this.virtualRange = null;
+  },
+
+  // Row heights are indexed by position in the filtered list, so they have to be
+  // dropped when that list is refiltered or reordered. Length plus the ids at
+  // both ends is enough to catch every case that matters; a reorder that keeps
+  // all three is absorbed by the spacer anchoring anyway.
+  syncVirtualGeometryKey(filtered = []) {
+    const key = [
+      this.addonFilter,
+      filtered.length,
+      filtered[0]?.id || "",
+      filtered[filtered.length - 1]?.id || ""
+    ].join("|");
+    if (this.virtualGeometryKey !== key) {
+      this.virtualGeometryKey = key;
+      this.resetVirtualGeometry();
+    }
+  },
+
+  renderVirtualSpacer(position, height) {
+    const px = Math.max(0, Math.round(Number(height || 0)));
+    return `<div class="stream-route-virtual-spacer" data-virtual-spacer="${position}" style="height:${px}px"></div>`;
+  },
+
+  renderCardWindow(filtered, range, streamBadgesEnabled, badgeSettings) {
+    const total = filtered.length;
+    if (!total || range.end < range.start) {
+      return "";
+    }
+    const start = clamp(Number(range.start || 0), 0, Math.max(0, total - 1));
+    const end = clamp(Number(range.end ?? start), start, Math.max(0, total - 1));
+    const cards = [];
+    for (let index = start; index <= end; index += 1) {
+      cards.push(
+        this.renderStreamCard(filtered[index], index, streamBadgesEnabled, badgeSettings)
+      );
+    }
+    const topHeight = this.getRowOffset(start, total);
+    const bottomHeight = this.getRowOffset(total, total) - this.getRowOffset(end + 1, total);
+    return (
+      this.renderVirtualSpacer("top", topHeight) +
+      cards.join("") +
+      this.renderVirtualSpacer("bottom", bottomHeight)
+    );
+  },
+
+  applyVirtualSpacerHeights(track, range, total) {
+    const top = track?.querySelector('[data-virtual-spacer="top"]');
+    const bottom = track?.querySelector('[data-virtual-spacer="bottom"]');
+    if (top) {
+      top.style.height = `${Math.max(0, Math.round(this.getRowOffset(range.start, total)))}px`;
+    }
+    if (bottom) {
+      const height = this.getRowOffset(total, total) - this.getRowOffset(range.end + 1, total);
+      bottom.style.height = `${Math.max(0, Math.round(height))}px`;
+    }
+  },
+
+  // offsetTop deltas between consecutive rows give the true stride (box plus
+  // margin) without reading computed styles, which would cost a style resolve
+  // per row on webOS.
+  measureRenderedRows() {
+    const byIndex = this.getCardRows();
+    if (!byIndex.size) {
+      return false;
+    }
+    const measurements = [];
+    byIndex.forEach((entry) => {
+      measurements.push({
+        row: entry.row,
+        top: Number(entry.node.offsetTop || 0),
+        height: Number(entry.node.offsetHeight || 0)
+      });
+    });
+    const { strides, gap } = deriveRowStrides(measurements, this.rowGapPx);
+    this.rowGapPx = gap;
+    let changed = false;
+    strides.forEach((stride, row) => {
+      if (Math.abs(Number(this.rowHeights[row] || 0) - stride) > 0.5) {
+        this.rowHeights[row] = stride;
+        changed = true;
+      }
+    });
+    if (changed) {
+      this.rowOffsets = null;
+    }
+    return changed;
+  },
+
+  getRowViewportTop(listNode, index) {
+    if (!listNode || index === null || index === undefined) {
+      return null;
+    }
+    const entry = this.getCardRow(index);
+    if (!entry?.node) {
+      return null;
+    }
+    return (
+      entry.node.getBoundingClientRect().top - listNode.getBoundingClientRect().top
+    );
+  },
+
+  findFirstRowInView(listNode) {
+    const byIndex = this.getCardRows();
+    if (!byIndex.size || !listNode) {
+      return null;
+    }
+    const listTop = listNode.getBoundingClientRect().top;
+    let best = null;
+    let bestTop = Number.POSITIVE_INFINITY;
+    byIndex.forEach((entry) => {
+      const top = entry.node.getBoundingClientRect().top - listTop;
+      if (top >= -1 && top < bestTop) {
+        bestTop = top;
+        best = entry.row;
+      }
+    });
+    return best;
+  },
+
+  // Swaps the rendered window. Everything visible is pinned to anchorRow so an
+  // inaccurate spacer estimate can never surface as a visible jump.
+  renderVirtualRows(range, anchorRow = null) {
+    const list = this.container?.querySelector(".stream-route-list");
+    const track = this.getListTrack(list);
+    if (!list || !track) {
+      return false;
+    }
+    const filtered = this.getFilteredStreams();
+    const anchorBefore = this.getRowViewportTop(list, anchorRow);
+
+    track.innerHTML =
+      this.renderCardWindow(
+        filtered,
+        range,
+        DebridSettingsStore.get().streamBadgesEnabled !== false,
+        StreamBadgeSettingsStore.snapshot()
+      ) + (this.hasPendingSourceLoads() ? this.renderLoadingCards(1) : "");
+
+    this.virtualRange = { start: range.start, end: range.end };
+    this.cardRowsCache = null;
+    this.focusedNode = null;
+    ScreenUtils.indexFocusables(this.container);
+    this.measureRenderedRows();
+    this.applyVirtualSpacerHeights(track, this.virtualRange, filtered.length);
+
+    const anchorAfter = this.getRowViewportTop(list, anchorRow);
+    if (anchorBefore !== null && anchorAfter !== null) {
+      const delta = anchorAfter - anchorBefore;
+      if (Math.abs(delta) > 0.5) {
+        this.setListScrollTop(
+          list,
+          this.getListScrollTop(list) + delta,
+          this.getVirtualMaxScroll(list, filtered.length, this.getListViewportHeight(list))
+        );
+      }
+    }
+    this.hydrateVisibleStreamBadges();
+    return true;
+  },
+
+  // The window rendered inline by render() still has estimate-sized spacers.
+  // Measure it once so the first D-pad step already works off real geometry.
+  measureInitialVirtualRows() {
+    if (!this.virtualRange) {
+      return;
+    }
+    const list = this.container?.querySelector(".stream-route-list");
+    const track = this.getListTrack(list);
+    if (!track) {
+      return;
+    }
+    const anchorBefore = this.getRowViewportTop(list, this.virtualRange.start);
+    if (!this.measureRenderedRows()) {
+      return;
+    }
+    this.applyVirtualSpacerHeights(track, this.virtualRange, this.getVisibleStreamCount());
+    const anchorAfter = this.getRowViewportTop(list, this.virtualRange.start);
+    if (anchorBefore !== null && anchorAfter !== null) {
+      const delta = anchorAfter - anchorBefore;
+      if (Math.abs(delta) > 0.5) {
+        const total = this.getVisibleStreamCount();
+        this.setListScrollTop(
+          list,
+          this.getListScrollTop(list) + delta,
+          this.getVirtualMaxScroll(list, total, this.getListViewportHeight(list))
+        );
+      }
+    }
+  },
+
+  // Where the list will end up scrolled once this row is focused. Measured rects
+  // are preferred over the geometry model whenever the row is already rendered:
+  // ensureListItemVisible does the actual scrolling from rects, so deriving the
+  // window from the model instead would let the two drift apart and then feed
+  // that drift back into the next window.
+  getProjectedScrollForRow(listNode, focus, total, viewport) {
+    return projectScrollForRow({
+      offsets: this.ensureRowOffsets(total),
+      row: focus,
+      scrollTop: this.getListScrollTop(listNode),
+      viewportHeight: viewport,
+      pad: WEBOS_VIRTUAL_VISIBILITY_PAD_PX,
+      maxScroll: this.getVirtualMaxScroll(listNode, total, viewport)
+    });
+  },
+
+  // Called before focusing a row: makes sure that row exists in the DOM. The
+  // model offsets only choose the window here — focusElement then scrolls using
+  // real rects, so an estimate being wrong costs nothing.
+  syncVirtualWindowForRow(rowIndex) {
+    if (!this.isVirtualListEnabled()) {
+      return;
+    }
+    const list = this.container?.querySelector(".stream-route-list");
+    if (!list) {
+      return;
+    }
+    const total = this.getVisibleStreamCount();
+    if (!total) {
+      return;
+    }
+    const focus = clamp(Number(rowIndex || 0), 0, total - 1);
+    const viewport = this.getListViewportHeight(list);
+    const projected = this.getProjectedScrollForRow(list, focus, total, viewport);
+    const range = this.computeVirtualRange(projected, viewport, total, focus);
+    if (this.virtualRangeNeedsRefresh(range, total)) {
+      this.renderVirtualRows(range, this.isRowRendered(focus) ? focus : null);
+    }
+  },
+
+  // Last-resort recovery: put the window on this row no matter what the current
+  // scroll offset or geometry model say.
+  forceVirtualWindowOnRow(rowIndex) {
+    if (!this.isVirtualListEnabled()) {
+      return;
+    }
+    const list = this.container?.querySelector(".stream-route-list");
+    const total = this.getVisibleStreamCount();
+    if (!list || !total) {
+      return;
+    }
+    const viewport = this.getListViewportHeight(list);
+    const focus = clamp(Number(rowIndex || 0), 0, total - 1);
+    this.renderVirtualRows(
+      this.computeVirtualRange(this.getRowOffset(focus, total), viewport, total, focus),
+      null
+    );
+  },
+
+  // Pointer and wheel scrolling drive the window directly. Focus is deliberately
+  // not re-applied, so scrolling away from the focused card does not yank the
+  // list back to it.
+  syncVirtualWindowForScroll(listNode) {
+    if (!this.isVirtualListEnabled() || !listNode) {
+      return;
+    }
+    const total = this.getVisibleStreamCount();
+    if (!total) {
+      return;
+    }
+    // No focus row is pinned here on purpose: pinning it would stretch the
+    // window from the focused card all the way to wherever the user scrolled.
+    // The next D-pad press goes through syncVirtualWindowForRow, which brings
+    // the focused row back before anything tries to focus it.
+    const range = this.computeVirtualRange(
+      this.getListScrollTop(listNode),
+      this.getListViewportHeight(listNode),
+      total,
+      null
+    );
+    if (!this.virtualRangeNeedsRefresh(range, total)) {
+      return;
+    }
+    this.renderVirtualRows(range, this.findFirstRowInView(listNode));
+  },
+
   renderLoadingCards(count = 3) {
     return `
       <div class="stream-route-card-row">
@@ -2206,6 +2772,7 @@ export const StreamScreen = {
 
   render() {
     this.cancelScheduledRender();
+    this.invalidateStreamRouteCaches();
     const { isSeries, title, subtitle, episodeLabel, detailLine } = this.getHeaderMeta();
     const backdrop = this.getBackdropUrl();
     const logo = this.params?.logo || "";
@@ -2229,13 +2796,31 @@ export const StreamScreen = {
     const showAddonLogo = badgeSettings.showAddonLogo === true;
     const addonLogosReady = !showAddonLogo || !filtered.length || this.areAddonLogosReady(filtered);
 
+    this.syncVirtualGeometryKey(filtered);
+    this.virtualRange = null;
+
     let body = "";
     if (filtered.length && addonLogosReady) {
-      body = filtered
-        .map((stream, index) =>
-          this.renderStreamCard(stream, index, streamBadgesEnabled, badgeSettings)
-        )
-        .join("");
+      if (this.isVirtualListEnabled()) {
+        // The list box does not exist yet, so seed the window from the last known
+        // viewport and the restored scroll offset. applyFocus() re-derives it
+        // against the real box immediately after this markup lands.
+        const range = this.computeVirtualRange(
+          Number(this.listScrollTop || 0),
+          this.getListViewportHeight(null),
+          filtered.length,
+          this.focusState?.zone === "card" ? Number(this.focusState?.row || 0) : null
+        );
+        this.virtualRange = { start: range.start, end: range.end };
+        body = this.renderCardWindow(filtered, range, streamBadgesEnabled, badgeSettings);
+      } else {
+        this.virtualRange = null;
+        body = filtered
+          .map((stream, index) =>
+            this.renderStreamCard(stream, index, streamBadgesEnabled, badgeSettings)
+          )
+          .join("");
+      }
       if (hasPendingForFilter) {
         body += this.renderLoadingCards(1);
       }
@@ -2268,7 +2853,7 @@ export const StreamScreen = {
             </div>
             <div class="stream-route-panel-shell">
               <div class="stream-route-panel">
-                <div class="stream-route-list">${body}</div>
+                <div class="stream-route-list"><div class="stream-route-list-track">${body}</div></div>
               </div>
             </div>
           </section>
@@ -2286,11 +2871,13 @@ export const StreamScreen = {
       </div>
     `;
 
+    // Restore once, then measure. The second restore that used to sit after
+    // indexFocusables only re-forced a whole-list layout.
     this.restoreScrollPosition();
+    this.measureInitialVirtualRows();
     this.hydrateVisibleStreamBadges();
     this.bindAddonLogoFallbacks();
     ScreenUtils.indexFocusables(this.container);
-    this.restoreScrollPosition();
     this.applyFocus();
     this.bindListScrollState();
     this.hasRenderedStreamRouteShell = true;
@@ -2305,6 +2892,7 @@ export const StreamScreen = {
       "scroll",
       () => {
         this.listScrollTop = this.getListScrollTop(list);
+        this.syncVirtualWindowForScroll(list);
         this.requestStreamBadgeHydration();
       },
       { passive: true }
@@ -2320,7 +2908,17 @@ export const StreamScreen = {
             return;
           }
           event?.preventDefault?.();
-          this.setListScrollTop(list, this.getListScrollTop(list) + deltaY);
+          const max = this.isVirtualListEnabled()
+            ? this.getVirtualMaxScroll(
+                list,
+                this.getVisibleStreamCount(),
+                this.getListViewportHeight(list)
+              )
+            : null;
+          this.setListScrollTop(list, this.getListScrollTop(list) + deltaY, max);
+          // Manual scroll clips the list, so no scroll event fires to drive the
+          // window; do it here.
+          this.syncVirtualWindowForScroll(list);
           this.requestStreamBadgeHydration();
         },
         { passive: false }
@@ -2357,9 +2955,6 @@ export const StreamScreen = {
     if (!list || !placeholders.length) {
       return;
     }
-    const filtered = this.getFilteredStreams();
-    const streamBadgesEnabled = DebridSettingsStore.get().streamBadgesEnabled !== false;
-    const badgeSettings = StreamBadgeSettingsStore.snapshot();
     const listRect = list.getBoundingClientRect();
     const overscan = Math.max(
       WEBOS_STREAM_BADGE_MIN_OVERSCAN_PX,
@@ -2373,6 +2968,12 @@ export const StreamScreen = {
     // Android's LazyColumn only composes badge images near the viewport. Keep
     // the complete Web card list for existing remote/pointer navigation, but
     // apply the same bounded image/DOM lifetime on webOS.
+    //
+    // Measure every placeholder first, mutate afterwards. Interleaving the two
+    // made each innerHTML write invalidate layout for the next rect read, so a
+    // single D-pad step forced one full layout of the entire card list per
+    // hydrated row.
+    const pending = [];
     placeholders.forEach((placeholder) => {
       const rowIndex = Number(placeholder.dataset.streamBadgeRow || -1);
       const card = placeholder.closest(".stream-route-card-row");
@@ -2384,17 +2985,29 @@ export const StreamScreen = {
       );
       const shouldHydrate = rowIndex === focusedRow || nearViewport;
       const hydrated = placeholder.dataset.badgesHydrated === "true";
-      if (shouldHydrate && !hydrated) {
+      if (shouldHydrate !== hydrated) {
+        pending.push({ placeholder, rowIndex, shouldHydrate });
+      }
+    });
+    if (!pending.length) {
+      return;
+    }
+
+    const filtered = this.getFilteredStreams();
+    const streamBadgesEnabled = DebridSettingsStore.get().streamBadgesEnabled !== false;
+    const badgeSettings = StreamBadgeSettingsStore.snapshot();
+    pending.forEach(({ placeholder, rowIndex, shouldHydrate }) => {
+      if (shouldHydrate) {
         placeholder.innerHTML = renderStreamBadgeContents(
           filtered[rowIndex],
           streamBadgesEnabled,
           badgeSettings
         );
         placeholder.dataset.badgesHydrated = "true";
-      } else if (!shouldHydrate && hydrated) {
-        placeholder.textContent = "";
-        placeholder.dataset.badgesHydrated = "false";
+        return;
       }
+      placeholder.textContent = "";
+      placeholder.dataset.badgesHydrated = "false";
     });
   },
 
@@ -2582,8 +3195,8 @@ export const StreamScreen = {
 
     const direction = getDpadDirection(event);
     if (direction) {
-      const { chips, rows } = this.getFocusLists();
-      const zone = this.focusState?.zone || (rows.length ? "card" : "filter");
+      const { chips, rowCount } = this.getFocusLists();
+      const zone = this.focusState?.zone || (rowCount ? "card" : "filter");
       let index = Number(this.focusState?.index || 0);
       event?.preventDefault?.();
 
@@ -2616,7 +3229,7 @@ export const StreamScreen = {
           }
           return;
         }
-        if (direction === "down" && rows.length) {
+        if (direction === "down" && rowCount) {
           this.focusState = { zone: "card", row: 0, action: "play" };
           this.applyFocus();
         }
@@ -2624,17 +3237,17 @@ export const StreamScreen = {
       }
 
       if (zone === "card") {
-        const rowIndex = clamp(Number(this.focusState?.row || 0), 0, Math.max(0, rows.length - 1));
-        const currentRow = rows[rowIndex] || null;
+        const rowIndex = clamp(Number(this.focusState?.row || 0), 0, Math.max(0, rowCount - 1));
+        const currentRow = this.getCardRow(rowIndex);
         const currentAction = String(this.focusState?.action || "play");
         if (direction === "up") {
           if (rowIndex > 0) {
-            const previousRow = rows[rowIndex - 1] || null;
-            const target = this.resolveCardActionForRow(previousRow, currentAction);
+            // The target action is resolved in applyFocus(), once the row it
+            // names is guaranteed to be inside the rendered window.
             this.focusState = {
               zone: "card",
               row: rowIndex - 1,
-              action: String(target?.dataset?.cardAction || "play")
+              action: currentAction
             };
             this.applyFocus();
             return;
@@ -2651,13 +3264,10 @@ export const StreamScreen = {
           return;
         }
         if (direction === "down") {
-          const nextRowIndex = clamp(rowIndex + 1, 0, Math.max(0, rows.length - 1));
-          const nextRow = rows[nextRowIndex] || null;
-          const target = this.resolveCardActionForRow(nextRow, currentAction);
           this.focusState = {
             zone: "card",
-            row: nextRowIndex,
-            action: String(target?.dataset?.cardAction || "play")
+            row: clamp(rowIndex + 1, 0, Math.max(0, rowCount - 1)),
+            action: currentAction
           };
           this.applyFocus();
           return;

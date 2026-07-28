@@ -19186,12 +19186,23 @@ html.legacy-webos .debug-console-log-frame {
   scroll-padding-bottom: 8px;
 }
 
-.legacy-webos .stream-route-list.manual-scroll {
+/* Manual scroll is driven from JS on every webOS version, not just the legacy
+   ones, so the clip must not be scoped to .legacy-webos. The offset itself is
+   applied inline on .stream-route-list-track (webOS 3.x has no CSS vars). */
+.stream-route-list.manual-scroll {
   overflow: hidden;
 }
 
-.legacy-webos .stream-route-list.manual-scroll > * {
-  transform: translateY(var(--stream-route-manual-scroll, 0));
+/* Stand-ins for the rows outside the rendered window. Height is set inline from
+   measured row geometry; they must not pick up card styling or hit testing. */
+.stream-route-virtual-spacer {
+  display: block;
+  width: 100%;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  pointer-events: none;
 }
 
 .legacy-webos .stream-route-card-row {
