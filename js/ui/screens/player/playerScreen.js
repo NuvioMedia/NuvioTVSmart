@@ -10139,7 +10139,7 @@ export const PlayerScreen = {
           this.updateUiTick();
           return;
         }
-        if (readyState >= 3 || (this.currentEngineFsStream && this.isEngineFsStartupReady())) {
+        if (!Environment.isWebOS() && (readyState >= 3 || (this.currentEngineFsStream && this.isEngineFsStartupReady()))) {
           this.schedulePlaybackStallGuard({ timeoutMs: 1000 });
           return;
         }
