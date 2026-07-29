@@ -1265,7 +1265,14 @@ export const PlayerController = {
       });
       return false;
     }
-    this.applyAvPlaySubtitleRenderMode(renderMode);
+    const mode = normalizeAvPlaySubtitleRenderMode(renderMode);
+    try {
+      // Re-arm AVPlay's subtitle decoder before selecting. Selecting the same
+      // TEXT track is otherwise a no-op after subtitles were disabled.
+      avplay.setSilentSubtitle?.(mode === "native");
+    } catch (_) {
+      // Track selection can still succeed when this toggle is unavailable.
+    }
     try {
       logTizenAvPlayDebug("Tizen AVPlay setSelectTrack(TEXT)", {
         state,
@@ -1279,9 +1286,10 @@ export const PlayerController = {
         targetIndex,
         error: error?.message || String(error || "")
       });
+      this.applyAvPlaySubtitleRenderMode(mode);
       return false;
     }
-    this.applyAvPlaySubtitleRenderMode(renderMode);
+    this.applyAvPlaySubtitleRenderMode(mode);
     if (nudge) {
       this.nudgeAvPlayAfterTrackSwitch();
     }
