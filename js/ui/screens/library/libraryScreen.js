@@ -10,10 +10,7 @@ import {
   PosterOptionsDialogController,
   posterItemFromNode
 } from "../../components/posterOptionsMenu.js";
-import {
-  isTitleItemWatched,
-  renderTitleWatchedBadge
-} from "../../components/watchedTitleBadge.js";
+import { isTitleItemWatched, renderTitleWatchedBadge } from "../../components/watchedTitleBadge.js";
 import {
   activateLegacySidebarAction,
   bindRootSidebarEvents,

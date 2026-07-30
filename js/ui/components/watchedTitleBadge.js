@@ -34,6 +34,9 @@ export function renderWatchedBadgeGlyph(className = "title-watched-badge-svg") {
   return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="currentColor"/></svg>`;
 }
 
-export function renderTitleWatchedBadge({ className = "title-watched-badge", iconClassName = "title-watched-badge-svg" } = {}) {
+export function renderTitleWatchedBadge({
+  className = "title-watched-badge",
+  iconClassName = "title-watched-badge-svg"
+} = {}) {
   return `<span class="${className}" aria-label="${escapeHtml(watchedBadgeLabel())}">${renderWatchedBadgeGlyph(iconClassName)}</span>`;
 }

@@ -10,9 +10,7 @@
         ? ""
         : existing.NUVIO_SUPABASE_ANON_KEY,
     TV_LOGIN_WEB_BASE_URL:
-      typeof existing.TV_LOGIN_WEB_BASE_URL === "undefined"
-        ? ""
-        : existing.TV_LOGIN_WEB_BASE_URL,
+      typeof existing.TV_LOGIN_WEB_BASE_URL === "undefined" ? "" : existing.TV_LOGIN_WEB_BASE_URL,
     YOUTUBE_PROXY_URL:
       typeof existing.YOUTUBE_PROXY_URL === "undefined"
         ? "youtube-proxy.html"

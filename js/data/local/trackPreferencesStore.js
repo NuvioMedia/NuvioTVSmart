@@ -49,8 +49,9 @@ export const TrackPreferencesStore = {
     if (!normalizedContentId) {
       return null;
     }
-    const entry = readEntries(profileId)
-      .find((candidate) => candidate.contentId === normalizedContentId);
+    const entry = readEntries(profileId).find(
+      (candidate) => candidate.contentId === normalizedContentId
+    );
     return normalizeAudioPreference(entry?.audio);
   },
 
@@ -61,8 +62,9 @@ export const TrackPreferencesStore = {
       return;
     }
 
-    const entries = readEntries(profileId)
-      .filter((entry) => entry.contentId !== normalizedContentId);
+    const entries = readEntries(profileId).filter(
+      (entry) => entry.contentId !== normalizedContentId
+    );
     entries.unshift({
       contentId: normalizedContentId,
       audio: normalizedAudio,

@@ -162,12 +162,7 @@ async function packageWebOs() {
 
   console.log("creating webOS IPK...");
   try {
-    await runWebOsToolsBinary("ares-package", [
-      appStageDir,
-      serviceStageDir,
-      "--outdir",
-      rootDir
-    ]);
+    await runWebOsToolsBinary("ares-package", [appStageDir, serviceStageDir, "--outdir", rootDir]);
   } catch (error) {
     const { version } = await readAppMetadata();
     const expectedIpk = path.join(rootDir, `space.nuvio.webos_${version}_all.ipk`);

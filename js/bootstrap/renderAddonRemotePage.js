@@ -38,7 +38,9 @@ function clonePrefs(prefs = {}) {
     order: Array.isArray(prefs.order) ? [...prefs.order] : [],
     disabled: Array.isArray(prefs.disabled) ? [...prefs.disabled] : [],
     customTitles:
-      prefs.customTitles && typeof prefs.customTitles === "object" && !Array.isArray(prefs.customTitles)
+      prefs.customTitles &&
+      typeof prefs.customTitles === "object" &&
+      !Array.isArray(prefs.customTitles)
         ? { ...prefs.customTitles }
         : {}
   };

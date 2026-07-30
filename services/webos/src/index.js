@@ -355,7 +355,7 @@ function registerSubtitleTextCommand() {
           Object.assign(buildBasePayload(), {
             proxiedPath: subtitlePath,
             statusCode: statusCode,
-            contentType: String(result.headers && result.headers["content-type"] || "text/vtt"),
+            contentType: String((result.headers && result.headers["content-type"]) || "text/vtt"),
             body: String(result.body || ""),
             bodyBytes: Number(result.bodyBytes || 0),
             bodyTruncated: Boolean(result.bodyTruncated)
@@ -369,19 +369,21 @@ function registerSubtitleTextCommand() {
 function registerBitmapSubtitleCommand() {
   service.register("bitmapSubtitlePrepare", function (message) {
     var payload = getMessagePayload(message);
-    prepareBitmapSubtitleSource({ url: payload.url }).then(function (result) {
-      respond(message, Object.assign(buildBasePayload(), result, { returnValue: true }));
-    }).catch(function (error) {
-      console.warn("[" + SERVICE_ID + "] bitmap subtitle preparation failed:", error);
-      respond(
-        message,
-        buildErrorPayload(error, {
-          bitmapSubtitle: true,
-          errorCode: String(error && error.code || "BITMAP_SUBTITLE_PREPARE_FAILED"),
-          errorDetails: error && error.details || null
-        })
-      );
-    });
+    prepareBitmapSubtitleSource({ url: payload.url })
+      .then(function (result) {
+        respond(message, Object.assign(buildBasePayload(), result, { returnValue: true }));
+      })
+      .catch(function (error) {
+        console.warn("[" + SERVICE_ID + "] bitmap subtitle preparation failed:", error);
+        respond(
+          message,
+          buildErrorPayload(error, {
+            bitmapSubtitle: true,
+            errorCode: String((error && error.code) || "BITMAP_SUBTITLE_PREPARE_FAILED"),
+            errorDetails: (error && error.details) || null
+          })
+        );
+      });
   });
 
   service.register("bitmapSubtitleWindow", function (message) {
@@ -391,19 +393,21 @@ function registerBitmapSubtitleCommand() {
       trackNumber: payload.trackNumber,
       startSeconds: payload.startSeconds,
       endSeconds: payload.endSeconds
-    }).then(function (result) {
-      respond(message, Object.assign(buildBasePayload(), result, { returnValue: true }));
-    }).catch(function (error) {
-      console.error("[" + SERVICE_ID + "] bitmap subtitle extraction failed:", error);
-      respond(
-        message,
-        buildErrorPayload(error, {
-          bitmapSubtitle: true,
-          errorCode: String(error && error.code || "BITMAP_SUBTITLE_FAILED"),
-          errorDetails: error && error.details || null
-        })
-      );
-    });
+    })
+      .then(function (result) {
+        respond(message, Object.assign(buildBasePayload(), result, { returnValue: true }));
+      })
+      .catch(function (error) {
+        console.error("[" + SERVICE_ID + "] bitmap subtitle extraction failed:", error);
+        respond(
+          message,
+          buildErrorPayload(error, {
+            bitmapSubtitle: true,
+            errorCode: String((error && error.code) || "BITMAP_SUBTITLE_FAILED"),
+            errorDetails: (error && error.details) || null
+          })
+        );
+      });
   });
 }
 

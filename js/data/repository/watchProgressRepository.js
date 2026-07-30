@@ -250,12 +250,7 @@ function matchesResumeTarget(item = {}, { videoId = null, season = null, episode
   }
   const wantedSeason = Number(season);
   const wantedEpisode = Number(episode || 0);
-  if (
-    season != null &&
-    Number.isFinite(wantedSeason) &&
-    wantedSeason >= 0 &&
-    wantedEpisode > 0
-  ) {
+  if (season != null && Number.isFinite(wantedSeason) && wantedSeason >= 0 && wantedEpisode > 0) {
     return (
       Number(item?.season || item?.seasonNumber || 0) === wantedSeason &&
       Number(item?.episode || item?.episodeNumber || 0) === wantedEpisode
@@ -314,11 +309,7 @@ function toProgressItemFromTraktHistory(historyItem) {
   const isEpisode = historyItem.type === "episode";
   const tmdbId = isEpisode ? historyItem.showTmdbId : historyItem.tmdbId;
   const traktId = isEpisode ? historyItem.showTraktId : historyItem.traktId;
-  const contentId = tmdbId
-    ? `tmdb:${tmdbId}`
-    : traktId
-      ? `trakt:${traktId}`
-      : null;
+  const contentId = tmdbId ? `tmdb:${tmdbId}` : traktId ? `trakt:${traktId}` : null;
   if (!contentId) return null;
   const watchedAtMs = historyItem.watchedAt
     ? new Date(historyItem.watchedAt).getTime()
@@ -461,21 +452,26 @@ async function fetchTraktProgressSnapshot() {
 
   traktProgressSnapshotInFlight = (async () => {
     const [history, playbackState, watchedShows] = await Promise.all([
-      withTimeout(TraktAuthService.fetchWatchHistory({ limit: 300 }), TRAKT_API_TIMEOUT_MS, [])
-        .catch((err) => {
-          console.warn("[CW] Trakt history fetch failed", err);
-          return [];
-        }),
-      withTimeout(TraktAuthService.fetchPlaybackState({ limit: 50 }), TRAKT_API_TIMEOUT_MS, [])
-        .catch((err) => {
-          console.warn("[CW] Trakt playback state fetch failed", err);
-          return [];
-        }),
-      withTimeout(TraktAuthService.fetchWatchedShows(), TRAKT_API_TIMEOUT_MS, [])
-        .catch((err) => {
-          console.warn("[CW] Trakt watched shows fetch failed", err);
-          return [];
-        })
+      withTimeout(
+        TraktAuthService.fetchWatchHistory({ limit: 300 }),
+        TRAKT_API_TIMEOUT_MS,
+        []
+      ).catch((err) => {
+        console.warn("[CW] Trakt history fetch failed", err);
+        return [];
+      }),
+      withTimeout(
+        TraktAuthService.fetchPlaybackState({ limit: 50 }),
+        TRAKT_API_TIMEOUT_MS,
+        []
+      ).catch((err) => {
+        console.warn("[CW] Trakt playback state fetch failed", err);
+        return [];
+      }),
+      withTimeout(TraktAuthService.fetchWatchedShows(), TRAKT_API_TIMEOUT_MS, []).catch((err) => {
+        console.warn("[CW] Trakt watched shows fetch failed", err);
+        return [];
+      })
     ]);
 
     const watchedShowSeedItems = [];
@@ -614,7 +610,12 @@ class WatchProgressRepository {
     }
 
     const localItems = WatchProgressStore.listForProfile(activeProfileId());
-    const allItems = [...localItems, ...traktHistoryItems, ...playbackItems, ...watchedShowSeedItems];
+    const allItems = [
+      ...localItems,
+      ...traktHistoryItems,
+      ...playbackItems,
+      ...watchedShowSeedItems
+    ];
 
     const recentItems = filterForSelectedContinueWatchingSource(allItems)
       .filter((item) => cutoffMs === 0 || Number(item?.updatedAt || 0) >= cutoffMs)

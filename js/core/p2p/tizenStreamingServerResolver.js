@@ -89,10 +89,12 @@ function isMagnetUri(value = "") {
 
 function getDirectPlaybackUrl(stream = {}) {
   const candidates = [stream.url, stream.externalUrl];
-  return candidates.find((value) => {
-    const url = String(value || "").trim();
-    return url && !isMagnetUri(url);
-  }) || "";
+  return (
+    candidates.find((value) => {
+      const url = String(value || "").trim();
+      return url && !isMagnetUri(url);
+    }) || ""
+  );
 }
 
 function normalizeTrackerSource(value = "") {

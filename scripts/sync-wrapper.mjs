@@ -494,10 +494,7 @@ function upsertTizenWidgetVersion(xml, version) {
 function upsertTizenRequiredVersion(xml, version) {
   const applicationPattern = /<tizen:application\b([^>]*?)\brequired_version="[^"]*"([^>]*)\/>/;
   if (applicationPattern.test(xml)) {
-    return xml.replace(
-      applicationPattern,
-      `<tizen:application$1required_version="${version}"$2/>`
-    );
+    return xml.replace(applicationPattern, `<tizen:application$1required_version="${version}"$2/>`);
   }
 
   return xml.replace(

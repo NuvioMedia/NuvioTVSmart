@@ -9,7 +9,9 @@ const PULL_PAGE_SIZE = 500;
 const VALID_POSTER_SHAPES = new Set(["POSTER", "LANDSCAPE", "SQUARE"]);
 
 function normalizePosterShape(value) {
-  const shape = String(value || "").trim().toUpperCase();
+  const shape = String(value || "")
+    .trim()
+    .toUpperCase();
   return VALID_POSTER_SHAPES.has(shape) ? shape : "POSTER";
 }
 

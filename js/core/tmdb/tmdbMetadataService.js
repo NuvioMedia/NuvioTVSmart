@@ -331,9 +331,13 @@ export const TmdbMetadataService = {
     }
 
     const lang = normalizeTmdbLanguageCode(language || settings.language);
-    const seasons = [...new Set((Array.isArray(seasonNumbers) ? seasonNumbers : [])
-      .map((season) => Number(season))
-      .filter((season) => Number.isFinite(season) && season >= 0))];
+    const seasons = [
+      ...new Set(
+        (Array.isArray(seasonNumbers) ? seasonNumbers : [])
+          .map((season) => Number(season))
+          .filter((season) => Number.isFinite(season) && season >= 0)
+      )
+    ];
     if (!seasons.length) {
       return new Map();
     }
@@ -419,9 +423,12 @@ export const TmdbMetadataService = {
         landscapePoster: toImageUrl(item?.backdrop_path || null, "backdrop"),
         description: item?.overview || "",
         releaseInfo:
-          String(type === "tv" ? item?.first_air_date || "" : item?.release_date || "").slice(0, 4) ||
-          "",
-        tmdbRating: typeof item?.vote_average === "number" ? Number(item.vote_average.toFixed(1)) : null
+          String(type === "tv" ? item?.first_air_date || "" : item?.release_date || "").slice(
+            0,
+            4
+          ) || "",
+        tmdbRating:
+          typeof item?.vote_average === "number" ? Number(item.vote_average.toFixed(1)) : null
       }))
       .filter((item) => item.id);
   }

@@ -228,7 +228,10 @@ export const ConsoleDebugScreen = {
     }
 
     const railHeight = Math.max(1, rail.clientHeight || 1);
-    const thumbHeight = Math.max(48, Math.round((list.clientHeight / list.scrollHeight) * railHeight));
+    const thumbHeight = Math.max(
+      48,
+      Math.round((list.clientHeight / list.scrollHeight) * railHeight)
+    );
     const top = Math.round((scrollTop / maxScroll) * Math.max(0, railHeight - thumbHeight));
     thumb.style.height = `${thumbHeight}px`;
     thumb.style.transform = `translateY(${top}px)`;
@@ -255,7 +258,10 @@ export const ConsoleDebugScreen = {
     const delta = Math.max(160, Math.round((list.clientHeight || 600) * 0.72));
     list.scrollTop = Math.max(
       0,
-      Math.min(list.scrollHeight - list.clientHeight, Number(list.scrollTop || 0) + direction * delta)
+      Math.min(
+        list.scrollHeight - list.clientHeight,
+        Number(list.scrollTop || 0) + direction * delta
+      )
     );
     this.logScrollTop = Number(list.scrollTop || 0);
     this.updateScrollChrome();
@@ -291,8 +297,10 @@ export const ConsoleDebugScreen = {
       return;
     }
 
-    const isUp = code === 38 || code === 33 || key === "arrowup" || key === "up" || key === "pageup";
-    const isDown = code === 40 || code === 34 || key === "arrowdown" || key === "down" || key === "pagedown";
+    const isUp =
+      code === 38 || code === 33 || key === "arrowup" || key === "up" || key === "pageup";
+    const isDown =
+      code === 40 || code === 34 || key === "arrowdown" || key === "down" || key === "pagedown";
     if (isUp || isDown) {
       event?.preventDefault?.();
       const direction = isUp ? -1 : 1;

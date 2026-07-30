@@ -108,10 +108,12 @@ function isMagnetUri(value = "") {
 
 function getDirectPlaybackUrl(stream = {}) {
   const candidates = [stream.url, stream.externalUrl];
-  return candidates.find((value) => {
-    const url = String(value || "").trim();
-    return url && !isMagnetUri(url);
-  }) || "";
+  return (
+    candidates.find((value) => {
+      const url = String(value || "").trim();
+      return url && !isMagnetUri(url);
+    }) || ""
+  );
 }
 
 function normalizeTrackerSource(value = "") {
@@ -398,13 +400,7 @@ function isEngineFsSwarmActive(snapshot = {}) {
   );
 }
 
-async function waitForEngineFsReady(
-  baseCandidate,
-  infoHash,
-  fileIdx,
-  playbackUrl,
-  _options = {}
-) {
+async function waitForEngineFsReady(baseCandidate, infoHash, fileIdx, playbackUrl, _options = {}) {
   const start = Date.now();
   let baseRoot = String(baseCandidate || "").replace(/\/$/, "");
   try {
@@ -817,10 +813,13 @@ export const WebOsEngineFsResolver = {
           });
         }
       } else {
-        const detail = statusError
-          || statusPayload?.error?.message
-          || (statusPayload?.settingsReachable === false ? "EngineFS local runtime settings endpoint is unreachable" : "")
-          || "EngineFS local runtime URL is unavailable";
+        const detail =
+          statusError ||
+          statusPayload?.error?.message ||
+          (statusPayload?.settingsReachable === false
+            ? "EngineFS local runtime settings endpoint is unreachable"
+            : "") ||
+          "EngineFS local runtime URL is unavailable";
         return { status: "unavailable", detail };
       }
       if (createPayload.returnValue === false) {

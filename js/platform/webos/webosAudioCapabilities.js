@@ -17,8 +17,8 @@ export const DTS_RESTORE_PROBE_COMMAND = [
   "grep -q 'avdec_dca=290' /etc/gst/gstcool.conf 2>/dev/null && rank=1",
   "grep -q ' /usr/lib/gstreamer-1.0/libgstlibav.so ' /proc/mounts 2>/dev/null && libav=1",
   "[ -e /var/lib/webosbrew/init.d/restore_dts25 ] && plus_init=1",
-  "[ \"$plus_init\" = 1 ] && /usr/bin/gst-inspect-1.0 dtsdec >/dev/null 2>&1 && dtsdec=1",
-  "[ \"$plus_init\" = 1 ] && /usr/bin/gst-inspect-1.0 avdec_truehd >/dev/null 2>&1 && truehd=1",
+  '[ "$plus_init" = 1 ] && /usr/bin/gst-inspect-1.0 dtsdec >/dev/null 2>&1 && dtsdec=1',
+  '[ "$plus_init" = 1 ] && /usr/bin/gst-inspect-1.0 avdec_truehd >/dev/null 2>&1 && truehd=1',
   `printf '${DTS_RESTORE_PROBE_PREFIX} init=%s rank=%s libav=%s plus_init=%s dtsdec=%s truehd=%s\\n' "$init" "$rank" "$libav" "$plus_init" "$dtsdec" "$truehd"`
 ].join("; ");
 
@@ -51,9 +51,7 @@ function settleWithin(promise, timeoutMs = AUDIO_CAPABILITY_TIMEOUT_MS) {
 }
 
 export function parseDtsRestoreProbeOutput(result) {
-  const output = typeof result === "string"
-    ? result
-    : String(result?.stdoutString || "");
+  const output = typeof result === "string" ? result : String(result?.stdoutString || "");
   const match = output.match(/NUVIO_DTS_RESTORE\s+init=([01])\s+rank=([01])\s+libav=([01])/);
   if (!match) {
     return { ...EMPTY_DTS_RESTORE_STATE };
@@ -103,7 +101,9 @@ export function deriveWebOsAudioCapabilities({ edidType = "", dtsRestore = null 
       source: dtsFromEdid
         ? "edid"
         : dtsRestoreActive
-          ? dtsRestore?.plusInstalled ? "dts_restore_plus" : "dts_restore"
+          ? dtsRestore?.plusInstalled
+            ? "dts_restore_plus"
+            : "dts_restore"
           : "none"
     },
     truehd: {
@@ -162,12 +162,9 @@ export function detectWebOsAudioCapabilities({ forceRefresh = false } = {}) {
     return detectionPromise;
   }
 
-  detectionPromise = Promise.all([
-    requestEdidType(),
-    requestDtsRestoreState()
-  ]).then(([edidType, dtsRestore]) => (
-    deriveWebOsAudioCapabilities({ edidType, dtsRestore })
-  )).catch(() => deriveWebOsAudioCapabilities());
+  detectionPromise = Promise.all([requestEdidType(), requestDtsRestoreState()])
+    .then(([edidType, dtsRestore]) => deriveWebOsAudioCapabilities({ edidType, dtsRestore }))
+    .catch(() => deriveWebOsAudioCapabilities());
 
   return detectionPromise;
 }

@@ -24,8 +24,14 @@ export const localMediaSubtitleRepository = {
       REQUEST_TIMEOUT_MS
     );
     const payload = result?.payload || {};
-    if (payload.returnValue === false || Number(payload.statusCode || 0) < 200 || Number(payload.statusCode || 0) >= 300) {
-      throw new Error(payload.errorText || `Subtitle request failed with HTTP ${payload.statusCode || 0}`);
+    if (
+      payload.returnValue === false ||
+      Number(payload.statusCode || 0) < 200 ||
+      Number(payload.statusCode || 0) >= 300
+    ) {
+      throw new Error(
+        payload.errorText || `Subtitle request failed with HTTP ${payload.statusCode || 0}`
+      );
     }
     if (payload.bodyTruncated) {
       throw new Error("Subtitle response is too large");

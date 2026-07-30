@@ -46,9 +46,7 @@ const BACK_DEBOUNCE_MS = 250;
 const TIZEN_PAIRED_BACK_EVENT_WINDOW_MS = 3000;
 
 function getBackInputChannel(event) {
-  return String(event?.type || "").toLowerCase() === "tizenhwkey"
-    ? "tizenhwkey"
-    : "keydown";
+  return String(event?.type || "").toLowerCase() === "tizenhwkey" ? "tizenhwkey" : "keydown";
 }
 
 export const FocusEngine = {
@@ -82,15 +80,17 @@ export const FocusEngine = {
 
   handleTizenHardwareKey(event) {
     const normalizedEvent = buildNormalizedEvent(event);
-    if (!Platform.isBackEvent({
-      target: normalizedEvent.target,
-      key: normalizedEvent.key,
-      code: normalizedEvent.code,
-      keyName: normalizedEvent.keyName,
-      keyCode: normalizedEvent.keyCode,
-      originalKeyCode: normalizedEvent.originalKeyCode,
-      detail: event?.detail || null
-    })) {
+    if (
+      !Platform.isBackEvent({
+        target: normalizedEvent.target,
+        key: normalizedEvent.key,
+        code: normalizedEvent.code,
+        keyName: normalizedEvent.keyName,
+        keyCode: normalizedEvent.keyCode,
+        originalKeyCode: normalizedEvent.originalKeyCode,
+        detail: event?.detail || null
+      })
+    ) {
       return;
     }
     this.handleBack(event, normalizedEvent);
@@ -106,11 +106,7 @@ export const FocusEngine = {
       this.lastBackHandledChannel !== inputChannel &&
       elapsedSinceHandled < TIZEN_PAIRED_BACK_EVENT_WINDOW_MS
     );
-    if (
-      normalizedEvent.repeat ||
-      elapsedSinceHandled < BACK_DEBOUNCE_MS ||
-      isPairedTizenEvent
-    ) {
+    if (normalizedEvent.repeat || elapsedSinceHandled < BACK_DEBOUNCE_MS || isPairedTizenEvent) {
       normalizedEvent.preventDefault();
       normalizedEvent.stopPropagation();
       normalizedEvent.stopImmediatePropagation();

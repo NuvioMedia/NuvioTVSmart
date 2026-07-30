@@ -18,9 +18,8 @@ function installUtf8CodecFallbacks() {
         let written = 0;
         while (read < text.length) {
           const firstUnit = text.charCodeAt(read);
-          const hasSurrogatePair = firstUnit >= 0xd800
-            && firstUnit <= 0xdbff
-            && read + 1 < text.length;
+          const hasSurrogatePair =
+            firstUnit >= 0xd800 && firstUnit <= 0xdbff && read + 1 < text.length;
           const character = text.slice(read, read + (hasSurrogatePair ? 2 : 1));
           const bytes = this.encode(character);
           if (written + bytes.length > destination.length) {
@@ -38,7 +37,9 @@ function installUtf8CodecFallbacks() {
   if (typeof globalThis.TextDecoder !== "function") {
     globalThis.TextDecoder = class TextDecoderFallback {
       decode(value) {
-        const bytes = value ? new Uint8Array(value.buffer || value, value.byteOffset || 0, value.byteLength) : new Uint8Array(0);
+        const bytes = value
+          ? new Uint8Array(value.buffer || value, value.byteOffset || 0, value.byteLength)
+          : new Uint8Array(0);
         let binary = "";
         const chunkSize = 8192;
         for (let offset = 0; offset < bytes.length; offset += chunkSize) {
@@ -56,12 +57,12 @@ function installUtf8CodecFallbacks() {
 
 export function supportsBitmapSubtitleDecoding() {
   if (
-    typeof globalThis.WebAssembly !== "object"
-    || typeof globalThis.Uint8Array !== "function"
-    || typeof globalThis.Uint8ClampedArray !== "function"
-    || typeof globalThis.Promise !== "function"
-    || typeof globalThis.fetch !== "function"
-    || typeof globalThis.document?.createElement !== "function"
+    typeof globalThis.WebAssembly !== "object" ||
+    typeof globalThis.Uint8Array !== "function" ||
+    typeof globalThis.Uint8ClampedArray !== "function" ||
+    typeof globalThis.Promise !== "function" ||
+    typeof globalThis.fetch !== "function" ||
+    typeof globalThis.document?.createElement !== "function"
   ) {
     return false;
   }

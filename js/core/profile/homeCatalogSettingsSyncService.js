@@ -74,7 +74,8 @@ function currentPullToken(profileId = null) {
   if (!AuthManager.isAuthenticated) {
     return null;
   }
-  const userId = normalizeString(decodeJwtPayload(SessionStore.accessToken)?.sub) || "authenticated";
+  const userId =
+    normalizeString(decodeJwtPayload(SessionStore.accessToken)?.sub) || "authenticated";
   return `${userId}:${resolveProfileId(profileId)}`;
 }
 

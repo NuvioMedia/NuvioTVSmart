@@ -197,10 +197,14 @@ export const CastDetailScreen = {
     const popular = [...allCredits].sort((left, right) => right.popularity - left.popularity);
     const latest = allCredits
       .filter((item) => item.releaseDate && item.releaseDate <= today)
-      .sort((left, right) => String(right.releaseDate || "").localeCompare(String(left.releaseDate || "")));
+      .sort((left, right) =>
+        String(right.releaseDate || "").localeCompare(String(left.releaseDate || ""))
+      );
     const upcoming = allCredits
       .filter((item) => item.releaseDate && item.releaseDate > today)
-      .sort((left, right) => String(left.releaseDate || "").localeCompare(String(right.releaseDate || "")));
+      .sort((left, right) =>
+        String(left.releaseDate || "").localeCompare(String(right.releaseDate || ""))
+      );
 
     return [
       { key: "popular", title: t("person_popular", {}, "Popular"), items: popular },

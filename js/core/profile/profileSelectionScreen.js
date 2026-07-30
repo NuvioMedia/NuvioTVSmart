@@ -365,11 +365,10 @@ export const ProfileSelectionScreen = {
 
     const skipInitialProfileSync = Boolean(params?.skipInitialProfileSync);
     const profilePinEnabled = skipInitialProfileSync
-      ? (params?.profilePinEnabled || {})
-      : (await Promise.all([
-          ProfileSyncService.pull(),
-          ProfileSyncService.pullProfileLockStates()
-        ]))[1];
+      ? params?.profilePinEnabled || {}
+      : (
+          await Promise.all([ProfileSyncService.pull(), ProfileSyncService.pullProfileLockStates()])
+        )[1];
     this.profiles = await ProfileManager.getProfiles();
     this.profilePinEnabled = profilePinEnabled;
     this.lastProfileFocusKey = `profile:${this.activeProfileId || "1"}`;

@@ -16,10 +16,7 @@ export async function resolveNextUpCandidates(
   }
 
   const results = new Array(limitedCandidates.length);
-  const workerCount = Math.min(
-    limitedCandidates.length,
-    Math.max(1, Number(concurrency || 1))
-  );
+  const workerCount = Math.min(limitedCandidates.length, Math.max(1, Number(concurrency || 1)));
   let nextIndex = 0;
 
   const worker = async () => {

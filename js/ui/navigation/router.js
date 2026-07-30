@@ -182,15 +182,21 @@ export const Router = {
       const shouldSkipConsume = Boolean(this.skipConsumeNextPopstate);
       this.skipConsumeNextPopstate = false;
       const currentScreen = this.getCurrentScreen();
-      const shouldLetPlayerReturnToStream = this.current === "player"
-        && state?.route === "stream"
-        && currentScreen?.shouldReturnToStreamOnBack?.() !== false
-        && !currentScreen?.hasBackDismissableOverlay?.();
-      const consumeResult = !shouldSkipConsume && !shouldLetPlayerReturnToStream
-        ? currentScreen?.consumeBackRequest?.()
-        : false;
+      const shouldLetPlayerReturnToStream =
+        this.current === "player" &&
+        state?.route === "stream" &&
+        currentScreen?.shouldReturnToStreamOnBack?.() !== false &&
+        !currentScreen?.hasBackDismissableOverlay?.();
+      const consumeResult =
+        !shouldSkipConsume && !shouldLetPlayerReturnToStream
+          ? currentScreen?.consumeBackRequest?.()
+          : false;
       if (consumeResult) {
-        if (consumeResult !== "history" && window?.history && typeof window.history.pushState === "function") {
+        if (
+          consumeResult !== "history" &&
+          window?.history &&
+          typeof window.history.pushState === "function"
+        ) {
           window.history.pushState({ route: this.current, params: this.currentParams }, "");
         }
         return;
@@ -429,9 +435,7 @@ export const Router = {
 
   async back(options = {}) {
     const currentScreen = this.getCurrentScreen();
-    const consumeResult = !options?.skipConsume
-      ? currentScreen?.consumeBackRequest?.()
-      : false;
+    const consumeResult = !options?.skipConsume ? currentScreen?.consumeBackRequest?.() : false;
     if (consumeResult) {
       if (consumeResult !== "history") {
         this.suppressNextPopstate();

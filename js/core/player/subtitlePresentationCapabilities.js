@@ -17,7 +17,12 @@ export function resolveSubtitleStyleControlAvailability({
   const availability = Object.fromEntries(
     SUBTITLE_STYLE_CONTROL_IDS.map((controlId) => [controlId, true])
   );
-  if (!isTizenAvPlay || rendererMode === "html" || rendererMode === "html-callback" || rendererMode === "none") {
+  if (
+    !isTizenAvPlay ||
+    rendererMode === "html" ||
+    rendererMode === "html-callback" ||
+    rendererMode === "none"
+  ) {
     return availability;
   }
   if (rendererMode === "embedded-native") {

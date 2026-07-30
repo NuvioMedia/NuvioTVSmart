@@ -279,12 +279,7 @@ function formatBytes(value) {
 function normalizeEpisodeCode(season, episode) {
   const seasonNumber = Number(season);
   const episodeNumber = Number(episode || 0);
-  if (
-    season == null ||
-    !Number.isFinite(seasonNumber) ||
-    seasonNumber < 0 ||
-    episodeNumber <= 0
-  ) {
+  if (season == null || !Number.isFinite(seasonNumber) || seasonNumber < 0 || episodeNumber <= 0) {
     return "";
   }
   return `S${seasonNumber} E${episodeNumber}`;
@@ -576,11 +571,7 @@ function renderImportedStreamBadgeChipContents(
 }
 
 function renderImportedStreamBadgeChips(stream = {}, badges = [], showFileSizeBadges = true) {
-  const contents = renderImportedStreamBadgeChipContents(
-    stream,
-    badges,
-    showFileSizeBadges
-  );
+  const contents = renderImportedStreamBadgeChipContents(stream, badges, showFileSizeBadges);
   return contents
     ? `<div class="stream-route-card-badges" aria-label="${escapeHtml(t("settings_stream_badges_section", {}, "Fusion Style"))}">${contents}</div>`
     : "";
@@ -610,8 +601,8 @@ function hasStreamBadges(stream = {}, enabled = true, badgeSettings = null) {
   ) {
     return true;
   }
-  return matchStreamBadges(stream, currentBadgeSettings.rules).some(
-    (badge) => normalizeAddonLogoUrl(badge.imageURL)
+  return matchStreamBadges(stream, currentBadgeSettings.rules).some((badge) =>
+    normalizeAddonLogoUrl(badge.imageURL)
   );
 }
 
@@ -777,9 +768,7 @@ export const StreamScreen = {
               normalizeAddonLogoUrl(stream?.addonLogo) ||
               resolveAddonLogo(stream?.addonName, this.addonLogoLookup)
           )
-          .filter(
-            (url) => url && !hasFailedAddonLogo(url) && !getCachedAddonLogoDisplayUrl(url)
-          )
+          .filter((url) => url && !hasFailedAddonLogo(url) && !getCachedAddonLogoDisplayUrl(url))
       )
     );
     if (!urls.length) {
@@ -961,7 +950,10 @@ export const StreamScreen = {
     this.autoPlayAttempted = returningFromPlayer;
     this.cancelAutoPlayCountdown();
     this.cancelAutoPlaySelectionWait();
-    const autoPlayWaitSeconds = Math.max(0, Math.trunc(Number(playerSettings.streamAutoPlayTimeoutSeconds || 0)));
+    const autoPlayWaitSeconds = Math.max(
+      0,
+      Math.trunc(Number(playerSettings.streamAutoPlayTimeoutSeconds || 0))
+    );
     this.autoPlaySelectionReady = autoPlayWaitSeconds === 0;
     if (autoPlayWaitSeconds > 0 && autoPlayWaitSeconds !== 2147483647) {
       this.autoPlaySelectionWaitTimer = setTimeout(() => {
@@ -992,7 +984,8 @@ export const StreamScreen = {
     // instead of inheriting an old list scroll/focus snapshot.
     const restored =
       navigationContext?.isBackNavigation &&
-      navigationContext?.restoredState && typeof navigationContext.restoredState === "object"
+      navigationContext?.restoredState &&
+      typeof navigationContext.restoredState === "object"
         ? navigationContext.restoredState
         : null;
     if (restored) {
@@ -1152,9 +1145,7 @@ export const StreamScreen = {
       }
       await Promise.all([
         preloadMatchedStreamBadgeImages(chunkStreams, badgeSettings),
-        ...(showAddonLogo
-          ? [preloadAddonLogoImages(chunkStreams, this.addonLogoLookup)]
-          : [])
+        ...(showAddonLogo ? [preloadAddonLogoImages(chunkStreams, this.addonLogoLookup)] : [])
       ]);
       if (token !== this.loadToken) {
         return;
@@ -1235,9 +1226,7 @@ export const StreamScreen = {
       if (missingStreams.length) {
         await Promise.all([
           preloadMatchedStreamBadgeImages(missingStreams, badgeSettings),
-          ...(showAddonLogo
-            ? [preloadAddonLogoImages(missingStreams, this.addonLogoLookup)]
-            : [])
+          ...(showAddonLogo ? [preloadAddonLogoImages(missingStreams, this.addonLogoLookup)] : [])
         ]);
         if (token !== this.loadToken) {
           return;
@@ -1317,9 +1306,7 @@ export const StreamScreen = {
     const cachedIdentity = canReuseStoredStream
       ? String(reusableStream?.resumeIdentity || "").trim()
       : "";
-    const canReusePreferredStream = Boolean(
-      canReuseStoredStream && preferredStreamId
-    );
+    const canReusePreferredStream = Boolean(canReuseStoredStream && preferredStreamId);
     if (!progressIdentity && !cachedIdentity && !canReusePreferredStream) {
       this.autoResumeUiActive = false;
       return;
@@ -1332,16 +1319,15 @@ export const StreamScreen = {
       }
       return;
     }
-    const identityMatch = this.streams.find((stream) => {
-      const stableIdentity = buildStreamResumeIdentity(stream);
-      return Boolean(
-        (cachedIdentity && stableIdentity === cachedIdentity) ||
-        (progressIdentity && (
-          stableIdentity === progressIdentity ||
-          streamMergeKey(stream) === progressIdentity
-        ))
-      );
-    }) || null;
+    const identityMatch =
+      this.streams.find((stream) => {
+        const stableIdentity = buildStreamResumeIdentity(stream);
+        return Boolean(
+          (cachedIdentity && stableIdentity === cachedIdentity) ||
+          (progressIdentity &&
+            (stableIdentity === progressIdentity || streamMergeKey(stream) === progressIdentity))
+        );
+      }) || null;
     // Stream preferences are stored per profile and per video. They are the
     // Web equivalent of Android's local stream-link cache and remain available
     // even when the selected progress source cannot carry stream metadata.
@@ -1388,13 +1374,14 @@ export const StreamScreen = {
     if (autoPlayMode === "MANUAL" || !isAutoPlayEffectivelyEnabled(settings)) {
       return;
     }
-    const savedPreference = settings.streamAutoPlayPreferBingeGroupForNextEpisode &&
+    const savedPreference =
+      settings.streamAutoPlayPreferBingeGroupForNextEpisode &&
       settings.streamAutoPlayReuseBingeGroup
-      ? StreamPreferencesStore.getEntry(
-          this.params?.itemId,
-          this.params?.videoId || this.params?.itemId
-        )
-      : null;
+        ? StreamPreferencesStore.getEntry(
+            this.params?.itemId,
+            this.params?.videoId || this.params?.itemId
+          )
+        : null;
     const preferredBingeGroup = String(savedPreference?.bingeGroup || "").trim();
     const installedAddonNames = new Set(
       (addonRepository.getCachedInstalledAddons() || [])
@@ -1667,7 +1654,7 @@ export const StreamScreen = {
   isLegacyWebOsRoute() {
     return Boolean(
       document.documentElement?.classList?.contains("legacy-webos") ||
-        document.body?.classList?.contains("legacy-webos")
+      document.body?.classList?.contains("legacy-webos")
     );
   },
 
@@ -2368,25 +2355,18 @@ export const StreamScreen = {
   },
 
   hydrateVisibleStreamBadges() {
-    if (
-      !Environment.isWebOS() ||
-      Router.getCurrent() !== "stream" ||
-      !this.container
-    ) {
+    if (!Environment.isWebOS() || Router.getCurrent() !== "stream" || !this.container) {
       return;
     }
     const list = this.container.querySelector(".stream-route-list");
-    const placeholders = Array.from(
-      this.container.querySelectorAll("[data-lazy-stream-badges]")
-    );
+    const placeholders = Array.from(this.container.querySelectorAll("[data-lazy-stream-badges]"));
     if (!list || !placeholders.length) {
       return;
     }
     const filtered = this.getFilteredStreams();
     const streamBadgesEnabled = DebridSettingsStore.get().streamBadgesEnabled !== false;
     const badgeSettings = StreamBadgeSettingsStore.snapshot();
-    const focusedRow =
-      this.focusState?.zone === "card" ? Number(this.focusState?.row || 0) : -1;
+    const focusedRow = this.focusState?.zone === "card" ? Number(this.focusState?.row || 0) : -1;
 
     // Android's LazyColumn only composes badge images near the viewport. Keep
     // the complete Web card list for existing remote/pointer navigation, but

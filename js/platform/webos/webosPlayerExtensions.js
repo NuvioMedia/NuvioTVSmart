@@ -19,7 +19,7 @@ function getWebOsSystemObjects() {
 function getWebOsLifecycleSystems() {
   return Array.from(
     new Set([globalThis.webOSSystem || null, globalThis.PalmSystem || null].filter(Boolean))
-  ).filter((system) => (typeof system === "object" || typeof system === "function"));
+  ).filter((system) => typeof system === "object" || typeof system === "function");
 }
 
 function setScreenSaverBlocked(blocked) {
@@ -45,10 +45,10 @@ function setScreenSaverBlocked(blocked) {
 
 function isVideoActivelyPlaying(videoElement) {
   return Boolean(
-    videoElement
-    && !videoElement.paused
-    && !videoElement.ended
-    && Number(videoElement.readyState || 0) > 0
+    videoElement &&
+    !videoElement.paused &&
+    !videoElement.ended &&
+    Number(videoElement.readyState || 0) > 0
   );
 }
 
@@ -86,7 +86,8 @@ function bindWebOsAppLifecycle() {
     }
 
     const install = (callbackName, inForeground) => {
-      const previous = typeof system[callbackName] === "function" ? system[callbackName].bind(system) : null;
+      const previous =
+        typeof system[callbackName] === "function" ? system[callbackName].bind(system) : null;
       try {
         system[callbackName] = (...args) => {
           if (previous) {
@@ -123,7 +124,8 @@ function requestWakeLock() {
   if (wakeLock || !globalThis.navigator?.wakeLock?.request) {
     return;
   }
-  globalThis.navigator.wakeLock.request("screen")
+  globalThis.navigator.wakeLock
+    .request("screen")
     .then((lock) => {
       wakeLock = lock;
       lock.addEventListener?.("release", () => {
@@ -205,9 +207,11 @@ function bindWebOsPlaybackKeepAwake(videoElement) {
     sync();
   };
 
-  ["playing", "play", "timeupdate", "seeked", "ratechange", "loadeddata", "canplay"].forEach((eventName) => {
-    videoElement.addEventListener(eventName, sync);
-  });
+  ["playing", "play", "timeupdate", "seeked", "ratechange", "loadeddata", "canplay"].forEach(
+    (eventName) => {
+      videoElement.addEventListener(eventName, sync);
+    }
+  );
   ["pause", "ended", "emptied", "abort", "error"].forEach((eventName) => {
     videoElement.addEventListener(eventName, stop);
   });

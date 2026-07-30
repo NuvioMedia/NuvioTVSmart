@@ -1,5 +1,7 @@
 function cleanCodecText(value) {
-  return String(value ?? "").replace(/\s+/g, " ").trim();
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function formatAudioCodecName(value) {
@@ -9,13 +11,27 @@ export function formatAudioCodecName(value) {
   }
 
   if (text.includes("truehd") && text.includes("atmos")) return "TrueHD Atmos";
-  if (text.includes("eac3-joc") || text.includes("ec-3-joc") || text.includes("e-ac-3-joc") || /\bjoc\b/.test(text) || text.includes("atmos")) return "E-AC-3-JOC";
+  if (
+    text.includes("eac3-joc") ||
+    text.includes("ec-3-joc") ||
+    text.includes("e-ac-3-joc") ||
+    /\bjoc\b/.test(text) ||
+    text.includes("atmos")
+  )
+    return "E-AC-3-JOC";
   if (text.includes("truehd")) return "TrueHD";
   if (text.includes("dts-hd")) return "DTS-HD";
   if (text.includes("dts express")) return "DTS Express";
   if (text.includes("dts")) return "DTS";
-  if (text.includes("ec-3") || text.includes("eac3") || text.includes("ddp") || text.includes("dolby digital plus")) return "E-AC-3";
-  if (text.includes("ac-3") || text.includes("ac3") || text.includes("dolby digital")) return "AC-3";
+  if (
+    text.includes("ec-3") ||
+    text.includes("eac3") ||
+    text.includes("ddp") ||
+    text.includes("dolby digital plus")
+  )
+    return "E-AC-3";
+  if (text.includes("ac-3") || text.includes("ac3") || text.includes("dolby digital"))
+    return "AC-3";
   if (text.includes("ac-4") || text.includes("ac4")) return "AC-4";
   if (text.includes("aac") || text.includes("mp4a")) return "AAC";
   if (text.includes("mp3") || text.includes("mpeg audio")) return "MP3";
@@ -50,9 +66,7 @@ export function getAuthoritativeAudioCodecValue(track = {}) {
     track?.format,
     track?.format_name
   ];
-  return candidates
-    .map(cleanCodecText)
-    .find((value) => Boolean(formatAudioCodecName(value))) || "";
+  return candidates.map(cleanCodecText).find((value) => Boolean(formatAudioCodecName(value))) || "";
 }
 
 export function getAudioTrackCodecCompatibilityText(track = {}, fallbackMetadataText = "") {
@@ -75,7 +89,9 @@ export function getAudioTrackCodecCompatibilityText(track = {}, fallbackMetadata
     track?.codec_profile,
     track?.format,
     track?.format_name
-  ].map(cleanCodecText).find(Boolean);
+  ]
+    .map(cleanCodecText)
+    .find(Boolean);
   return structuredCodec || cleanCodecText(fallbackMetadataText);
 }
 
@@ -101,7 +117,10 @@ export function getAudioTrackLabelPrefix(label) {
   return prefix && !formatAudioCodecName(prefix) ? prefix : "";
 }
 
-export function mapAudioTrackNativeIndexes(supportedTracks = [], { filterUnsupported = false } = {}) {
+export function mapAudioTrackNativeIndexes(
+  supportedTracks = [],
+  { filterUnsupported = false } = {}
+) {
   let nextNativeIndex = 0;
   return supportedTracks.map((supported, index) => {
     if (!filterUnsupported) {

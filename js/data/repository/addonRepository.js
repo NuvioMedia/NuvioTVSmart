@@ -680,13 +680,13 @@ class AddonRepository {
   }
 
   resourceSupportsType(resource = {}, type = "") {
-    const targetType = String(type || "").trim().toLowerCase();
+    const targetType = String(type || "")
+      .trim()
+      .toLowerCase();
     if (!targetType) {
       return false;
     }
-    const types = this.getResourceTypes(resource).map((resourceType) =>
-      resourceType.toLowerCase()
-    );
+    const types = this.getResourceTypes(resource).map((resourceType) => resourceType.toLowerCase());
     return !types.length || types.includes(targetType);
   }
 
@@ -710,12 +710,15 @@ class AddonRepository {
     id = "",
     options = {}
   ) {
-    const targetResource = String(resourceName || "").trim().toLowerCase();
+    const targetResource = String(resourceName || "")
+      .trim()
+      .toLowerCase();
     const cleanRequestedType = String(requestedType || "").trim();
     const resources = (addon?.resources || []).filter(
       (resource) =>
-        String(resource?.name || "").trim().toLowerCase() === targetResource &&
-        this.resourceSupportsId(addon, resource, id, options)
+        String(resource?.name || "")
+          .trim()
+          .toLowerCase() === targetResource && this.resourceSupportsId(addon, resource, id, options)
     );
     if (!resources.length) {
       return "";

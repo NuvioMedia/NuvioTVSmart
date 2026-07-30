@@ -636,12 +636,16 @@ export const CatalogSeeAllScreen = {
         <section class="seeall-grid">
           ${cards}
         </section>
-        ${this.loading ? `
+        ${
+          this.loading
+            ? `
           <div class="seeall-loading">
             ${renderLoadingIndicator()}
             <span>${escapeHtml(t("discover_loading", {}, "Loading..."))}</span>
           </div>
-        ` : ""}
+        `
+            : ""
+        }
       </div>
     `;
 

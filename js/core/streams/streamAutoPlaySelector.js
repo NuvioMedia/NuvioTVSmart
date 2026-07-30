@@ -16,12 +16,16 @@ export const STREAM_AUTO_PLAY_SOURCE = {
 };
 
 function normalizeMode(value) {
-  const mode = String(value || "").trim().toUpperCase();
+  const mode = String(value || "")
+    .trim()
+    .toUpperCase();
   return STREAM_AUTO_PLAY_MODE[mode] ? mode : STREAM_AUTO_PLAY_MODE.MANUAL;
 }
 
 function normalizeSource(value) {
-  const source = String(value || "").trim().toUpperCase();
+  const source = String(value || "")
+    .trim()
+    .toUpperCase();
   return STREAM_AUTO_PLAY_SOURCE[source] ? source : STREAM_AUTO_PLAY_SOURCE.ALL_SOURCES;
 }
 
@@ -57,40 +61,33 @@ export function isAutoPlayEffectivelyEnabled(settings = {}) {
 // auto-play never lands on a non-video page.
 function isPlayableStream(stream = {}) {
   const resolve = stream?.clientResolve || stream?.raw?.clientResolve || {};
-  const debridState = String(stream?.debridCacheStatus?.state || "").trim().toUpperCase();
+  const debridState = String(stream?.debridCacheStatus?.state || "")
+    .trim()
+    .toUpperCase();
   if (["CHECKING", "NOT_CACHED", "UNKNOWN"].includes(debridState)) {
     return false;
   }
   return Boolean(
-    stream && (
-      stream.url ||
+    stream &&
+    (stream.url ||
       stream.ytId ||
       stream.infoHash ||
       resolve.infoHash ||
       resolve.magnetUri ||
       stream.engineFs ||
       stream.tizenP2p ||
-      stream.debridCacheStatus
-    )
+      stream.debridCacheStatus)
   );
 }
 
 function streamBingeGroup(stream = {}) {
   return String(
-    stream?.behaviorHints?.bingeGroup ||
-    stream?.raw?.behaviorHints?.bingeGroup ||
-    ""
+    stream?.behaviorHints?.bingeGroup || stream?.raw?.behaviorHints?.bingeGroup || ""
   ).trim();
 }
 
 function streamSearchableText(stream = {}) {
-  const parts = [
-    stream.addonName,
-    stream.name,
-    stream.title,
-    stream.description,
-    stream.url
-  ];
+  const parts = [stream.addonName, stream.name, stream.title, stream.description, stream.url];
   if (stream.infoHash) {
     parts.push(stream.infoHash);
   }
@@ -98,9 +95,10 @@ function streamSearchableText(stream = {}) {
 }
 
 function scopeStreamsBySource(streams, source, installedAddonNames) {
-  const installed = installedAddonNames instanceof Set
-    ? installedAddonNames
-    : new Set(Array.isArray(installedAddonNames) ? installedAddonNames : []);
+  const installed =
+    installedAddonNames instanceof Set
+      ? installedAddonNames
+      : new Set(Array.isArray(installedAddonNames) ? installedAddonNames : []);
   if (source === STREAM_AUTO_PLAY_SOURCE.INSTALLED_ADDONS_ONLY) {
     return streams.filter((stream) => installed.has(String(stream.addonName || "")));
   }
@@ -140,21 +138,24 @@ export function selectAutoPlayStream(streams, options = {}) {
   }
   const mode = normalizeMode(options.mode);
   const source = normalizeSource(options.source);
-  const installedAddonNames = options.installedAddonNames instanceof Set
-    ? options.installedAddonNames
-    : new Set(Array.isArray(options.installedAddonNames) ? options.installedAddonNames : []);
-  const selectedAddons = options.selectedAddons instanceof Set
-    ? options.selectedAddons
-    : new Set(Array.isArray(options.selectedAddons) ? options.selectedAddons : []);
-  const selectedPlugins = options.selectedPlugins instanceof Set
-    ? options.selectedPlugins
-    : new Set(Array.isArray(options.selectedPlugins) ? options.selectedPlugins : []);
+  const installedAddonNames =
+    options.installedAddonNames instanceof Set
+      ? options.installedAddonNames
+      : new Set(Array.isArray(options.installedAddonNames) ? options.installedAddonNames : []);
+  const selectedAddons =
+    options.selectedAddons instanceof Set
+      ? options.selectedAddons
+      : new Set(Array.isArray(options.selectedAddons) ? options.selectedAddons : []);
+  const selectedPlugins =
+    options.selectedPlugins instanceof Set
+      ? options.selectedPlugins
+      : new Set(Array.isArray(options.selectedPlugins) ? options.selectedPlugins : []);
   const candidates = scopeStreamsBySource(list, source, installedAddonNames).filter((stream) => {
     const addonName = String(stream?.addonName || "");
     const isAddonStream = installedAddonNames.has(addonName);
     return isAddonStream
-      ? (!selectedAddons.size || selectedAddons.has(addonName))
-      : (!selectedPlugins.size || selectedPlugins.has(addonName));
+      ? !selectedAddons.size || selectedAddons.has(addonName)
+      : !selectedPlugins.size || selectedPlugins.has(addonName);
   });
   if (!candidates.length) {
     return null;
@@ -164,9 +165,9 @@ export function selectAutoPlayStream(streams, options = {}) {
   // including MANUAL. In bingeGroupOnly mode, a miss must open the picker.
   const preferredBingeGroup = String(options.preferredBingeGroup || "").trim();
   if (options.preferBingeGroupInSelection && preferredBingeGroup) {
-    const bingeGroupMatch = candidates.find((stream) => (
-      streamBingeGroup(stream) === preferredBingeGroup && isPlayableStream(stream)
-    ));
+    const bingeGroupMatch = candidates.find(
+      (stream) => streamBingeGroup(stream) === preferredBingeGroup && isPlayableStream(stream)
+    );
     if (bingeGroupMatch) {
       return bingeGroupMatch;
     }

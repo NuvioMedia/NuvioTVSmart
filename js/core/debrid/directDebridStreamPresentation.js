@@ -958,8 +958,14 @@ function formatTemplateDescription(value = "") {
     .trim();
 }
 
-function resolveManagedStreamDescription(templateDescription = "", stream = {}, displayedName = "") {
-  const displayed = String(displayedName || "").trim().toLowerCase();
+function resolveManagedStreamDescription(
+  templateDescription = "",
+  stream = {},
+  displayedName = ""
+) {
+  const displayed = String(displayedName || "")
+    .trim()
+    .toLowerCase();
   return (
     [templateDescription, stream.description, stream.title]
       .map((value) => formatTemplateDescription(value))

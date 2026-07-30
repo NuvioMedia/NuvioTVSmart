@@ -31,10 +31,7 @@ import {
   renderTitleWatchedBadge
 } from "../../components/watchedTitleBadge.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
-import {
-  buildSearchTargets,
-  catalogSupportsExtra
-} from "./searchCatalogTargets.js";
+import { buildSearchTargets, catalogSupportsExtra } from "./searchCatalogTargets.js";
 
 const POSTER_HOLD_DELAY_MS = 650;
 const SEARCH_RESULTS_PER_ROW_DEFAULT = 18;

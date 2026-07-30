@@ -131,14 +131,21 @@ export async function preloadAddonLogoImages(streams = [], lookup = {}) {
 }
 
 export async function preloadAddonLogoUrls(urls = []) {
-  const pending = Array.from(new Set(Array.from(urls || []).map(normalizeAddonLogoUrl).filter(Boolean)));
+  const pending = Array.from(
+    new Set(
+      Array.from(urls || [])
+        .map(normalizeAddonLogoUrl)
+        .filter(Boolean)
+    )
+  );
   if (!pending.length) {
     return;
   }
 
-  const concurrency = Environment.isWebOS() || Platform.isTizen()
-    ? ADDON_LOGO_PRELOAD_CONCURRENCY_TV
-    : ADDON_LOGO_PRELOAD_CONCURRENCY_DEFAULT;
+  const concurrency =
+    Environment.isWebOS() || Platform.isTizen()
+      ? ADDON_LOGO_PRELOAD_CONCURRENCY_TV
+      : ADDON_LOGO_PRELOAD_CONCURRENCY_DEFAULT;
   let nextIndex = 0;
   const worker = async () => {
     while (nextIndex < pending.length) {
@@ -147,9 +154,7 @@ export async function preloadAddonLogoUrls(urls = []) {
       await warmAddonLogoPreview(url);
     }
   };
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, pending.length) }, () => worker())
-  );
+  await Promise.all(Array.from({ length: Math.min(concurrency, pending.length) }, () => worker()));
 }
 
 export function requestAddonLogo(url = "", onSettled = null) {

@@ -16,7 +16,10 @@ test("continues past candidates without a next episode until the lookup limit", 
     { maxLookups: 10, concurrency: 2 }
   );
 
-  assert.deepEqual(visited.slice().sort((left, right) => left - right), candidates);
+  assert.deepEqual(
+    visited.slice().sort((left, right) => left - right),
+    candidates
+  );
   assert.deepEqual(resolved, ["next-9", "next-10"]);
 });
 

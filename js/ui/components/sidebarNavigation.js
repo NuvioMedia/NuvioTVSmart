@@ -11,7 +11,8 @@ const ROOT_SIDEBAR_ITEMS = [
     labelKey: "sidebar.home",
     iconType: "svg",
     viewBox: "0 0 24 24",
-    iconMarkup: '<path d="M12 3.2 3.5 10v10.25c0 .69.56 1.25 1.25 1.25h5.5v-6.5h3.5v6.5h5.5c.69 0 1.25-.56 1.25-1.25V10L12 3.2Zm0 1.92 7 5.6v9.53h-4v-6.5H9v6.5H5v-9.53l7-5.6Z"/>'
+    iconMarkup:
+      '<path d="M12 3.2 3.5 10v10.25c0 .69.56 1.25 1.25 1.25h5.5v-6.5h3.5v6.5h5.5c.69 0 1.25-.56 1.25-1.25V10L12 3.2Zm0 1.92 7 5.6v9.53h-4v-6.5H9v6.5H5v-9.53l7-5.6Z"/>'
   },
   {
     action: "gotoSearch",
@@ -94,7 +95,10 @@ function syncSidebarStateClasses(container) {
   );
   root.classList.toggle(
     "has-expanded-sidebar",
-    Boolean(legacySidebar?.classList?.contains("expanded") || modernSidebar?.classList?.contains("expanded"))
+    Boolean(
+      legacySidebar?.classList?.contains("expanded") ||
+      modernSidebar?.classList?.contains("expanded")
+    )
   );
 }
 

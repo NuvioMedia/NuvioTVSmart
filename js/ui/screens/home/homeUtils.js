@@ -70,7 +70,10 @@ export function formatCatalogRowTitle(catalogName, type, showTypeSuffix = true) 
     return base;
   }
   const rawTypeLabel = toTitleCase(type || "movie") || "Movie";
-  const suffixPattern = new RegExp(`\\b(${escapeRegExp(typeLabel)}|${escapeRegExp(rawTypeLabel)})$`, "i");
+  const suffixPattern = new RegExp(
+    `\\b(${escapeRegExp(typeLabel)}|${escapeRegExp(rawTypeLabel)})$`,
+    "i"
+  );
   return suffixPattern.test(base) ? base : `${base} - ${typeLabel}`;
 }
 

@@ -4,10 +4,7 @@ import test from "node:test";
 import { AuthManager } from "../auth/authManager.js";
 import { AuthState } from "../auth/authState.js";
 import { SupabaseApi } from "../../data/remote/supabase/supabaseApi.js";
-import {
-  ProfileSyncService,
-  shouldTryProfileTableFallback
-} from "./profileSyncService.js";
+import { ProfileSyncService, shouldTryProfileTableFallback } from "./profileSyncService.js";
 
 test("profile table fallback is limited to a missing profiles RPC", () => {
   assert.equal(shouldTryProfileTableFallback({ status: 404 }), true);

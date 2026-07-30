@@ -149,7 +149,7 @@ const KEY_ALIASES = {
   "stream.debrid.serviceDegraded": "debrid_service_degraded",
   "stream.enginefs.failed": "enginefs_resolution_failed",
   "stream.p2p.failed": "p2p_resolution_failed",
-  "player_error_p2p_disabled": "player_error_p2p_disabled",
+  player_error_p2p_disabled: "player_error_p2p_disabled",
   "stream.debrid.notCached": "debrid_not_cached",
   "stream.p2p.resolving": "p2p_resolving_stream",
   "stream.debrid.resolving": "debrid_resolving_stream",

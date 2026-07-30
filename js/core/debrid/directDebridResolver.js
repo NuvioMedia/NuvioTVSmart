@@ -1,7 +1,11 @@
 import { DebridSettingsStore } from "../../data/local/debridSettingsStore.js";
 import { DebridApi } from "../../data/remote/api/debridApi.js";
 import { DEBRID_CAPABILITIES, DEBRID_PROVIDER_IDS, DebridProviders } from "./debridProviders.js";
-import { getDebridFileDisplayName, getDebridFileSize, selectDebridFile } from "./debridFileSelection.js";
+import {
+  getDebridFileDisplayName,
+  getDebridFileSize,
+  selectDebridFile
+} from "./debridFileSelection.js";
 
 const RESOLVE_CACHE_TTL_MS = 15 * 60 * 1000;
 const RESOLVE_CACHE_MAX_ENTRIES = 100;
@@ -9,7 +13,10 @@ const resolvedCache = new Map();
 const inFlightResolves = new Map();
 
 function isMagnetLink(value) {
-  return String(value || "").trim().toLowerCase().startsWith("magnet:");
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .startsWith("magnet:");
 }
 
 function getStreamUrl(stream = {}) {
@@ -23,24 +30,26 @@ function torrentMagnetUri(stream = {}) {
 function isDirectDebrid(stream = {}) {
   const resolve = stream.clientResolve || stream.raw?.clientResolve;
   return Boolean(
-    resolve
-      && String(resolve.type || "").toLowerCase() === "debrid"
-      && DebridProviders.isSupported(resolve.service)
-      && resolve.isCached === true
+    resolve &&
+    String(resolve.type || "").toLowerCase() === "debrid" &&
+    DebridProviders.isSupported(resolve.service) &&
+    resolve.isCached === true
   );
 }
 
 function needsLocalDebridResolve(stream = {}) {
-  return !isDirectDebrid(stream)
-    && !getStreamUrl(stream)
-    && Boolean(stream.infoHash || torrentMagnetUri(stream));
+  return (
+    !isDirectDebrid(stream) &&
+    !getStreamUrl(stream) &&
+    Boolean(stream.infoHash || torrentMagnetUri(stream))
+  );
 }
 
 function stableFingerprint(value) {
   const text = String(value || "");
   let hash = 0;
   for (let index = 0; index < text.length; index += 1) {
-    hash = ((hash << 5) - hash) + text.charCodeAt(index);
+    hash = (hash << 5) - hash + text.charCodeAt(index);
     hash |= 0;
   }
   return Math.abs(hash).toString(36);
@@ -72,10 +81,12 @@ function buildMagnetUri(resolve = {}) {
 }
 
 function buildLocalResolve(stream = {}, season, episode, providerId) {
-  const magnet = torrentMagnetUri(stream) || buildMagnetUri({
-    infoHash: stream.infoHash,
-    sources: stream.sources
-  });
+  const magnet =
+    torrentMagnetUri(stream) ||
+    buildMagnetUri({
+      infoHash: stream.infoHash,
+      sources: stream.sources
+    });
   if (!magnet) {
     return null;
   }
@@ -95,7 +106,12 @@ function buildLocalResolve(stream = {}, season, episode, providerId) {
   };
 }
 
-function getResolve(stream = {}, season = null, episode = null, settings = DebridSettingsStore.get()) {
+function getResolve(
+  stream = {},
+  season = null,
+  episode = null,
+  settings = DebridSettingsStore.get()
+) {
   const directResolve = stream.clientResolve || stream.raw?.clientResolve || null;
   if (directResolve) {
     return directResolve;
@@ -104,13 +120,21 @@ function getResolve(stream = {}, season = null, episode = null, settings = Debri
     return null;
   }
   const credential = DebridProviders.preferredResolverService(settings);
-  if (!credential || !DebridProviders.supports(credential.provider.id, DEBRID_CAPABILITIES.LOCAL_TORRENT_RESOLVE)) {
+  if (
+    !credential ||
+    !DebridProviders.supports(credential.provider.id, DEBRID_CAPABILITIES.LOCAL_TORRENT_RESOLVE)
+  ) {
     return null;
   }
   return buildLocalResolve(stream, season, episode, credential.provider.id);
 }
 
-function cacheKeyFor(stream = {}, season = null, episode = null, settings = DebridSettingsStore.get()) {
+function cacheKeyFor(
+  stream = {},
+  season = null,
+  episode = null,
+  settings = DebridSettingsStore.get()
+) {
   const resolve = getResolve(stream, season, episode, settings);
   if (!resolve) {
     return null;
@@ -129,7 +153,9 @@ function cacheKeyFor(stream = {}, season = null, episode = null, settings = Debr
     stableFingerprint(apiKey),
     String(identity).trim().toLowerCase(),
     String(resolve.fileIdx ?? ""),
-    String(resolve.filename || stream.behaviorHints?.filename || "").trim().toLowerCase(),
+    String(resolve.filename || stream.behaviorHints?.filename || "")
+      .trim()
+      .toLowerCase(),
     String(season ?? resolve.season ?? ""),
     String(episode ?? resolve.episode ?? "")
   ].join("|");
@@ -191,7 +217,9 @@ async function resolveTorbox(resolve, apiKey, season, episode) {
     if (degraded) {
       return degraded;
     }
-    return create.status === 409 ? failure("not_cached") : failure(create.status === 401 || create.status === 403 ? "error" : "stale");
+    return create.status === 409
+      ? failure("not_cached")
+      : failure(create.status === 401 || create.status === 403 ? "error" : "stale");
   }
   const torrent = await DebridApi.torboxGetTorrent(apiKey, torrentId);
   const files = torrent.data?.data?.files || [];
@@ -230,14 +258,25 @@ async function resolvePremiumize(resolve, apiKey, season, episode, stream = {}) 
   const body = response.data || {};
   if (String(body.status || "").toLowerCase() === "error") {
     const message = `${body.message || ""} ${body.code || ""}`.toLowerCase();
-    return failure(message.includes("cache") || message.includes("not found") ? "not_cached" : "stale", message);
+    return failure(
+      message.includes("cache") || message.includes("not found") ? "not_cached" : "stale",
+      message
+    );
   }
-  const file = selectDebridFile(body.content || [], resolve, { season, episode, kind: "premiumize" });
+  const file = selectDebridFile(body.content || [], resolve, {
+    season,
+    episode,
+    kind: "premiumize"
+  });
   const url = file?.link || "";
   if (!file || !url) {
     return failure("stale");
   }
-  return success(url, getDebridFileDisplayName(file) || stream.behaviorHints?.filename || null, getDebridFileSize(file) || stream.behaviorHints?.videoSize || null);
+  return success(
+    url,
+    getDebridFileDisplayName(file) || stream.behaviorHints?.filename || null,
+    getDebridFileSize(file) || stream.behaviorHints?.videoSize || null
+  );
 }
 
 async function resolveRealDebrid(resolve, apiKey, season, episode) {
@@ -279,7 +318,11 @@ async function resolveRealDebrid(resolve, apiKey, season, episode) {
       return failure("stale");
     }
     resolved = true;
-    return success(url, unrestricted.data?.filename || getDebridFileDisplayName(file), unrestricted.data?.filesize || getDebridFileSize(file));
+    return success(
+      url,
+      unrestricted.data?.filename || getDebridFileDisplayName(file),
+      unrestricted.data?.filesize || getDebridFileSize(file)
+    );
   } finally {
     if (!resolved) {
       DebridApi.realDebridDeleteTorrent(apiKey, torrentId).catch(() => null);
@@ -288,7 +331,9 @@ async function resolveRealDebrid(resolve, apiKey, season, episode) {
 }
 
 async function getLocalTorrentCacheStatus(provider, apiKey, hash) {
-  const normalized = String(hash || "").trim().toLowerCase();
+  const normalized = String(hash || "")
+    .trim()
+    .toLowerCase();
   if (!normalized) {
     return { status: "unknown" };
   }
@@ -341,7 +386,6 @@ function withResolvedUrl(stream = {}, result) {
 }
 
 export const DirectDebridResolver = {
-
   canResolveStream(stream = {}, { season = null, episode = null } = {}) {
     const settings = DebridSettingsStore.get();
     if (!settings.enabled) {
@@ -359,7 +403,10 @@ export const DirectDebridResolver = {
     if (isDirectDebrid(stream) && activeProvider?.id && provider.id !== activeProvider.id) {
       return false;
     }
-    if (needsLocalDebridResolve(stream) && !provider.capabilities.includes(DEBRID_CAPABILITIES.LOCAL_TORRENT_RESOLVE)) {
+    if (
+      needsLocalDebridResolve(stream) &&
+      !provider.capabilities.includes(DEBRID_CAPABILITIES.LOCAL_TORRENT_RESOLVE)
+    ) {
       return false;
     }
     if (needsLocalDebridResolve(stream) && stream.debridCacheStatus?.state === "NOT_CACHED") {
@@ -397,12 +444,14 @@ export const DirectDebridResolver = {
       return failure("not_cached");
     }
     if (
-      needsLocalDebridResolve(stream)
-      && stream.infoHash
-      && stream.debridCacheStatus?.state !== "CACHED"
-      && provider.capabilities.includes(DEBRID_CAPABILITIES.LOCAL_TORRENT_CACHE_CHECK)
+      needsLocalDebridResolve(stream) &&
+      stream.infoHash &&
+      stream.debridCacheStatus?.state !== "CACHED" &&
+      provider.capabilities.includes(DEBRID_CAPABILITIES.LOCAL_TORRENT_CACHE_CHECK)
     ) {
-      const cacheStatus = await getLocalTorrentCacheStatus(provider, apiKey, stream.infoHash).catch((error) => failure("error", error?.message || ""));
+      const cacheStatus = await getLocalTorrentCacheStatus(provider, apiKey, stream.infoHash).catch(
+        (error) => failure("error", error?.message || "")
+      );
       if (cacheStatus?.status === "service_degraded") {
         return cacheStatus;
       }
@@ -458,5 +507,4 @@ export const DirectDebridResolver = {
       }
     }
   }
-
 };

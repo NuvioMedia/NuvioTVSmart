@@ -52,9 +52,7 @@ function normalizeLayoutPreferences(value = {}) {
   return {
     ...merged,
     modernLandscapePostersEnabled: Boolean(merged.modernLandscapePostersEnabled),
-    modernHeroFullScreenBackdropEnabled: Boolean(
-      merged.modernHeroFullScreenBackdropEnabled
-    ),
+    modernHeroFullScreenBackdropEnabled: Boolean(merged.modernHeroFullScreenBackdropEnabled),
     focusedPosterBackdropExpandEnabled: Boolean(merged.focusedPosterBackdropExpandEnabled),
     focusedPosterBackdropExpandDelaySeconds: Math.max(
       0,

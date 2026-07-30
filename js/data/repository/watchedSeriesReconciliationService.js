@@ -5,7 +5,9 @@ import { detailWatchedEnrichmentService } from "./detailWatchedEnrichmentService
 import { isWatchProgressCompleted } from "../../domain/model/watchProgress.js";
 
 function isSeriesType(type = "") {
-  const normalized = String(type || "").trim().toLowerCase();
+  const normalized = String(type || "")
+    .trim()
+    .toLowerCase();
   return ["series", "tv", "anime", "show", "tvshow"].includes(normalized);
 }
 
@@ -44,11 +46,8 @@ function normalizeEpisode(video = {}) {
     video.number,
     parsed?.episode
   ]);
-  const season = firstPositiveInt([
-    video.season,
-    video.seasonNumber,
-    parsed?.season
-  ]) || (episode ? 1 : null);
+  const season =
+    firstPositiveInt([video.season, video.seasonNumber, parsed?.season]) || (episode ? 1 : null);
   if (!video.id || !season || !episode) {
     return null;
   }
@@ -125,14 +124,7 @@ function watchedItemEpisodeKey(item = {}) {
 }
 
 function buildContentIds(contentId, meta = {}) {
-  return new Set(
-    [
-      contentId,
-      meta?.id
-    ]
-      .map((value) => String(value || "").trim())
-      .filter(Boolean)
-  );
+  return new Set([contentId, meta?.id].map((value) => String(value || "").trim()).filter(Boolean));
 }
 
 async function loadSeriesMeta(contentId, contentType, meta = null) {

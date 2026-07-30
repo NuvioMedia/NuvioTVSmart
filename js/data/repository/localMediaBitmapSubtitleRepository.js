@@ -8,7 +8,10 @@ const MAX_PREPARED_SOURCES = 4;
 function withTimeout(promise, timeoutMs) {
   let timeoutId = 0;
   const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error("webOS bitmap subtitle request timed out")), timeoutMs);
+    timeoutId = setTimeout(
+      () => reject(new Error("webOS bitmap subtitle request timed out")),
+      timeoutMs
+    );
   });
   return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
 }
@@ -37,16 +40,20 @@ export const localMediaBitmapSubtitleRepository = {
         parameters: { url: targetUrl }
       }),
       REQUEST_TIMEOUT_MS
-    ).then((result) => {
-      const payload = result?.payload || {};
-      if (payload.returnValue === false) {
-        throw new Error(payload.errorText || payload.errorCode || "Bitmap subtitle preparation failed");
-      }
-      return payload;
-    }).catch((error) => {
-      preparedSources.delete(targetUrl);
-      throw error;
-    });
+    )
+      .then((result) => {
+        const payload = result?.payload || {};
+        if (payload.returnValue === false) {
+          throw new Error(
+            payload.errorText || payload.errorCode || "Bitmap subtitle preparation failed"
+          );
+        }
+        return payload;
+      })
+      .catch((error) => {
+        preparedSources.delete(targetUrl);
+        throw error;
+      });
     preparedSources.set(targetUrl, request);
     while (preparedSources.size > MAX_PREPARED_SOURCES) {
       preparedSources.delete(preparedSources.keys().next().value);
@@ -75,7 +82,9 @@ export const localMediaBitmapSubtitleRepository = {
     );
     const payload = result?.payload || {};
     if (payload.returnValue === false) {
-      throw new Error(payload.errorText || payload.errorCode || "Bitmap subtitle extraction failed");
+      throw new Error(
+        payload.errorText || payload.errorCode || "Bitmap subtitle extraction failed"
+      );
     }
     if (String(payload.format || "").toLowerCase() !== "vobsub") {
       throw new Error("Unsupported bitmap subtitle response");

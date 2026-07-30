@@ -141,11 +141,9 @@ npm run inspect:webos -- -d lg
 
 <!-- Describe the exact flow tested in the app. -->
 
-
 ## Screenshots / Video
 
 <!-- Required for any UI, layout, focus, or visual change. Write "Not a UI change" only if no UI changed. -->
-
 
 ## Logs
 

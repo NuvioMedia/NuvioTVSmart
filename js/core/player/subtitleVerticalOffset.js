@@ -12,20 +12,14 @@ export function normalizeSubtitleVerticalOffset(
 ) {
   const parsed = Number(value);
   const normalized = Number.isFinite(parsed) ? Math.round(parsed) : fallback;
-  return Math.min(
-    SUBTITLE_VERTICAL_OFFSET_MAX,
-    Math.max(SUBTITLE_VERTICAL_OFFSET_MIN, normalized)
-  );
+  return Math.min(SUBTITLE_VERTICAL_OFFSET_MAX, Math.max(SUBTITLE_VERTICAL_OFFSET_MIN, normalized));
 }
 
 export function splitSubtitleVerticalOffset(value) {
   const storedValue = normalizeSubtitleVerticalOffset(value);
-  const relativeOffset = (
-    storedValue - SUBTITLE_VERTICAL_OFFSET_DEFAULT
-  ) / ANDROID_POINTS_PER_WEB_STEP;
-  const lineOffset = relativeOffset < 0
-    ? Math.ceil(relativeOffset)
-    : Math.floor(relativeOffset);
+  const relativeOffset =
+    (storedValue - SUBTITLE_VERTICAL_OFFSET_DEFAULT) / ANDROID_POINTS_PER_WEB_STEP;
+  const lineOffset = relativeOffset < 0 ? Math.ceil(relativeOffset) : Math.floor(relativeOffset);
   const residualOffset = Number((relativeOffset - lineOffset).toFixed(2));
   return {
     storedValue,

@@ -19,7 +19,9 @@ function releaseYear(value = "") {
 }
 
 export function selectCanonicalCinemetaId(items = [], { type, title, year } = {}) {
-  const rawType = String(type || "").trim().toLowerCase();
+  const rawType = String(type || "")
+    .trim()
+    .toLowerCase();
   const normalizedType = rawType === "tv" ? "series" : rawType;
   const normalizedTitle = normalizeMatchText(title);
   const normalizedYear = releaseYear(year);
@@ -28,13 +30,15 @@ export function selectCanonicalCinemetaId(items = [], { type, title, year } = {}
   }
 
   const matches = (items || []).filter((item) => {
-    const rawItemType = String(item?.type || "").trim().toLowerCase();
+    const rawItemType = String(item?.type || "")
+      .trim()
+      .toLowerCase();
     const itemType = rawItemType === "tv" ? "series" : rawItemType;
     return (
-      /^tt\d+$/i.test(String(item?.id || "").trim())
-      && itemType === normalizedType
-      && normalizeMatchText(item?.name) === normalizedTitle
-      && releaseYear(item?.releaseInfo || item?.year) === normalizedYear
+      /^tt\d+$/i.test(String(item?.id || "").trim()) &&
+      itemType === normalizedType &&
+      normalizeMatchText(item?.name) === normalizedTitle &&
+      releaseYear(item?.releaseInfo || item?.year) === normalizedYear
     );
   });
   const ids = Array.from(new Set(matches.map((item) => String(item.id).trim())));
@@ -57,17 +61,19 @@ export function buildSubtitleIdCandidates({
     }
     candidates.push(normalized);
   };
-  const normalizedType = String(type || "").trim().toLowerCase();
+  const normalizedType = String(type || "")
+    .trim()
+    .toLowerCase();
   const seasonNumber = Number(season);
   const episodeNumber = Number(episode);
 
   if (normalizedType === "series") {
     push(videoId);
     if (
-      Number.isFinite(seasonNumber)
-      && seasonNumber > 0
-      && Number.isFinite(episodeNumber)
-      && episodeNumber > 0
+      Number.isFinite(seasonNumber) &&
+      seasonNumber > 0 &&
+      Number.isFinite(episodeNumber) &&
+      episodeNumber > 0
     ) {
       (ids || []).forEach((id) => {
         if (/^tt\d+$/i.test(String(id || "").trim())) {
@@ -82,9 +88,7 @@ export function buildSubtitleIdCandidates({
     (ids || []).forEach(push);
   }
 
-  const prefixes = (idPrefixes || [])
-    .map((value) => String(value || "").trim())
-    .filter(Boolean);
+  const prefixes = (idPrefixes || []).map((value) => String(value || "").trim()).filter(Boolean);
   const compatible = prefixes.length
     ? candidates.filter((candidate) => prefixes.some((prefix) => candidate.startsWith(prefix)))
     : candidates;

@@ -503,16 +503,20 @@ function normalizeWatchedShowItem(entry) {
   if (!contentId) return null;
 
   const seasons = Array.isArray(entry.seasons)
-    ? entry.seasons.map((season) => ({
-        number: Number(season?.number || 0),
-        episodes: Array.isArray(season?.episodes)
-          ? season.episodes.map((episode) => ({
-              number: Number(episode?.number || 0),
-              plays: Number(episode?.plays || 0),
-              lastWatchedAt: episode?.last_watched_at || null
-            })).filter((episode) => episode.number > 0 && episode.plays > 0)
-          : []
-      })).filter((season) => season.number > 0 && season.episodes.length)
+    ? entry.seasons
+        .map((season) => ({
+          number: Number(season?.number || 0),
+          episodes: Array.isArray(season?.episodes)
+            ? season.episodes
+                .map((episode) => ({
+                  number: Number(episode?.number || 0),
+                  plays: Number(episode?.plays || 0),
+                  lastWatchedAt: episode?.last_watched_at || null
+                }))
+                .filter((episode) => episode.number > 0 && episode.plays > 0)
+            : []
+        }))
+        .filter((season) => season.number > 0 && season.episodes.length)
     : [];
 
   return {

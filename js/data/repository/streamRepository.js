@@ -359,10 +359,7 @@ class StreamRepository {
     }
     const firstSegment = parts[0];
     const minSegments = /^tt/i.test(firstSegment) || /^\d+$/.test(firstSegment) ? 1 : 2;
-    const segmentsToDrop = Math.min(
-      trailingNumericCount,
-      Math.max(0, parts.length - minSegments)
-    );
+    const segmentsToDrop = Math.min(trailingNumericCount, Math.max(0, parts.length - minSegments));
     return segmentsToDrop > 0 ? parts.slice(0, -segmentsToDrop).join(":") : raw;
   }
 }

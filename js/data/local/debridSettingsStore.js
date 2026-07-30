@@ -226,11 +226,7 @@ function idsFor(items) {
 }
 
 function normalizeStringArray(value, allowedIds = null, fallback = []) {
-  const source = Array.isArray(value)
-    ? value
-    : typeof value === "string"
-      ? value.split(",")
-      : [];
+  const source = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
   const allowed = allowedIds ? new Set(allowedIds) : null;
   const normalized = [];
   source.forEach((entry) => {
@@ -328,8 +324,14 @@ export function normalizeDebridStreamPreferences(value) {
       idsFor(DEBRID_STREAM_QUALITIES),
       DEFAULT_STREAM_PREFERENCES.preferredQualities
     ),
-    requiredQualities: normalizeStringArray(source.requiredQualities, idsFor(DEBRID_STREAM_QUALITIES)),
-    excludedQualities: normalizeStringArray(source.excludedQualities, idsFor(DEBRID_STREAM_QUALITIES)),
+    requiredQualities: normalizeStringArray(
+      source.requiredQualities,
+      idsFor(DEBRID_STREAM_QUALITIES)
+    ),
+    excludedQualities: normalizeStringArray(
+      source.excludedQualities,
+      idsFor(DEBRID_STREAM_QUALITIES)
+    ),
     preferredVisualTags: normalizeStringArray(
       source.preferredVisualTags,
       idsFor(DEBRID_STREAM_VISUAL_TAGS),
@@ -348,8 +350,14 @@ export function normalizeDebridStreamPreferences(value) {
       idsFor(DEBRID_STREAM_AUDIO_TAGS),
       DEFAULT_STREAM_PREFERENCES.preferredAudioTags
     ),
-    requiredAudioTags: normalizeStringArray(source.requiredAudioTags, idsFor(DEBRID_STREAM_AUDIO_TAGS)),
-    excludedAudioTags: normalizeStringArray(source.excludedAudioTags, idsFor(DEBRID_STREAM_AUDIO_TAGS)),
+    requiredAudioTags: normalizeStringArray(
+      source.requiredAudioTags,
+      idsFor(DEBRID_STREAM_AUDIO_TAGS)
+    ),
+    excludedAudioTags: normalizeStringArray(
+      source.excludedAudioTags,
+      idsFor(DEBRID_STREAM_AUDIO_TAGS)
+    ),
     preferredAudioChannels: normalizeStringArray(
       source.preferredAudioChannels,
       idsFor(DEBRID_STREAM_AUDIO_CHANNELS),
@@ -370,9 +378,18 @@ export function normalizeDebridStreamPreferences(value) {
     ),
     requiredEncodes: normalizeStringArray(source.requiredEncodes, idsFor(DEBRID_STREAM_ENCODES)),
     excludedEncodes: normalizeStringArray(source.excludedEncodes, idsFor(DEBRID_STREAM_ENCODES)),
-    preferredLanguages: normalizeStringArray(source.preferredLanguages, idsFor(DEBRID_STREAM_LANGUAGES)),
-    requiredLanguages: normalizeStringArray(source.requiredLanguages, idsFor(DEBRID_STREAM_LANGUAGES)),
-    excludedLanguages: normalizeStringArray(source.excludedLanguages, idsFor(DEBRID_STREAM_LANGUAGES)),
+    preferredLanguages: normalizeStringArray(
+      source.preferredLanguages,
+      idsFor(DEBRID_STREAM_LANGUAGES)
+    ),
+    requiredLanguages: normalizeStringArray(
+      source.requiredLanguages,
+      idsFor(DEBRID_STREAM_LANGUAGES)
+    ),
+    excludedLanguages: normalizeStringArray(
+      source.excludedLanguages,
+      idsFor(DEBRID_STREAM_LANGUAGES)
+    ),
     requiredReleaseGroups: normalizeTextList(source.requiredReleaseGroups),
     excludedReleaseGroups: normalizeTextList(source.excludedReleaseGroups),
     sortCriteria: normalizeSortCriteria(source.sortCriteria)
@@ -503,7 +520,9 @@ export function applyDebridCodecFilter(preferences, filter) {
 }
 
 function normalizePreferredResolverProviderId(source) {
-  const preferred = String(source.preferredResolverProviderId || "").trim().toLowerCase();
+  const preferred = String(source.preferredResolverProviderId || "")
+    .trim()
+    .toLowerCase();
   const connected = [
     ["torbox", source.torboxApiKey],
     ["premiumize", source.premiumizeApiKey],
@@ -538,7 +557,10 @@ function normalizeDebridSettings(value = {}) {
       0,
       Math.min(5, Math.trunc(Number(source.instantPlaybackPreparationLimit || 0)))
     ),
-    streamMaxResults: Math.max(0, Math.min(100, Math.trunc(Number(streamPreferences.maxResults || 0)))),
+    streamMaxResults: Math.max(
+      0,
+      Math.min(100, Math.trunc(Number(streamPreferences.maxResults || 0)))
+    ),
     streamSortMode: legacyModeForSortCriteria(streamPreferences.sortCriteria),
     streamMinimumQuality: normalizeEnum(source.streamMinimumQuality, "streamMinimumQuality"),
     streamDolbyVisionFilter: normalizeEnum(
@@ -583,7 +605,9 @@ export const DebridSettingsStore = {
   },
 
   setProviderApiKey(providerId, apiKey, options = {}) {
-    const normalizedProviderId = String(providerId || "").trim().toLowerCase();
+    const normalizedProviderId = String(providerId || "")
+      .trim()
+      .toLowerCase();
     const field =
       normalizedProviderId === "torbox"
         ? "torboxApiKey"
@@ -646,13 +670,20 @@ export const DebridSettingsStore = {
 
   setStreamHdrFilter(filter, options = {}) {
     const normalizedFilter = normalizeEnum(filter, "streamHdrFilter");
-    const streamPreferences = applyDebridFeatureFilter(store.get().streamPreferences, "hdr", normalizedFilter);
+    const streamPreferences = applyDebridFeatureFilter(
+      store.get().streamPreferences,
+      "hdr",
+      normalizedFilter
+    );
     return store.set({ streamHdrFilter: normalizedFilter, streamPreferences }, options);
   },
 
   setStreamCodecFilter(filter, options = {}) {
     const normalizedFilter = normalizeEnum(filter, "streamCodecFilter");
-    const streamPreferences = applyDebridCodecFilter(store.get().streamPreferences, normalizedFilter);
+    const streamPreferences = applyDebridCodecFilter(
+      store.get().streamPreferences,
+      normalizedFilter
+    );
     return store.set({ streamCodecFilter: normalizedFilter, streamPreferences }, options);
   },
 

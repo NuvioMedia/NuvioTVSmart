@@ -233,8 +233,7 @@ function mapProgressRow(row = {}) {
       normalizedVideoId.startsWith(SYNTHETIC_EPISODE_VIDEO_PREFIX)
         ? null
         : normalizedVideoId,
-    season:
-      seasonRaw != null && Number.isFinite(seasonNum) && seasonNum >= 0 ? seasonNum : null,
+    season: seasonRaw != null && Number.isFinite(seasonNum) && seasonNum >= 0 ? seasonNum : null,
     episode: Number.isFinite(episodeNum) && episodeNum > 0 ? episodeNum : null,
     positionMs: normalizedTimes.positionMs,
     durationMs: normalizedTimes.durationMs,
