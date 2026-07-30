@@ -5,6 +5,7 @@
   "version": "0.3.26",
   "scripts": {
     "build": "node ./scripts/build.mjs",
+    "prepare": "husky || true",
     "test": "node --test \"**/*.test.mjs\"",
     "build:on-release": "node ./scripts/release-build-poller.mjs",
     "install:webos": "node ./scripts/ares-install-webos.mjs",
@@ -15,10 +16,8 @@
     "lint:home:incremental": "eslint \"js/ui/screens/home/**/*.js\" \"eslint.config.mjs\"",
     "package:tizen": "npm run build && node ./scripts/package-tizen.mjs",
     "package:webos": "npm run build && node ./scripts/package-webos.mjs",
-    "format": "npm run format:incremental",
-    "format:incremental": "prettier --write \"js/ui/screens/home/**/*.js\" \"eslint.config.mjs\" \"package.json\" \".prettierrc.json\"",
-    "format:check": "npm run format:check:incremental",
-    "format:check:incremental": "prettier --check \"js/ui/screens/home/**/*.js\" \"eslint.config.mjs\" \"package.json\" \".prettierrc.json\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "serve": "node ./scripts/serve.mjs",
     "sync": "node ./scripts/sync-wrapper.mjs",
     "sync:tizen": "node ./scripts/sync-wrapper.mjs --tizen",
@@ -37,6 +36,7 @@
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
     "postcss": "^8.5.9",
     "prettier": "^3.8.4"
   },
