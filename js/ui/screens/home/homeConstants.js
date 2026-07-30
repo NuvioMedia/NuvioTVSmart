@@ -8,6 +8,7 @@ export const HERO_ROTATE_INTERVAL_MS = 10000;
 export const HOME_LAYOUT_SEQUENCE = ["modern", "grid", "classic"];
 
 export const CW_MAX_NEXT_UP_LOOKUPS = 24;
+export const CW_MAX_NEXT_UP_CONCURRENCY = 4;
 export const CW_MAX_VISIBLE_ITEMS = 10;
 export const CW_DAYS_CAP = 60;
 export const CW_PROGRESS_START_THRESHOLD = WATCH_PROGRESS_STARTED_THRESHOLD;

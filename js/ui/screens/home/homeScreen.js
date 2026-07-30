@@ -63,6 +63,7 @@ import {
   CW_ENRICHMENT_CACHE_MAX_AGE_MS,
   CW_ENTER_DELAY_MS,
   CW_HOLD_DELAY_MS,
+  CW_MAX_NEXT_UP_CONCURRENCY,
   CW_MAX_NEXT_UP_LOOKUPS,
   CW_MAX_VISIBLE_ITEMS,
   CW_META_TIMEOUT_MS,
@@ -89,6 +90,7 @@ import {
   HOME_ROW_RETRY_TIMEOUT_MS,
   HOME_ROW_TIMEOUT_MS
 } from "./homeConstants.js";
+import { resolveNextUpCandidates } from "./nextUpCandidateResolver.js";
 import {
   buildHeroBackdropSources,
   buildImageFallbackErrorHandler,
@@ -8553,12 +8555,9 @@ export const HomeScreen = {
       return [];
     }
 
-    const neededSlots = Math.max(0, CW_MAX_VISIBLE_ITEMS - Math.min(CW_MAX_VISIBLE_ITEMS, Number(inProgressItems?.length || 0)));
-    const lookupCount = Math.min(CW_MAX_NEXT_UP_LOOKUPS, neededSlots || CW_MAX_VISIBLE_ITEMS);
-    const limitedCandidates = activeCandidates.slice(0, lookupCount);
     const watchedEpisodeIndex = this.buildWatchedEpisodeIndex(watchedItems);
 
-    const nextUpItems = await Promise.all(limitedCandidates.map(async (progressEntry) => {
+    const nextUpItems = await resolveNextUpCandidates(activeCandidates, async (progressEntry) => {
       const contentType = String(progressEntry?.contentType || "series").toLowerCase();
       const contentId = String(progressEntry?.contentId || "").trim();
       if (!contentId || !isSeriesTypeForContinueWatching(contentType)) {
@@ -8636,10 +8635,12 @@ export const HomeScreen = {
         language: firstNonEmpty(meta.language),
         country: firstNonEmpty(meta.country)
       };
-    }));
+    }, {
+      maxLookups: CW_MAX_NEXT_UP_LOOKUPS,
+      concurrency: CW_MAX_NEXT_UP_CONCURRENCY
+    });
 
     return nextUpItems
-      .filter(Boolean)
       .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0));
   },
 
