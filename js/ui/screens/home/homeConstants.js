@@ -45,4 +45,3 @@ export const HOME_BACKGROUND_RENDER_DELAY_MS = 120;
 export const HOME_BACKGROUND_RENDER_DELAY_LEGACY_MS = 180;
 export const HOME_MODERN_HERO_BACKDROP_CROSSFADE_MS = 400;
 export const HOME_RETURN_FOCUS_STATE_KEY = "homeReturnFocusState";
-export const HOME_PERF_DEBUG = Boolean(globalThis.__NUVIO_DEBUG_HOME_PERF__);

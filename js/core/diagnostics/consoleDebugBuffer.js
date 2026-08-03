@@ -105,6 +105,15 @@ function captureConsoleEvent(level, args) {
   notifyListeners();
 }
 
+/**
+ * Records an event without going through console interception. Used by callers
+ * that want a line in the on-device debug console but must not hijack the
+ * matching console method globally (e.g. perf logging on console.info).
+ */
+export function recordDebugEvent(level, args) {
+  captureConsoleEvent(String(level || "info"), args);
+}
+
 export function installConsoleDebugBuffer() {
   if (installed) {
     return;

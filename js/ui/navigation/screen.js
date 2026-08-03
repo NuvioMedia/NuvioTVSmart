@@ -1,5 +1,7 @@
 import { LocalStore } from "../../core/storage/localStore.js";
+import { createPerfLogger } from "../../core/diagnostics/perfLog.js";
 
+const navPerf = createPerfLogger("nav");
 const STRICT_DPAD_GRID_KEY = "strictDpadGridNavigation";
 
 function shouldUseStrictDpadGrid() {
@@ -93,14 +95,21 @@ export const ScreenUtils = {
   },
 
   moveFocusDirectional(container, direction, selector = ".focusable") {
+    const endMove = navPerf.span("moveFocusDirectional");
     if (globalThis?.document?.body?.classList?.contains("nuvio-modal-open")) {
+      endMove({ direction, result: "modalOpen" });
       return;
     }
+    // Every candidate is measured, so this scan forces a full layout flush; it
+    // is timed separately because it scales with the focusable count.
+    const endScan = navPerf.span("moveFocusDirectional:scanCandidates");
     const list = Array.from(container?.querySelectorAll(selector) || []).filter((node) => {
       const rect = node.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     });
+    endScan({ direction, visible: list.length });
     if (!list.length) {
+      endMove({ direction, result: "noFocusables" });
       return;
     }
 
@@ -220,6 +229,7 @@ export const ScreenUtils = {
       }
     }
     if (!target) {
+      endMove({ direction, result: "noTarget", visible: list.length });
       return;
     }
 
@@ -230,6 +240,12 @@ export const ScreenUtils = {
     } catch (_) {
       target.focus();
     }
+    endMove({
+      direction,
+      result: "moved",
+      visible: list.length,
+      container: String(container?.id || "")
+    });
   },
 
   handleDpadNavigation(event, container, selector = ".focusable") {

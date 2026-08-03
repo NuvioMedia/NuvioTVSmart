@@ -44,6 +44,7 @@ import { metaRepository } from "../../../data/repository/metaRepository.js";
 import { I18n } from "../../../i18n/index.js";
 import { Environment } from "../../../platform/environment.js";
 import { Router } from "../../navigation/router.js";
+import { createPerfLogger } from "../../../core/diagnostics/perfLog.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
 import { DirectDebridResolver } from "../../../core/debrid/directDebridResolver.js";
 import { TraktScrobbleService } from "../../../data/repository/traktScrobbleService.js";
@@ -79,6 +80,8 @@ import {
   supportsBitmapSubtitleDecoding,
   warmBitmapSubtitleDecoder
 } from "../../../core/player/bitmapSubtitleDecoder.js";
+
+const playerPerf = createPerfLogger("player");
 
 const CLOCK_FORMATTER_CACHE = new Map();
 const LANGUAGE_DISPLAY_NAME_CACHE = new Map();
@@ -2157,6 +2160,8 @@ function uniqueNonEmptyValues(values = []) {
 
 export const PlayerScreen = {
   async mount(params = {}) {
+    // Closed by the first `playing` event so this measures time-to-first-frame.
+    this.perfMountSpan = playerPerf.span("mount:toFirstFrame");
     this.container = document.getElementById("player");
     this.container.style.display = "block";
     this.container.classList.toggle("player-platform-webos", Environment.isWebOS());
@@ -8279,6 +8284,10 @@ export const PlayerScreen = {
     };
 
     const onPlaying = () => {
+      if (this.perfMountSpan) {
+        this.perfMountSpan({ engine: String(this.activePlaybackEngine || "") });
+        this.perfMountSpan = null;
+      }
       if (this.isStartupErrorVisible()) {
         return;
       }
@@ -13463,7 +13472,16 @@ export const PlayerScreen = {
     this.subtitleOptionRailIndex = Math.max(0, selectedIndex >= 0 ? selectedIndex : 0);
   },
 
-  selectSubtitleOption(option, { focusOptions = true } = {}) {
+  selectSubtitleOption(option, options = {}) {
+    const endSelect = playerPerf.span("selectSubtitleOption");
+    try {
+      return this.selectSubtitleOptionInner(option, options);
+    } finally {
+      endSelect({ lang: String(option?.languageKey || "") });
+    }
+  },
+
+  selectSubtitleOptionInner(option, { focusOptions = true } = {}) {
     if (!option?.entry || !option.languageKey || option.languageKey === SUBTITLE_LANGUAGE_OFF_KEY) {
       return false;
     }
@@ -14663,6 +14681,15 @@ export const PlayerScreen = {
   },
 
   applySubtitleEntry(entry) {
+    const endApply = playerPerf.span("applySubtitleEntry");
+    try {
+      return this.applySubtitleEntryInner(entry);
+    } finally {
+      endApply({ lang: String(entry?.languageKey || entry?.lang || "") });
+    }
+  },
+
+  applySubtitleEntryInner(entry) {
     if (!entry || entry.disabled) {
       return;
     }
@@ -15652,7 +15679,16 @@ export const PlayerScreen = {
     this.resetControlsAutoHide();
   },
 
-  applyAudioTrack(index, { automaticFallback = false, rememberSelection = false } = {}) {
+  applyAudioTrack(index, options = {}) {
+    const endApply = playerPerf.span("applyAudioTrack");
+    try {
+      return this.applyAudioTrackInner(index, options);
+    } finally {
+      endApply({ index });
+    }
+  },
+
+  applyAudioTrackInner(index, { automaticFallback = false, rememberSelection = false } = {}) {
     const entries = this.getAudioEntries();
     const selectedEntry = entries[index] || null;
     if (!selectedEntry) {
@@ -18886,6 +18922,7 @@ export const PlayerScreen = {
   },
 
   cleanup() {
+    const endCleanup = playerPerf.span("cleanup");
     try {
       this.playerRouteActive = false;
       this.playerMountToken = Number(this.playerMountToken || 0) + 1;
@@ -19018,5 +19055,6 @@ export const PlayerScreen = {
       this.uiRefs = null;
       this.lastUiTickState = null;
     }
+    endCleanup();
   }
 };

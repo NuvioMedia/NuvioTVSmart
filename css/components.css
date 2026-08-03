@@ -10106,6 +10106,11 @@ html.legacy-webos .debug-console-log-frame {
   color: #ff8a80;
 }
 
+.debug-console-event-perf .debug-console-level {
+  background: rgba(0, 188, 212, 0.16);
+  color: #80deea;
+}
+
 .debug-console-time,
 .debug-console-sequence {
   color: var(--text-secondary, rgba(255, 255, 255, 0.68));

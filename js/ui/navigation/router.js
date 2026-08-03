@@ -23,25 +23,9 @@ import { FolderDetailScreen } from "../screens/collection/folderDetailScreen.js"
 import { Platform } from "../../platform/index.js";
 import { RouteStateStore } from "./routeStateStore.js";
 import { LocalStore } from "../../core/storage/localStore.js";
+import { createPerfLogger } from "../../core/diagnostics/perfLog.js";
 
-const ROUTER_PERF_DEBUG = Boolean(
-  globalThis.__NUVIO_DEBUG_ROUTER_PERF__ || globalThis.__NUVIO_DEBUG_HOME_PERF__
-);
-
-function routerPerfNow() {
-  return typeof performance !== "undefined" && typeof performance.now === "function"
-    ? performance.now()
-    : Date.now();
-}
-
-function logRouterPerf(stage, data = {}) {
-  if (!ROUTER_PERF_DEBUG) {
-    return;
-  }
-  try {
-    console.info(`[router-perf] ${stage}`, data);
-  } catch (_) {}
-}
+const routerPerf = createPerfLogger("router");
 
 const NON_BACKSTACK_ROUTES = new Set([
   "profileSelection",
@@ -319,7 +303,7 @@ export const Router = {
   },
 
   async navigate(routeName, params = {}, options = {}) {
-    const navigationStart = ROUTER_PERF_DEBUG ? routerPerfNow() : 0;
+    const endNavigate = routerPerf.span("navigate");
 
     const fromHistory = Boolean(options?.fromHistory);
     const skipStackPush = Boolean(options?.skipStackPush);
@@ -342,6 +326,7 @@ export const Router = {
     }
 
     // Cleanup current
+    const endCleanup = routerPerf.span("navigate:cleanupPrevious");
     const previousRoute = this.current;
     const shouldSkipPush = skipStackPush || NON_BACKSTACK_ROUTES.has(previousRoute);
     if (this.current && this.current !== routeName) {
@@ -358,14 +343,17 @@ export const Router = {
       this.routes[this.current].cleanup?.();
     }
 
+    endCleanup({ route: routeName, previousRoute });
+
     this.current = routeName;
     this.currentParams = targetParams;
     const navigationContext = this.resolveNavigationContext(routeName, this.currentParams, options);
 
+    const endMount = routerPerf.span("navigate:mount");
     await Screen.mount(this.currentParams, navigationContext);
+    endMount({ route: routeName });
     this.completeRouteReturnBackGuard(routeReturnBackGuardNavigationId);
-    logRouterPerf("navigate", {
-      ms: Number((routerPerfNow() - navigationStart).toFixed(2)),
+    endNavigate({
       route: routeName,
       previousRoute,
       fromHistory,
