@@ -273,6 +273,25 @@ export const ScreenUtils = {
     return true;
   },
 
+  /**
+   * Cheap identity for a block of generated markup. Screens that rebuild via a
+   * single innerHTML assignment use this to skip the write when the markup they
+   * just produced is what the DOM already holds - identical markup means an
+   * identical DOM, so the write is pure parse/layout/paint cost.
+   *
+   * Returns a djb2 hash plus the length rather than the string itself, because
+   * a full screen of markup runs to hundreds of kilobytes and holding it would
+   * cost more memory than the check saves on a TV.
+   */
+  markupSignature(markup) {
+    const text = String(markup || "");
+    let hash = 5381;
+    for (let index = 0; index < text.length; index += 1) {
+      hash = ((hash << 5) + hash + text.charCodeAt(index)) | 0;
+    }
+    return `${hash}:${text.length}`;
+  },
+
   indexFocusables(container, selector = ".focusable") {
     const list = Array.from(container?.querySelectorAll(selector) || []);
     list.forEach((node, index) => {

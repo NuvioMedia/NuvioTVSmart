@@ -139,19 +139,6 @@ const homePerf = createPerfLogger("home");
 const homePerfNow = homePerf.now;
 const logHomePerf = homePerf.log;
 
-// Home markup runs to hundreds of kilobytes with a full set of rows, so the
-// rendered state is remembered as a djb2 hash plus the length rather than by
-// retaining the string itself. Length is included because it makes a collision
-// require both the same hash and the same size.
-function buildHomeMarkupSignature(markup) {
-  const text = String(markup || "");
-  let hash = 5381;
-  for (let index = 0; index < text.length; index += 1) {
-    hash = ((hash << 5) + hash + text.charCodeAt(index)) | 0;
-  }
-  return `${hash}:${text.length}`;
-}
-
 function t(key, params = {}, fallback = key) {
   return I18n.t(key, params, { fallback });
 }
@@ -8937,7 +8924,7 @@ export const HomeScreen = {
     // The generated markup is its own signature, so equality is exact: identical
     // markup means an identical DOM, and skipping the write cannot change what
     // is on screen. Anything that differs, however slightly, still writes.
-    const nextMarkupSignature = buildHomeMarkupSignature(nextMarkup);
+    const nextMarkupSignature = ScreenUtils.markupSignature(nextMarkup);
     const shellMounted = Boolean(this.container.querySelector(".home-shell"));
     const markupUnchanged = shellMounted && this.renderedMarkupSignature === nextMarkupSignature;
 

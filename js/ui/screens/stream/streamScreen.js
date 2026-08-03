@@ -2334,7 +2334,7 @@ export const StreamScreen = {
           </section>
         </div>`;
 
-    this.container.innerHTML = `
+    const nextMarkup = `
       <div class="stream-route-shell${shellStableClass}">
         <div class="stream-route-backdrop"${backdrop ? ` style="background-image:url('${String(backdrop).replace(/'/g, "%27")}')"` : ""}></div>
         <div class="stream-route-backdrop-dim"></div>
@@ -2346,6 +2346,19 @@ export const StreamScreen = {
       </div>
     `;
 
+    // Addon logos and the webOS image proxy each schedule their own render once
+    // they resolve, so a settled list is rebuilt several times over. Measured on
+    // a 407-source list: three consecutive renders produced byte-identical
+    // markup at ~1s each, so two of them were pure parse/layout/paint cost.
+    const nextMarkupSignature = ScreenUtils.markupSignature(nextMarkup);
+    const shellMounted = Boolean(this.container.querySelector(".stream-route-shell"));
+    const markupUnchanged = shellMounted && this.renderedMarkupSignature === nextMarkupSignature;
+
+    if (!markupUnchanged) {
+      this.container.innerHTML = nextMarkup;
+      this.renderedMarkupSignature = nextMarkupSignature;
+    }
+
     this.restoreScrollPosition();
     this.hydrateVisibleStreamBadges();
     this.bindAddonLogoFallbacks();
@@ -2355,6 +2368,7 @@ export const StreamScreen = {
     this.bindListScrollState();
     this.hasRenderedStreamRouteShell = true;
     endRender({
+      domWrite: !markupUnchanged,
       streams: this.streams.length,
       visible: this.getFilteredStreams().length,
       filter: this.addonFilter,
@@ -2367,6 +2381,13 @@ export const StreamScreen = {
     if (!list) {
       return;
     }
+    // A full innerHTML write used to discard this node along with its listeners.
+    // Now that an unchanged render keeps the node alive, re-binding would stack
+    // a duplicate scroll handler on every render.
+    if (this.boundStreamListNode === list) {
+      return;
+    }
+    this.boundStreamListNode = list;
     list.addEventListener(
       "scroll",
       () => {
