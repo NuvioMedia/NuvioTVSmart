@@ -96,11 +96,11 @@ import {
   HOME_MAX_ITEMS_PER_ROW_DEFAULT,
   HOME_MAX_ITEMS_PER_ROW_LEGACY_TV,
   HOME_MODERN_HERO_BACKDROP_CROSSFADE_MS,
-  HOME_PERF_DEBUG,
   HOME_RETURN_FOCUS_STATE_KEY,
   HOME_ROW_RETRY_TIMEOUT_MS,
   HOME_ROW_TIMEOUT_MS
 } from "./homeConstants.js";
+import { createPerfLogger } from "../../../core/diagnostics/perfLog.js";
 import { resolveNextUpCandidates } from "./nextUpCandidateResolver.js";
 import {
   getContinueWatchingRenderItems,
@@ -135,19 +135,21 @@ const HOME_LAZY_IMAGE_SELECTOR =
 const HOME_LAZY_IMAGE_ROW_SELECTOR =
   ".home-row, .home-modern-row, .home-grid-section, .home-row-continue";
 
-function homePerfNow() {
-  return typeof performance !== "undefined" && typeof performance.now === "function"
-    ? performance.now()
-    : Date.now();
-}
+const homePerf = createPerfLogger("home");
+const homePerfNow = homePerf.now;
+const logHomePerf = homePerf.log;
 
-function logHomePerf(stage, data = {}) {
-  if (!HOME_PERF_DEBUG) {
-    return;
+// Home markup runs to hundreds of kilobytes with a full set of rows, so the
+// rendered state is remembered as a djb2 hash plus the length rather than by
+// retaining the string itself. Length is included because it makes a collision
+// require both the same hash and the same size.
+function buildHomeMarkupSignature(markup) {
+  const text = String(markup || "");
+  let hash = 5381;
+  for (let index = 0; index < text.length; index += 1) {
+    hash = ((hash << 5) + hash + text.charCodeAt(index)) | 0;
   }
-  try {
-    console.info(`[home-perf] ${stage}`, data);
-  } catch (_) {}
+  return `${hash}:${text.length}`;
 }
 
 function t(key, params = {}, fallback = key) {
@@ -7002,7 +7004,7 @@ export const HomeScreen = {
       return currentMain || null;
     }
     if (currentMain !== target) {
-      const syncStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
+      const syncStart = homePerfNow();
       if (currentMain && currentMain.isConnected) {
         currentMain.classList.remove("focused");
       }
@@ -7390,7 +7392,7 @@ export const HomeScreen = {
     if (!current || !target || current === target) {
       return false;
     }
-    const focusStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
+    const focusStart = homePerfNow();
     const scrollAdjustments = this.getExpandedPosterScrollAdjustments(current, target, direction);
     const shouldInstantCollapseExpandedPoster =
       this.layoutMode === "modern" && (direction === "left" || direction === "right");
@@ -7858,7 +7860,7 @@ export const HomeScreen = {
   },
 
   async mount(params = {}, navigationContext = {}) {
-    const mountStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
+    const mountStart = homePerfNow();
     this.container = document.getElementById("home");
     const restoredRouteFocusState =
       navigationContext?.isBackNavigation && navigationContext?.restoredState?.layoutMode
@@ -8051,7 +8053,7 @@ export const HomeScreen = {
   },
 
   async loadData({ background = false, preserveReturnState = false } = {}) {
-    const loadStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
+    const loadStart = homePerfNow();
     const token = this.homeLoadToken;
     const preserveHomeReturnState = Boolean(background && preserveReturnState);
     const preservedHeroItem = preserveHomeReturnState ? this.heroItem : null;
@@ -8504,16 +8506,30 @@ export const HomeScreen = {
     const onBatch = typeof options?.onBatch === "function" ? options.onBatch : null;
     const onRow = typeof options?.onRow === "function" ? options.onRow : null;
     const fetchedRows = [];
-    const normalizedDescriptors = Array.isArray(descriptors) ? descriptors : [];
-    if (HOME_PERF_DEBUG) {
-      const descriptorKeys = normalizedDescriptors.map((descriptor) =>
-        buildModernRowKey(descriptor)
-      );
-      const uniqueDescriptorCount = new Set(descriptorKeys).size;
+    const requestedDescriptors = Array.isArray(descriptors) ? descriptors : [];
+    // Descriptors arrive from several merged sources, so the same catalog can be
+    // listed more than once. Duplicates resolve to the same row key and are
+    // discarded downstream, but each one still costs a catalog request.
+    const seenDescriptorKeys = new Set();
+    const normalizedDescriptors = requestedDescriptors.filter((descriptor) => {
+      const rowKey = buildModernRowKey(descriptor);
+      // buildModernRowKey joins three fields, so a descriptor with none of them
+      // still yields "__". Those carry no identity and are left untouched.
+      if (!rowKey || !rowKey.replace(/_/g, "")) {
+        return true;
+      }
+      if (seenDescriptorKeys.has(rowKey)) {
+        return false;
+      }
+      seenDescriptorKeys.add(rowKey);
+      return true;
+    });
+    if (homePerf.enabled()) {
+      const uniqueDescriptorCount = normalizedDescriptors.length;
       logHomePerf("fetchCatalogRows", {
-        requested: Number(normalizedDescriptors.length || 0),
+        requested: Number(requestedDescriptors.length || 0),
         unique: uniqueDescriptorCount,
-        duplicates: Number(normalizedDescriptors.length || 0) - uniqueDescriptorCount,
+        duplicates: Number(requestedDescriptors.length || 0) - uniqueDescriptorCount,
         batchSize: Number(batchSize || 0),
         allowLoading
       });
@@ -8702,7 +8718,7 @@ export const HomeScreen = {
   },
 
   render() {
-    const renderStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
+    const renderStart = homePerfNow();
     this.cancelScheduledRender();
     this.cancelModernCameraFollow({ stopAnimations: true });
     this.teardownModernTrackScrollPagination();
@@ -8893,7 +8909,7 @@ export const HomeScreen = {
       this.sidebarExpanded && retainedFocusState?.focusKind === "sidebar"
     );
 
-    this.container.innerHTML = `
+    const nextMarkup = `
       <div class="home-shell home-screen-shell ${layoutClass}"${sizingStyle ? ` style="${escapeAttribute(sizingStyle)}"` : ""}>
         ${renderRootSidebar({
           selectedRoute: "home",
@@ -8911,6 +8927,24 @@ export const HomeScreen = {
       </div>
       ${this.renderActiveHoldMenu()}
     `;
+
+    // Returning to Home re-renders several times as cached rows, the background
+    // refresh and the catalog rows each land. When a pass produces markup the
+    // DOM already holds, writing it back costs a full parse, layout and paint of
+    // every card for no visible change - and it destroys the live nodes, which
+    // is what forces focus and scroll to be re-derived afterwards.
+    //
+    // The generated markup is its own signature, so equality is exact: identical
+    // markup means an identical DOM, and skipping the write cannot change what
+    // is on screen. Anything that differs, however slightly, still writes.
+    const nextMarkupSignature = buildHomeMarkupSignature(nextMarkup);
+    const shellMounted = Boolean(this.container.querySelector(".home-shell"));
+    const markupUnchanged = shellMounted && this.renderedMarkupSignature === nextMarkupSignature;
+
+    if (!markupUnchanged) {
+      this.container.innerHTML = nextMarkup;
+      this.renderedMarkupSignature = nextMarkupSignature;
+    }
 
     if (modernLandscapePostersEnabled) {
       this.applyCachedModernLandscapePosterMetrics(
@@ -9082,6 +9116,7 @@ export const HomeScreen = {
     );
     logHomePerf("render", {
       ms: Number((homePerfNow() - renderStart).toFixed(2)),
+      domWrite: !markupUnchanged,
       layoutMode: this.layoutMode,
       rows: Number(this.rows?.length || 0),
       mountedRows,
@@ -10748,6 +10783,7 @@ export const HomeScreen = {
   },
 
   cleanup() {
+    const endCleanup = homePerf.span("cleanup");
     this.cancelModernSidebarPillAutoCollapse();
     this.cancelPendingContinueWatchingEnter();
     this.cancelPendingContinueWatchingHold();
@@ -10835,5 +10871,6 @@ export const HomeScreen = {
       this.container.style.removeProperty("pointer-events");
       ScreenUtils.hide(this.container);
     }
+    endCleanup({ layoutMode: this.layoutMode });
   }
 };
