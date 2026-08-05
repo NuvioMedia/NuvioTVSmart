@@ -96,24 +96,16 @@ import {
   HOME_MAX_ITEMS_PER_ROW_DEFAULT,
   HOME_MAX_ITEMS_PER_ROW_LEGACY_TV,
   HOME_MODERN_HERO_BACKDROP_CROSSFADE_MS,
+  HOME_PERF_DEBUG,
   HOME_RETURN_FOCUS_STATE_KEY,
   HOME_ROW_RETRY_TIMEOUT_MS,
   HOME_ROW_TIMEOUT_MS
 } from "./homeConstants.js";
-import { createPerfLogger } from "../../../core/diagnostics/perfLog.js";
 import { resolveNextUpCandidates } from "./nextUpCandidateResolver.js";
 import {
   getContinueWatchingRenderItems,
   shouldAppendContinueWatchingItems
 } from "./continueWatchingRenderWindow.js";
-import {
-  HOME_HERO_UNIT_KEY,
-  HOME_PATCH_SYNCED_SELECTOR,
-  HOME_PATCH_UNIT_SELECTOR,
-  collectHomeRenderUnits,
-  homePatchUnitKey,
-  syncHomePatchedAttributes
-} from "./homeRenderPatchUnits.js";
 import {
   buildHeroBackdropSources,
   buildImageFallbackErrorHandler,
@@ -143,9 +135,20 @@ const HOME_LAZY_IMAGE_SELECTOR =
 const HOME_LAZY_IMAGE_ROW_SELECTOR =
   ".home-row, .home-modern-row, .home-grid-section, .home-row-continue";
 
-const homePerf = createPerfLogger("home");
-const homePerfNow = homePerf.now;
-const logHomePerf = homePerf.log;
+function homePerfNow() {
+  return typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now();
+}
+
+function logHomePerf(stage, data = {}) {
+  if (!HOME_PERF_DEBUG) {
+    return;
+  }
+  try {
+    console.info(`[home-perf] ${stage}`, data);
+  } catch (_) {}
+}
 
 function t(key, params = {}, fallback = key) {
   return I18n.t(key, params, { fallback });
@@ -3851,93 +3854,6 @@ export const HomeScreen = {
     this.applyHeroToDom();
   },
 
-  // Replaces only the units whose generated markup changed since the last write,
-  // instead of handing the whole shell back to `innerHTML` for one arriving row.
-  //
-  // Returns `{ patched: true, rowsPatched, heroPatched }`, or
-  // `{ patched: false, reason }` when the markup is not shaped like what is on
-  // screen - the caller then does the full write, which is always correct. The
-  // reason is logged so a patcher that has quietly stopped engaging shows up in
-  // the same `home-perf render` line this change is measured by.
-  patchRenderedHome(nextMarkup) {
-    const container = this.container;
-    const rendered = this.renderedHomeUnits;
-    if (!rendered) {
-      return { patched: false, reason: "no-cache" };
-    }
-    if (!container?.querySelector(".home-shell")) {
-      return { patched: false, reason: "unmounted" };
-    }
-
-    // Parsed into a <template> rather than a detached <div> so the fragment is
-    // inert: a detached <div> still starts fetching every non-deferred <img> in
-    // the markup, which on the target webOS TV more than doubled the parse
-    // (measured 2026-08-03: 100.3ms vs 45.6ms for the same 341KB Home).
-    const scratch = document.createElement("template");
-    scratch.innerHTML = nextMarkup;
-    const next = collectHomeRenderUnits(scratch.content);
-    if (next.skeleton !== rendered.skeleton) {
-      return { patched: false, reason: "skeleton" };
-    }
-
-    // `collectHomeRenderUnits` stops at a unit boundary but `querySelectorAll`
-    // descends into one, so these two lists agree only while no unit contains a
-    // nested unit. That holds today (cards carry `data-track-row-key`, not
-    // `data-row-key`), and this length check is what keeps a future nested match
-    // from silently misaligning `nextUnits[index]` with `next.markups[index]`
-    // and splicing the wrong node into the live DOM.
-    const liveUnits = container.querySelectorAll(HOME_PATCH_UNIT_SELECTOR);
-    const nextUnits = scratch.content.querySelectorAll(HOME_PATCH_UNIT_SELECTOR);
-    if (liveUnits.length !== next.keys.length || nextUnits.length !== next.keys.length) {
-      return { patched: false, reason: "shape" };
-    }
-    for (let index = 0; index < next.keys.length; index += 1) {
-      const key = next.keys[index];
-      // Equal skeletons already pin the keys and their order, since each unit
-      // contributes its key between NUL marks and nothing else in the string can
-      // contain a NUL; the cache half of this test is a cheap restatement of
-      // that. The live half is not - it is the only check that the tree on
-      // screen still matches the cache, so it has to stay.
-      if (key !== rendered.keys[index]) {
-        return { patched: false, reason: "shape" };
-      }
-      if (key !== homePatchUnitKey(liveUnits[index])) {
-        return { patched: false, reason: "live-shape" };
-      }
-    }
-
-    // Held out of the skeleton comparison, so they are copied across
-    // unconditionally. `applyCachedModern*PosterMetrics` runs straight after
-    // render() and is selector-matched on the shell's layout class, so a stale
-    // class here would silently misroute it. Every match is synced, because the
-    // skeleton strips class and style from every match - syncing only the first
-    // would leave any later one permanently stale.
-    const liveSynced = container.querySelectorAll(HOME_PATCH_SYNCED_SELECTOR);
-    const nextSynced = scratch.content.querySelectorAll(HOME_PATCH_SYNCED_SELECTOR);
-    if (liveSynced.length !== nextSynced.length) {
-      return { patched: false, reason: "shape" };
-    }
-    for (let index = 0; index < liveSynced.length; index += 1) {
-      syncHomePatchedAttributes(liveSynced[index], nextSynced[index]);
-    }
-
-    let rowsPatched = 0;
-    let heroPatched = false;
-    for (let index = 0; index < next.keys.length; index += 1) {
-      if (next.markups[index] === rendered.markups[index]) {
-        continue;
-      }
-      liveUnits[index].replaceWith(nextUnits[index]);
-      if (next.keys[index] === HOME_HERO_UNIT_KEY) {
-        heroPatched = true;
-      } else {
-        rowsPatched += 1;
-      }
-    }
-    this.renderedHomeUnits = next;
-    return { patched: true, rowsPatched, heroPatched };
-  },
-
   applyHeroToDom() {
     const heroNode = this.container?.querySelector(".home-hero-card");
     if (!heroNode) {
@@ -7086,7 +7002,7 @@ export const HomeScreen = {
       return currentMain || null;
     }
     if (currentMain !== target) {
-      const syncStart = homePerfNow();
+      const syncStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
       if (currentMain && currentMain.isConnected) {
         currentMain.classList.remove("focused");
       }
@@ -7474,7 +7390,7 @@ export const HomeScreen = {
     if (!current || !target || current === target) {
       return false;
     }
-    const focusStart = homePerfNow();
+    const focusStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
     const scrollAdjustments = this.getExpandedPosterScrollAdjustments(current, target, direction);
     const shouldInstantCollapseExpandedPoster =
       this.layoutMode === "modern" && (direction === "left" || direction === "right");
@@ -7942,7 +7858,7 @@ export const HomeScreen = {
   },
 
   async mount(params = {}, navigationContext = {}) {
-    const mountStart = homePerfNow();
+    const mountStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
     this.container = document.getElementById("home");
     const restoredRouteFocusState =
       navigationContext?.isBackNavigation && navigationContext?.restoredState?.layoutMode
@@ -8135,7 +8051,7 @@ export const HomeScreen = {
   },
 
   async loadData({ background = false, preserveReturnState = false } = {}) {
-    const loadStart = homePerfNow();
+    const loadStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
     const token = this.homeLoadToken;
     const preserveHomeReturnState = Boolean(background && preserveReturnState);
     const preservedHeroItem = preserveHomeReturnState ? this.heroItem : null;
@@ -8220,17 +8136,45 @@ export const HomeScreen = {
         });
     });
 
+    // Installed-addon state can contain the same manifest catalog more than
+    // once. Collapse only descriptors that would issue the exact same request;
+    // addons that reuse ids on different base URLs must retain the existing
+    // last-row-wins behavior.
+    const seenCatalogDescriptors = new Set();
+    const uniqueCatalogDescriptors = catalogDescriptors.filter((descriptor) => {
+      const descriptorKey = JSON.stringify([
+        descriptor?.addonBaseUrl || "",
+        descriptor?.addonId || "",
+        descriptor?.addonName || "",
+        descriptor?.catalogId || "",
+        descriptor?.catalogName || "",
+        descriptor?.type || ""
+      ]);
+      if (seenCatalogDescriptors.has(descriptorKey)) {
+        return false;
+      }
+      seenCatalogDescriptors.add(descriptorKey);
+      return true;
+    });
+    if (HOME_PERF_DEBUG) {
+      logHomePerf("catalogDescriptors", {
+        requested: catalogDescriptors.length,
+        unique: uniqueCatalogDescriptors.length,
+        duplicates: catalogDescriptors.length - uniqueCatalogDescriptors.length
+      });
+    }
+
     // Seed missing order keys from manifest order before progressive requests
     // can add rows in network-completion order.
     HomeCatalogStore.ensureOrderKeys(
-      catalogDescriptors.map((catalog) =>
+      uniqueCatalogDescriptors.map((catalog) =>
         buildCatalogOrderKey(catalog.addonId, catalog.type, catalog.catalogId)
       )
     );
 
     const initialCatalogLoad = this.getInitialCatalogLoadCount();
-    const initialDescriptors = catalogDescriptors.slice(0, initialCatalogLoad);
-    const deferredDescriptors = catalogDescriptors.slice(initialCatalogLoad);
+    const initialDescriptors = uniqueCatalogDescriptors.slice(0, initialCatalogLoad);
+    const deferredDescriptors = uniqueCatalogDescriptors.slice(initialCatalogLoad);
 
     const progressiveInitialRows = new Map();
     const initialRows = await this.fetchCatalogRows(initialDescriptors, {
@@ -8588,34 +8532,7 @@ export const HomeScreen = {
     const onBatch = typeof options?.onBatch === "function" ? options.onBatch : null;
     const onRow = typeof options?.onRow === "function" ? options.onRow : null;
     const fetchedRows = [];
-    const requestedDescriptors = Array.isArray(descriptors) ? descriptors : [];
-    // Descriptors arrive from several merged sources, so the same catalog can be
-    // listed more than once. Duplicates resolve to the same row key and are
-    // discarded downstream, but each one still costs a catalog request.
-    const seenDescriptorKeys = new Set();
-    const normalizedDescriptors = requestedDescriptors.filter((descriptor) => {
-      const rowKey = buildModernRowKey(descriptor);
-      // buildModernRowKey joins three fields, so a descriptor with none of them
-      // still yields "__". Those carry no identity and are left untouched.
-      if (!rowKey || !rowKey.replace(/_/g, "")) {
-        return true;
-      }
-      if (seenDescriptorKeys.has(rowKey)) {
-        return false;
-      }
-      seenDescriptorKeys.add(rowKey);
-      return true;
-    });
-    if (homePerf.enabled()) {
-      const uniqueDescriptorCount = normalizedDescriptors.length;
-      logHomePerf("fetchCatalogRows", {
-        requested: Number(requestedDescriptors.length || 0),
-        unique: uniqueDescriptorCount,
-        duplicates: Number(requestedDescriptors.length || 0) - uniqueDescriptorCount,
-        batchSize: Number(batchSize || 0),
-        allowLoading
-      });
-    }
+    const normalizedDescriptors = Array.isArray(descriptors) ? descriptors : [];
 
     const fetchBatch = async (batchDescriptors = []) => {
       const rowResults = await Promise.all(
@@ -8800,7 +8717,7 @@ export const HomeScreen = {
   },
 
   render() {
-    const renderStart = homePerfNow();
+    const renderStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
     this.cancelScheduledRender();
     this.cancelModernCameraFollow({ stopAnimations: true });
     this.teardownModernTrackScrollPagination();
@@ -9016,37 +8933,15 @@ export const HomeScreen = {
     // every card for no visible change - and it destroys the live nodes, which
     // is what forces focus and scroll to be re-derived afterwards.
     //
-    // The generated markup is its own signature, so equality is exact: identical
-    // markup means an identical DOM, and skipping the write cannot change what
-    // is on screen. Anything that differs, however slightly, still writes.
-    const nextMarkupSignature = ScreenUtils.markupSignature(nextMarkup);
+    // Keep the last generated markup itself: exact equality is required because
+    // addon/catalog text is part of this string and fixed-width hashes can
+    // collide, which could otherwise preserve stale DOM.
     const shellMounted = Boolean(this.container.querySelector(".home-shell"));
-    const markupUnchanged = shellMounted && this.renderedMarkupSignature === nextMarkupSignature;
+    const markupUnchanged = shellMounted && this.renderedMarkup === nextMarkup;
 
-    // When something did change, replacing only the units that changed upholds
-    // the same invariant the skip above relies on, which is not literal equality
-    // with `nextMarkup` - that stopped being true the moment
-    // `hydrateHomeLazyImages`, `setFocusedNode` or `applyHomeTruncationState`
-    // touched the tree - but "the live DOM equals `nextMarkup` except for the
-    // mutations the post-write steps below own and re-derive on every render".
-    // A partial write preserves exactly that, so the signature is recorded on
-    // both paths.
-    let rowsPatched = 0;
-    let heroPatched = false;
-    let patchFallback = "";
     if (!markupUnchanged) {
-      const patch = this.patchRenderedHome(nextMarkup);
-      if (patch.patched) {
-        rowsPatched = patch.rowsPatched;
-        heroPatched = patch.heroPatched;
-      } else {
-        patchFallback = patch.reason;
-        this.container.innerHTML = nextMarkup;
-        // Read back before the post-write steps below mutate the tree, so the
-        // cache holds exactly the markup that produced it.
-        this.renderedHomeUnits = collectHomeRenderUnits(this.container);
-      }
-      this.renderedMarkupSignature = nextMarkupSignature;
+      this.container.innerHTML = nextMarkup;
+      this.renderedMarkup = nextMarkup;
     }
 
     if (modernLandscapePostersEnabled) {
@@ -9220,11 +9115,6 @@ export const HomeScreen = {
     logHomePerf("render", {
       ms: Number((homePerfNow() - renderStart).toFixed(2)),
       domWrite: !markupUnchanged,
-      rowsPatched,
-      heroPatched,
-      // "" when the units were patched (or nothing was written); otherwise why
-      // the patcher declined, so a full-write regression is not silent.
-      patchFallback,
       layoutMode: this.layoutMode,
       rows: Number(this.rows?.length || 0),
       mountedRows,
@@ -10891,7 +10781,6 @@ export const HomeScreen = {
   },
 
   cleanup() {
-    const endCleanup = homePerf.span("cleanup");
     this.cancelModernSidebarPillAutoCollapse();
     this.cancelPendingContinueWatchingEnter();
     this.cancelPendingContinueWatchingHold();
@@ -10977,12 +10866,8 @@ export const HomeScreen = {
       this.container.style.removeProperty("left");
       this.container.style.removeProperty("visibility");
       this.container.style.removeProperty("pointer-events");
-      // hide() empties the container, so the cached unit markup describes a DOM
-      // that no longer exists. Dropping it releases the strings while Home is
-      // away; the next render rebuilds it from its own full write.
-      this.renderedHomeUnits = null;
+      this.renderedMarkup = null;
       ScreenUtils.hide(this.container);
     }
-    endCleanup({ layoutMode: this.layoutMode });
   }
 };

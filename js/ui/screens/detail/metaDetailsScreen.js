@@ -1,6 +1,5 @@
 ﻿import { Router } from "../../navigation/router.js";
 import { ScreenUtils } from "../../navigation/screen.js";
-import { createPerfLogger } from "../../../core/diagnostics/perfLog.js";
 import { metaRepository } from "../../../data/repository/metaRepository.js";
 import { watchProgressRepository } from "../../../data/repository/watchProgressRepository.js";
 import { savedLibraryRepository } from "../../../data/repository/savedLibraryRepository.js";
@@ -41,8 +40,6 @@ import {
   isWatchProgressInProgress,
   resolveWatchProgressResumePositionMs
 } from "../../../domain/model/watchProgress.js";
-
-const detailPerf = createPerfLogger("detail");
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const EPISODE_HOLD_DELAY_MS = 650;
@@ -1518,7 +1515,6 @@ export const MetaDetailsScreen = {
   },
 
   async mount(params = {}, navigationContext = {}) {
-    const endMount = detailPerf.span("mount");
     this.container = document.getElementById("detail");
     ScreenUtils.show(this.container);
     this.stopTrailerPlayback({
@@ -1627,11 +1623,6 @@ export const MetaDetailsScreen = {
         void this.loadMdbListRatings(this.meta, refreshToken);
       }
       this.maybeAutoOpenContinueWatchingStream();
-      endMount({
-        source: "routeStateSnapshot",
-        itemId: String(params?.itemId || ""),
-        itemType: String(params?.itemType || "")
-      });
       return;
     }
 
@@ -1663,15 +1654,9 @@ export const MetaDetailsScreen = {
     `;
 
     await this.loadDetail();
-    endMount({
-      source: "freshLoad",
-      itemId: String(params?.itemId || ""),
-      itemType: String(params?.itemType || "")
-    });
   },
 
   async loadDetail() {
-    const endLoadDetail = detailPerf.span("loadDetail");
     const token = this.detailLoadToken;
     let { itemId, itemType = "movie", fallbackTitle = "Untitled" } = this.params || {};
     if (!itemId) {
@@ -1825,14 +1810,6 @@ export const MetaDetailsScreen = {
     }
     this.render(meta);
     this.isLoadingDetail = false;
-    // Enrichment (recommendations, ratings, trailer, comments) continues in the
-    // background from here; first paint is what the user actually waits for.
-    endLoadDetail({
-      stage: "firstPaint",
-      itemType: String(itemType || ""),
-      episodes: this.episodes.length,
-      cast: this.castItems.length
-    });
     this.maybeAutoOpenContinueWatchingStream();
     void this.refreshTrailerSource(meta, token);
     void this.loadTraktComments({ force: true });
@@ -2833,7 +2810,6 @@ export const MetaDetailsScreen = {
   },
 
   render(meta, focusRestore = undefined) {
-    const endRender = detailPerf.span("render");
     if (this._sectionsUpdateRaf) {
       const cancelRaf =
         typeof cancelAnimationFrame === "function" ? cancelAnimationFrame : clearTimeout;
@@ -2853,14 +2829,12 @@ export const MetaDetailsScreen = {
       if (this.pendingEpisodeSelection) {
         this.renderEpisodeStreamChooser();
       }
-      endRender({ layout: "series", season: this.selectedSeason });
       return;
     }
     this.renderMovieLayout(meta);
     if (this.pendingMovieSelection) {
       this.renderMovieStreamChooser();
     }
-    endRender({ layout: "movie" });
   },
 
   renderSeriesHeroMarkup(meta) {
@@ -3963,10 +3937,8 @@ export const MetaDetailsScreen = {
   },
 
   focusEpisodeByIndex(index, options = {}) {
-    const endFocus = detailPerf.span("focusEpisode");
     const episodes = this.getSelectedSeasonEpisodes();
     if (!episodes.length) {
-      endFocus({ result: "noEpisodes" });
       return false;
     }
     const targetIndex = Math.max(0, Math.min(episodes.length - 1, Number(index || 0)));
@@ -3980,30 +3952,24 @@ export const MetaDetailsScreen = {
           `.series-episode-card[data-episode-index="${targetIndex}"]`
         ) || null;
       if (target instanceof HTMLElement) {
-        const focused = this.focusInList([target], 0, {
+        return this.focusInList([target], 0, {
           animated: options?.animated !== false,
           preserveVerticalScroll: Boolean(options?.preserveVerticalScroll)
         });
-        endFocus({ result: "rewindowed", targetIndex, episodes: episodes.length });
-        return focused;
       }
       this.pendingFocusRestore = focusRestore;
-      endFocus({ result: "deferredToRestore", targetIndex, episodes: episodes.length });
       return true;
     }
     const target =
       this.container?.querySelector(`.series-episode-card[data-episode-index="${targetIndex}"]`) ||
       null;
     if (!(target instanceof HTMLElement)) {
-      endFocus({ result: "missingCard", targetIndex });
       return false;
     }
-    const focused = this.focusInList([target], 0, {
+    return this.focusInList([target], 0, {
       animated: options?.animated !== false,
       preserveVerticalScroll: Boolean(options?.preserveVerticalScroll)
     });
-    endFocus({ result: "inWindow", targetIndex, episodes: episodes.length });
-    return focused;
   },
 
   focusEpisodeByVideoId(videoId, options = {}) {
@@ -7531,11 +7497,7 @@ export const MetaDetailsScreen = {
   },
 
   focusInList(list, targetIndex, options = {}) {
-    // Every directional move on the detail screen funnels through here, not
-    // through ScreenUtils.handleDpadNavigation.
-    const endFocus = detailPerf.span("focusInList");
     if (!Array.isArray(list) || !list.length) {
-      endFocus({ result: "emptyList" });
       return false;
     }
     let preserveVerticalScroll = Boolean(options?.preserveVerticalScroll);
@@ -7543,7 +7505,6 @@ export const MetaDetailsScreen = {
     const index = Math.max(0, Math.min(list.length - 1, targetIndex));
     const target = list[index];
     if (!target) {
-      endFocus({ result: "noTarget" });
       return false;
     }
     const previous = this.container.querySelector(".focusable.focused");
@@ -7603,12 +7564,6 @@ export const MetaDetailsScreen = {
     if (!preserveVerticalScroll) {
       this.syncDetailScrollBounds(target);
     }
-    endFocus({
-      result: "moved",
-      listSize: list.length,
-      index,
-      target: String(target?.dataset?.action || target?.className?.split?.(" ")?.[0] || "")
-    });
     return true;
   },
 
@@ -9080,7 +9035,6 @@ export const MetaDetailsScreen = {
   },
 
   cleanup() {
-    const endCleanup = detailPerf.span("cleanup");
     this.detailLoadToken = (this.detailLoadToken || 0) + 1;
     this.cancelPendingEpisodeHold();
     this.cancelPendingSeasonHold();
@@ -9140,6 +9094,5 @@ export const MetaDetailsScreen = {
       this.trailerProxyMessageHandler = null;
     }
     ScreenUtils.hide(this.container);
-    endCleanup({ itemType: String(this.params?.itemType || "") });
   }
 };

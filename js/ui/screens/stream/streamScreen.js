@@ -1,6 +1,5 @@
 import { Router } from "../../navigation/router.js";
 import { ScreenUtils } from "../../navigation/screen.js";
-import { createPerfLogger } from "../../../core/diagnostics/perfLog.js";
 import { streamRepository } from "../../../data/repository/streamRepository.js";
 import { addonRepository } from "../../../data/repository/addonRepository.js";
 import { watchProgressRepository } from "../../../data/repository/watchProgressRepository.js";
@@ -46,8 +45,6 @@ import {
 } from "../../../core/streams/streamBadgeRules.js";
 import { normalizeMathematicalAlphanumericSymbols } from "../../../core/streams/streamDisplayText.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
-
-const streamPerf = createPerfLogger("stream");
 
 const STREAM_BADGE_LIMIT = 9;
 // Number of rows on each side of the focused source to keep badge-hydrated.
@@ -917,7 +914,6 @@ export const StreamScreen = {
   },
 
   async mount(params = {}, navigationContext = {}) {
-    const endMount = streamPerf.span("mount");
     this.container = document.getElementById("stream");
     ScreenUtils.show(this.container);
     this.params = params || {};
@@ -1040,21 +1036,13 @@ export const StreamScreen = {
     this.render();
 
     if (restoringFromBack) {
-      endMount({ source: "restoredSnapshot", streams: this.streams.length });
       return;
     }
 
-    // mount ends at the first paint of the empty shell; loadStreams reports its
-    // own timings as addons come in.
-    endMount({ source: "freshOpen", itemType: String(this.params?.itemType || "") });
     void this.loadStreams();
   },
 
   async loadStreams() {
-    const endLoadStreams = streamPerf.span("loadStreams");
-    // Addons resolve independently and out of order, so each one is timed from
-    // the moment it is announced to the moment its chunk is merged in.
-    const addonStartedAt = new Map();
     const token = this.loadToken;
     const itemType = normalizeType(this.params?.itemType);
     const videoId = String(this.params?.videoId || this.params?.itemId || "");
@@ -1209,11 +1197,6 @@ export const StreamScreen = {
         if (token !== this.loadToken) {
           return;
         }
-        const addonName = String(addon?.displayName || addon?.name || "").trim();
-        if (addonName && !addonStartedAt.has(addonName)) {
-          addonStartedAt.set(addonName, streamPerf.now());
-          streamPerf.log("addon:start", { addon: addonName });
-        }
         upsertSourceChip(addon, "loading");
         this.requestRender({ delayMs: 120 });
       },
@@ -1222,15 +1205,6 @@ export const StreamScreen = {
           return;
         }
         const groups = Array.isArray(chunkResult.data) ? chunkResult.data : [];
-        groups.forEach((group) => {
-          const addonName = String(group?.addonName || "").trim();
-          const startedAt = addonName ? addonStartedAt.get(addonName) : undefined;
-          streamPerf.log("addon:chunk", {
-            addon: addonName,
-            ms: startedAt === undefined ? null : Number((streamPerf.now() - startedAt).toFixed(2)),
-            streams: Array.isArray(group?.streams) ? group.streams.length : 0
-          });
-        });
         queueChunkGroups(groups);
       }
     };
@@ -1301,12 +1275,6 @@ export const StreamScreen = {
       }
       this.requestRender();
       this.scheduleErrorChipCleanup();
-      endLoadStreams({
-        result: "success",
-        streams: this.streams.length,
-        addons: this.sourceChips.length,
-        failedAddons: this.sourceChips.filter((chip) => chip.status === "error").length
-      });
       this.maybeAutoResumeStream({ allLoaded: true });
       this.maybeAutoPlayStream({ allLoaded: true });
     } catch (error) {
@@ -1321,7 +1289,6 @@ export const StreamScreen = {
       );
       this.requestRender();
       this.scheduleErrorChipCleanup();
-      endLoadStreams({ result: "error", message: String(error?.message || error) });
     }
   },
 
@@ -1848,10 +1815,8 @@ export const StreamScreen = {
   },
 
   applyFocus() {
-    const endApplyFocus = streamPerf.span("applyFocus");
     const { chips, rows } = this.getFocusLists();
     if (!chips.length && !rows.length) {
-      endApplyFocus({ zone: "none" });
       return;
     }
     const zone = this.focusState?.zone || (rows.length ? "card" : "filter");
@@ -1863,12 +1828,10 @@ export const StreamScreen = {
       const resolvedAction = target?.dataset?.cardAction || "play";
       this.focusState = { zone: "card", row: rowIndex, action: resolvedAction };
       this.focusElement(target);
-      endApplyFocus({ zone: "card", rowIndex, rows: rows.length, action: resolvedAction });
       return;
     }
     this.focusState = { zone: "filter", index: clamp(index, 0, Math.max(0, chips.length - 1)) };
     this.focusList(chips, this.focusState.index);
-    endApplyFocus({ zone: "filter", index: this.focusState.index, chips: chips.length });
   },
 
   restoreScrollPosition() {
@@ -2262,7 +2225,6 @@ export const StreamScreen = {
   },
 
   render() {
-    const endRender = streamPerf.span("render");
     this.cancelScheduledRender();
     // Rebuilt markup means the memoised filtered-stream list may be stale.
     this._filteredStreamsCache = null;
@@ -2350,13 +2312,15 @@ export const StreamScreen = {
     // they resolve, so a settled list is rebuilt several times over. Measured on
     // a 407-source list: three consecutive renders produced byte-identical
     // markup at ~1s each, so two of them were pure parse/layout/paint cost.
-    const nextMarkupSignature = ScreenUtils.markupSignature(nextMarkup);
+    // Keep the exact generated markup. Fixed-width hashes are not sufficient
+    // here because stream/addon text is part of the string and collisions could
+    // otherwise cause a genuinely changed list to retain stale DOM.
     const shellMounted = Boolean(this.container.querySelector(".stream-route-shell"));
-    const markupUnchanged = shellMounted && this.renderedMarkupSignature === nextMarkupSignature;
+    const markupUnchanged = shellMounted && this.renderedMarkup === nextMarkup;
 
     if (!markupUnchanged) {
       this.container.innerHTML = nextMarkup;
-      this.renderedMarkupSignature = nextMarkupSignature;
+      this.renderedMarkup = nextMarkup;
     }
 
     this.restoreScrollPosition();
@@ -2367,13 +2331,6 @@ export const StreamScreen = {
     this.applyFocus();
     this.bindListScrollState();
     this.hasRenderedStreamRouteShell = true;
-    endRender({
-      domWrite: !markupUnchanged,
-      streams: this.streams.length,
-      visible: this.getFilteredStreams().length,
-      filter: this.addonFilter,
-      loading: this.loading
-    });
   },
 
   bindListScrollState() {
@@ -2792,7 +2749,6 @@ export const StreamScreen = {
   },
 
   cleanup() {
-    const endCleanup = streamPerf.span("cleanup");
     this.cancelAutoPlayCountdown();
     this.cancelAutoPlaySelectionWait();
     this.loadToken = (this.loadToken || 0) + 1;
@@ -2811,7 +2767,8 @@ export const StreamScreen = {
       this.releaseImageProxyReadyListener();
       this.releaseImageProxyReadyListener = null;
     }
+    this.renderedMarkup = null;
+    this.boundStreamListNode = null;
     ScreenUtils.hide(this.container);
-    endCleanup({ streams: this.streams.length });
   }
 };

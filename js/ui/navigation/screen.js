@@ -1,7 +1,5 @@
 import { LocalStore } from "../../core/storage/localStore.js";
-import { createPerfLogger } from "../../core/diagnostics/perfLog.js";
 
-const navPerf = createPerfLogger("nav");
 const STRICT_DPAD_GRID_KEY = "strictDpadGridNavigation";
 
 function shouldUseStrictDpadGrid() {
@@ -95,21 +93,14 @@ export const ScreenUtils = {
   },
 
   moveFocusDirectional(container, direction, selector = ".focusable") {
-    const endMove = navPerf.span("moveFocusDirectional");
     if (globalThis?.document?.body?.classList?.contains("nuvio-modal-open")) {
-      endMove({ direction, result: "modalOpen" });
       return;
     }
-    // Every candidate is measured, so this scan forces a full layout flush; it
-    // is timed separately because it scales with the focusable count.
-    const endScan = navPerf.span("moveFocusDirectional:scanCandidates");
     const list = Array.from(container?.querySelectorAll(selector) || []).filter((node) => {
       const rect = node.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     });
-    endScan({ direction, visible: list.length });
     if (!list.length) {
-      endMove({ direction, result: "noFocusables" });
       return;
     }
 
@@ -229,7 +220,6 @@ export const ScreenUtils = {
       }
     }
     if (!target) {
-      endMove({ direction, result: "noTarget", visible: list.length });
       return;
     }
 
@@ -240,12 +230,6 @@ export const ScreenUtils = {
     } catch (_) {
       target.focus();
     }
-    endMove({
-      direction,
-      result: "moved",
-      visible: list.length,
-      container: String(container?.id || "")
-    });
   },
 
   handleDpadNavigation(event, container, selector = ".focusable") {
@@ -271,25 +255,6 @@ export const ScreenUtils = {
     }
     this.moveFocusDirectional(container, direction, selector);
     return true;
-  },
-
-  /**
-   * Cheap identity for a block of generated markup. Screens that rebuild via a
-   * single innerHTML assignment use this to skip the write when the markup they
-   * just produced is what the DOM already holds - identical markup means an
-   * identical DOM, so the write is pure parse/layout/paint cost.
-   *
-   * Returns a djb2 hash plus the length rather than the string itself, because
-   * a full screen of markup runs to hundreds of kilobytes and holding it would
-   * cost more memory than the check saves on a TV.
-   */
-  markupSignature(markup) {
-    const text = String(markup || "");
-    let hash = 5381;
-    for (let index = 0; index < text.length; index += 1) {
-      hash = ((hash << 5) + hash + text.charCodeAt(index)) | 0;
-    }
-    return `${hash}:${text.length}`;
   },
 
   indexFocusables(container, selector = ".focusable") {

@@ -123,7 +123,7 @@ export const ConsoleDebugScreen = {
 
     return events
       .map((event) => {
-        const level = String(event.level || "warn").toUpperCase();
+        const level = event.level === "error" ? "ERROR" : "WARN";
         const message = event.args?.length ? event.args.join("\n\n") : event.message || "";
         return `
           <article class="debug-console-event debug-console-event-${escapeHtml(event.level)}">
