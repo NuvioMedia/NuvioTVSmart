@@ -584,7 +584,8 @@ export const SearchScreen = {
                 .toLowerCase() === "search" && Boolean(extra?.isRequired)
           );
         if (requiresSearch) return;
-        if (!isSearchableCatalogType(catalog.apiType)) return;
+        if (!isSearchableCatalogType(catalog.apiType) && !catalogSupportsExtra(catalog, "search"))
+          return;
         sections.push({
           addonBaseUrl: addon.baseUrl,
           addonId: addon.id,
