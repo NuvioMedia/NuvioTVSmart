@@ -42,7 +42,10 @@ export const localMediaSubtitleRepository = {
     }
     return {
       body,
-      contentType: String(payload.contentType || "text/vtt")
+      contentType: String(payload.contentType || "text/vtt"),
+      // Forwarded when the companion service reports the final URL after
+      // redirects; absent today, so callers fall back to the requested URL.
+      resolvedUrl: payload.resolvedUrl ? String(payload.resolvedUrl) : ""
     };
   }
 };

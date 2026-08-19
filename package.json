@@ -44,6 +44,7 @@
     "flatted": "3.4.2"
   },
   "dependencies": {
+    "assjs": "0.1.10",
     "dashjs": "4.7.4",
     "hls.js": "1.5.20",
     "jszip": "^3.10.1",

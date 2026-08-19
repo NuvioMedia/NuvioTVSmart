@@ -7325,10 +7325,7 @@ button:focus-visible {
   border-color: rgba(var(--focus-color-rgb), 0.18);
 }
 
-.trakt-route-shell
-  .settings-tracking-panel
-  .settings-trakt-scroll-area
-  > .settings-trakt-card {
+.trakt-route-shell .settings-tracking-panel .settings-trakt-scroll-area > .settings-trakt-card {
   height: auto;
   max-height: none;
   flex: 0 0 auto;
@@ -11416,6 +11413,22 @@ html.legacy-webos .debug-console-log-frame {
   display: none;
 }
 
+.player-ass-subtitles {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  inset: 0;
+  z-index: 12;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.player-ass-subtitles.hidden {
+  display: none;
+}
+
 .player-html-subtitle-cue {
   position: absolute;
   display: flex;
@@ -11544,7 +11557,8 @@ html[data-card-depth="true"][data-card-depth-cast="true"] .movie-cast-card,
 html[data-card-depth="true"][data-card-depth-trailers="true"] .detail-trailer-card {
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, var(--card-depth-edge, 0.28)),
-    inset 0 var(--card-depth-coverage-size, 12px) 28px rgba(255, 255, 255, var(--card-depth-sheen, 0.1));
+    inset 0 var(--card-depth-coverage-size, 12px) 28px
+      rgba(255, 255, 255, var(--card-depth-sheen, 0.1));
 }
 
 .home-classic-focus-gradient .home-screen-main {
@@ -21779,7 +21793,13 @@ html[data-card-depth="true"][data-card-depth-trailers="true"] .detail-trailer-ca
   box-sizing: border-box;
   padding: 7vh 8vw;
   color: var(--color-text, #fff);
-  background: radial-gradient(circle at 50% 0%, rgba(var(--accent-rgb, 255, 255, 255), 0.12), transparent 45%), var(--color-background, #090909);
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(var(--accent-rgb, 255, 255, 255), 0.12),
+      transparent 45%
+    ),
+    var(--color-background, #090909);
 }
 
 .experience-mode-screen {
@@ -21790,18 +21810,76 @@ html[data-card-depth="true"][data-card-depth-trailers="true"] .detail-trailer-ca
   text-align: center;
 }
 
-.experience-mode-logo { width: min(22vw, 360px); margin-bottom: 4vh; }
-.experience-mode-screen h1, .licenses-screen h1 { font-size: 3rem; margin: 0 0 1rem; }
-.experience-mode-screen > p, .licenses-screen header p { color: var(--color-text-secondary, #aaa); font-size: 1.2rem; max-width: 54rem; }
-.experience-mode-options { display: grid; grid-template-columns: repeat(2, minmax(18rem, 28rem)); gap: 1.4rem; margin-top: 3rem; }
-.experience-mode-options.is-layout { grid-template-columns: repeat(3, minmax(13rem, 20rem)); }
-.experience-mode-card, .license-row { border: 1px solid rgba(255,255,255,.16); border-radius: 1rem; color: inherit; background: rgba(255,255,255,.06); text-align: left; padding: 1.5rem; }
-.experience-mode-card strong, .license-row strong { display: block; font-size: 1.35rem; margin-bottom: .55rem; }
-.experience-mode-card span, .license-row span { color: var(--color-text-secondary, #aaa); line-height: 1.45; }
-.experience-mode-card.focused, .license-row.focused { border-color: var(--color-accent, #fff); transform: scale(1.025); background: rgba(255,255,255,.12); }
-.licenses-screen { overflow-y: auto; }
-.licenses-screen header { max-width: 64rem; margin-bottom: 2rem; }
-.licenses-list { max-width: 72rem; }
-.licenses-list section { margin-bottom: 2rem; }
-.licenses-list h2 { font-size: .95rem; letter-spacing: .12em; color: var(--color-text-secondary, #aaa); }
-.license-row { display: block; width: 100%; margin: .65rem 0; }
+.experience-mode-logo {
+  width: min(22vw, 360px);
+  margin-bottom: 4vh;
+}
+.experience-mode-screen h1,
+.licenses-screen h1 {
+  font-size: 3rem;
+  margin: 0 0 1rem;
+}
+.experience-mode-screen > p,
+.licenses-screen header p {
+  color: var(--color-text-secondary, #aaa);
+  font-size: 1.2rem;
+  max-width: 54rem;
+}
+.experience-mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(18rem, 28rem));
+  gap: 1.4rem;
+  margin-top: 3rem;
+}
+.experience-mode-options.is-layout {
+  grid-template-columns: repeat(3, minmax(13rem, 20rem));
+}
+.experience-mode-card,
+.license-row {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 1rem;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.06);
+  text-align: left;
+  padding: 1.5rem;
+}
+.experience-mode-card strong,
+.license-row strong {
+  display: block;
+  font-size: 1.35rem;
+  margin-bottom: 0.55rem;
+}
+.experience-mode-card span,
+.license-row span {
+  color: var(--color-text-secondary, #aaa);
+  line-height: 1.45;
+}
+.experience-mode-card.focused,
+.license-row.focused {
+  border-color: var(--color-accent, #fff);
+  transform: scale(1.025);
+  background: rgba(255, 255, 255, 0.12);
+}
+.licenses-screen {
+  overflow-y: auto;
+}
+.licenses-screen header {
+  max-width: 64rem;
+  margin-bottom: 2rem;
+}
+.licenses-list {
+  max-width: 72rem;
+}
+.licenses-list section {
+  margin-bottom: 2rem;
+}
+.licenses-list h2 {
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  color: var(--color-text-secondary, #aaa);
+}
+.license-row {
+  display: block;
+  width: 100%;
+  margin: 0.65rem 0;
+}
