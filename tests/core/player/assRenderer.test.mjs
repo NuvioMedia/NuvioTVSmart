@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
-import { test, beforeEach } from "node:test";
+import { test, beforeEach, afterEach } from "node:test";
 import { createAssRenderer } from "../../../js/core/player/assRenderer.js";
 
-const originalLoad = globalThis.__loadAssStub;
 let loadBehavior = "ok";
 
 class FakeAss {
@@ -47,10 +46,9 @@ function installLoaderStub() {
 beforeEach(() => {
   installLoaderStub();
 });
-beforeEach(() => {
-  return () => {
-    delete globalThis.ASS;
-  };
+
+afterEach(() => {
+  delete globalThis.ASS;
 });
 
 function makeBase({ token = 1, current = () => true } = {}) {
@@ -160,6 +158,7 @@ test("destroy calls the library cleanup and clears the container", async () => {
   await renderer.init();
   renderer.destroy();
   assert.equal(FakeAss.instances.length, 1);
+  assert.equal(FakeAss.instances[0].destroyed, true);
   renderer.destroy();
   // Container is empty and second destroy is a no-op.
   assert.equal(base.container.children.length, 0);

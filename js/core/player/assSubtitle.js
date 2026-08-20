@@ -32,8 +32,9 @@ function hasAssSectionHeaders(normalized) {
 }
 
 function hasAssDialogueEvents(normalized) {
-  return /^\s*Dialogue\s*:/m.test(normalized) && /^\s*Format\s*:/m.test(normalized);
+  return /^\s*Dialogue\s*:/im.test(normalized) && /^\s*Format\s*:/im.test(normalized);
 }
+
 
 /**
  * Detect ASS/SSA subtitle bodies from content and metadata.
@@ -68,15 +69,16 @@ export function isAssSubtitle(body, { sourceUrl = "", contentType = "" } = {}) {
 function parseAssTimestamp(value) {
   const match = String(value || "")
     .trim()
-    .match(/^(\d+):(\d{1,2}):(\d{2})[.,](\d{1,2})$/);
+    .match(/^(\d+):(\d{1,2}):(\d{2})[.,](\d{1,3})$/);
   if (!match) {
     return NaN;
   }
-  const centiseconds = String(match[4] || "0")
-    .padEnd(2, "0")
-    .slice(0, 2);
+  const milliseconds = Number(String(match[4] || "0").padEnd(3, "0"));
   return (
-    Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) + Number(centiseconds) / 100
+    Number(match[1]) * 3600 +
+    Number(match[2]) * 60 +
+    Number(match[3]) +
+    milliseconds / 1000
   );
 }
 

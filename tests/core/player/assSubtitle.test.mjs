@@ -150,3 +150,15 @@ test("commas inside dialogue text survive field splitting", () => {
   const cues = convertAssDialogueToVttCues(body);
   assert.equal(cues[0].text, "Hello, world, again");
 });
+
+test("accepts lowercase ASS event keywords and three-digit fractions", () => {
+  const body = [
+    "[Events]",
+    "format: Start, End, Text",
+    "dialogue: 0:00:01.000,0:00:02.500,Three digit timing"
+  ].join("\n");
+  assert.equal(isAssSubtitle(body), true);
+  assert.deepEqual(convertAssDialogueToVttCues(body), [
+    { start: 1, end: 2.5, text: "Three digit timing" }
+  ]);
+});

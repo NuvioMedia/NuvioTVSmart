@@ -2327,7 +2327,6 @@ export const PlayerScreen = {
     this.webOsEmbeddedHtmlSubtitleCueCount = 0;
     this.webOsEmbeddedHtmlSubtitleActivationKey = "";
     this.assSubtitleRenderer = null;
-    this.assSubtitleSelectedId = null;
     this.bitmapSubtitleDecoder = null;
     this.bitmapSubtitleTrack = null;
     this.bitmapSubtitleLoadToken = 0;
@@ -5169,7 +5168,7 @@ export const PlayerScreen = {
           bufferingStatus: uiRoot.querySelector("#playerBufferingSpinner .player-loading-status"),
           parentalGuide: uiRoot.querySelector("#playerParentalGuide"),
           skipIntro: uiRoot.querySelector("#playerSkipIntro"),
-          aspectToast: uiRoot.querySelector("#playerAspectToast"),
+          htmlSubtitles: uiRoot.querySelector("#playerHtmlSubtitles"),
           assSubtitles: uiRoot.querySelector("#playerAssSubtitles"),
           bitmapSubtitles: uiRoot.querySelector("#playerBitmapSubtitles"),
           seekOverlay: uiRoot.querySelector("#playerSeekOverlay"),
@@ -12472,7 +12471,7 @@ export const PlayerScreen = {
       return null;
     }
     if (/^(blob:|data:)/i.test(original)) {
-      return { body: "", sourceUrl: original, contentType: "", resolvedUrl: original };
+      return { body: null, sourceUrl: original, contentType: "", resolvedUrl: original };
     }
     const effectiveTimeoutMs =
       Number(timeoutMs) > 0 ? Number(timeoutMs) : Environment.isWebOS() ? 5000 : 0;
@@ -12636,7 +12635,6 @@ export const PlayerScreen = {
       this.assSubtitleRenderer.destroy();
       this.assSubtitleRenderer = null;
     }
-    this.assSubtitleSelectedId = null;
     const node = this.getAssSubtitleContainer();
     if (node) {
       node.classList.add("hidden");
@@ -12662,7 +12660,7 @@ export const PlayerScreen = {
    * caller must fall back, using the returned fallbackVtt (plain-text VTT
    * converted from Dialogue events, never raw ASS text).
    */
-  async applyAssSubtitleBody({ body, subtitleId, selectionToken }) {
+  async applyAssSubtitleBody({ body, selectionToken }) {
     const isCurrentSelection = () => Number(selectionToken) === Number(this.subtitleSelectionToken);
     this.destroyAssSubtitleRenderer();
     const container = this.getAssSubtitleContainer();
@@ -12674,8 +12672,10 @@ export const PlayerScreen = {
       selectionToken,
       isCurrentSelection
     });
+    if (!renderer || typeof renderer.init !== "function") {
+      return { applied: false, fallbackVtt: convertAssBodyToVtt(body) };
+    }
     this.assSubtitleRenderer = renderer;
-    this.assSubtitleSelectedId = subtitleId;
     const result = await renderer.init();
     if (!result.ok || !isCurrentSelection()) {
       const fallbackVtt = convertAssBodyToVtt(body);
@@ -13180,7 +13180,7 @@ export const PlayerScreen = {
         });
         // Fall through to the existing HTML subtitle path.
       }
-      if (raw && isAssSubtitle(raw.body, { sourceUrl, contentType: raw.contentType })) {
+      if (raw?.body != null && isAssSubtitle(raw.body, { sourceUrl, contentType: raw.contentType })) {
         if (!isCurrentSelection()) {
           return false;
         }
@@ -13191,7 +13191,6 @@ export const PlayerScreen = {
         }
         const assResult = await this.applyAssSubtitleBody({
           body: raw.body,
-          subtitleId,
           selectionToken
         });
         if (assResult.applied && isCurrentSelection()) {
@@ -13227,7 +13226,7 @@ export const PlayerScreen = {
         console.warn("ASS subtitle fallback produced no cues", { subtitleUrl: sourceUrl });
         return false;
       }
-      if (raw) {
+      if (raw?.body != null) {
         // Non-ASS body already fetched: parse cues directly, no second
         // network round trip.
         if (!isCurrentSelection()) {
@@ -15502,23 +15501,23 @@ export const PlayerScreen = {
     this.clearMountedExternalSubtitleTracks();
 
     // ASS branch: detect from the raw body and render through ass.js.
-    // Only this branch loads ass.js; SRT/VTT continues below unchanged.
     let assFallbackVtt = "";
     let rawBody = null;
+    let detectedAss = false;
     try {
       const raw = await this.fetchSubtitleRawBody(subtitle.url);
       rawBody = raw;
-      if (
-        raw &&
+      detectedAss = Boolean(
+        raw?.body != null &&
         isAssSubtitle(raw.body, { sourceUrl: subtitle.url, contentType: raw.contentType })
-      ) {
+      );
+      if (detectedAss) {
         if (!isCurrentSelection()) {
           return;
         }
         this.clearHtmlSubtitleOverlay();
         const assResult = await this.applyAssSubtitleBody({
           body: raw.body,
-          subtitleId,
           selectionToken
         });
         if (assResult.applied && isCurrentSelection()) {
@@ -15543,20 +15542,24 @@ export const PlayerScreen = {
     }
 
     let resolvedSubtitleUrl = "";
-    if (assFallbackVtt) {
-      // ass.js failed or is unavailable: plain-text VTT fallback. Never
-      // mount raw ASS text as a VTT <track>.
+    if (detectedAss) {
+      if (!assFallbackVtt) {
+        console.warn("ASS subtitle fallback produced no cues", { subtitleUrl: subtitle.url });
+        return;
+      }
       resolvedSubtitleUrl = URL.createObjectURL(new Blob([assFallbackVtt], { type: "text/vtt" }));
       this.externalSubtitleObjectUrls.push(resolvedSubtitleUrl);
+    } else if (rawBody?.body == null && rawBody?.sourceUrl) {
+      // blob:/data: URLs were not fetched; preserve the old direct URL path.
+      resolvedSubtitleUrl = rawBody.sourceUrl;
     } else if (rawBody) {
-      // Reuse the already-fetched body; no second network round trip.
       resolvedSubtitleUrl = this.createSubtitleObjectUrl(
         rawBody.body,
-        rawBody.sourceUrl,
+        rawBody.resolvedUrl || rawBody.sourceUrl,
         rawBody.contentType
       );
     } else {
-      resolvedSubtitleUrl = await this.resolveSubtitlePlaybackUrl(subtitle.url);
+      resolvedSubtitleUrl = subtitle.url;
     }
     if (!isCurrentSelection() || !resolvedSubtitleUrl) {
       return;
