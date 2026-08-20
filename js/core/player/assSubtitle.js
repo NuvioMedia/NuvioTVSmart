@@ -100,7 +100,7 @@ function sanitizeAssDialogueText(text) {
     .trim();
 }
 
-function parseAssDialogueCues(body) {
+export function convertAssDialogueToVttCues(body) {
   const normalized = normalizeBody(body);
   let formatFields = null;
   const cues = [];
@@ -148,9 +148,6 @@ function parseAssDialogueCues(body) {
  * override tags. Malformed events are dropped. Returns "" when no usable
  * cues remain.
  */
-export function convertAssDialogueToVttCues(body) {
-  return parseAssDialogueCues(body);
-}
 
 export function buildVttFromAssCues(cues) {
   if (!Array.isArray(cues) || !cues.length) {
