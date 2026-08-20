@@ -35,7 +35,6 @@ function hasAssDialogueEvents(normalized) {
   return /^\s*Dialogue\s*:/im.test(normalized) && /^\s*Format\s*:/im.test(normalized);
 }
 
-
 /**
  * Detect ASS/SSA subtitle bodies from content and metadata.
  *
@@ -74,12 +73,7 @@ function parseAssTimestamp(value) {
     return NaN;
   }
   const milliseconds = Number(String(match[4] || "0").padEnd(3, "0"));
-  return (
-    Number(match[1]) * 3600 +
-    Number(match[2]) * 60 +
-    Number(match[3]) +
-    milliseconds / 1000
-  );
+  return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) + milliseconds / 1000;
 }
 
 function formatVttTimestamp(totalSeconds) {
@@ -100,6 +94,11 @@ function sanitizeAssDialogueText(text) {
     .trim();
 }
 
+/**
+ * Convert ASS/SSA `Dialogue:` events to plain VTT cues: timestamps become
+ * `HH:MM:SS.mmm` ranges, dialogue text keeps line breaks and loses all
+ * override tags. Malformed events are dropped.
+ */
 export function convertAssDialogueToVttCues(body) {
   const normalized = normalizeBody(body);
   let formatFields = null;
@@ -143,12 +142,9 @@ export function convertAssDialogueToVttCues(body) {
 }
 
 /**
- * Convert ASS/SSA `Dialogue:` events to plain VTT cues: timestamps become
- * `HH:MM:SS.mmm` ranges, dialogue text keeps line breaks and loses all
- * override tags. Malformed events are dropped. Returns "" when no usable
+ * Render converted cues as a complete VTT document. Returns "" when no
  * cues remain.
  */
-
 export function buildVttFromAssCues(cues) {
   if (!Array.isArray(cues) || !cues.length) {
     return "";

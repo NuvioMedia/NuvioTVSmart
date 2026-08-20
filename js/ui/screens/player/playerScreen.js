@@ -13180,7 +13180,10 @@ export const PlayerScreen = {
         });
         // Fall through to the existing HTML subtitle path.
       }
-      if (raw?.body != null && isAssSubtitle(raw.body, { sourceUrl, contentType: raw.contentType })) {
+      if (
+        raw?.body != null &&
+        isAssSubtitle(raw.body, { sourceUrl, contentType: raw.contentType })
+      ) {
         if (!isCurrentSelection()) {
           return false;
         }
@@ -19471,6 +19474,9 @@ export const PlayerScreen = {
         }
         if (/\b(eac3|ec-3|ddp|atmos)\b/.test(text)) {
           score += isWebOsRuntime ? -70 : -18;
+        }
+        if (/\b(truehd|dts-hd|dts:x|dts)\b/.test(text)) {
+          score += isWebOsRuntime ? -85 : -40;
         }
         if (/\b(stereo|2\.0|2ch)\b/.test(text)) {
           score += isWebOsRuntime ? 10 : 4;
