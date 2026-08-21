@@ -8,7 +8,7 @@ import { loadStreamingLibs, warmStreamingLibs } from "../../../js/runtime/loadSt
 
 const requestLog = [];
 
-function installDocument({ failSources = [], assStub = null } = {}) {
+function installDocument({ failSources = [], assStub = null, eventErrors = false } = {}) {
   globalThis.document = {
     createElement() {
       return {
@@ -24,7 +24,11 @@ function installDocument({ failSources = [], assStub = null } = {}) {
         requestLog.push(script.src);
         queueMicrotask(() => {
           if (failSources.some((src) => script.src.includes(src))) {
-            script.onerror?.(new Error(`load failed: ${script.src}`));
+            script.onerror?.(
+              eventErrors
+                ? { type: "error", target: script }
+                : new Error(`load failed: ${script.src}`)
+            );
           } else {
             if (assStub) {
               globalThis.ASS = assStub;
@@ -72,6 +76,28 @@ test("falls back to the CDN when the local asset fails", async () => {
 test("rejects when the constructor never appears", async () => {
   installDocument();
   await assert.rejects(loadAssSubtitleLib(), /ass\.js/);
+});
+
+test("both-source failure names every attempted source", async () => {
+  installDocument({ failSources: ["assets/libs/ass.min.js", "cdn.jsdelivr.net"] });
+  await assert.rejects(loadAssSubtitleLib(), (error) => {
+    assert.match(error.message, /ass\.js failed to load from all sources/);
+    assert.match(error.message, /assets\/libs\/ass\.min\.js: /);
+    assert.match(error.message, /cdn\.jsdelivr\.net\/npm\/assjs@0\.1\.10\/[^:]*: /);
+    return true;
+  });
+});
+
+test("both-source failure survives an Event-like onerror payload", async () => {
+  installDocument({
+    failSources: ["assets/libs/ass.min.js", "cdn.jsdelivr.net"],
+    eventErrors: true
+  });
+  await assert.rejects(loadAssSubtitleLib(), (error) => {
+    assert.match(error.message, /assets\/libs\/ass\.min\.js: failed to load/);
+    assert.match(error.message, /cdn\.jsdelivr\.net\/npm\/assjs@0\.1\.10\/[^:]*: failed to load/);
+    return true;
+  });
 });
 
 test("shares one in-flight promise across concurrent calls", async () => {

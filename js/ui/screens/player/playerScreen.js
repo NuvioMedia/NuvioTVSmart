@@ -12813,10 +12813,21 @@ export const PlayerScreen = {
     }
     this.assSubtitleRenderer = renderer;
     const result = await renderer.init();
+    if (!result.ok) {
+      console.warn("ASS renderer failed to activate, using plain-text fallback", {
+        error: result.error || "ass-renderer-unknown",
+        detail: result.detail || ""
+      });
+    }
     if (!result.ok || !isCurrentSelection()) {
       const fallbackVtt = convertAssBodyToVtt(body);
       this.destroyAssSubtitleRenderer(renderer);
-      return { applied: false, fallbackVtt };
+      return {
+        applied: false,
+        fallbackVtt,
+        error: result.error || null,
+        detail: result.detail || null
+      };
     }
     renderer.setDelay(this.subtitleDelayMs);
     this.showAssSubtitleContainer();
@@ -13342,7 +13353,16 @@ export const PlayerScreen = {
           this.renderSubtitleDialog();
           return true;
         }
-        // ass.js unavailable or stale: plain-text VTT fallback below.
+        // ass.js unavailable, failed, or stale: plain-text VTT fallback below.
+        if (!assResult.applied) {
+          console.warn("ASS addon subtitle fell back to plain text (tv-html path)", {
+            subtitleUrl: sourceUrl,
+            error:
+              assResult.error ||
+              (isCurrentSelection() ? "ass-renderer-unknown" : "ass-renderer-stale"),
+            detail: assResult.detail || ""
+          });
+        }
         const fallbackCues = this.parseSubtitleCues(assResult.fallbackVtt || "");
         if (fallbackCues.length && isCurrentSelection()) {
           this.clearMountedExternalSubtitleTracks();
@@ -15030,9 +15050,7 @@ export const PlayerScreen = {
       ? "html"
       : PlayerController.getAvPlaySubtitleOutputMode?.() || "none";
     const usingWebOsNative = Boolean(
-      Environment.isWebOS() &&
-        PlayerController.isUsingNativePlayback?.() &&
-        !htmlRendererActive
+      Environment.isWebOS() && PlayerController.isUsingNativePlayback?.() && !htmlRendererActive
     );
     const availability = resolveSubtitleStyleControlAvailability({
       isTizenAvPlay: usingTizenAvPlay,
@@ -15691,6 +15709,15 @@ export const PlayerScreen = {
           return;
         }
         assFallbackVtt = assResult.fallbackVtt || "";
+        if (!assResult.applied) {
+          console.warn("ASS addon subtitle fell back to plain text (video-element path)", {
+            subtitleUrl: subtitle.url,
+            error:
+              assResult.error ||
+              (isCurrentSelection() ? "ass-renderer-unknown" : "ass-renderer-stale"),
+            detail: assResult.detail || ""
+          });
+        }
       }
     } catch (assError) {
       if (!isCurrentSelection()) {

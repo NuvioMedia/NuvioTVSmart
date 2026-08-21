@@ -36,7 +36,7 @@ export function loadAssSubtitleLib() {
     return assLibPromise;
   }
   assLibPromise = (async () => {
-    let lastError = null;
+    const failures = [];
     for (const src of ASS_LIB_SOURCES) {
       try {
         await loadScript(src);
@@ -44,12 +44,12 @@ export function loadAssSubtitleLib() {
         if (constructor) {
           return constructor;
         }
-        lastError = new Error(`ass.js loaded from ${src} without the global ASS constructor`);
+        failures.push(`${src}: loaded without the global ASS constructor`);
       } catch (error) {
-        lastError = error;
+        failures.push(`${src}: ${error?.message || "failed to load"}`);
       }
     }
-    throw lastError || new Error("ass.js failed to load");
+    throw new Error(`ass.js failed to load from all sources (${failures.join("; ")})`);
   })();
   try {
     return assLibPromise;
