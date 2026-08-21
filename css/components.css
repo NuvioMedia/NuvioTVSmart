@@ -20102,11 +20102,17 @@ html[data-card-depth="true"][data-card-depth-trailers="true"] .detail-trailer-ca
   scroll-padding-bottom: 8px;
 }
 
-.legacy-webos .stream-route-list.manual-scroll {
+/* The manual-scroll class is only ever applied on webOS, and every webOS
+   version uses it once the list overflows - not just legacy builds. Scoping
+   these rules to .legacy-webos meant newer webOS fell back to moving each row
+   with an inline transform from JS, which costs one style write per row on
+   every D-pad press. Driving it from the custom property instead moves the
+   whole list from a single invalidation. */
+.stream-route-list.manual-scroll {
   overflow: hidden;
 }
 
-.legacy-webos .stream-route-list.manual-scroll > * {
+.stream-route-list.manual-scroll > * {
   transform: translateY(var(--stream-route-manual-scroll, 0));
 }
 
