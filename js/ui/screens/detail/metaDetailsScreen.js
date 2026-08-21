@@ -207,6 +207,7 @@ function toEpisodeEntry(video = {}) {
       video.imdb_score ??
       video.ratings?.imdb ??
       video.mdbListRatings?.imdb ??
+      video.rating ??
       null
   };
 }
@@ -744,6 +745,39 @@ function resolveImdbRating(meta = {}) {
     return meta.mdbListRatings.imdb;
   }
   return null;
+}
+
+// Ratings the addon supplied on meta.videos[].rating, in the same shape the
+// episode-ratings service returns. Merged under it, so the service still wins.
+function addonRatingsBySeason(episodes = []) {
+  const seasons = {};
+  episodes.forEach((episode) => {
+    const season = Number(episode?.season);
+    const number = Number(episode?.episode);
+    const rating = normalizeEpisodeImdbRating(episode?.imdbRating);
+    if (!Number.isFinite(season) || !Number.isFinite(number) || rating == null) {
+      return;
+    }
+    if (!Array.isArray(seasons[season])) {
+      seasons[season] = [];
+    }
+    seasons[season].push({ episode: number, rating });
+  });
+  Object.keys(seasons).forEach((season) => {
+    seasons[season].sort((left, right) => left.episode - right.episode);
+  });
+  return seasons;
+}
+
+function mergeSeasonRatings(addon = {}, service = {}) {
+  const merged = {};
+  new Set([...Object.keys(addon), ...Object.keys(service)]).forEach((season) => {
+    const byEpisode = new Map();
+    (addon[season] || []).forEach((entry) => byEpisode.set(Number(entry.episode), entry));
+    (service[season] || []).forEach((entry) => byEpisode.set(Number(entry.episode), entry));
+    merged[season] = [...byEpisode.values()].sort((l, r) => l.episode - r.episode);
+  });
+  return merged;
 }
 
 function resolveEpisodeImdbRating(episode = {}, seriesRatingsBySeason = {}) {
@@ -1947,7 +1981,10 @@ export const MetaDetailsScreen = {
         return;
       }
       if (isSeriesDetailMeta(this.meta, this.episodes)) {
-        this.seriesRatingsBySeason = results[0] || {};
+        this.seriesRatingsBySeason = mergeSeasonRatings(
+          addonRatingsBySeason(this.episodes),
+          results[0] || {}
+        );
         if (this.meta?.ids?.trakt && results[1] instanceof Map) {
           this.enrichedWatchedState = results[1];
           this.buildEpisodeState(allProgressItems, allWatchedItems, this.enrichedWatchedState);
