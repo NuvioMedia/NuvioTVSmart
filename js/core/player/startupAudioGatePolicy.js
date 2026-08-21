@@ -26,3 +26,15 @@ export function selectStartupAudioFallbackOption(options = []) {
   );
   return supportedOptions.find((entry) => entry?.selected) || supportedOptions[0] || null;
 }
+
+// Startup exposes a synthetic audio entry as soon as a playback URL exists so
+// the controls have something to render. Tizen AVPlay (and webOS) only publish
+// the real track list a moment later, so that placeholder must never be treated
+// as the final answer for the preferred audio language.
+export function hasOnlyImplicitStartupAudioOptions(options = []) {
+  const list = Array.isArray(options) ? options : [];
+  if (!list.length) {
+    return true;
+  }
+  return list.every((option) => Boolean(option?.entry?.implicitAudioTrack));
+}

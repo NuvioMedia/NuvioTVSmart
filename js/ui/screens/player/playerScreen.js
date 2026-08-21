@@ -9,6 +9,7 @@ import {
 } from "../../../core/player/audioTrackCodecMetadata.js";
 import {
   canReleasePlayingNativeStartupAudioGate,
+  hasOnlyImplicitStartupAudioOptions,
   selectStartupAudioFallbackOption,
   shouldAllowNativePlaybackDuringStartupAudioGate
 } from "../../../core/player/startupAudioGatePolicy.js";
@@ -14654,7 +14655,13 @@ export const PlayerScreen = {
     }
 
     const preferredTargets = this.getStartupPreferredAudioLanguageTargets();
-    const isStillLoading = this.isAudioPreferenceDiscoveryPending();
+    // `loadedmetadata` fires before Tizen AVPlay publishes `getTotalTrackInfo`,
+    // so the option list can still hold nothing but the synthetic startup entry.
+    // Concluding there means falling back to the runtime's first audio track and
+    // latching that choice, which is why the preferred language never applied.
+    const isStillLoading =
+      this.isAudioPreferenceDiscoveryPending() ||
+      hasOnlyImplicitStartupAudioOptions(this.collectAudioOptionItems());
     const matchedRememberedOption = this.findRememberedAudioOption();
     const rememberedOption =
       isStillLoading && matchedRememberedOption?.entry?.implicitAudioTrack
