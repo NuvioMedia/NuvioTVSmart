@@ -1816,7 +1816,15 @@ export const StreamScreen = {
   },
 
   shouldUseManualListScroll(listNode) {
-    if (!listNode || !Environment.isWebOS()) {
+    // Manual scrolling exists for legacy webOS, whose scrollTop does not stick -
+    // the stylesheet that positions the rows has always been scoped to
+    // `.legacy-webos`. This predicate matched every webOS version instead, so
+    // webOS 7+ took the manual path too: each offset change re-transforms every
+    // row and the following `scrollTop = 0` forces a synchronous layout over all
+    // of them. Profiled on a 714-row list that cost ~920ms per D-pad press, and
+    // it scales with list length, which is why a freshly rendered long list felt
+    // worst. Newer webOS scrolls natively and composites it off the main thread.
+    if (!listNode || !Environment.isWebOS() || !this.isLegacyWebOsRoute()) {
       return false;
     }
     return Number(listNode.scrollHeight || 0) > Number(listNode.clientHeight || 0);
@@ -1832,6 +1840,19 @@ export const StreamScreen = {
     return Number(listNode.scrollTop || 0);
   },
 
+  updateManualListScrollTransform(listNode, scrollTop) {
+    if (!listNode) {
+      return;
+    }
+    const normalized = Math.max(0, Number(scrollTop || 0));
+    const transform = normalized > 0 ? `translateY(${-normalized}px)` : "";
+    Array.from(listNode.children || []).forEach((child) => {
+      if (child instanceof HTMLElement) {
+        child.style.transform = transform;
+      }
+    });
+  },
+
   applyManualListScroll(listNode, scrollTop) {
     if (!listNode) {
       return;
@@ -1845,11 +1866,7 @@ export const StreamScreen = {
     } catch (_) {
       // Ignore webOS scrollTop assignment failures; the manual transform is authoritative.
     }
-    // The offset is applied through the --stream-route-manual-scroll custom
-    // property above, so one style invalidation moves every row. Writing a
-    // transform onto each child instead cost ~285ms per D-pad press on a
-    // 246-row list - 7.1s of self time across 25 presses when profiled - and
-    // was the reason moving through a long source list felt stuck.
+    this.updateManualListScrollTransform(listNode, normalized);
     this.listScrollTop = normalized;
   },
 
