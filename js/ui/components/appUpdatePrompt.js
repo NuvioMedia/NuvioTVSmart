@@ -59,7 +59,7 @@ export function buildReleaseNotesContent(notes, documentRef = globalThis.documen
   return container;
 }
 
-export function showAppUpdatePrompt(update, { documentRef = globalThis.document } = {}) {
+export function showAppUpdatePrompt(update, { documentRef = globalThis.document, onClose } = {}) {
   if (!update || !documentRef?.body) {
     return null;
   }
@@ -81,9 +81,20 @@ export function showAppUpdatePrompt(update, { documentRef = globalThis.document 
   content.appendChild(notes);
 
   let dialog = null;
+  let closed = false;
+  const notifyClosed = () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    if (typeof onClose === "function") {
+      onClose();
+    }
+  };
   const close = () => {
     const activeDialog = dialog;
     dialog = null;
+    notifyClosed();
     activeDialog?.destroy();
   };
 
@@ -111,6 +122,7 @@ export function showAppUpdatePrompt(update, { documentRef = globalThis.document 
     ],
     onDismiss: () => {
       dialog = null;
+      notifyClosed();
     }
   });
   dialog.mount(documentRef.body);

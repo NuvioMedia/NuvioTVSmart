@@ -21,6 +21,7 @@ import { Platform } from "./platform/index.js";
 import { LocalStore } from "./core/storage/localStore.js";
 import { I18n } from "./i18n/index.js";
 import { getLatestAppUpdate } from "./core/update/appUpdateService.js";
+import { shouldShowUpdate } from "./core/update/updateBannerPolicy.js";
 import { showAppUpdatePrompt } from "./ui/components/appUpdatePrompt.js";
 import { resolveExperienceRoute } from "./core/profile/experienceModeRouting.js";
 
@@ -48,6 +49,7 @@ let appShellRendered = false;
 let updateCheckStarted = false;
 
 const APP_VERSION = typeof __NUVIO_APP_VERSION__ !== "undefined" ? __NUVIO_APP_VERSION__ : "0.0.0";
+const UPDATE_DISMISSED_TAG_KEY = "app_update_dismissed_tag";
 
 function markBootStage(stage) {
   const guard = globalThis.NuvioBootGuard;
@@ -75,10 +77,16 @@ async function checkForAppUpdateOnStartup() {
     if (!update) {
       return;
     }
+    const dismissedTag = LocalStore.get(UPDATE_DISMISSED_TAG_KEY, null);
+    if (!shouldShowUpdate({ isRemoteNewer: true, dismissedTag, updateTag: update.tag })) {
+      return;
+    }
     if (!(await waitForInitialRoute())) {
       return;
     }
-    showAppUpdatePrompt(update);
+    showAppUpdatePrompt(update, {
+      onClose: () => LocalStore.set(UPDATE_DISMISSED_TAG_KEY, update.tag)
+    });
   } catch (error) {
     console.warn("App update check failed", error);
   }
