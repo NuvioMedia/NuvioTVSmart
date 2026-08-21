@@ -465,6 +465,18 @@ async function buildCoreJsBundle() {
   });
 }
 
+async function buildAssSubtitleLibrary() {
+  await build({
+    entryPoints: [
+      path.join(rootDir, "node_modules", "assjs", "dist", "ass.global.min.js")
+    ],
+    outfile: path.join(distDir, "assets", "libs", "ass.min.js"),
+    minify: !debugBundle,
+    target: [`chrome${compatibilityPolicy.chromiumVersion}`],
+    legalComments: "none"
+  });
+}
+
 async function buildBundle() {
   const { version } = await readAppMetadata();
 
@@ -527,14 +539,11 @@ async function runBuild() {
         path.join(distDir, "assets", "libs", "dashjs.LICENSE.md")
       ),
       cp(
-        path.join(rootDir, "node_modules", "assjs", "dist", "ass.global.min.js"),
-        path.join(distDir, "assets", "libs", "ass.min.js")
-      ),
-      cp(
         path.join(rootDir, "node_modules", "assjs", "LICENSE"),
         path.join(distDir, "assets", "libs", "assjs.LICENSE")
       )
     ]);
+    await buildAssSubtitleLibrary();
     await cp(
       path.join(rootDir, "node_modules", "libbitsub", "pkg", "libbitsub_bg.wasm"),
       path.join(distDir, "assets", "libs", "libbitsub_bg.wasm")
