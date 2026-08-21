@@ -8,6 +8,7 @@ import { hlsJsEngine } from "./engines/hlsJsEngine.js";
 import { dashJsEngine } from "./engines/dashJsEngine.js";
 import { resolvePlatformAvplayEngine } from "./engines/platformAvplayEngine.js";
 import { isTerminalHlsHttpStatus } from "./hlsNetworkErrorPolicy.js";
+import { isShortPlaceholderDuration } from "./naturalPlaybackCompletion.js";
 import {
   applyWebOsAudioCodecOverrides,
   detectWebOsAudioCapabilities
@@ -4932,6 +4933,11 @@ export const PlayerController = {
 
     const safePosition = Number(positionMs || 0);
     const safeDuration = Number(durationMs || 0);
+    if (isShortPlaceholderDuration(safeDuration)) {
+      // Debrid cache-sync/error clips must not create watched state or progress
+      // records, whether this is the periodic flush or the native ended event.
+      return false;
+    }
     const hasFiniteDuration = Number.isFinite(safeDuration) && safeDuration > 0;
     const hasReachedMinimumSyncPosition =
       Number.isFinite(safePosition) && safePosition >= MIN_PROGRESS_SYNC_DURATION_MS;

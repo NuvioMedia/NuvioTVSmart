@@ -6994,9 +6994,6 @@ export const PlayerScreen = {
     if (!this.hasPresentedPlaybackFrame) {
       return false;
     }
-    if (this.nextEpisodeCardTriggered) {
-      return true;
-    }
     const durationSeconds = Number(this.getPlaybackDurationSeconds() || 0);
     const currentSeconds = Number(this.getPlaybackCurrentSeconds() || 0);
     if (
@@ -7006,6 +7003,12 @@ export const PlayerScreen = {
       currentSeconds < 0
     ) {
       return false;
+    }
+    if (!this.isNaturalPlaybackCompletionEligible(durationSeconds)) {
+      return false;
+    }
+    if (this.nextEpisodeCardTriggered) {
+      return true;
     }
     const settings = PlayerSettingsStore.get();
     const shouldShow = shouldShowNextEpisodeCardRule({
@@ -7022,6 +7025,32 @@ export const PlayerScreen = {
     return shouldShow;
   },
 
+  hasFatalPlaybackError() {
+    const controllerErrorCode =
+      typeof PlayerController.getLastPlaybackErrorCode === "function"
+        ? Number(PlayerController.getLastPlaybackErrorCode() || 0)
+        : 0;
+    const nativeErrorCode = Number(PlayerController.video?.error?.code || 0);
+    return (
+      this.isStartupErrorVisible() ||
+      Boolean(String(this.sourcesError || "").trim()) ||
+      controllerErrorCode > 0 ||
+      nativeErrorCode > 0
+    );
+  },
+
+  isNaturalPlaybackCompletionEligible(durationSeconds = this.getPlaybackDurationSeconds()) {
+    const duration = Number(durationSeconds);
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return false;
+    }
+    return shouldTreatAsNaturalPlaybackCompletion({
+      hasRenderedFirstFrame: Boolean(this.hasPresentedPlaybackFrame),
+      hasFatalError: this.hasFatalPlaybackError(),
+      durationMs: duration * 1000
+    });
+  },
+
   hasPlaybackReachedNaturalEnd() {
     const durationSeconds = Number(this.getPlaybackDurationSeconds() || 0);
     const currentSeconds = Number(this.getPlaybackCurrentSeconds() || 0);
@@ -7036,9 +7065,7 @@ export const PlayerScreen = {
     const remainingSeconds = durationSeconds - currentSeconds;
     const progress = currentSeconds / durationSeconds;
     const reachedEnd = remainingSeconds <= 1 || progress >= 0.999;
-    return (
-      reachedEnd && shouldTreatAsNaturalPlaybackCompletion({ durationMs: durationSeconds * 1000 })
-    );
+    return reachedEnd && this.isNaturalPlaybackCompletionEligible(durationSeconds);
   },
 
   shouldPrefetchNextEpisodeStreams() {
@@ -7050,6 +7077,9 @@ export const PlayerScreen = {
       !Number.isFinite(currentSeconds) ||
       currentSeconds < 0
     ) {
+      return false;
+    }
+    if (!this.isNaturalPlaybackCompletionEligible(durationSeconds)) {
       return false;
     }
     return currentSeconds / durationSeconds >= NEXT_EPISODE_PREFETCH_PERCENT;
@@ -7222,6 +7252,10 @@ export const PlayerScreen = {
       !Number.isFinite(currentSeconds) ||
       currentSeconds < 0
     ) {
+      return false;
+    }
+    if (!this.isNaturalPlaybackCompletionEligible(durationSeconds)) {
+      this.nextEpisodeAutoplayAttemptedKey = "";
       return false;
     }
 
@@ -19294,6 +19328,31 @@ export const PlayerScreen = {
   },
 
   async handlePlaybackEnded() {
+    const naturalCompletion = this.isNaturalPlaybackCompletionEligible();
+    if (!naturalCompletion) {
+      // Match Android: an error/placeholder end is not a completion, so it
+      // must not stop scrobbling, mark watched, navigate away, or auto-play.
+      TrackingScrobbleService.cancel();
+      this.nextEpisodeAutoplayAttemptedKey = "";
+      this.nextEpisodeCardTriggered = false;
+      this.resetStillWatchingPromptState({ render: false });
+      if (this.nextEpisodeLaunching) {
+        this.cancelNextEpisodeLaunch();
+      }
+      this.clearPlaybackStallGuard();
+      this.releaseStartupAudioGate({ resume: false });
+      this.loadingVisible = false;
+      this.paused = true;
+      this.dismissPauseOverlay();
+      this.updateLoadingVisibility();
+      this.updateMediaSessionPlaybackState();
+      this.setControlsVisible(true, { focus: false });
+      this.renderControlButtons();
+      this.renderNextEpisodeCard();
+      this.updateUiTick();
+      return;
+    }
+
     // Immediate scrobble stop (may trigger mark-as-watched)
     if (TrackingScrobbleService.isEnabled()) {
       TrackingScrobbleService.stop(this.buildScrobbleContext());
