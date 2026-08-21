@@ -1,4 +1,5 @@
 import { AuthManager } from "../../core/auth/authManager.js";
+import { toTraktImageUrl } from "../../core/trakt/traktImageUrl.js";
 import { SavedLibrarySyncService } from "../../core/profile/savedLibrarySyncService.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
 import { LocalStore } from "../../core/storage/localStore.js";
@@ -526,14 +527,15 @@ function toPersonalList(raw = {}) {
 
 function bestTraktImage(images = {}, kind) {
   const candidates = images?.[kind];
+  let url = null;
   if (Array.isArray(candidates)) {
-    return candidates.find((entry) => typeof entry === "string") || null;
+    url = candidates.find((entry) => typeof entry === "string") || null;
+  } else if (typeof candidates === "string") {
+    url = candidates;
+  } else if (candidates && typeof candidates === "object") {
+    url = candidates.full || candidates.medium || candidates.thumb || null;
   }
-  if (typeof candidates === "string") return candidates;
-  if (candidates && typeof candidates === "object") {
-    return candidates.full || candidates.medium || candidates.thumb || null;
-  }
-  return null;
+  return url ? toTraktImageUrl(url) : null;
 }
 
 function toSavedItemFromTraktList(entry) {
