@@ -1874,38 +1874,34 @@ export const StreamScreen = {
     if (!listNode) {
       return;
     }
-    const maxScrollTop = Math.max(
-      0,
-      Number(listNode.scrollHeight || 0) - Number(listNode.clientHeight || 0)
-    );
-    const normalized = clamp(Number(nextScrollTop || 0), 0, maxScrollTop);
-    if (listNode.classList?.contains("manual-scroll")) {
-      this.applyManualListScroll(listNode, normalized);
+    const usesManualScroll =
+      Boolean(listNode.classList?.contains("manual-scroll")) ||
+      this.shouldUseManualListScroll(listNode);
+
+    // Every `scrollHeight`/`clientHeight`/`scrollTop` read flushes pending style
+    // and layout, and on a long list that flush is the expensive part. Only the
+    // manual path needs the measured maximum up front; a native scroller clamps
+    // the assignment itself. Measuring unconditionally cost ~81ms per D-pad
+    // press on a 730-row list.
+    if (usesManualScroll) {
+      const maxScrollTop = Math.max(
+        0,
+        Number(listNode.scrollHeight || 0) - Number(listNode.clientHeight || 0)
+      );
+      this.applyManualListScroll(listNode, clamp(Number(nextScrollTop || 0), 0, maxScrollTop));
       return;
     }
-    if (this.shouldUseManualListScroll(listNode)) {
-      this.applyManualListScroll(listNode, normalized);
-      return;
-    }
-    listNode.scrollTop = normalized;
-    if (typeof listNode.scrollTo === "function") {
-      try {
-        listNode.scrollTo(0, normalized);
-      } catch (_) {
-        listNode.scrollTop = normalized;
-      }
-    }
-    const applied = Number(listNode.scrollTop || 0);
-    if (
-      this.isLegacyWebOsRoute() &&
-      maxScrollTop > 0 &&
-      normalized > 0 &&
-      Math.abs(applied - normalized) > 2
-    ) {
-      this.applyManualListScroll(listNode, normalized);
-      return;
-    }
-    this.listScrollTop = Number(applied || normalized || 0);
+
+    const requested = Math.max(0, Number(nextScrollTop || 0));
+    // One write, and no read-back: `scrollTo` here only repeated what the
+    // assignment already did, and reading the applied value forced another
+    // layout. The legacy fallback that compared them cannot trigger anyway,
+    // because a legacy route already took the manual branch above.
+    listNode.scrollTop = requested;
+    // Store what was asked for rather than reading it back. The browser clamps
+    // to the real maximum, so this can differ by a few pixels at the very end of
+    // the list; the next focus move recomputes from element geometry anyway.
+    this.listScrollTop = requested;
   },
 
   ensureListItemVisible(listNode, target) {
