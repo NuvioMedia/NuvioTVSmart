@@ -1582,7 +1582,10 @@ export const StreamScreen = {
     if (preferredZone === "card" && filtered.length) {
       this.focusState = {
         zone: "card",
-        row: clamp(preferredIndex, 0, filtered.length - 1),
+        // Carrying the previous row index into a different source's list picks
+        // an unrelated stream and scrolls the list to wherever that index
+        // happens to land. Each tab is its own list, so start at the top.
+        row: filterChanged ? 0 : clamp(preferredIndex, 0, filtered.length - 1),
         action: "play"
       };
     } else {
