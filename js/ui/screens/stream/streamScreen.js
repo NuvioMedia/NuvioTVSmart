@@ -1528,7 +1528,9 @@ export const StreamScreen = {
     }
     this.errorChipTimer = setTimeout(() => {
       this.sourceChips = this.sourceChips.filter((chip) => chip.status !== "error");
-      this.requestRender();
+      if (!this.refreshSourceChipsOnly()) {
+        this.requestRender();
+      }
     }, 1600);
   },
 
@@ -2285,6 +2287,42 @@ export const StreamScreen = {
     }
   },
 
+  buildSourceChipMarkup() {
+    return [
+      this.renderChip("all", this.addonFilter === "all", "success"),
+      ...this.getOrderedFilterNames().map((name) => {
+        const chip = this.sourceChips.find((entry) => entry.name === name) || {
+          name,
+          status: "success"
+        };
+        return this.renderChip(name, this.addonFilter === name, chip.status);
+      })
+    ].join("");
+  },
+
+  // A source finishing, failing, or having its error chip cleared only changes
+  // the chip row, but it used to trigger a full render. On a settled list that
+  // rebuilt every stream card - hundreds of rows - so an addon going red froze
+  // navigation twice: once when it failed and again when the chip was removed.
+  refreshSourceChipsOnly() {
+    const track = this.container?.querySelector?.(".stream-route-chip-track");
+    if (!track) {
+      return false;
+    }
+    const markup = this.buildSourceChipMarkup();
+    if (track.innerHTML === markup) {
+      return true;
+    }
+    track.innerHTML = markup;
+    // The chip nodes were replaced, so cached focus lookups must not keep
+    // pointing at the detached ones.
+    this.streamFocusDomCache = null;
+    if (this.focusState?.zone === "filter") {
+      this.applyFocus();
+    }
+    return true;
+  },
+
   renderChip(name, selected, status) {
     const chipStatus = String(status || "success");
     const classes = [
@@ -2409,17 +2447,7 @@ export const StreamScreen = {
     const backdrop = this.getBackdropUrl();
     const logo = this.params?.logo || "";
     const shellStableClass = this.hasRenderedStreamRouteShell ? " stable" : "";
-    const orderedFilters = this.getOrderedFilterNames();
-    const chips = [
-      this.renderChip("all", this.addonFilter === "all", "success"),
-      ...orderedFilters.map((name) => {
-        const chip = this.sourceChips.find((entry) => entry.name === name) || {
-          name,
-          status: "success"
-        };
-        return this.renderChip(name, this.addonFilter === name, chip.status);
-      })
-    ].join("");
+    const chips = this.buildSourceChipMarkup();
     const filtered = this.getFilteredStreams();
     const allStreams = this.getFilteredStreams("all");
     const hasPendingForFilter = this.hasPendingSourceLoads();
