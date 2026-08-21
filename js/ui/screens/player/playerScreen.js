@@ -15,6 +15,7 @@ import {
 import { isTerminalHlsHttpStatus } from "../../../core/player/hlsNetworkErrorPolicy.js";
 import { buildClockFormatOptions, resolveSystemHour12 } from "../../../core/player/clockFormat.js";
 import { resolveSubtitleStyleControlAvailability } from "../../../core/player/subtitlePresentationCapabilities.js";
+import { shouldTreatAsNaturalPlaybackCompletion } from "../../../core/player/naturalPlaybackCompletion.js";
 import {
   ensureWebOsImageProxyReady,
   normalizeImageUrl,
@@ -7034,7 +7035,10 @@ export const PlayerScreen = {
     }
     const remainingSeconds = durationSeconds - currentSeconds;
     const progress = currentSeconds / durationSeconds;
-    return remainingSeconds <= 1 || progress >= 0.999;
+    const reachedEnd = remainingSeconds <= 1 || progress >= 0.999;
+    return (
+      reachedEnd && shouldTreatAsNaturalPlaybackCompletion({ durationMs: durationSeconds * 1000 })
+    );
   },
 
   shouldPrefetchNextEpisodeStreams() {
