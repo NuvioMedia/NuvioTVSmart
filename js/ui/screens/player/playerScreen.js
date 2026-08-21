@@ -5168,6 +5168,7 @@ export const PlayerScreen = {
           bufferingStatus: uiRoot.querySelector("#playerBufferingSpinner .player-loading-status"),
           parentalGuide: uiRoot.querySelector("#playerParentalGuide"),
           skipIntro: uiRoot.querySelector("#playerSkipIntro"),
+          aspectToast: uiRoot.querySelector("#playerAspectToast"),
           htmlSubtitles: uiRoot.querySelector("#playerHtmlSubtitles"),
           assSubtitles: uiRoot.querySelector("#playerAssSubtitles"),
           bitmapSubtitles: uiRoot.querySelector("#playerBitmapSubtitles"),
@@ -12630,7 +12631,14 @@ export const PlayerScreen = {
     return this.uiRefs?.assSubtitles || document.getElementById("playerAssSubtitles");
   },
 
-  destroyAssSubtitleRenderer() {
+  destroyAssSubtitleRenderer(renderer = null) {
+    // A stale async activation may finish after a newer selection replaced
+    // this.assSubtitleRenderer. Destroy only the instance owned by that
+    // activation; never hide or clear the newer renderer's container.
+    if (renderer && this.assSubtitleRenderer !== renderer) {
+      renderer.destroy?.();
+      return;
+    }
     if (this.assSubtitleRenderer) {
       this.assSubtitleRenderer.destroy();
       this.assSubtitleRenderer = null;
@@ -12679,7 +12687,7 @@ export const PlayerScreen = {
     const result = await renderer.init();
     if (!result.ok || !isCurrentSelection()) {
       const fallbackVtt = convertAssBodyToVtt(body);
-      this.destroyAssSubtitleRenderer();
+      this.destroyAssSubtitleRenderer(renderer);
       return { applied: false, fallbackVtt };
     }
     renderer.setDelay(this.subtitleDelayMs);

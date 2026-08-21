@@ -45,10 +45,16 @@ function installLoaderStub() {
 
 beforeEach(() => {
   installLoaderStub();
+  globalThis.ResizeObserver = class FakeResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
 });
 
 afterEach(() => {
   delete globalThis.ASS;
+  delete globalThis.ResizeObserver;
 });
 
 function makeBase({ token = 1, current = () => true } = {}) {
@@ -105,6 +111,15 @@ test("stale activation is rejected", async () => {
   const result = await renderer.init();
   assert.equal(result.ok, false);
   assert.equal(result.error, "ass-renderer-stale");
+  assert.equal(FakeAss.instances.length, 0);
+});
+
+test("unsupported runtime is rejected before ass.js construction", async () => {
+  delete globalThis.ResizeObserver;
+  const renderer = createAssRenderer(makeBase());
+  const result = await renderer.init();
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "ass-renderer-unsupported");
   assert.equal(FakeAss.instances.length, 0);
 });
 

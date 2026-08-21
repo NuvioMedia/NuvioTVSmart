@@ -70,6 +70,16 @@ export function createAssRenderer({
       if (destroyed || stale()) {
         return { ok: false, error: "ass-renderer-stale" };
       }
+      // ass.js constructs a ResizeObserver before its own cleanup handle is
+      // available. Avoid a partial instance on older TV runtimes where the
+      // library can load but ResizeObserver is missing.
+      if (typeof globalThis.ResizeObserver !== "function") {
+        return {
+          ok: false,
+          error: "ass-renderer-unsupported",
+          detail: "ass.js requires ResizeObserver"
+        };
+      }
       try {
         instance = new AssConstructor(String(body), video, { container, resampling });
       } catch (error) {

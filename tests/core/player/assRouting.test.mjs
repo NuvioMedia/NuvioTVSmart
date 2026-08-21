@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test, beforeEach } from "node:test";
+import { test, beforeEach, afterEach } from "node:test";
 import { isAssSubtitle, convertAssBodyToVtt } from "../../../js/core/player/assSubtitle.js";
 import { createAssRenderer } from "../../../js/core/player/assRenderer.js";
 import { resetAssSubtitleLibCache } from "../../../js/core/player/assSubtitleLoader.js";
@@ -54,7 +54,16 @@ beforeEach(() => {
   lastFakeAss = null;
   delete globalThis.ASS;
   delete globalThis.document;
+  globalThis.ResizeObserver = class FakeResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
   resetAssSubtitleLibCache();
+});
+
+afterEach(() => {
+  delete globalThis.ResizeObserver;
 });
 
 test("routing pipeline: detected ASS reaches the renderer, not a VTT track", async () => {
