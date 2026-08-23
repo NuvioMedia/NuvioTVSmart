@@ -747,7 +747,8 @@ function addonRatingsBySeason(episodes = []) {
   episodes.forEach((episode) => {
     const season = Number(episode?.season);
     const number = Number(episode?.episode);
-    const rating = normalizeEpisodeImdbRating(episode?.imdbRating);
+    const normalizedRating = normalizeEpisodeImdbRating(episode?.imdbRating);
+    const rating = normalizedRating == null ? null : Number(normalizedRating.toFixed(1));
     if (!Number.isFinite(season) || !Number.isFinite(number) || rating == null) {
       return;
     }
@@ -767,7 +768,14 @@ function mergeSeasonRatings(addon = {}, service = {}) {
   new Set([...Object.keys(addon), ...Object.keys(service)]).forEach((season) => {
     const byEpisode = new Map();
     (addon[season] || []).forEach((entry) => byEpisode.set(Number(entry.episode), entry));
-    (service[season] || []).forEach((entry) => byEpisode.set(Number(entry.episode), entry));
+    (service[season] || []).forEach((entry) => {
+      const episode = Number(entry?.episode);
+      const hasUsableRating = normalizeEpisodeImdbRating(entry?.rating) != null;
+      if (!hasUsableRating && byEpisode.has(episode)) {
+        return;
+      }
+      byEpisode.set(episode, entry);
+    });
     merged[season] = [...byEpisode.values()].sort((l, r) => l.episode - r.episode);
   });
   return merged;
