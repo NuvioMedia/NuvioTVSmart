@@ -4033,6 +4033,12 @@ export const HomeScreen = {
       return this.homeBackgroundRefreshPromise;
     }
 
+    // A post-sync refresh can begin while the initial catalog/CW load still
+    // has child promises in flight. Invalidate that older load before the new
+    // refresh captures its token, otherwise a slow stale response can win
+    // after the freshly synchronized data has been rendered.
+    this.homeLoadToken = (this.homeLoadToken || 0) + 1;
+
     let refreshPromise = null;
     refreshPromise = (async () => {
       let didRefresh = false;
@@ -11413,6 +11419,7 @@ export const HomeScreen = {
     this.homeBackgroundRefreshPending = false;
     this.homeBackgroundRefreshPreserveReturnState = false;
     this.homeBackgroundRefreshReason = "";
+    this.homeBackgroundRefreshPromise = null;
     this.cancelModernSidebarPillAutoCollapse();
     this.cancelPendingContinueWatchingEnter();
     this.cancelPendingContinueWatchingHold();
