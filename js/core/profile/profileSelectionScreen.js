@@ -2465,18 +2465,14 @@ export const ProfileSelectionScreen = {
       ThemeManager.apply({ enforceAccess: true, access: memberAccess });
       I18n.apply();
       const experienceRoute = await resolveExperienceRoute(profileId);
-      const shouldWaitForHomeSync = experienceRoute === "home" && StartupSyncService.started;
       await Router.navigate(
         experienceRoute,
-        experienceRoute === "home"
-          ? {
-              forceReload: true,
-              ...(shouldWaitForHomeSync ? { waitForFreshContinueWatching: true } : {})
-            }
-          : {},
+        experienceRoute === "home" ? { forceReload: true } : {},
         experienceRoute === "home" ? {} : { replaceHistory: true, skipStackPush: true }
       );
-      void StartupSyncService.requestSyncNow().catch((error) => {
+      void StartupSyncService.requestSyncNow({
+        notifyPullCompleted: experienceRoute === "home"
+      }).catch((error) => {
         console.warn("Profile background sync failed", error);
       });
     } catch (error) {
