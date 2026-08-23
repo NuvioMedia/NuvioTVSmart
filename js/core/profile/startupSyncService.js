@@ -40,6 +40,7 @@ const STARTUP_SYNC_STATE_KEY = "startupSyncState";
 // the initial Home load fall back to its local snapshot/progress reads when a
 // TV network request is slow or unavailable.
 const HOME_CONTINUE_WATCHING_PREFLIGHT_TIMEOUT_MS = 12000;
+const syncPullCompletedListeners = new Set();
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -121,6 +122,16 @@ function runSurface(label, task) {
     });
 }
 
+function notifySyncPullCompleted(event = {}) {
+  syncPullCompletedListeners.forEach((listener) => {
+    try {
+      listener(event);
+    } catch (error) {
+      console.warn("Startup sync completion listener failed", error);
+    }
+  });
+}
+
 export const StartupSyncService = {
   started: false,
   intervalId: null,
@@ -174,12 +185,18 @@ export const StartupSyncService = {
     );
   },
 
-  queuePendingSyncRequest({ force = true, includeProfileSettings = true, pushAfterPull = false }) {
+  queuePendingSyncRequest({
+    force = true,
+    includeProfileSettings = true,
+    pushAfterPull = false,
+    notifyPullCompleted = false
+  }) {
     const current = this.pendingSyncRequest || {};
     this.pendingSyncRequest = {
       force: Boolean(current.force || force),
       includeProfileSettings: Boolean(current.includeProfileSettings || includeProfileSettings),
-      pushAfterPull: Boolean(current.pushAfterPull || pushAfterPull)
+      pushAfterPull: Boolean(current.pushAfterPull || pushAfterPull),
+      notifyPullCompleted: Boolean(current.notifyPullCompleted || notifyPullCompleted)
     };
   },
 
@@ -269,18 +286,32 @@ export const StartupSyncService = {
     this.profileScopedSyncEnabled = true;
   },
 
+  subscribeToPullCompleted(listener) {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+    syncPullCompletedListeners.add(listener);
+    return () => syncPullCompletedListeners.delete(listener);
+  },
+
   async requestSyncNow({
     force = true,
     includeProfileSettings = true,
     allowWarmRepeat = false,
-    pushAfterPull = false
+    pushAfterPull = false,
+    notifyPullCompleted = false
   } = {}) {
     if (!this.started) {
       return false;
     }
     const generation = this.runGeneration;
     if (this.inFlightPromise && this.inFlightGeneration === generation) {
-      this.queuePendingSyncRequest({ force, includeProfileSettings, pushAfterPull });
+      this.queuePendingSyncRequest({
+        force,
+        includeProfileSettings,
+        pushAfterPull,
+        notifyPullCompleted
+      });
       return this.inFlightPromise;
     }
     if (
@@ -289,7 +320,12 @@ export const StartupSyncService = {
     ) {
       await this.continueWatchingInFlightPromise.catch(() => false);
       if (this.inFlightPromise && this.inFlightGeneration === generation) {
-        this.queuePendingSyncRequest({ force, includeProfileSettings, pushAfterPull });
+        this.queuePendingSyncRequest({
+          force,
+          includeProfileSettings,
+          pushAfterPull,
+          notifyPullCompleted
+        });
         return this.inFlightPromise;
       }
     }
@@ -309,6 +345,13 @@ export const StartupSyncService = {
       coversProfileSettings &&
       now - this.lastPulledAtMs < FORCE_RESYNC_MIN_INTERVAL_MS
     ) {
+      if (notifyPullCompleted) {
+        notifySyncPullCompleted({
+          profileId: normalizeProfileId(profileId),
+          includeProfileScoped: Boolean(this.profileScopedSyncEnabled),
+          completedAt: Date.now()
+        });
+      }
       return true;
     }
     if (!force && !allowWarmRepeat && canUsePersistedWarmSync(key, includeProfileSettings, now)) {
@@ -349,6 +392,13 @@ export const StartupSyncService = {
               this.markFullPullSucceeded(key, includeProfileSettings);
               resetSyncBackoff();
               completed = true;
+              if (notifyPullCompleted) {
+                notifySyncPullCompleted({
+                  profileId: normalizeProfileId(profileId),
+                  includeProfileScoped: Boolean(this.profileScopedSyncEnabled),
+                  completedAt: Date.now()
+                });
+              }
               break;
             }
             this.scheduleBackoffRetry();

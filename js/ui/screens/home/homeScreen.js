@@ -81,8 +81,6 @@ import {
   CW_ENRICHMENT_CACHE_MAX_AGE_MS,
   CW_ENTER_DELAY_MS,
   CW_HOLD_DELAY_MS,
-  CW_INITIAL_RESOLVE_BUDGET_MS,
-  CW_INITIAL_RESOLVE_BUDGET_TV_MS,
   CW_MAX_ENRICHMENT_CONCURRENCY,
   CW_MAX_NEXT_UP_CONCURRENCY,
   CW_MAX_NEXT_UP_LOOKUPS,
@@ -117,6 +115,11 @@ import {
   HOME_ROW_TIMEOUT_MS
 } from "./homeConstants.js";
 import { mergeRefreshedHomeRows } from "./homeRowMerge.js";
+import {
+  findHomeFocusIdentityMatch,
+  getHomeFocusIdentity,
+  shouldApplyLateContinueWatchingFocus
+} from "./homeFocusPolicy.js";
 import { resolveNextUpCandidates } from "./nextUpCandidateResolver.js";
 import {
   getContinueWatchingRenderItems,
@@ -146,6 +149,10 @@ export { escapeAttribute, escapeHtml, formatCatalogRowTitle } from "./homeUtils.
 
 const MODERN_SIDEBAR_PILL_AUTO_COLLAPSE_MS = 4000;
 const CW_RELEASE_ALERT_MAX_AGE_MS = 60 * 24 * 60 * 60 * 1000;
+
+function isDirectionalKeyCode(code) {
+  return code >= 37 && code <= 40;
+}
 const HOME_LAZY_IMAGE_SELECTOR =
   ".home-main .content-poster[data-src], .home-main .home-poster-landscape-logo[data-src], .home-main .home-continue-bg[data-src]";
 const HOME_LAZY_IMAGE_ROW_SELECTOR =
@@ -2980,6 +2987,7 @@ export const HomeScreen = {
       mainScrollTop: viewport.scrollTop,
       rowKey,
       itemIndex,
+      itemIdentity: getHomeFocusIdentity(focused),
       focusKind,
       trackStates
     };
@@ -3046,6 +3054,7 @@ export const HomeScreen = {
       mainScrollTop: viewport.scrollTop,
       rowKey: String(section?.dataset?.rowKey || ""),
       itemIndex,
+      itemIdentity: getHomeFocusIdentity(node),
       focusKind,
       trackStates
     };
@@ -3125,7 +3134,11 @@ export const HomeScreen = {
     });
 
     const nodes = this.getNavigationRowNodes(focusState.rowKey);
-    const target = nodes[focusState.itemIndex] || nodes[0] || null;
+    const target =
+      findHomeFocusIdentityMatch(nodes, focusState.itemIdentity) ||
+      nodes[focusState.itemIndex] ||
+      nodes[0] ||
+      null;
     if (!target) {
       return false;
     }
@@ -3259,7 +3272,11 @@ export const HomeScreen = {
       : this.container.querySelector(
           ".home-main .home-continue-card.focusable, .home-main .home-poster-card.focusable"
         );
-    const target = targetNodes[focusState.itemIndex] || targetNodes[0] || fallback;
+    const target =
+      findHomeFocusIdentityMatch(targetNodes, focusState.itemIdentity) ||
+      targetNodes[focusState.itemIndex] ||
+      targetNodes[0] ||
+      fallback;
     if (!target) {
       return false;
     }
@@ -3303,7 +3320,11 @@ export const HomeScreen = {
       target = this.container.querySelector(".home-hero-card.focusable");
     } else if (focusState.rowKey) {
       const rowNodes = this.getNavigationRowNodes(focusState.rowKey);
-      target = rowNodes[focusState.itemIndex] || rowNodes[0] || null;
+      target =
+        findHomeFocusIdentityMatch(rowNodes, focusState.itemIdentity) ||
+        rowNodes[focusState.itemIndex] ||
+        rowNodes[0] ||
+        null;
     }
 
     if (this.isRestoringFocusFromBack && focusState.rowKey) {
@@ -3975,6 +3996,72 @@ export const HomeScreen = {
     this.requestRender({ delayMs: this.getBackgroundRenderDelay() });
   },
 
+  ensureStartupSyncSubscription() {
+    if (this.unsubscribeStartupSyncPullCompleted) {
+      return;
+    }
+    this.unsubscribeStartupSyncPullCompleted = StartupSyncService.subscribeToPullCompleted(
+      ({ profileId } = {}) => {
+        if (Router.getCurrent() !== "home") {
+          return;
+        }
+        const activeProfileId = String(ProfileManager.getActiveProfileId() || "");
+        if (profileId && String(profileId) !== activeProfileId) {
+          return;
+        }
+        void this.requestHomeBackgroundRefresh({
+          preserveReturnState: true,
+          reason: "startup-sync"
+        }).catch((error) => {
+          console.warn("Home post-sync refresh failed", error);
+        });
+      }
+    );
+  },
+
+  requestHomeBackgroundRefresh({ preserveReturnState = true, reason = "background" } = {}) {
+    this.homeBackgroundRefreshPending = true;
+    this.homeBackgroundRefreshPreserveReturnState = Boolean(
+      this.homeBackgroundRefreshPreserveReturnState || preserveReturnState
+    );
+    this.homeBackgroundRefreshReason = String(reason || "background");
+
+    if (this.isInitialHomeLoading) {
+      return Promise.resolve(false);
+    }
+    if (this.homeBackgroundRefreshPromise) {
+      return this.homeBackgroundRefreshPromise;
+    }
+
+    let refreshPromise = null;
+    refreshPromise = (async () => {
+      let didRefresh = false;
+      while (this.homeBackgroundRefreshPending && Router.getCurrent() === "home") {
+        const shouldPreserveReturnState = Boolean(this.homeBackgroundRefreshPreserveReturnState);
+        const refreshReason = this.homeBackgroundRefreshReason;
+        this.homeBackgroundRefreshPending = false;
+        this.homeBackgroundRefreshPreserveReturnState = false;
+        this.homeBackgroundRefreshReason = "";
+        await this.loadData({
+          background: true,
+          preserveReturnState: shouldPreserveReturnState
+        });
+        didRefresh = true;
+        logHomePerf("backgroundRefresh", {
+          reason: refreshReason,
+          preserveReturnState: shouldPreserveReturnState
+        });
+      }
+      return didRefresh;
+    })().finally(() => {
+      if (this.homeBackgroundRefreshPromise === refreshPromise) {
+        this.homeBackgroundRefreshPromise = null;
+      }
+    });
+    this.homeBackgroundRefreshPromise = refreshPromise;
+    return refreshPromise;
+  },
+
   stopHeroRotation() {
     if (this.heroRotateTimer) {
       clearInterval(this.heroRotateTimer);
@@ -4335,6 +4422,10 @@ export const HomeScreen = {
     this.focusWithoutAutoScroll(target, { suppressDelegatedFocus });
     this.scheduleHomeLazyImageHydration(target);
     return target;
+  },
+
+  markUserInteractionSinceHomePaint() {
+    this.hasUserInteractedSinceHomePaint = true;
   },
 
   getInitialFocusSelector() {
@@ -8186,6 +8277,7 @@ export const HomeScreen = {
         if (!target || !this.container?.contains(target)) {
           return;
         }
+        this.markUserInteractionSinceHomePaint();
         const action = String(target.dataset.action || "");
         if (action === "openDetail" || action === "openCollectionFolder") {
           this.openDetailFromNode(target);
@@ -8200,6 +8292,11 @@ export const HomeScreen = {
         }
       };
     }
+    if (!this.boundHomeMouseDownHandler) {
+      this.boundHomeMouseDownHandler = () => {
+        this.markUserInteractionSinceHomePaint();
+      };
+    }
     if (!this.boundHomeMouseOverHandler) {
       this.boundHomeMouseOverHandler = (event) => {
         const target = event?.target?.closest?.(".home-main .home-content-card.focusable");
@@ -8211,6 +8308,7 @@ export const HomeScreen = {
         if (this.sidebarExpanded || this.isSidebarFocusActive()) {
           return;
         }
+        this.markUserInteractionSinceHomePaint();
         this.setFocusedNode(target, { suppressDelegatedFocus: true });
         if (this.isMainNode(target)) {
           this.lastMainFocus = target;
@@ -8227,6 +8325,7 @@ export const HomeScreen = {
         if (!(target instanceof HTMLElement) || !main?.contains(target)) {
           return;
         }
+        this.markUserInteractionSinceHomePaint();
         // LG Magic Remote wheel events scroll the hovered element natively.
         // Consume them while the sidebar owns navigation so the background
         // remains fixed, matching Android TV's blocked content input.
@@ -8246,11 +8345,13 @@ export const HomeScreen = {
     if (this.boundHomeEventContainer) {
       this.boundHomeEventContainer.removeEventListener("focusin", this.boundHomeFocusInHandler);
       this.boundHomeEventContainer.removeEventListener("click", this.boundHomeClickHandler);
+      this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
       this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
       this.boundHomeEventContainer.removeEventListener("wheel", this.boundHomeWheelHandler);
     }
     this.container.addEventListener("focusin", this.boundHomeFocusInHandler);
     this.container.addEventListener("click", this.boundHomeClickHandler);
+    this.container.addEventListener("mousedown", this.boundHomeMouseDownHandler);
     this.container.addEventListener("mouseover", this.boundHomeMouseOverHandler);
     this.container.addEventListener("wheel", this.boundHomeWheelHandler, { passive: false });
     this.boundHomeEventContainer = this.container;
@@ -8291,12 +8392,6 @@ export const HomeScreen = {
   async mount(params = {}, navigationContext = {}) {
     const mountStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
     const isBackNavigation = Boolean(navigationContext?.isBackNavigation);
-    // Startup-only Home flags can be retained in the route stack when the
-    // user opens Detail. Do not replay them when returning to the rendered TV
-    // Home, otherwise Back is mistaken for a new cold Home load.
-    const waitForFreshContinueWatching = Boolean(
-      params?.waitForFreshContinueWatching && !isBackNavigation
-    );
     this.container = document.getElementById("home");
     const restoredRouteFocusState =
       navigationContext?.isBackNavigation && navigationContext?.restoredState?.layoutMode
@@ -8421,9 +8516,10 @@ export const HomeScreen = {
       this.scheduleHomeTruncationUpdate();
       this.scheduleHomeLazyImageHydration();
       this.scheduleReturnFocusRestore();
-      this.loadData({
-        background: true,
-        preserveReturnState: true
+      this.ensureStartupSyncSubscription();
+      this.requestHomeBackgroundRefresh({
+        preserveReturnState: true,
+        reason: "route-resume"
       }).catch((error) => {
         console.warn("Home background refresh failed", error);
       });
@@ -8449,11 +8545,12 @@ export const HomeScreen = {
     if (this.hasLoadedOnce && Array.isArray(this.rows) && this.rows.length) {
       this.homeLoadToken = (this.homeLoadToken || 0) + 1;
       this.render();
-      this.loadData({
-        background: true,
+      this.ensureStartupSyncSubscription();
+      this.requestHomeBackgroundRefresh({
         preserveReturnState: Boolean(
           navigationContext?.isBackNavigation || returnFocusState?.layoutMode
-        )
+        ),
+        reason: "route-return"
       }).catch((error) => {
         console.warn("Home background refresh failed", error);
       });
@@ -8469,24 +8566,32 @@ export const HomeScreen = {
 
     this.homeLoadToken = (this.homeLoadToken || 0) + 1;
     this.hasAppliedInitialContinueWatchingFocus = false;
+    this.hasUserInteractedSinceHomePaint = false;
     this.isInitialHomeLoading = true;
+    this.ensureStartupSyncSubscription();
     this.layoutPrefs = LayoutPreferences.get();
     this.layoutMode = String(this.layoutPrefs.homeLayout || "classic").toLowerCase();
     this.rows = [];
     this.watchedItems = [];
     this.watchedTitleIds = new Set();
-    this.continueWatchingDisplay = waitForFreshContinueWatching
-      ? []
-      : readContinueWatchingDisplaySnapshot(watchProgressRepository.getContinueWatchingSourceKey());
-    this.continueWatchingHydratedFromSnapshot = Boolean(
-      !waitForFreshContinueWatching && this.continueWatchingDisplay.length
+    this.continueWatchingDisplay = readContinueWatchingDisplaySnapshot(
+      watchProgressRepository.getContinueWatchingSourceKey()
     );
+    this.continueWatchingHydratedFromSnapshot = Boolean(this.continueWatchingDisplay.length);
     this.continueWatchingLoading = false;
     this.heroCandidates = [];
     this.heroItem = null;
     this.sidebarProfile = await getLocalSidebarProfileState().catch(() => null);
     this.render();
-    await this.loadData({ background: false, waitForFreshContinueWatching });
+    await this.loadData({ background: false });
+    if (this.homeBackgroundRefreshPending) {
+      void this.requestHomeBackgroundRefresh({
+        preserveReturnState: true,
+        reason: this.homeBackgroundRefreshReason || "post-initial-load"
+      }).catch((error) => {
+        console.warn("Home deferred background refresh failed", error);
+      });
+    }
     logHomePerf("mount", {
       ms: Number((homePerfNow() - mountStart).toFixed(2)),
       route: "home",
@@ -8495,19 +8600,9 @@ export const HomeScreen = {
     });
   },
 
-  async loadData({
-    background = false,
-    preserveReturnState = false,
-    waitForFreshContinueWatching = false
-  } = {}) {
+  async loadData({ background = false, preserveReturnState = false } = {}) {
     const loadStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
     const token = this.homeLoadToken;
-    if (!background && waitForFreshContinueWatching && StartupSyncService.started) {
-      globalThis.NuvioBootGuard?.stage?.("Synchronizing Continue Watching");
-      await StartupSyncService.requestHomeSyncNow().catch((error) => {
-        console.warn("Initial Continue Watching sync failed", error);
-      });
-    }
     const preserveHomeReturnState = Boolean(background && preserveReturnState);
     const preservedHeroItem = preserveHomeReturnState ? this.heroItem : null;
     const preservedHeroIdentity = preserveHomeReturnState ? buildHeroIdentity(this.heroItem) : "";
@@ -8537,25 +8632,6 @@ export const HomeScreen = {
     const previousContinueWatchingSignature = preserveContinueWatching
       ? buildContinueWatchingSignature(this.continueWatchingDisplay)
       : "";
-    const waitForInitialContinueWatching = Boolean(!background && !hydratedFromSnapshot);
-    const initialContinueWatchingBudgetMs = this.isPerformanceConstrained()
-      ? CW_INITIAL_RESOLVE_BUDGET_TV_MS
-      : CW_INITIAL_RESOLVE_BUDGET_MS;
-    let initialContinueWatchingReleased = false;
-    const releaseInitialHomeAfterContinueWatching = () => {
-      if (!waitForInitialContinueWatching || initialContinueWatchingReleased) {
-        return false;
-      }
-      if (token !== this.homeLoadToken || Router.getCurrent() !== "home") {
-        return false;
-      }
-      initialContinueWatchingReleased = true;
-      this.isInitialHomeLoading = false;
-      this.hasLoadedOnce = true;
-      this.render();
-      return true;
-    };
-
     let progressAllError = null;
     let recentProgressError = null;
     const sidebarProfilePromise = getSidebarProfileState().catch(() => null);
@@ -8656,11 +8732,9 @@ export const HomeScreen = {
         if (!this.heroItem) {
           this.heroItem = this.pickInitialHero();
         }
-        if (!waitForInitialContinueWatching) {
-          this.isInitialHomeLoading = false;
-          this.hasLoadedOnce = true;
-          this.requestBackgroundRender();
-        }
+        this.isInitialHomeLoading = false;
+        this.hasLoadedOnce = true;
+        this.requestBackgroundRender();
       }
     });
     if (token !== this.homeLoadToken) {
@@ -8688,7 +8762,14 @@ export const HomeScreen = {
     ) {
       // CW already painted instantly from the snapshot — focus it on this render.
       // Fresh data reconciles fire-and-forget below.
-      if (!this.suppressInitialContinueWatchingFocus) {
+      if (
+        shouldApplyLateContinueWatchingFocus({
+          background,
+          hasUserInteracted: this.hasUserInteractedSinceHomePaint,
+          suppressInitialFocus: this.suppressInitialContinueWatchingFocus,
+          hasAppliedInitialFocus: this.hasAppliedInitialContinueWatchingFocus
+        })
+      ) {
         this.forceInitialContinueWatchingFocus = true;
       }
     }
@@ -8716,11 +8797,9 @@ export const HomeScreen = {
     }
     this.loadedProfileId = String(ProfileManager.getActiveProfileId() || "");
     this.loadedWatchProgressSourceKey = watchProgressRepository.getContinueWatchingSourceKey();
-    if (!waitForInitialContinueWatching) {
-      this.isInitialHomeLoading = false;
-      this.hasLoadedOnce = true;
-      this.render();
-    }
+    this.isInitialHomeLoading = false;
+    this.hasLoadedOnce = true;
+    this.render();
     logHomePerf("loadData", {
       phase: "first-render",
       ms: Number((homePerfNow() - loadStart).toFixed(2)),
@@ -8808,15 +8887,6 @@ export const HomeScreen = {
         });
     }
 
-    if (waitForInitialContinueWatching) {
-      setTimeout(() => {
-        if (token !== this.homeLoadToken || Router.getCurrent() !== "home") {
-          return;
-        }
-        releaseInitialHomeAfterContinueWatching();
-      }, initialContinueWatchingBudgetMs);
-    }
-
     {
       (async () => {
         const [allProgress, continueWatching] = await Promise.all([
@@ -8855,10 +8925,7 @@ export const HomeScreen = {
         if (!suppressContinueWatchingLoading) {
           this.continueWatchingLoading = shouldShowLoading;
           this.continueWatchingDisplay = [];
-          if (
-            !waitForInitialContinueWatching &&
-            (previousLoadingState !== this.continueWatchingLoading || previousDisplaySignature)
-          ) {
+          if (previousLoadingState !== this.continueWatchingLoading || previousDisplaySignature) {
             this.requestBackgroundRender();
           }
         }
@@ -8866,23 +8933,18 @@ export const HomeScreen = {
         if (!shouldShowLoading) {
           if (suppressContinueWatchingLoading && (progressAllError || recentProgressError)) {
             this.continueWatchingLoading = false;
-            releaseInitialHomeAfterContinueWatching();
             return;
           }
           if (preserveContinueWatching) {
             const nextSignature = "";
             if (nextSignature === previousContinueWatchingSignature) {
               this.continueWatchingLoading = false;
-              releaseInitialHomeAfterContinueWatching();
               return;
             }
           }
           this.continueWatchingLoading = false;
           this.continueWatchingDisplay = [];
-          if (
-            !releaseInitialHomeAfterContinueWatching() &&
-            (previousLoadingState || previousDisplaySignature)
-          ) {
+          if (previousLoadingState || previousDisplaySignature) {
             this.requestBackgroundRender();
           }
           return;
@@ -8925,9 +8987,12 @@ export const HomeScreen = {
               this.heroItem = this.pickInitialHero();
             }
             if (
-              !background &&
-              !this.suppressInitialContinueWatchingFocus &&
-              !this.hasAppliedInitialContinueWatchingFocus
+              shouldApplyLateContinueWatchingFocus({
+                background,
+                hasUserInteracted: this.hasUserInteractedSinceHomePaint,
+                suppressInitialFocus: this.suppressInitialContinueWatchingFocus,
+                hasAppliedInitialFocus: this.hasAppliedInitialContinueWatchingFocus
+              })
             ) {
               this.forceInitialContinueWatchingFocus = true;
             }
@@ -8935,21 +9000,16 @@ export const HomeScreen = {
           const nextDisplaySignature = buildContinueWatchingSignature(this.continueWatchingDisplay);
           const nextHeroIdentity = buildHeroIdentity(this.heroItem);
           if (
-            !releaseInitialHomeAfterContinueWatching() &&
-            (previousLoadingState !== this.continueWatchingLoading ||
-              previousDisplaySignature !== nextDisplaySignature ||
-              (!preserveHomeReturnState && previousHeroIdentity !== nextHeroIdentity))
+            previousLoadingState !== this.continueWatchingLoading ||
+            previousDisplaySignature !== nextDisplaySignature ||
+            (!preserveHomeReturnState && previousHeroIdentity !== nextHeroIdentity)
           ) {
             this.requestBackgroundRender();
           }
         } catch (error) {
           console.warn("Continue watching async enrichment failed", error);
           this.continueWatchingLoading = false;
-          if (
-            !releaseInitialHomeAfterContinueWatching() &&
-            !suppressContinueWatchingLoading &&
-            previousLoadingState
-          ) {
+          if (!suppressContinueWatchingLoading && previousLoadingState) {
             this.requestBackgroundRender();
           }
         }
@@ -8959,7 +9019,7 @@ export const HomeScreen = {
           return;
         }
         this.continueWatchingLoading = false;
-        if (!releaseInitialHomeAfterContinueWatching() && !suppressContinueWatchingLoading) {
+        if (!suppressContinueWatchingLoading) {
           this.requestBackgroundRender();
         }
       });
@@ -10713,6 +10773,9 @@ export const HomeScreen = {
     const currentFocusedNode =
       this.getCurrentFocusedNode() || this.container?.querySelector(".focusable") || null;
     const code = Number(event?.keyCode || 0);
+    if (code === 13 || isDirectionalKeyCode(code)) {
+      this.markUserInteractionSinceHomePaint();
+    }
     if (this._homeHoldDialog) {
       return true;
     }
@@ -10745,7 +10808,7 @@ export const HomeScreen = {
         this.scheduleModernSidebarPillAutoCollapse({ restart: wasIconOnly });
       }
     }
-    if (this.layoutMode === "modern" && [37, 38, 39, 40].includes(code)) {
+    if (this.layoutMode === "modern" && isDirectionalKeyCode(code)) {
       this.cancelFocusedPosterFlow();
     }
     if (this.handleHomeDpad(event)) {
@@ -11343,6 +11406,13 @@ export const HomeScreen = {
   },
 
   cleanup() {
+    if (this.unsubscribeStartupSyncPullCompleted) {
+      this.unsubscribeStartupSyncPullCompleted();
+      this.unsubscribeStartupSyncPullCompleted = null;
+    }
+    this.homeBackgroundRefreshPending = false;
+    this.homeBackgroundRefreshPreserveReturnState = false;
+    this.homeBackgroundRefreshReason = "";
     this.cancelModernSidebarPillAutoCollapse();
     this.cancelPendingContinueWatchingEnter();
     this.cancelPendingContinueWatchingHold();
@@ -11392,6 +11462,7 @@ export const HomeScreen = {
     if (this.boundHomeEventContainer) {
       this.boundHomeEventContainer.removeEventListener("focusin", this.boundHomeFocusInHandler);
       this.boundHomeEventContainer.removeEventListener("click", this.boundHomeClickHandler);
+      this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
       this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
       this.boundHomeEventContainer.removeEventListener("wheel", this.boundHomeWheelHandler);
       this.boundHomeEventContainer = null;

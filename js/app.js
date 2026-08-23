@@ -239,11 +239,6 @@ async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
       : null;
   const isHomeResumeRoute = resumeRoute?.route === "home";
 
-  const shouldWaitForHomeSync =
-    experienceRoute === "home" &&
-    (!resumeRoute?.route || isHomeResumeRoute) &&
-    StartupSyncService.started;
-
   if (experienceRoute !== "home") {
     await Router.navigate(experienceRoute, {}, { replaceHistory: true, skipStackPush: true });
   } else if (resumeRoute?.route && !isHomeResumeRoute) {
@@ -252,20 +247,15 @@ async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
       skipStackPush: true
     });
   } else {
-    await Router.navigate(
-      "home",
-      shouldWaitForHomeSync || isHomeResumeRoute
-        ? {
-            ...(isHomeResumeRoute ? resumeRoute.params || {} : {}),
-            ...(shouldWaitForHomeSync
-              ? { forceReload: true, waitForFreshContinueWatching: true }
-              : {})
-          }
-        : {}
-    );
+    await Router.navigate("home", {
+      ...(isHomeResumeRoute ? resumeRoute.params || {} : {}),
+      ...(StartupSyncService.started ? { forceReload: true } : {})
+    });
   }
 
-  void StartupSyncService.requestSyncNow().catch((error) => {
+  void StartupSyncService.requestSyncNow({
+    notifyPullCompleted: experienceRoute === "home"
+  }).catch((error) => {
     console.warn("Profile background sync failed", error);
   });
 }
