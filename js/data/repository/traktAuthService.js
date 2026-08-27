@@ -7,6 +7,7 @@ import {
 import { TraktAuthStore } from "../local/traktAuthStore.js";
 import { detailWatchedEnrichmentService } from "./detailWatchedEnrichmentService.js";
 import { TraktCredentialSyncService } from "../../core/profile/traktCredentialSyncService.js";
+import { isTraktRefreshTokenRejected } from "./traktRefreshFailure.js";
 
 const API_VERSION = "2";
 const DEFAULT_API_URL = "https://api.trakt.tv";
@@ -219,7 +220,7 @@ export const TraktAuthService = {
     });
 
     if (!response.ok || !payload) {
-      if (response.status === 401 || response.status === 403) {
+      if (isTraktRefreshTokenRejected(response.status)) {
         const recovered = await TraktCredentialSyncService.pullFromRemote();
         if (recovered && TraktAuthStore.get().refreshToken !== state.refreshToken) {
           return this.refreshTokenIfNeeded(true);
