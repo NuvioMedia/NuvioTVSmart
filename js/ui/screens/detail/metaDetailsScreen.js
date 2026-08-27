@@ -13,6 +13,7 @@ import { watchedSeriesReconciliationService } from "../../../data/repository/wat
 import { TmdbService } from "../../../core/tmdb/tmdbService.js";
 import { TmdbMetadataService } from "../../../core/tmdb/tmdbMetadataService.js";
 import { normalizeTmdbBackdropUrl } from "../../../core/tmdb/tmdbImageUrl.js";
+import { tabSupportsContentType } from "../../../core/util/libraryMembership.js";
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 import {
   showHomeRatings,
@@ -4810,7 +4811,7 @@ export const MetaDetailsScreen = {
     const tabs = await libraryRepository.getListTabs().catch(() => []);
     const resolvedTabs =
       Array.isArray(tabs) && tabs.length
-        ? tabs.filter((tab) => tab.isMembershipDestination !== false)
+        ? tabs.filter((tab) => tabSupportsContentType(tab, item.itemType))
         : [{ key: "local", title: t("detail.library", {}, "Library"), type: "local" }];
     const snapshot = await libraryRepository
       .getMembershipSnapshot(item)

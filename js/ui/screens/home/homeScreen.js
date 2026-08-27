@@ -19,6 +19,7 @@ import { mapWithConcurrency } from "../../../core/network/mapWithConcurrency.js"
 import { filterReleasedItems } from "../../../core/util/releaseInfoUtils.js";
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 import { showHomeRatings } from "../../../core/util/imdbRatingVisibility.js";
+import { tabSupportsContentType } from "../../../core/util/libraryMembership.js";
 import { ContinueWatchingPreferences } from "../../../data/local/continueWatchingPreferences.js";
 import { HomeCatalogStore } from "../../../data/local/homeCatalogStore.js";
 import { CollectionsStore, buildCollectionHomeKey } from "../../../data/local/collectionsStore.js";
@@ -4992,7 +4993,7 @@ export const HomeScreen = {
     const tabs = await libraryRepository.getListTabs().catch(() => []);
     const resolvedTabs =
       Array.isArray(tabs) && tabs.length
-        ? tabs.filter((tab) => tab.isMembershipDestination !== false)
+        ? tabs.filter((tab) => tabSupportsContentType(tab, item.type))
         : [{ key: "local", title: t("detail.library", {}, "Library"), type: "local" }];
     const libraryItem = {
       itemId: item.id,

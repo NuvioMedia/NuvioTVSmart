@@ -4,6 +4,7 @@ import { libraryRepository, LibrarySourceMode } from "../../data/repository/libr
 import { watchedItemsRepository } from "../../data/repository/watchedItemsRepository.js";
 import { watchProgressRepository } from "../../data/repository/watchProgressRepository.js";
 import { watchedSeriesReconciliationService } from "../../data/repository/watchedSeriesReconciliationService.js";
+import { tabSupportsContentType } from "../../core/util/libraryMembership.js";
 import { NuvioDialog } from "./nuvioDialog.js";
 
 function t(key, params = {}, fallback = key) {
@@ -190,7 +191,7 @@ export async function createPosterListPickerState(state) {
   const tabs = await libraryRepository.getListTabs().catch(() => []);
   const resolvedTabs =
     Array.isArray(tabs) && tabs.length
-      ? tabs.filter((tab) => tab.isMembershipDestination !== false)
+      ? tabs.filter((tab) => tabSupportsContentType(tab, item.type))
       : [{ key: "local", title: t("detail.library", {}, "Library"), type: "local" }];
   const libraryItem = toLibraryItem(item);
   const snapshot = await libraryRepository
