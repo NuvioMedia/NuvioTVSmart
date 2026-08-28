@@ -29,7 +29,7 @@ test("poster style prefers poster then backdrop, never the episode still", () =>
     isNextUp: true,
     hasAired: true
   });
-  assert.deepEqual(sources, ["poster.jpg", "backdrop.jpg", "background.jpg"]);
+  assert.deepEqual(sources, ["poster.jpg", "backdrop.jpg"]);
   assert.ok(!sources.includes("episode.jpg"));
   assert.ok(!sources.includes("thumbnail.jpg"));
 });
@@ -41,13 +41,7 @@ test("card style with thumbnails on and not next up leads with the episode thumb
     isNextUp: false,
     hasAired: true
   });
-  assert.deepEqual(sources, [
-    "episode.jpg",
-    "backdrop.jpg",
-    "poster.jpg",
-    "thumbnail.jpg",
-    "background.jpg"
-  ]);
+  assert.deepEqual(sources, ["episode.jpg", "backdrop.jpg", "poster.jpg"]);
 });
 
 test("card style next up not aired keeps the episode still last", () => {
@@ -57,13 +51,7 @@ test("card style next up not aired keeps the episode still last", () => {
     isNextUp: true,
     hasAired: false
   });
-  assert.deepEqual(sources, [
-    "backdrop.jpg",
-    "poster.jpg",
-    "thumbnail.jpg",
-    "background.jpg",
-    "episode.jpg"
-  ]);
+  assert.deepEqual(sources, ["backdrop.jpg", "poster.jpg", "thumbnail.jpg"]);
 });
 
 test("card style next up aired leads with the thumbnail", () => {
@@ -73,43 +61,79 @@ test("card style next up aired leads with the thumbnail", () => {
     isNextUp: true,
     hasAired: true
   });
-  assert.deepEqual(sources, [
-    "thumbnail.jpg",
-    "episode.jpg",
-    "backdrop.jpg",
-    "poster.jpg",
-    "background.jpg"
-  ]);
+  assert.deepEqual(sources, ["thumbnail.jpg", "backdrop.jpg", "poster.jpg"]);
 });
 
-test("thumbnails off leads with the backdrop and keeps the episode still low", () => {
+test("thumbnails off excludes episode artwork from the fallback chain", () => {
   const sources = continueWatchingImageSources(art, {
     cardStyle: "card",
     useEpisodeThumbnails: false,
     isNextUp: false,
     hasAired: true
   });
-  assert.deepEqual(sources, [
-    "backdrop.jpg",
-    "poster.jpg",
-    "thumbnail.jpg",
-    "episode.jpg",
-    "background.jpg"
-  ]);
+  assert.deepEqual(sources, ["backdrop.jpg", "poster.jpg"]);
+  assert.ok(!sources.includes("episode.jpg"));
+  assert.ok(!sources.includes("thumbnail.jpg"));
 });
 
-test("wide style behaves like card style for the episode thumbnail order", () => {
+test("wide style uses poster-art ordering while thumbnails are enabled", () => {
   const wide = continueWatchingImageSources(art, {
     cardStyle: "wide",
     useEpisodeThumbnails: true,
     isNextUp: false,
     hasAired: true
   });
-  const card = continueWatchingImageSources(art, {
-    cardStyle: "card",
+  assert.deepEqual(wide, ["episode.jpg", "poster.jpg", "backdrop.jpg"]);
+});
+
+test("wide next up uses the next-up thumbnail before poster art", () => {
+  const sources = continueWatchingImageSources(art, {
+    cardStyle: "wide",
     useEpisodeThumbnails: true,
+    isNextUp: true,
+    hasAired: true
+  });
+  assert.deepEqual(sources, ["thumbnail.jpg", "poster.jpg", "backdrop.jpg"]);
+});
+
+test("wide style excludes thumbnails when the preference is disabled", () => {
+  const sources = continueWatchingImageSources(art, {
+    cardStyle: "wide",
+    useEpisodeThumbnails: false,
     isNextUp: false,
     hasAired: true
   });
-  assert.deepEqual(wide, card);
+  assert.deepEqual(sources, ["poster.jpg", "backdrop.jpg"]);
+});
+
+test("card style keeps an unaired next up thumbnail as a last resort", () => {
+  const sources = continueWatchingImageSources(art, {
+    cardStyle: "card",
+    useEpisodeThumbnails: true,
+    isNextUp: true,
+    hasAired: false
+  });
+  assert.deepEqual(sources, ["backdrop.jpg", "poster.jpg", "thumbnail.jpg"]);
+});
+
+test("card style with thumbnails disabled does not use an unaired next up thumbnail", () => {
+  const sources = continueWatchingImageSources(art, {
+    cardStyle: "card",
+    useEpisodeThumbnails: false,
+    isNextUp: true,
+    hasAired: false
+  });
+  assert.deepEqual(sources, ["backdrop.jpg", "poster.jpg"]);
+});
+
+test("card style normalization is case insensitive", () => {
+  assert.equal(continueWatchingUsesEpisodeThumbnails(" POSTER ", true), false);
+  assert.deepEqual(
+    continueWatchingImageSources(art, {
+      cardStyle: " WIDE ",
+      useEpisodeThumbnails: true,
+      isNextUp: false
+    }),
+    ["episode.jpg", "poster.jpg", "backdrop.jpg"]
+  );
 });

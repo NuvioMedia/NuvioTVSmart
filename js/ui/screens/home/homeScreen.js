@@ -2375,8 +2375,7 @@ function renderContinueWatchingCard(item, index, options = {}) {
       poster: normalized.poster,
       backdrop: normalized.backdrop,
       thumbnail: normalized.thumbnail,
-      episodeThumbnail: normalized.episodeThumbnail,
-      background: normalized.background
+      episodeThumbnail: normalized.episodeThumbnail
     },
     {
       cardStyle,
