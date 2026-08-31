@@ -52,7 +52,8 @@ export function createAssRenderer({
   container,
   selectionToken,
   isCurrentSelection,
-  resampling = "video_height"
+  resampling = "video_height",
+  forceRafFrameLoop = false
 }) {
   if (!body || !video || !container) {
     return { ok: false, error: "ass-renderer-missing-arguments" };
@@ -124,7 +125,27 @@ export function createAssRenderer({
             detail: "ASS body lacks an [Events] section with Dialogue rows"
           };
         }
-        instance = new AssConstructor(sourceBody, video, { container, resampling });
+        // webOS advertises requestVideoFrameCallback but never invokes it for
+        // its video pipeline (measured 0 callbacks over 6s of playback while
+        // requestAnimationFrame ticked normally), and ass.js schedules its
+        // frame loop on rVFC when present — so cues paint once and freeze
+        // (#844). Shadow the method while the constructor captures its frame
+        // scheduler so ass.js binds requestAnimationFrame instead, then
+        // restore the element.
+        const shadowRvfc =
+          forceRafFrameLoop &&
+          typeof video.requestVideoFrameCallback === "function" &&
+          !Object.prototype.hasOwnProperty.call(video, "requestVideoFrameCallback");
+        if (shadowRvfc) {
+          video.requestVideoFrameCallback = undefined;
+        }
+        try {
+          instance = new AssConstructor(sourceBody, video, { container, resampling });
+        } finally {
+          if (shadowRvfc) {
+            delete video.requestVideoFrameCallback;
+          }
+        }
         debugAssRender("constructed", {
           token,
           childCount: Number(container.childNodes?.length || 0),

@@ -14045,7 +14045,10 @@ export const PlayerScreen = {
       video,
       container,
       selectionToken,
-      isCurrentSelection
+      isCurrentSelection,
+      // webOS never fires requestVideoFrameCallback for its video pipeline,
+      // which freezes the ass.js frame loop on its first paint (#844).
+      forceRafFrameLoop: Environment.isWebOS()
     });
     if (!renderer || typeof renderer.init !== "function") {
       return { applied: false, fallbackVtt: convertAssBodyToVtt(body) };
