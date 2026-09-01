@@ -662,7 +662,7 @@ export const PluginsScreen = {
       return;
     }
     if (kind === "remove") {
-      if (PluginManager.removeRepository(id)) {
+      if (await PluginManager.removeRepository(id)) {
         this.setStatus(t("plugin_repo_removed", {}, "Repository removed."), "success");
       }
       this.render();

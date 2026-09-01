@@ -3,6 +3,7 @@ import { clearAccountLocalData } from "./accountLocalDataReset.js";
 import { SessionStore } from "../storage/sessionStore.js";
 import { SUPABASE_ANON_KEY } from "../../config.js";
 import { fetchSupabaseAuth } from "./supabaseAuthFetch.js";
+import { PluginCodeStore } from "../../data/local/pluginCodeStore.js";
 
 function isJwtLike(token) {
   const value = String(token || "").trim();
@@ -158,6 +159,7 @@ class AuthManagerClass {
     } catch (error) {
       console.warn("Account-local data reset failed during sign out", error);
     }
+    await PluginCodeStore.clearAll();
     this.cachedEffectiveUserId = null;
     this.cachedEffectiveUserSourceUserId = null;
     if (!wasSignedOut) {

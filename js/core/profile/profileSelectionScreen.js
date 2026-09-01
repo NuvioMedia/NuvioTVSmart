@@ -2277,7 +2277,7 @@ export const ProfileSelectionScreen = {
     const deleted = await ProfileManager.deleteProfile(profile.id);
     if (deleted !== false) {
       PluginStore.clearProfile(profile.id);
-      PluginCodeStore.clearProfile(profile.id);
+      await PluginCodeStore.clearProfile(profile.id);
       await ProfileSyncService.deleteProfileData(profile.id);
       await ProfileSyncService.push();
       await this.refreshProfilePinStates();

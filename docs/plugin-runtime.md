@@ -84,16 +84,27 @@ il self-test QuickJS prima di diventare eseguibile.
 
 ## Stato, profili e sincronizzazione
 
-Lo stato è versionato e profile-scoped (`pluginState`); il codice è in una cache separata
-(`pluginCodeCache`) con chiavi hashate, limite dimensionale, LRU e recupero da entry corrotte.
+Lo stato è versionato e profile-scoped (`pluginState`); il codice è in una cache IndexedDB separata
+(`nuvio_plugin_code_cache`) con record per profilo e chiave hashata, limite dimensionale, LRU e
+recupero tollerante dagli errori. Se IndexedDB non è disponibile o fallisce, la cache usa memoria
+limitata alla sessione con le stesse quote. Le operazioni di pulizia (rimozione, svuotamento
+profilo, sign-out) restituiscono `false` e registrano un avviso quando la cancellazione persistente
+non può essere verificata; i record restano comunque nascosti per la sessione. In upgrade il
+vecchio payload localStorage `pluginCodeCache` viene eliminato una volta in modo idempotente, senza
+parsing o migrazione.
+Il cambiamento rimuove il percorso di persistenza sincrono che causava la regressione di reattività e
+quota su LG webOS 5.x; il comportamento di plugin, riproduzione e gli altri store localStorage resta
+invariato. La stessa cache asincrona viene usata anche sulle altre piattaforme Web TV.
 
 La cache del manifest/provider è il campo `metadata` dello stato del repository, con timestamp
 `lastUpdated`: non ha un TTL implicito e viene sostituita solo da un'aggiunta, da un refresh
 esplicito o da una riconciliazione cloud valida. Il codice JS è invalidato quando cambia il provider
 del manifest, la versione/URL viene risalvata o il repository viene rimosso; l'eviction è LRU e una
 scrittura viene verificata rileggendo l'entry, così un limite di storage non lascia un provider
-falsamente eseguibile. Non viene mantenuta una cache di bytecode compilato: l'asset QuickJS è parte
-immutabile del package e ogni esecuzione crea un contesto nuovo.
+falsamente eseguibile. Uno scraper con `codeAvailable: true` ma cache assente (ad esempio dopo
+un'eviction) non blocca l'esecuzione: il codice viene riscaricato al momento dell'uso. Non viene
+mantenuta una cache di bytecode compilato: l'asset QuickJS è parte immutabile del package e ogni
+esecuzione crea un contesto nuovo.
 
 - Il profilo principale è il profilo `1`.
 - Un profilo secondario con `usesPrimaryPlugins` legge il set principale e non può modificarlo o
@@ -237,7 +248,10 @@ eseguito almeno questo collaudo:
 8. verificare che add-on normali, playback, libreria, account e sync continuino a funzionare
    quando il plugin gate è negativo;
 9. raccogliere modello, versione OS/Web Engine, protocol handshake, memoria, log del servizio e
-   risultato QuickJS per ogni generazione.
+   risultato QuickJS per ogni generazione;
+10. su webOS 5.x, verificare che il salvataggio/lettura del codice provider nella cache IndexedDB
+    `nuvio_plugin_code_cache` non produca errori di quota o perdita di reattività, e che il vecchio
+    payload `pluginCodeCache` in localStorage non sia più presente.
 
 Finché questa matrice non è eseguita su dispositivi reali, la classificazione corretta è
 “candidato al runtime” e non “compatibile hardware”.

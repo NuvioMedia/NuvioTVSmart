@@ -204,33 +204,35 @@ export function resultToStream(result = {}, scraper = {}) {
   };
 }
 
-function mergeRepositoryScrapers(state, repository, manifest) {
+async function mergeRepositoryScrapers(state, repository, manifest) {
   const previous = state.scrapers.filter((entry) => entry.repositoryId === repository.id);
   const previousByKey = new Map(
     previous.map((entry) => [`${entry.manifestId || entry.filename}`, entry])
   );
-  const scrapers = manifest.scrapers.map((entry) => {
-    const id = scraperIdForManifest(repository.id, entry.id, entry.filename);
-    const old = previousByKey.get(`${entry.id}`) || previousByKey.get(`${entry.filename}`) || {};
-    return {
-      ...entry,
-      id,
-      repositoryId: repository.id,
-      manifestId: entry.id,
-      type: PLUGIN_REPOSITORY_TYPES.NUVIO_JS,
-      // Android keeps an existing user choice, but newly discovered
-      // VideoEasy providers start disabled until the user confirms the risk.
-      enabled:
-        old.enabled !== undefined
-          ? old.enabled
-          : entry.enabled !== false && !isVideoEasyScraper(entry.id, entry.name, entry.filename),
-      manifestEnabled: entry.enabled !== false,
-      codeAvailable: Boolean(PluginCodeStore.get(id)),
-      codeUrl: resolvePluginUrl(entry.codeUrl || entry.filename, repository.url),
-      supportedPlatforms: entry.supportedPlatforms || [],
-      disabledPlatforms: entry.disabledPlatforms || []
-    };
-  });
+  const scrapers = await Promise.all(
+    manifest.scrapers.map(async (entry) => {
+      const id = scraperIdForManifest(repository.id, entry.id, entry.filename);
+      const old = previousByKey.get(`${entry.id}`) || previousByKey.get(`${entry.filename}`) || {};
+      return {
+        ...entry,
+        id,
+        repositoryId: repository.id,
+        manifestId: entry.id,
+        type: PLUGIN_REPOSITORY_TYPES.NUVIO_JS,
+        // Android keeps an existing user choice, but newly discovered
+        // VideoEasy providers start disabled until the user confirms the risk.
+        enabled:
+          old.enabled !== undefined
+            ? old.enabled
+            : entry.enabled !== false && !isVideoEasyScraper(entry.id, entry.name, entry.filename),
+        manifestEnabled: entry.enabled !== false,
+        codeAvailable: Boolean(await PluginCodeStore.get(id)),
+        codeUrl: resolvePluginUrl(entry.codeUrl || entry.filename, repository.url),
+        supportedPlatforms: entry.supportedPlatforms || [],
+        disabledPlatforms: entry.disabledPlatforms || []
+      };
+    })
+  );
   return {
     ...state,
     repositories: [
@@ -496,7 +498,7 @@ async function classifyRemoteRepository(remote, quota) {
 }
 
 async function downloadCode(scraper, repository, quota) {
-  const existing = PluginCodeStore.get(scraper.id);
+  const existing = await PluginCodeStore.get(scraper.id);
   try {
     const response = await PluginServiceClient.fetch({
       url: scraper.codeUrl,
@@ -511,12 +513,12 @@ async function downloadCode(scraper, repository, quota) {
     if (!response.ok || response.truncated || !response.body.trim())
       throw new Error(`HTTP ${response.status || 0}`);
     if (
-      !PluginCodeStore.save(
+      !(await PluginCodeStore.save(
         scraper.id,
         response.body,
         { url: scraper.codeUrl, version: scraper.version },
         { maxBytes: quota.maxCacheBytes }
-      )
+      ))
     ) {
       throw new Error("Plugin code cache quota exceeded");
     }
@@ -532,11 +534,13 @@ async function hydrateJsRepository(state, repository, manifest, { markDirty = fa
   const previousIds = state.scrapers
     .filter((entry) => entry.repositoryId === repository.id)
     .map((entry) => entry.id);
-  let next = mergeRepositoryScrapers(state, repository, manifest);
+  let next = await mergeRepositoryScrapers(state, repository, manifest);
   const nextIds = new Set(
     next.scrapers.filter((entry) => entry.repositoryId === repository.id).map((entry) => entry.id)
   );
-  previousIds.filter((id) => !nextIds.has(id)).forEach((id) => PluginCodeStore.remove(id));
+  await Promise.all(
+    previousIds.filter((id) => !nextIds.has(id)).map((id) => PluginCodeStore.remove(id))
+  );
   const hydrated = [];
   for (const scraper of next.scrapers.filter((entry) => entry.repositoryId === repository.id)) {
     const codeAvailable = await downloadCode(scraper, repository, quota);
@@ -593,19 +597,26 @@ function externalScrapers(repository, metadata) {
   });
 }
 
-function clearRepositoryExecution(state, repositoryId) {
-  state.scrapers
-    .filter((entry) => entry.repositoryId === repositoryId)
-    .map((entry) => entry.id)
-    .forEach((id) => PluginCodeStore.remove(id));
+async function clearRepositoryExecution(state, repositoryId) {
+  await Promise.all(
+    state.scrapers
+      .filter((entry) => entry.repositoryId === repositoryId)
+      .map((entry) => PluginCodeStore.remove(entry.id))
+  );
   return {
     ...state,
     scrapers: state.scrapers.filter((entry) => entry.repositoryId !== repositoryId)
   };
 }
 
-function replaceRepositoryAsNonExecutable(state, existing, remote, detected, metadata = null) {
-  const cleaned = clearRepositoryExecution(state, existing.id);
+async function replaceRepositoryAsNonExecutable(
+  state,
+  existing,
+  remote,
+  detected,
+  metadata = null
+) {
+  const cleaned = await clearRepositoryExecution(state, existing.id);
   const type =
     detected.type === PLUGIN_REPOSITORY_TYPES.EXTERNAL_DEX
       ? PLUGIN_REPOSITORY_TYPES.EXTERNAL_DEX
@@ -643,7 +654,7 @@ async function hydrateDetectedJsRepository(state, existing, remote, detected) {
   const manifest =
     detected.manifest || normalizePluginManifest(await fetchJson(manifestUrl, quota), manifestUrl);
   if (!manifest) throw new Error("JS repository manifest is invalid");
-  const cleaned = clearRepositoryExecution(state, existing.id);
+  const cleaned = await clearRepositoryExecution(state, existing.id);
   return hydrateJsRepository(
     cleaned,
     {
@@ -716,7 +727,11 @@ async function executeOne(
   signal,
   { throwOnError = false, mapResults = true } = {}
 ) {
-  const code = PluginCodeStore.get(scraper.id);
+  let code = await PluginCodeStore.get(scraper.id);
+  if (!code?.code && scraper.codeUrl) {
+    await downloadCode(scraper, repository, quota);
+    code = await PluginCodeStore.get(scraper.id);
+  }
   if (!code?.code) return [];
   const executionProfileId = getEffectivePluginProfileId();
   const executionSettings = currentState().settings.scraperSettings?.[scraper.id] || {};
@@ -1039,7 +1054,7 @@ export const PluginManager = {
     return { ok: true };
   },
 
-  removeRepository(repositoryId) {
+  async removeRepository(repositoryId) {
     if (!canEdit()) return false;
     const state = currentState();
     const repository = state.repositories.find((entry) => entry.id === repositoryId);
@@ -1052,7 +1067,7 @@ export const PluginManager = {
     const scraperIds = state.scrapers
       .filter((entry) => entry.repositoryId === repositoryId)
       .map((entry) => entry.id);
-    scraperIds.forEach((id) => PluginCodeStore.remove(id));
+    await Promise.all(scraperIds.map((id) => PluginCodeStore.remove(id)));
     PluginStore.replace({
       ...state,
       repositories: state.repositories.filter((entry) => entry.id !== repositoryId),
@@ -1179,7 +1194,7 @@ export const PluginManager = {
               : null;
           // A typed remote transition is authoritative for execution policy:
           // remove any cached JS code before retaining the row as metadata-only.
-          next = replaceRepositoryAsNonExecutable(next, existing, remote, detected, external);
+          next = await replaceRepositoryAsNonExecutable(next, existing, remote, detected, external);
           continue;
         }
         if (
@@ -1243,14 +1258,16 @@ export const PluginManager = {
       const removed = next.repositories.filter(
         (entry) => !remoteIdentities.has(repositoryIdentity(entry.url))
       );
-      removed
-        .filter((entry) => entry.type === PLUGIN_REPOSITORY_TYPES.NUVIO_JS)
-        .flatMap((entry) =>
-          next.scrapers
-            .filter((scraper) => scraper.repositoryId === entry.id)
-            .map((scraper) => scraper.id)
-        )
-        .forEach((id) => PluginCodeStore.remove(id));
+      await Promise.all(
+        removed
+          .filter((entry) => entry.type === PLUGIN_REPOSITORY_TYPES.NUVIO_JS)
+          .flatMap((entry) =>
+            next.scrapers
+              .filter((scraper) => scraper.repositoryId === entry.id)
+              .map((scraper) => scraper.id)
+          )
+          .map((id) => PluginCodeStore.remove(id))
+      );
       // A DEX or future/opaque repository is outside this client's delete
       // authority. Keep it even when an older server response omits the row;
       // Android may execute/reconcile DEX locally, but Web must never turn a
@@ -1466,7 +1483,7 @@ export const PluginManager = {
   },
 
   async clearCache() {
-    PluginCodeStore.clear();
+    await PluginCodeStore.clear();
     PluginServiceClient.resetHealthCache();
     try {
       await PluginServiceClient.clearCache();
