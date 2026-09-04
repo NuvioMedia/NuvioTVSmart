@@ -9363,7 +9363,7 @@ export const PlayerScreen = {
       return false;
     }
     const shouldShow = this.getNextEpisodeCardThresholdReached(currentSeconds, durationSeconds);
-    if (this.nextEpisodeCardTriggered && !shouldShow) {
+    if (this.nextEpisodeCardTriggered && !this.nextEpisodeLaunching && !shouldShow) {
       this.resetNextEpisodeCardCycle({ render: false });
       return false;
     }
@@ -10056,7 +10056,7 @@ export const PlayerScreen = {
       (Boolean(settings.autoplayNextEpisode) ||
         Boolean(settings.streamAutoPlayPreferBingeGroupForNextEpisode));
     if (mode === "MANUAL" && !shouldAutoSelectInManualMode) {
-      return this.openNextEpisodeStreamPicker(nextEpisode, { forceReload: true });
+      return this.openNextEpisodeStreamPicker(nextEpisode, { forceReload: false });
     }
 
     const launchToken = Number(this.nextEpisodeLaunchToken || 0) + 1;
