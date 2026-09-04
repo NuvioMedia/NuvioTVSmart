@@ -3746,7 +3746,7 @@ export const PlayerController = {
       initialLiveManifestSize: isWebOs && isLivePlayback ? WEBOS_LIVE_INITIAL_MANIFEST_SIZE : 1,
       backBufferLength: isWebOs ? 30 : 90,
       maxBufferLength: isWebOs ? 18 : 30,
-      maxMaxBufferLength: isWebOs ? 24 : 60,
+      maxMaxBufferLength: isWebOs ? 80 : 60,
       maxBufferHole: 0.5,
       startFragPrefetch: false,
       fragLoadingTimeOut: isWebOs ? 18000 : 20000,
