@@ -18,9 +18,18 @@ export function createWatchProgress({
 
 export const WATCH_PROGRESS_STARTED_THRESHOLD = 0.02;
 export const WATCH_PROGRESS_COMPLETED_THRESHOLD = 0.9;
+// Simkl playback sessions report completion earlier than local progress, so
+// Android treats them as finished at 80% instead of 90%.
+export const WATCH_PROGRESS_SIMKL_COMPLETED_THRESHOLD = 0.8;
 // Android keeps a small in-progress marker when a player cannot expose a
 // meaningful duration (the usual case for live streams).
 export const WATCH_PROGRESS_UNKNOWN_DURATION_PERCENT = 5;
+
+export function watchProgressCompletedThreshold(progress = {}) {
+  return String(progress?.source || "") === "simkl_playback"
+    ? WATCH_PROGRESS_SIMKL_COMPLETED_THRESHOLD
+    : WATCH_PROGRESS_COMPLETED_THRESHOLD;
+}
 
 export function getWatchProgressFraction(progress = {}) {
   const positionMs = Number(progress?.positionMs || 0);
@@ -43,13 +52,14 @@ export function getWatchProgressFraction(progress = {}) {
 }
 
 export function isWatchProgressCompleted(progress = {}) {
-  return getWatchProgressFraction(progress) >= WATCH_PROGRESS_COMPLETED_THRESHOLD;
+  return getWatchProgressFraction(progress) >= watchProgressCompletedThreshold(progress);
 }
 
 export function isWatchProgressInProgress(progress = {}) {
   const fraction = getWatchProgressFraction(progress);
   return (
-    fraction >= WATCH_PROGRESS_STARTED_THRESHOLD && fraction < WATCH_PROGRESS_COMPLETED_THRESHOLD
+    fraction >= WATCH_PROGRESS_STARTED_THRESHOLD &&
+    fraction < watchProgressCompletedThreshold(progress)
   );
 }
 
