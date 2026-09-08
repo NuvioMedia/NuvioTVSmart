@@ -1,4 +1,4 @@
-import { SUPABASE_FALLBACK_URL, SUPABASE_URL } from "../../config.js";
+import { ServerConfigurationStore } from "../../data/local/serverConfigurationStore.js";
 import { recordSyncFailure } from "../sync/syncBackoffPolicy.js";
 
 const RETRYABLE_AUTH_STATUSES = new Set([
@@ -46,8 +46,9 @@ async function isRetryableResponse(response) {
 }
 
 export async function fetchSupabaseAuth(endpoint, init = {}) {
-  const primaryBaseUrl = normalizeBaseUrl(SUPABASE_URL);
-  const fallbackBaseUrl = normalizeBaseUrl(SUPABASE_FALLBACK_URL);
+  const configuration = ServerConfigurationStore.getActive();
+  const primaryBaseUrl = normalizeBaseUrl(configuration.backendUrl);
+  const fallbackBaseUrl = normalizeBaseUrl(configuration.fallbackBackendUrl);
   const canFallback =
     Boolean(fallbackBaseUrl) && fallbackBaseUrl.toLowerCase() !== primaryBaseUrl.toLowerCase();
   const primaryUrl = authUrl(primaryBaseUrl, endpoint);

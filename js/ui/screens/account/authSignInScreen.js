@@ -2,6 +2,7 @@ import { Router } from "../../navigation/router.js";
 import { ScreenUtils } from "../../navigation/screen.js";
 import { AuthManager } from "../../../core/auth/authManager.js";
 import { I18n } from "../../../i18n/index.js";
+import { ServerConfigurationStore } from "../../../data/local/serverConfigurationStore.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -19,6 +20,7 @@ export const AuthSignInScreen = {
   },
 
   render() {
+    const server = ServerConfigurationStore.getActive();
     this.container.innerHTML = `
       <div class="auth-simple-shell">
         <div class="auth-simple-hero">
@@ -26,8 +28,25 @@ export const AuthSignInScreen = {
           <p class="auth-simple-subtitle">${I18n.t("auth.signIn.description")}</p>
         </div>
         <div class="auth-simple-actions">
-          <div class="auth-simple-card focusable" data-action="openQr">${I18n.t("auth.signIn.openQrLogin")}</div>
-          <div class="auth-simple-card focusable" data-action="devLogin">${I18n.t("auth.signIn.devEmailLogin")}</div>
+          ${
+            server.capabilities.tvLogin
+              ? `<div class="auth-simple-card focusable" data-action="openQr">${I18n.t("auth.signIn.openQrLogin")}</div>`
+              : ""
+          }
+          ${
+            server.capabilities.emailPasswordAuth
+              ? `<div class="auth-simple-card focusable" data-action="emailLogin">${I18n.t(
+                  "account_signin_create_title",
+                  {},
+                  { fallback: "Sign In with Email" }
+                )}</div>`
+              : ""
+          }
+          <div class="auth-simple-card focusable" data-action="server">${I18n.t(
+            "server_options_title",
+            {},
+            { fallback: "Server options" }
+          )}</div>
           <div class="auth-simple-card focusable" data-action="back">${I18n.t("auth.signIn.back")}</div>
         </div>
       </div>
@@ -162,8 +181,12 @@ export const AuthSignInScreen = {
       Router.navigate("authQrSignIn");
       return;
     }
-    if (action === "devLogin") {
+    if (action === "emailLogin") {
       this.openEmailDialog();
+      return;
+    }
+    if (action === "server") {
+      Router.navigate("serverConnection", { returnRoute: "authSignIn" });
       return;
     }
     if (action === "back") {

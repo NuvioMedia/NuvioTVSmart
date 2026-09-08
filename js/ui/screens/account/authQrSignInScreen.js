@@ -47,6 +47,11 @@ export const AuthQrSignInScreen = {
             <div id="qr-status" class="qr-status">${I18n.t("auth.qr.waitingApproval")}</div>
             <div class="qr-actions">
               <button type="button" id="qr-refresh-btn" class="qr-action-btn qr-action-btn-primary focusable" data-action="refresh">${I18n.t("auth.qr.refresh")}</button>
+              <button type="button" class="qr-action-btn qr-action-btn-secondary focusable" data-action="server">${I18n.t(
+                "server_options_title",
+                {},
+                { fallback: "Server options" }
+              )}</button>
               <button type="button" id="qr-back-btn" class="qr-action-btn qr-action-btn-secondary focusable" data-action="back">${this.getBackButtonLabel()}</button>
             </div>
           </div>
@@ -343,6 +348,10 @@ export const AuthQrSignInScreen = {
     const action = current.dataset.action;
     if (action === "refresh") {
       this.handleRefreshAction();
+      return;
+    }
+    if (action === "server") {
+      Router.navigate("serverConnection", { returnRoute: "authQrSignIn" });
       return;
     }
     if (action === "back") {

@@ -3,6 +3,7 @@ import { PlayerScreen } from "../screens/player/playerScreen.js";
 import { AccountScreen } from "../screens/account/accountScreen.js";
 import { AuthQrSignInScreen } from "../screens/account/authQrSignInScreen.js";
 import { AuthSignInScreen } from "../screens/account/authSignInScreen.js";
+import { ServerConnectionScreen } from "../screens/account/serverConnectionScreen.js";
 import { SyncCodeScreen } from "../screens/account/syncCodeScreen.js";
 import { ProfileSelectionScreen } from "../../core/profile/profileSelectionScreen.js";
 import { MetaDetailsScreen } from "../screens/detail/metaDetailsScreen.js";
@@ -52,6 +53,7 @@ const NON_BACKSTACK_ROUTES = new Set([
   "profileSelection",
   "authQrSignIn",
   "authSignIn",
+  "serverConnection",
   "syncCode",
   "experienceModeSelection",
   "essentialAddonSetup"
@@ -100,6 +102,7 @@ export const Router = {
     account: AccountScreen,
     authQrSignIn: AuthQrSignInScreen,
     authSignIn: AuthSignInScreen,
+    serverConnection: ServerConnectionScreen,
     syncCode: SyncCodeScreen,
     profileSelection: ProfileSelectionScreen,
     experienceModeSelection: ExperienceModeSelectionScreen,

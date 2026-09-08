@@ -1,5 +1,5 @@
-import { AVATAR_PUBLIC_BASE_URL, SUPABASE_URL } from "../../../config.js";
 import { MemberCatalogStorage } from "../../local/memberCatalogStorage.js";
+import { ServerConfigurationStore } from "../../local/serverConfigurationStore.js";
 import { SupabaseApi } from "./supabaseApi.js";
 import { createStorageAssetUrl, revokeStorageAssetUrl } from "./storageAsset.js";
 
@@ -39,13 +39,14 @@ function avatarImageUrl(storagePath = "") {
   if (!normalizedPath) {
     return null;
   }
-  const configuredBaseUrl = String(AVATAR_PUBLIC_BASE_URL || "")
+  const configuration = ServerConfigurationStore.getActive();
+  const configuredBaseUrl = String(configuration.avatarPublicBaseUrl || "")
     .trim()
     .replace(/\/+$/, "");
   if (configuredBaseUrl) {
     return `${configuredBaseUrl}/${normalizedPath}`;
   }
-  return `${String(SUPABASE_URL || "").replace(/\/+$/, "")}/storage/v1/object/public/${AVATAR_BUCKET}/${normalizedPath}`;
+  return `${String(configuration.backendUrl || "").replace(/\/+$/, "")}/storage/v1/object/public/${AVATAR_BUCKET}/${normalizedPath}`;
 }
 
 function mapAvatar(row = {}) {

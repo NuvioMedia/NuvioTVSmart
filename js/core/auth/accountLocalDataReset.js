@@ -144,3 +144,19 @@ export function clearAccountLocalData(
 
   clearSessionAccountData(sessionStorage);
 }
+
+export function hasAccountLocalData(storage = globalThis.localStorage) {
+  if (!storage) return false;
+  try {
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
+      if (!key) continue;
+      const rawValue = storage.getItem(key);
+      if (shouldRemoveLocalStorageKey(key, rawValue)) return true;
+    }
+    return false;
+  } catch (error) {
+    console.warn("[accountLocalDataReset] Failed to verify local account cleanup", error);
+    return true;
+  }
+}

@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY, TV_LOGIN_WEB_BASE_URL } from "../../config.js";
+import { ServerConfigurationStore } from "../../data/local/serverConfigurationStore.js";
 import { Environment } from "../../platform/environment.js";
 import { SessionStore } from "../storage/sessionStore.js";
 import { AuthManager } from "./authManager.js";
@@ -16,7 +16,10 @@ function loginTrace(event, data) {
 }
 
 function hasQrAuthConfig() {
-  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+  const configuration = ServerConfigurationStore.getActive();
+  return Boolean(
+    configuration.backendUrl && configuration.publishableKey && configuration.capabilities.tvLogin
+  );
 }
 
 function isJwtLike(token) {
@@ -56,7 +59,7 @@ function getBearerToken() {
   if (isJwtLike(token) && !isJwtExpired(token, 0)) {
     return token;
   }
-  return SUPABASE_ANON_KEY;
+  return ServerConfigurationStore.getActive().publishableKey;
 }
 
 function generateDeviceNonce() {
@@ -81,8 +84,9 @@ function generateDeviceNonce() {
 }
 
 function resolveRedirectBaseUrl() {
-  if (TV_LOGIN_WEB_BASE_URL) {
-    return TV_LOGIN_WEB_BASE_URL;
+  const configuredUrl = ServerConfigurationStore.getActive().tvLoginWebBaseUrl;
+  if (configuredUrl) {
+    return configuredUrl;
   }
   if (typeof window !== "undefined") {
     const protocol = String(window.location?.protocol || "");
@@ -90,7 +94,7 @@ function resolveRedirectBaseUrl() {
       return window.location.origin;
     }
   }
-  return TV_LOGIN_WEB_BASE_URL;
+  return configuredUrl;
 }
 
 function extractOrigin(url) {
@@ -213,6 +217,7 @@ function extractSessionTokens(payload) {
 }
 
 async function ensureQrSessionAuthenticated({ forceNewAnonymous = false } = {}) {
+  const serverGeneration = AuthManager.getServerGeneration();
   if (forceNewAnonymous) {
     const wasAnonymous = SessionStore.isAnonymousSession;
     if (!wasAnonymous && SessionStore.refreshToken) {
@@ -255,10 +260,11 @@ async function ensureQrSessionAuthenticated({ forceNewAnonymous = false } = {}) 
     SessionStore.isAnonymousSession = false;
   }
 
+  const publishableKey = ServerConfigurationStore.getActive().publishableKey;
   const commonHeaders = {
     "Content-Type": "application/json",
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+    apikey: publishableKey,
+    Authorization: `Bearer ${publishableKey}`
   };
 
   const tryAnonymousSignup = async () => {
@@ -304,6 +310,9 @@ async function ensureQrSessionAuthenticated({ forceNewAnonymous = false } = {}) 
   if (!tokens) {
     throw new Error("Anonymous auth did not return session tokens");
   }
+  if (!AuthManager.isServerGenerationCurrent(serverGeneration)) {
+    throw new Error("QR session was superseded by a server change");
+  }
 
   SessionStore.accessToken = tokens.accessToken;
   SessionStore.refreshToken = tokens.refreshToken;
@@ -328,6 +337,7 @@ async function fetchWithCallerSessionRecovery(requestFactory) {
 }
 
 async function startRpc(deviceNonce, redirectBaseUrl, includeDeviceName = true) {
+  const publishableKey = ServerConfigurationStore.getActive().publishableKey;
   const payload = {
     p_device_nonce: deviceNonce,
     p_redirect_base_url: redirectBaseUrl
@@ -341,7 +351,7 @@ async function startRpc(deviceNonce, redirectBaseUrl, includeDeviceName = true) 
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
+        apikey: publishableKey,
         Authorization: `Bearer ${getBearerToken()}`
       },
       body: JSON.stringify(payload)
@@ -443,12 +453,13 @@ export const QrLoginService = {
         lastError = "QR auth is not configured";
         return null;
       }
+      const publishableKey = ServerConfigurationStore.getActive().publishableKey;
       const response = await fetchWithCallerSessionRecovery(() =>
         fetchSupabaseAuth("/rest/v1/rpc/poll_tv_login_session", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            apikey: SUPABASE_ANON_KEY,
+            apikey: publishableKey,
             Authorization: `Bearer ${getBearerToken()}`
           },
           body: JSON.stringify({
@@ -478,17 +489,19 @@ export const QrLoginService = {
   async exchange(code, deviceNonce) {
     lastError = null;
     loginTrace("qr exchange begin");
+    const serverGeneration = AuthManager.getServerGeneration();
     try {
       if (!hasQrAuthConfig()) {
         lastError = "QR auth is not configured";
         return false;
       }
+      const publishableKey = ServerConfigurationStore.getActive().publishableKey;
       const response = await fetchWithCallerSessionRecovery(() =>
         fetchSupabaseAuth("/functions/v1/tv-logins-exchange", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            apikey: SUPABASE_ANON_KEY,
+            apikey: publishableKey,
             Authorization: `Bearer ${getBearerToken()}`
           },
           body: JSON.stringify({
@@ -512,6 +525,10 @@ export const QrLoginService = {
       if (!tokens?.accessToken || !tokens?.refreshToken) {
         lastError = "QR exchange missing session tokens";
         loginTrace("qr exchange missing tokens");
+        return false;
+      }
+      if (!AuthManager.isServerGenerationCurrent(serverGeneration)) {
+        lastError = "QR exchange was superseded by a server change";
         return false;
       }
       SessionStore.accessToken = tokens.accessToken;

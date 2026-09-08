@@ -35,7 +35,7 @@ export const AccountScreen = {
 
   async signOut() {
     await AuthManager.signOut();
-    Router.navigate("authQrSignIn");
+    Router.navigate("authSignIn");
   },
 
   render() {
@@ -94,7 +94,7 @@ export const AccountScreen = {
     if (event.keyCode === 13 && current) {
       const action = current.dataset.action;
       if (action === "signin") {
-        Router.navigate("authQrSignIn");
+        Router.navigate("authSignIn");
       }
       if (action === "logout") {
         this.signOut();

@@ -1,9 +1,13 @@
 import { AuthState } from "./authState.js";
-import { clearAccountLocalData } from "./accountLocalDataReset.js";
+import { clearAccountLocalData, hasAccountLocalData } from "./accountLocalDataReset.js";
 import { SessionStore } from "../storage/sessionStore.js";
-import { SUPABASE_ANON_KEY } from "../../config.js";
+import { ServerConfigurationStore } from "../../data/local/serverConfigurationStore.js";
 import { fetchSupabaseAuth } from "./supabaseAuthFetch.js";
 import { PluginCodeStore } from "../../data/local/pluginCodeStore.js";
+
+function publishableKey() {
+  return ServerConfigurationStore.getActive().publishableKey;
+}
 
 function isJwtLike(token) {
   const value = String(token || "").trim();
@@ -64,6 +68,8 @@ class AuthManagerClass {
     this.cachedEffectiveUserSourceUserId = null;
     this.refreshPromise = null;
     this.lastRefreshFailureKind = null;
+    this.sessionGeneration = 0;
+    this.serverGeneration = 0;
   }
 
   // ------------------------------------
@@ -131,11 +137,12 @@ class AuthManagerClass {
   // EMAIL LOGIN
   // ------------------------------------
   async signInWithEmail(email, password) {
+    const sessionGeneration = this.sessionGeneration;
     const res = await fetchSupabaseAuth("/auth/v1/token?grant_type=password", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY
+        apikey: publishableKey()
       },
       body: JSON.stringify({ email, password })
     });
@@ -143,6 +150,9 @@ class AuthManagerClass {
     if (!res.ok) throw new Error("Login failed");
 
     const data = await res.json();
+    if (sessionGeneration !== this.sessionGeneration) {
+      throw new Error("Sign-in was superseded by a server change");
+    }
 
     SessionStore.accessToken = data.access_token;
     SessionStore.refreshToken = data.refresh_token;
@@ -153,6 +163,7 @@ class AuthManagerClass {
 
   async signOut() {
     const wasSignedOut = this.state === AuthState.SIGNED_OUT;
+    this.sessionGeneration += 1;
     SessionStore.clear();
     try {
       clearAccountLocalData();
@@ -164,6 +175,31 @@ class AuthManagerClass {
     this.cachedEffectiveUserSourceUserId = null;
     if (!wasSignedOut) {
       this.setState(AuthState.SIGNED_OUT);
+    }
+  }
+
+  async prepareForServerSwitch() {
+    try {
+      this.sessionGeneration += 1;
+      this.serverGeneration += 1;
+      SessionStore.clear();
+      clearAccountLocalData();
+      const pluginCodeCleared = await PluginCodeStore.clearAll();
+      this.cachedEffectiveUserId = null;
+      this.cachedEffectiveUserSourceUserId = null;
+      if (this.state !== AuthState.SIGNED_OUT) {
+        this.setState(AuthState.SIGNED_OUT);
+      }
+      return Boolean(
+        pluginCodeCleared &&
+        !SessionStore.accessToken &&
+        !SessionStore.refreshToken &&
+        !SessionStore.isAnonymousSession &&
+        !hasAccountLocalData()
+      );
+    } catch (error) {
+      console.warn("Unable to verify account cleanup before server switch", error);
+      return false;
     }
   }
 
@@ -183,18 +219,21 @@ class AuthManagerClass {
       return true;
     }
 
+    const sessionGeneration = this.sessionGeneration;
     this.refreshPromise = (async () => {
       try {
         const res = await fetchSupabaseAuth("/auth/v1/token?grant_type=refresh_token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            apikey: SUPABASE_ANON_KEY
+            apikey: publishableKey()
           },
           body: JSON.stringify({ refresh_token: refreshToken })
         });
+        if (sessionGeneration !== this.sessionGeneration) return false;
         if (!res.ok) {
           const responseBody = await res.text();
+          if (sessionGeneration !== this.sessionGeneration) return false;
           if (isInvalidRefreshResponse(res.status, responseBody)) {
             this.lastRefreshFailureKind = "invalid";
             await this.signOut();
@@ -205,6 +244,7 @@ class AuthManagerClass {
           return Boolean(accessToken);
         }
         const data = await res.json();
+        if (sessionGeneration !== this.sessionGeneration) return false;
         if (!data?.access_token) {
           this.lastRefreshFailureKind = "transient";
           return Boolean(accessToken);
@@ -216,6 +256,7 @@ class AuthManagerClass {
         this.lastRefreshFailureKind = null;
         return true;
       } catch (error) {
+        if (sessionGeneration !== this.sessionGeneration) return false;
         console.warn("Session refresh failed", error);
         if (accessToken) {
           this.lastRefreshFailureKind = "transient";
@@ -231,6 +272,14 @@ class AuthManagerClass {
     return this.refreshPromise;
   }
 
+  getServerGeneration() {
+    return this.serverGeneration;
+  }
+
+  isServerGenerationCurrent(generation) {
+    return Number(generation) === this.serverGeneration;
+  }
+
   // ------------------------------------
   // QR LOGIN FLOW
   // ------------------------------------
@@ -240,7 +289,7 @@ class AuthManagerClass {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
+        apikey: publishableKey(),
         Authorization: `Bearer ${SessionStore.accessToken}`
       },
       body: JSON.stringify({
@@ -261,7 +310,7 @@ class AuthManagerClass {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
+        apikey: publishableKey(),
         Authorization: `Bearer ${SessionStore.accessToken}`
       },
       body: JSON.stringify({
@@ -281,7 +330,7 @@ class AuthManagerClass {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
+        apikey: publishableKey(),
         Authorization: `Bearer ${SessionStore.accessToken}`
       },
       body: JSON.stringify({
@@ -317,7 +366,7 @@ class AuthManagerClass {
 
     const authHeaders = {
       "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY,
+      apikey: publishableKey(),
       Authorization: `Bearer ${SessionStore.accessToken}`
     };
 

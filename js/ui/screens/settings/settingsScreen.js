@@ -55,6 +55,7 @@ import {
 import { ProfileManager } from "../../../core/profile/profileManager.js";
 import { AuthManager } from "../../../core/auth/authManager.js";
 import { SupabaseApi } from "../../../data/remote/supabase/supabaseApi.js";
+import { ServerConfigurationStore } from "../../../data/local/serverConfigurationStore.js";
 import { Platform } from "../../../platform/index.js";
 import { TizenCapabilities } from "../../../platform/tizen/tizenCapabilities.js";
 import { isFastHorizontalNavigationEnabled } from "../../../platform/sharedKeys.js";
@@ -3200,7 +3201,9 @@ export const SettingsScreen = {
   renderAccountSection(model) {
     const signedIn = model.authState === "authenticated";
     const loading = model.authState === "loading";
-    this.actionMap.set("account:signin", () => Router.navigate("authQrSignIn"));
+    const server = ServerConfigurationStore.getActive();
+    this.actionMap.set("account:signin", () => Router.navigate("authSignIn"));
+    this.actionMap.set("account:server", () => Router.navigate("serverConnection"));
     this.actionMap.set("account:signout", async () => {
       await AuthManager.signOut();
       this.accountSyncOverview = null;
@@ -3231,12 +3234,20 @@ export const SettingsScreen = {
             ${this.renderAccountActionButton({
               focusKey: "account:signin",
               icon: "vpn_key",
-              title: t("account_signin_qr_title", {}, "Sign In with QR"),
-              subtitle: t(
-                "account_signin_qr_subtitle",
-                {},
-                "Scan a QR code and complete email login on your phone"
-              )
+              title: server.capabilities.emailPasswordAuth
+                ? t("account_signin_create_title", {}, "Sign In / Create Account")
+                : t("account_signin_qr_title", {}, "Sign In with QR"),
+              subtitle: server.capabilities.emailPasswordAuth
+                ? t(
+                    "account_signin_create_desc",
+                    {},
+                    "Use email and password to create or sign into your account."
+                  )
+                : t(
+                    "account_signin_qr_subtitle",
+                    {},
+                    "Scan a QR code and complete email login on your phone"
+                  )
             })}
           `
               : ""
@@ -3257,6 +3268,14 @@ export const SettingsScreen = {
           `
               : ""
           }
+          ${this.renderAccountActionButton({
+            focusKey: "account:server",
+            icon: "dns",
+            title: t("server_options_title", {}, "Server options"),
+            subtitle: server.isCustom
+              ? t("server_options_custom_active", {}, server.backendUrl)
+              : t("server_options_official_active", {}, "Using the official Nuvio server")
+          })}
         </div>
       </div>
     `;

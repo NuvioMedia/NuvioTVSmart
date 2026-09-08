@@ -29,6 +29,7 @@ import { shouldShowUpdate } from "./core/update/updateBannerPolicy.js";
 import { showAppUpdatePrompt } from "./ui/components/appUpdatePrompt.js";
 import { resolveExperienceRoute } from "./core/profile/experienceModeRouting.js";
 import { PluginRuntime } from "./core/player/pluginRuntime.js";
+import { ServerConfigurationStore } from "./data/local/serverConfigurationStore.js";
 
 // These legacy Web-only overrides are no longer user settings. Navigation now
 // uses the stable grid algorithm and simulator detection automatically.
@@ -48,7 +49,12 @@ LocalStore.remove("rotatedDpadMapping");
 })();
 
 const GUEST_QR_BYPASS_KEY = "skipAuthQrGate";
-const SIGNED_OUT_ALLOWED_ROUTES = new Set(["trakt"]);
+const SIGNED_OUT_ALLOWED_ROUTES = new Set([
+  "trakt",
+  "authQrSignIn",
+  "authSignIn",
+  "serverConnection"
+]);
 let hasSelectedProfileThisSession = false;
 let appShellRendered = false;
 let updateCheckStarted = false;
@@ -605,9 +611,14 @@ async function bootstrapApp() {
         return;
       }
       const hasSeenQr = LocalStore.get("hasSeenAuthQrOnFirstLaunch");
-      Router.navigate("authQrSignIn", {
-        onboardingMode: !hasSeenQr
-      });
+      const server = ServerConfigurationStore.getActive();
+      if (server.capabilities.emailPasswordAuth) {
+        Router.navigate("authSignIn");
+      } else {
+        Router.navigate("authQrSignIn", {
+          onboardingMode: !hasSeenQr
+        });
+      }
     }
 
     if (state === AuthState.AUTHENTICATED) {
