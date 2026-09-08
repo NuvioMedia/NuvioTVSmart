@@ -147,12 +147,16 @@ export const ServerConnectionScreen = {
                    value="${escapeHtml(this.inputValue)}" />
             ${this.error ? `<div class="settings-text-dialog-status is-error">${escapeHtml(this.error)}</div>` : ""}
             <div class="settings-text-dialog-actions">
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="check">${escapeHtml(
-                text("custom_server_check", "Check server")
-              )}</button>
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">${escapeHtml(
-                text("common.cancel", "Cancel")
-              )}</button>
+              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="check">
+                <span class="settings-dialog-option-label">${escapeHtml(
+                  text("custom_server_check", "Check server")
+                )}</span>
+              </button>
+              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">
+                <span class="settings-dialog-option-label">${escapeHtml(
+                  text("common.cancel", "Cancel")
+                )}</span>
+              </button>
             </div>
           </div>
         </div>`
@@ -182,14 +186,18 @@ export const ServerConnectionScreen = {
             )}</div>
             ${this.error ? `<div class="settings-text-dialog-status is-error">${escapeHtml(this.error)}</div>` : ""}
             <div class="settings-text-dialog-actions">
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="trust">${escapeHtml(
-                busy
-                  ? text("custom_server_switching", "Switching...")
-                  : text("custom_server_trust_action", "I trust this server")
-              )}</button>
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">${escapeHtml(
-                text("common.cancel", "Cancel")
-              )}</button>
+              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="trust">
+                <span class="settings-dialog-option-label">${escapeHtml(
+                  busy
+                    ? text("custom_server_switching", "Switching...")
+                    : text("custom_server_trust_action", "I trust this server")
+                )}</span>
+              </button>
+              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">
+                <span class="settings-dialog-option-label">${escapeHtml(
+                  text("common.cancel", "Cancel")
+                )}</span>
+              </button>
             </div>
           </div>
         </div>`
@@ -211,12 +219,16 @@ export const ServerConnectionScreen = {
             )}</div>
             ${this.error ? `<div class="settings-text-dialog-status is-error">${escapeHtml(this.error)}</div>` : ""}
             <div class="settings-text-dialog-actions">
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="confirmOfficial">${escapeHtml(
-                text("official_server_action", "Use official server")
-              )}</button>
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">${escapeHtml(
-                text("common.cancel", "Cancel")
-              )}</button>
+              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="confirmOfficial">
+                <span class="settings-dialog-option-label">${escapeHtml(
+                  text("official_server_action", "Use official server")
+                )}</span>
+              </button>
+              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">
+                <span class="settings-dialog-option-label">${escapeHtml(
+                  text("common.cancel", "Cancel")
+                )}</span>
+              </button>
             </div>
           </div>
         </div>`

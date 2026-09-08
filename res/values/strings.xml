@@ -1772,6 +1772,8 @@
     <string name="auth_qr_code_display">Code: %1$s</string>
     <string name="auth_qr_refresh">Refresh QR</string>
     <string name="auth_qr_continue_without_account">Continue without account</string>
+    <string name="auth_qr_configure_server">Configure a server to generate a QR code</string>
+    <string name="auth_qr_not_configured">Choose Server options to connect this TV before generating a QR code.</string>
     <string name="auth_qr_connected">Your account is connected on this TV.</string>
     <string name="auth_qr_synced_data">Your synced data</string>
     <string name="auth_qr_generating">Generating QR\u2026</string>

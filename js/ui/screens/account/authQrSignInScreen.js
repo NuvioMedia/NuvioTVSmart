@@ -5,6 +5,7 @@ import { ScreenUtils } from "../../navigation/screen.js";
 import { AuthManager } from "../../../core/auth/authManager.js";
 import { I18n } from "../../../i18n/index.js";
 import { renderBrandWordmarkImage } from "../../components/brandWordmark.js";
+import { ServerConfigurationStore } from "../../../data/local/serverConfigurationStore.js";
 
 let pollInterval = null;
 let countdownInterval = null;
@@ -20,6 +21,12 @@ export const AuthQrSignInScreen = {
     this.isMounted = true;
     this.isStartingQr = false;
     this.isLeaving = false;
+    const serverConfiguration = ServerConfigurationStore.getActive();
+    this.hasQrConfiguration = Boolean(
+      serverConfiguration.backendUrl &&
+      serverConfiguration.publishableKey &&
+      serverConfiguration.capabilities.tvLogin
+    );
     ScreenUtils.show(this.container);
 
     this.container.innerHTML = `
@@ -33,6 +40,13 @@ export const AuthQrSignInScreen = {
             <h1 class="qr-title">${I18n.t("auth.qr.title")}</h1>
             <p id="qr-description" class="qr-description">${this.getLeftDescription()}</p>
           </div>
+          <div class="qr-left-actions">
+            <button type="button" id="qr-server-btn" class="qr-action-btn qr-action-btn-secondary qr-server-btn focusable" data-action="server">${I18n.t(
+              "server_options_title",
+              {},
+              { fallback: "Server options" }
+            )}</button>
+          </div>
         </section>
 
         <section class="qr-card-panel" aria-label="${I18n.t("auth.qr.cardAriaLabel")}">
@@ -42,16 +56,19 @@ export const AuthQrSignInScreen = {
               <p id="qr-card-subtitle" class="qr-card-subtitle">${this.getCardSubtitle()}</p>
             </header>
 
-            <div id="qr-container" class="qr-code-frame"></div>
+            <div id="qr-container" class="qr-code-frame">${
+              this.hasQrConfiguration
+                ? ""
+                : `<span class="qr-code-placeholder">${I18n.t(
+                    "auth.qr.configureServer",
+                    {},
+                    { fallback: "Configure a server to generate a QR code" }
+                  )}</span>`
+            }</div>
             <div id="qr-code-text" class="qr-code-text"></div>
             <div id="qr-status" class="qr-status">${I18n.t("auth.qr.waitingApproval")}</div>
             <div class="qr-actions">
               <button type="button" id="qr-refresh-btn" class="qr-action-btn qr-action-btn-primary focusable" data-action="refresh">${I18n.t("auth.qr.refresh")}</button>
-              <button type="button" class="qr-action-btn qr-action-btn-secondary focusable" data-action="server">${I18n.t(
-                "server_options_title",
-                {},
-                { fallback: "Server options" }
-              )}</button>
               <button type="button" id="qr-back-btn" class="qr-action-btn qr-action-btn-secondary focusable" data-action="back">${this.getBackButtonLabel()}</button>
             </div>
           </div>
@@ -73,7 +90,10 @@ export const AuthQrSignInScreen = {
     }
 
     ScreenUtils.indexFocusables(this.container);
-    ScreenUtils.setInitialFocus(this.container);
+    ScreenUtils.setInitialFocus(
+      this.container,
+      this.hasQrConfiguration ? "#qr-refresh-btn" : "#qr-server-btn"
+    );
     // Android starts QR login from LaunchedEffect after composing the screen;
     // the QR service must not delay route completion or Back handling.
     void this.startQr().catch((error) => {
@@ -87,6 +107,10 @@ export const AuthQrSignInScreen = {
 
   async startQr() {
     if (!this.isMounted || this.isLeaving || this.isStartingQr) {
+      return;
+    }
+    if (!this.hasQrConfiguration) {
+      this.setStatus(I18n.t("auth.qr.notConfigured"));
       return;
     }
     this.isStartingQr = true;
