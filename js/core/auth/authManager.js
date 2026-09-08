@@ -162,35 +162,40 @@ class AuthManagerClass {
   }
 
   async signOut() {
+    await this._teardownAccountSession();
+  }
+
+  async prepareForServerSwitch() {
+    return this._teardownAccountSession({ serverSwitch: true, verify: true });
+  }
+
+  async _teardownAccountSession({ serverSwitch = false, verify = false } = {}) {
     const wasSignedOut = this.state === AuthState.SIGNED_OUT;
     this.sessionGeneration += 1;
-    SessionStore.clear();
+    if (serverSwitch) this.serverGeneration += 1;
+    let storageCleared = true;
+    let pluginCodeCleared = false;
     try {
+      SessionStore.clear();
       clearAccountLocalData();
     } catch (error) {
-      console.warn("Account-local data reset failed during sign out", error);
+      storageCleared = false;
+      console.warn("Account-local data reset failed", error);
     }
-    await PluginCodeStore.clearAll();
+    try {
+      pluginCodeCleared = await PluginCodeStore.clearAll();
+    } catch (error) {
+      console.warn("Plugin code reset failed", error);
+    }
     this.cachedEffectiveUserId = null;
     this.cachedEffectiveUserSourceUserId = null;
     if (!wasSignedOut) {
       this.setState(AuthState.SIGNED_OUT);
     }
-  }
-
-  async prepareForServerSwitch() {
+    if (!verify) return true;
     try {
-      this.sessionGeneration += 1;
-      this.serverGeneration += 1;
-      SessionStore.clear();
-      clearAccountLocalData();
-      const pluginCodeCleared = await PluginCodeStore.clearAll();
-      this.cachedEffectiveUserId = null;
-      this.cachedEffectiveUserSourceUserId = null;
-      if (this.state !== AuthState.SIGNED_OUT) {
-        this.setState(AuthState.SIGNED_OUT);
-      }
       return Boolean(
+        storageCleared &&
         pluginCodeCleared &&
         !SessionStore.accessToken &&
         !SessionStore.refreshToken &&

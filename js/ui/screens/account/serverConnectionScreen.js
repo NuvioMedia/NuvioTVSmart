@@ -4,6 +4,7 @@ import { ServerConfigurationStore } from "../../../data/local/serverConfiguratio
 import { I18n } from "../../../i18n/index.js";
 import { Router } from "../../navigation/router.js";
 import { ScreenUtils } from "../../navigation/screen.js";
+import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
 
 function text(key, fallback, params = {}) {
   return I18n.t(key, params, { fallback });
@@ -15,6 +16,14 @@ function escapeHtml(value) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function dialogButton(action, label) {
+  return `
+    <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="${action}">
+      <span class="settings-dialog-option-label">${escapeHtml(label)}</span>
+    </button>
+  `;
 }
 
 function errorMessage(error) {
@@ -100,6 +109,10 @@ export const ServerConnectionScreen = {
     const isReview = this.mode === "review" && this.discoveredServer;
     const isOfficialReview = this.mode === "officialReview";
     const busy = this.mode === "discovering" || this.mode === "switching";
+    const busyLabel =
+      this.mode === "switching"
+        ? text("custom_server_switching", "Switching...")
+        : text("custom_server_checking", "Checking...");
     const mainFocusableClass = isInput || isReview || isOfficialReview || busy ? "" : " focusable";
 
     this.container.innerHTML = `
@@ -147,16 +160,8 @@ export const ServerConnectionScreen = {
                    value="${escapeHtml(this.inputValue)}" />
             ${this.error ? `<div class="settings-text-dialog-status is-error">${escapeHtml(this.error)}</div>` : ""}
             <div class="settings-text-dialog-actions">
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="check">
-                <span class="settings-dialog-option-label">${escapeHtml(
-                  text("custom_server_check", "Check server")
-                )}</span>
-              </button>
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">
-                <span class="settings-dialog-option-label">${escapeHtml(
-                  text("common.cancel", "Cancel")
-                )}</span>
-              </button>
+              ${dialogButton("check", text("custom_server_check", "Check server"))}
+              ${dialogButton("cancel", text("common.cancel", "Cancel"))}
             </div>
           </div>
         </div>`
@@ -186,18 +191,13 @@ export const ServerConnectionScreen = {
             )}</div>
             ${this.error ? `<div class="settings-text-dialog-status is-error">${escapeHtml(this.error)}</div>` : ""}
             <div class="settings-text-dialog-actions">
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="trust">
-                <span class="settings-dialog-option-label">${escapeHtml(
-                  busy
-                    ? text("custom_server_switching", "Switching...")
-                    : text("custom_server_trust_action", "I trust this server")
-                )}</span>
-              </button>
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">
-                <span class="settings-dialog-option-label">${escapeHtml(
-                  text("common.cancel", "Cancel")
-                )}</span>
-              </button>
+              ${dialogButton(
+                "trust",
+                busy
+                  ? text("custom_server_switching", "Switching...")
+                  : text("custom_server_trust_action", "I trust this server")
+              )}
+              ${dialogButton("cancel", text("common.cancel", "Cancel"))}
             </div>
           </div>
         </div>`
@@ -219,28 +219,22 @@ export const ServerConnectionScreen = {
             )}</div>
             ${this.error ? `<div class="settings-text-dialog-status is-error">${escapeHtml(this.error)}</div>` : ""}
             <div class="settings-text-dialog-actions">
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="confirmOfficial">
-                <span class="settings-dialog-option-label">${escapeHtml(
-                  text("official_server_action", "Use official server")
-                )}</span>
-              </button>
-              <button class="settings-dialog-option settings-text-dialog-button focusable" data-action="cancel">
-                <span class="settings-dialog-option-label">${escapeHtml(
-                  text("common.cancel", "Cancel")
-                )}</span>
-              </button>
+              ${dialogButton(
+                "confirmOfficial",
+                text("official_server_action", "Use official server")
+              )}
+              ${dialogButton("cancel", text("common.cancel", "Cancel"))}
             </div>
           </div>
         </div>`
           : ""
       }
       ${
-        this.mode === "discovering" || this.mode === "switching"
-          ? `<div class="settings-dialog-backdrop"><div class="settings-dialog"><div class="settings-dialog-title">${escapeHtml(
-              this.mode === "switching"
-                ? text("custom_server_switching", "Switching...")
-                : text("custom_server_checking", "Checking...")
-            )}</div></div></div>`
+        busy
+          ? `<div class="settings-dialog-backdrop"><div class="settings-dialog">
+              ${renderLoadingIndicator({ label: busyLabel })}
+              <div class="settings-dialog-title">${escapeHtml(busyLabel)}</div>
+            </div></div>`
           : ""
       }
     `;

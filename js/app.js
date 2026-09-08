@@ -30,6 +30,7 @@ import { showAppUpdatePrompt } from "./ui/components/appUpdatePrompt.js";
 import { resolveExperienceRoute } from "./core/profile/experienceModeRouting.js";
 import { PluginRuntime } from "./core/player/pluginRuntime.js";
 import { ServerConfigurationStore } from "./data/local/serverConfigurationStore.js";
+import { supportsEmailPasswordAuth } from "./core/server/serverConfiguration.js";
 
 // These legacy Web-only overrides are no longer user settings. Navigation now
 // uses the stable grid algorithm and simulator detection automatically.
@@ -612,7 +613,7 @@ async function bootstrapApp() {
       }
       const hasSeenQr = LocalStore.get("hasSeenAuthQrOnFirstLaunch");
       const server = ServerConfigurationStore.getActive();
-      if (server.capabilities.emailPasswordAuth) {
+      if (supportsEmailPasswordAuth(server)) {
         Router.navigate("authSignIn");
       } else {
         Router.navigate("authQrSignIn", {

@@ -1,4 +1,11 @@
 import { SUPABASE_URL } from "../../config.js";
+import { withRequestTimeout } from "../network/requestTimeout.js";
+import {
+  createServerConfiguration,
+  isPublicHttpsUrl,
+  normalizePublicBackendUrl,
+  sameServer
+} from "./serverConfiguration.js";
 
 export const MAX_DISCOVERY_DOCUMENT_BYTES = 64 * 1024;
 const DISCOVERY_SUFFIX = "/.well-known/nuvio";
@@ -12,60 +19,6 @@ function parseUrl(value, code = "invalid_url") {
     return new URL(value);
   } catch (error) {
     throw serverError(code, { cause: error });
-  }
-}
-
-function isPrivateHostname(hostname = "") {
-  const host = String(hostname)
-    .toLowerCase()
-    .replace(/^\[|\]$/g, "");
-  if (host === "localhost" || host.endsWith(".local")) return true;
-
-  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4) {
-    const [, a, b, c] = ipv4.map(Number);
-    return Boolean(
-      a === 0 ||
-      a === 10 ||
-      a === 127 ||
-      (a === 100 && b >= 64 && b <= 127) ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168) ||
-      (a === 192 && b === 0 && (c === 0 || c === 2)) ||
-      (a === 198 && (b === 18 || b === 19 || (b === 51 && c === 100))) ||
-      (a === 203 && b === 0 && c === 113) ||
-      a >= 224
-    );
-  }
-
-  if (host.includes(":")) {
-    if (host === "::" || host === "::1") return true;
-    if (/^(fc|fd)[0-9a-f]{2}:/.test(host) || /^fe[89ab][0-9a-f]:/.test(host)) return true;
-    if (/^ff[0-9a-f]{2}:/.test(host) || /^2001:db8:/.test(host)) return true;
-    const mapped = host.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (mapped) return isPrivateHostname(mapped[1]);
-    const mappedHex = host.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
-    if (mappedHex) {
-      const high = Number.parseInt(mappedHex[1], 16);
-      const low = Number.parseInt(mappedHex[2], 16);
-      return isPrivateHostname(`${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`);
-    }
-  }
-  return false;
-}
-
-export function isPublicHttpsUrl(value) {
-  try {
-    const parsed = new URL(String(value || "").trim());
-    return Boolean(
-      parsed.protocol === "https:" &&
-      !parsed.username &&
-      !parsed.password &&
-      !isPrivateHostname(parsed.hostname)
-    );
-  } catch (_) {
-    return false;
   }
 }
 
@@ -85,26 +38,9 @@ export function normalizeDiscoveryUrl(input) {
 }
 
 function normalizeBackendUrl(value) {
-  const parsed = parseUrl(String(value || "").trim(), "missing_configuration");
-  if (
-    !isPublicHttpsUrl(parsed.toString()) ||
-    parsed.search ||
-    parsed.hash ||
-    isPrivateHostname(parsed.hostname)
-  ) {
-    throw serverError("missing_configuration");
-  }
-  return parsed.toString().replace(/\/+$/, "");
-}
-
-function sameServer(left, right) {
-  try {
-    const a = new URL(left);
-    const b = new URL(right);
-    return a.hostname.toLowerCase() === b.hostname.toLowerCase() && a.port === b.port;
-  } catch (_) {
-    return false;
-  }
+  const normalized = normalizePublicBackendUrl(value);
+  if (!normalized) throw serverError("missing_configuration");
+  return normalized;
 }
 
 function utf8ByteLength(value) {
@@ -139,17 +75,12 @@ export function parseDiscoveryDocument(discoveryUrl, source) {
     throw serverError("no_supported_auth");
   }
 
-  return {
+  return createServerConfiguration({
     backendUrl,
     publishableKey,
     capabilities,
-    isCustom: true,
-    discoveryUrl,
-    fallbackBackendUrl: "",
-    tvLoginWebBaseUrl: `${backendUrl}/tv-login`,
-    deviceLoginWebBaseUrl: `${backendUrl}/link`,
-    avatarPublicBaseUrl: `${backendUrl}/storage/v1/object/public/avatars`
-  };
+    isCustom: true
+  });
 }
 
 async function readLimitedText(response) {
@@ -191,56 +122,37 @@ async function readLimitedText(response) {
   return decodeURIComponent(escape(binary));
 }
 
-export async function discoverServer(input, fetchOrOptions = globalThis.fetch, options = {}) {
-  const fetchImpl =
-    typeof fetchOrOptions === "function"
-      ? fetchOrOptions
-      : fetchOrOptions.fetchImpl || globalThis.fetch;
-  const externalSignal =
-    typeof fetchOrOptions === "function" ? options.signal : fetchOrOptions.signal;
-  const timeoutMs = Math.max(
-    1,
-    Number(typeof fetchOrOptions === "function" ? options.timeoutMs : fetchOrOptions.timeoutMs) ||
-      15_000
-  );
+export async function discoverServer(
+  input,
+  { fetchImpl = globalThis.fetch, signal, timeoutMs = 15_000 } = {}
+) {
   const discoveryUrl = normalizeDiscoveryUrl(input);
   if (sameServer(discoveryUrl, SUPABASE_URL)) throw serverError("official_server");
-
-  const controller = typeof AbortController === "function" ? new AbortController() : null;
-  const abortFromExternal = () => controller?.abort();
-  externalSignal?.addEventListener?.("abort", abortFromExternal, { once: true });
-  if (externalSignal?.aborted) abortFromExternal();
-  let timeout;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeout = setTimeout(() => {
-      controller?.abort();
-      reject(serverError("connection_failed"));
-    }, timeoutMs);
-  });
-  const requestPromise = (async () => {
-    const response = await fetchImpl(discoveryUrl, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      redirect: "error",
-      ...(controller?.signal || externalSignal
-        ? { signal: controller?.signal || externalSignal }
-        : {})
-    });
-    if (!response?.ok) {
-      throw serverError("http_error", { statusCode: Number(response?.status || 0) });
-    }
-    if (new URL(response.url || discoveryUrl).protocol !== "https:") {
-      throw serverError("connection_failed");
-    }
-    return parseDiscoveryDocument(discoveryUrl, await readLimitedText(response));
-  })();
   try {
-    return await Promise.race([requestPromise, timeoutPromise]);
+    return await withRequestTimeout(
+      async (requestSignal) => {
+        const response = await fetchImpl(discoveryUrl, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          redirect: "error",
+          ...(requestSignal ? { signal: requestSignal } : {})
+        });
+        if (!response?.ok) {
+          throw serverError("http_error", { statusCode: Number(response?.status || 0) });
+        }
+        if (new URL(response.url || discoveryUrl).protocol !== "https:") {
+          throw serverError("connection_failed");
+        }
+        return parseDiscoveryDocument(discoveryUrl, await readLimitedText(response));
+      },
+      Math.max(1, Number(timeoutMs) || 15_000),
+      signal
+    );
   } catch (error) {
+    if (error?.code === "REQUEST_TIMEOUT") {
+      throw serverError("connection_failed", { cause: error });
+    }
     if (error?.code) throw error;
     throw serverError("connection_failed", { cause: error });
-  } finally {
-    clearTimeout(timeout);
-    externalSignal?.removeEventListener?.("abort", abortFromExternal);
   }
 }

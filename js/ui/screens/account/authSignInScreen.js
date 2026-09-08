@@ -3,6 +3,10 @@ import { ScreenUtils } from "../../navigation/screen.js";
 import { AuthManager } from "../../../core/auth/authManager.js";
 import { I18n } from "../../../i18n/index.js";
 import { ServerConfigurationStore } from "../../../data/local/serverConfigurationStore.js";
+import {
+  supportsEmailPasswordAuth,
+  supportsTvLogin
+} from "../../../core/server/serverConfiguration.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -29,12 +33,12 @@ export const AuthSignInScreen = {
         </div>
         <div class="auth-simple-actions">
           ${
-            server.capabilities.tvLogin
+            supportsTvLogin(server)
               ? `<div class="auth-simple-card focusable" data-action="openQr">${I18n.t("auth.signIn.openQrLogin")}</div>`
               : ""
           }
           ${
-            server.capabilities.emailPasswordAuth
+            supportsEmailPasswordAuth(server)
               ? `<div class="auth-simple-card focusable" data-action="emailLogin">${I18n.t(
                   "account_signin_create_title",
                   {},

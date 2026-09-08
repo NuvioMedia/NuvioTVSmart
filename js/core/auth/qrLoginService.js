@@ -1,5 +1,6 @@
 import { ServerConfigurationStore } from "../../data/local/serverConfigurationStore.js";
 import { Environment } from "../../platform/environment.js";
+import { supportsTvLogin } from "../server/serverConfiguration.js";
 import { SessionStore } from "../storage/sessionStore.js";
 import { AuthManager } from "./authManager.js";
 import { AuthState } from "./authState.js";
@@ -16,10 +17,7 @@ function loginTrace(event, data) {
 }
 
 function hasQrAuthConfig() {
-  const configuration = ServerConfigurationStore.getActive();
-  return Boolean(
-    configuration.backendUrl && configuration.publishableKey && configuration.capabilities.tvLogin
-  );
+  return supportsTvLogin(ServerConfigurationStore.getActive());
 }
 
 function isJwtLike(token) {

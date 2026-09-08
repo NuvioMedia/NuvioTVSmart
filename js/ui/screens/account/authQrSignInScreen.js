@@ -6,6 +6,7 @@ import { AuthManager } from "../../../core/auth/authManager.js";
 import { I18n } from "../../../i18n/index.js";
 import { renderBrandWordmarkImage } from "../../components/brandWordmark.js";
 import { ServerConfigurationStore } from "../../../data/local/serverConfigurationStore.js";
+import { supportsTvLogin } from "../../../core/server/serverConfiguration.js";
 
 let pollInterval = null;
 let countdownInterval = null;
@@ -22,11 +23,7 @@ export const AuthQrSignInScreen = {
     this.isStartingQr = false;
     this.isLeaving = false;
     const serverConfiguration = ServerConfigurationStore.getActive();
-    this.hasQrConfiguration = Boolean(
-      serverConfiguration.backendUrl &&
-      serverConfiguration.publishableKey &&
-      serverConfiguration.capabilities.tvLogin
-    );
+    this.hasQrConfiguration = supportsTvLogin(serverConfiguration);
     ScreenUtils.show(this.container);
 
     this.container.innerHTML = `

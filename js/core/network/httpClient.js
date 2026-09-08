@@ -1,6 +1,7 @@
 import { SessionStore } from "../storage/sessionStore.js";
 import { AuthManager } from "../auth/authManager.js";
 import { fetchViaWebOsSupabaseProxy } from "../../platform/webos/webosSupabaseProxy.js";
+import { withRequestTimeout } from "./requestTimeout.js";
 
 const DEFAULT_HTTP_REQUEST_TIMEOUT_MS = 60_000;
 const BACKEND_RETRY_MAX_DELAY_MS = 30_000;
@@ -117,55 +118,6 @@ function resolveTimeoutMs(value) {
   }
   const timeoutMs = Number(value);
   return Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 0;
-}
-
-function createRequestTimeoutError(timeoutMs) {
-  const error = new Error(`Request timed out after ${timeoutMs}ms`);
-  error.code = "REQUEST_TIMEOUT";
-  error.name = "TimeoutError";
-  return error;
-}
-
-async function withRequestTimeout(task, timeoutMs, callerSignal) {
-  if (!timeoutMs) {
-    return task(callerSignal);
-  }
-
-  const controller = typeof AbortController === "function" ? new AbortController() : null;
-  const requestSignal = controller?.signal || callerSignal;
-  let removeAbortListener = null;
-  if (controller && callerSignal) {
-    const forwardAbort = () => controller.abort();
-    if (callerSignal.aborted) {
-      controller.abort();
-    } else if (typeof callerSignal.addEventListener === "function") {
-      callerSignal.addEventListener("abort", forwardAbort, { once: true });
-      removeAbortListener = () => callerSignal.removeEventListener("abort", forwardAbort);
-    }
-  }
-
-  let timeoutId = 0;
-  let didTimeout = false;
-  try {
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => {
-        didTimeout = true;
-        controller?.abort();
-        reject(createRequestTimeoutError(timeoutMs));
-      }, timeoutMs);
-    });
-    return await Promise.race([Promise.resolve().then(() => task(requestSignal)), timeoutPromise]);
-  } catch (error) {
-    if (didTimeout) {
-      throw createRequestTimeoutError(timeoutMs);
-    }
-    throw error;
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    removeAbortListener?.();
-  }
 }
 
 export async function httpRequest(url, options = {}) {

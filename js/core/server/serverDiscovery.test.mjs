@@ -82,12 +82,14 @@ test("rejects discovery documents without a supported auth capability", () => {
 test("rejects discovery responses larger than 64 KiB", async () => {
   const oversized = `${JSON.stringify(VALID_DOCUMENT)}${" ".repeat(MAX_DISCOVERY_DOCUMENT_BYTES)}`;
   await assert.rejects(
-    discoverServer("https://backend.example.com", async (url) => ({
-      ok: true,
-      url,
-      headers: { get: () => String(oversized.length) },
-      text: async () => oversized
-    })),
+    discoverServer("https://backend.example.com", {
+      fetchImpl: async (url) => ({
+        ok: true,
+        url,
+        headers: { get: () => String(oversized.length) },
+        text: async () => oversized
+      })
+    }),
     { code: "response_too_large" }
   );
 });

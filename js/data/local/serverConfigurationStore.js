@@ -5,69 +5,26 @@ import {
   SUPABASE_URL,
   TV_LOGIN_WEB_BASE_URL
 } from "../../config.js";
-import { isPublicHttpsUrl } from "../../core/server/serverDiscovery.js";
+import { createServerConfiguration } from "../../core/server/serverConfiguration.js";
 
 export const SERVER_CONFIGURATION_KEY = "nuvioServerConfigurationV1";
-
-function normalizeUrl(value) {
-  return String(value || "")
-    .trim()
-    .replace(/\/+$/, "");
-}
+let activeConfiguration = null;
 
 function officialConfiguration() {
-  const backendUrl = normalizeUrl(SUPABASE_URL);
-  return {
-    backendUrl,
-    publishableKey: String(SUPABASE_ANON_KEY || "").trim(),
+  return createServerConfiguration({
+    backendUrl: SUPABASE_URL,
+    publishableKey: SUPABASE_ANON_KEY,
     capabilities: { emailPasswordAuth: false, tvLogin: true },
     isCustom: false,
-    discoveryUrl: null,
-    fallbackBackendUrl: normalizeUrl(SUPABASE_FALLBACK_URL),
-    tvLoginWebBaseUrl: normalizeUrl(TV_LOGIN_WEB_BASE_URL),
-    deviceLoginWebBaseUrl: "",
-    avatarPublicBaseUrl:
-      normalizeUrl(AVATAR_PUBLIC_BASE_URL) ||
-      (backendUrl ? `${backendUrl}/storage/v1/object/public/avatars` : "")
-  };
+    fallbackBackendUrl: SUPABASE_FALLBACK_URL,
+    tvLoginWebBaseUrl: TV_LOGIN_WEB_BASE_URL,
+    avatarPublicBaseUrl: AVATAR_PUBLIC_BASE_URL
+  });
 }
 
 function validCustomConfiguration(value) {
   if (!value || typeof value !== "object" || value.isCustom !== true) return null;
-  const backendUrl = normalizeUrl(value.backendUrl);
-  const publishableKey = String(value.publishableKey || "").trim();
-  const capabilities = {
-    emailPasswordAuth: value.capabilities?.emailPasswordAuth === true,
-    tvLogin: value.capabilities?.tvLogin === true
-  };
-  let parsed;
-  try {
-    parsed = new URL(backendUrl);
-  } catch (_) {
-    return null;
-  }
-  if (
-    !isPublicHttpsUrl(parsed.toString()) ||
-    parsed.username ||
-    parsed.password ||
-    parsed.search ||
-    parsed.hash ||
-    !publishableKey ||
-    (!capabilities.emailPasswordAuth && !capabilities.tvLogin)
-  ) {
-    return null;
-  }
-  return {
-    backendUrl,
-    publishableKey,
-    capabilities,
-    isCustom: true,
-    discoveryUrl: String(value.discoveryUrl || "").trim() || null,
-    fallbackBackendUrl: "",
-    tvLoginWebBaseUrl: `${backendUrl}/tv-login`,
-    deviceLoginWebBaseUrl: `${backendUrl}/link`,
-    avatarPublicBaseUrl: `${backendUrl}/storage/v1/object/public/avatars`
-  };
+  return createServerConfiguration({ ...value, isCustom: true });
 }
 
 function storageOrDefault(storage) {
@@ -75,18 +32,20 @@ function storageOrDefault(storage) {
 }
 
 export const ServerConfigurationStore = {
-  getOfficial() {
-    return officialConfiguration();
-  },
-
   getActive(storage) {
+    if (!storage && activeConfiguration) return activeConfiguration;
     try {
       const raw = storageOrDefault(storage)?.getItem?.(SERVER_CONFIGURATION_KEY);
-      if (!raw) return officialConfiguration();
-      return validCustomConfiguration(JSON.parse(raw)) || officialConfiguration();
+      const configuration = raw
+        ? validCustomConfiguration(JSON.parse(raw)) || officialConfiguration()
+        : officialConfiguration();
+      if (!storage) activeConfiguration = configuration;
+      return configuration;
     } catch (error) {
       console.warn("[serverConfiguration] Failed to load custom server", error);
-      return officialConfiguration();
+      const configuration = officialConfiguration();
+      if (!storage) activeConfiguration = configuration;
+      return configuration;
     }
   },
 
@@ -97,7 +56,9 @@ export const ServerConfigurationStore = {
       const target = storageOrDefault(storage);
       if (!target?.setItem || !target?.getItem) return false;
       target.setItem(SERVER_CONFIGURATION_KEY, JSON.stringify(normalized));
-      return target.getItem(SERVER_CONFIGURATION_KEY) !== null;
+      const saved = target.getItem(SERVER_CONFIGURATION_KEY) !== null;
+      if (saved && !storage) activeConfiguration = normalized;
+      return saved;
     } catch (error) {
       console.warn("[serverConfiguration] Failed to save custom server", error);
       return false;
@@ -109,7 +70,9 @@ export const ServerConfigurationStore = {
       const target = storageOrDefault(storage);
       if (!target?.removeItem || !target?.getItem) return false;
       target.removeItem(SERVER_CONFIGURATION_KEY);
-      return target.getItem(SERVER_CONFIGURATION_KEY) == null;
+      const removed = target.getItem(SERVER_CONFIGURATION_KEY) == null;
+      if (removed && !storage) activeConfiguration = officialConfiguration();
+      return removed;
     } catch (error) {
       console.warn("[serverConfiguration] Failed to restore official server", error);
       return false;

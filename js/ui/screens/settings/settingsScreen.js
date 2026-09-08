@@ -56,6 +56,7 @@ import { ProfileManager } from "../../../core/profile/profileManager.js";
 import { AuthManager } from "../../../core/auth/authManager.js";
 import { SupabaseApi } from "../../../data/remote/supabase/supabaseApi.js";
 import { ServerConfigurationStore } from "../../../data/local/serverConfigurationStore.js";
+import { supportsEmailPasswordAuth } from "../../../core/server/serverConfiguration.js";
 import { Platform } from "../../../platform/index.js";
 import { TizenCapabilities } from "../../../platform/tizen/tizenCapabilities.js";
 import { isFastHorizontalNavigationEnabled } from "../../../platform/sharedKeys.js";
@@ -3202,6 +3203,7 @@ export const SettingsScreen = {
     const signedIn = model.authState === "authenticated";
     const loading = model.authState === "loading";
     const server = ServerConfigurationStore.getActive();
+    const emailPasswordAuth = supportsEmailPasswordAuth(server);
     this.actionMap.set("account:signin", () => Router.navigate("authSignIn"));
     this.actionMap.set("account:server", () => Router.navigate("serverConnection"));
     this.actionMap.set("account:signout", async () => {
@@ -3234,10 +3236,10 @@ export const SettingsScreen = {
             ${this.renderAccountActionButton({
               focusKey: "account:signin",
               icon: "vpn_key",
-              title: server.capabilities.emailPasswordAuth
+              title: emailPasswordAuth
                 ? t("account_signin_create_title", {}, "Sign In / Create Account")
                 : t("account_signin_qr_title", {}, "Sign In with QR"),
-              subtitle: server.capabilities.emailPasswordAuth
+              subtitle: emailPasswordAuth
                 ? t(
                     "account_signin_create_desc",
                     {},
