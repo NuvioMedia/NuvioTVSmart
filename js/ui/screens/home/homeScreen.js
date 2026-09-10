@@ -3755,10 +3755,11 @@ export const HomeScreen = {
       state.position += state.velocity * deltaSeconds;
       container[property] = state.position;
 
-      const remaining = Number(state.target || 0) - Number(container[property] || 0);
+      // Reading scroll position after writing it can flush layout. It only
+      // affects settling once velocity is low enough; keep that check first.
       if (
-        Math.abs(remaining) <= state.precision &&
-        Math.abs(state.velocity) <= state.velocityEpsilon
+        Math.abs(state.velocity) <= state.velocityEpsilon &&
+        Math.abs(Number(state.target || 0) - Number(container[property] || 0)) <= state.precision
       ) {
         container[property] = state.target;
         existing[key] = null;
@@ -7395,6 +7396,7 @@ export const HomeScreen = {
         ? ".home-hero-description"
         : ".home-hero-description, .home-poster-title, .home-poster-subtitle";
     const nodes = root.querySelectorAll(truncationSelector);
+    const measurements = [];
     nodes.forEach((node) => {
       if (!(node instanceof HTMLElement)) {
         return;
@@ -7414,32 +7416,47 @@ export const HomeScreen = {
       if (!fullText) {
         return;
       }
-      node.dataset.fullText = fullText;
-      node.textContent = wordTrimmed ? `${fullText}...` : fullText;
-      const fits =
-        node.scrollWidth <= node.clientWidth + 1 && node.scrollHeight <= node.clientHeight + 1;
-      if (fits) {
-        node.classList.toggle("is-truncated", wordTrimmed);
-        return;
+      if (node.dataset.fullText !== fullText) {
+        node.dataset.fullText = fullText;
       }
+      const initialText = wordTrimmed ? `${fullText}...` : fullText;
+      if (node.textContent !== initialText) {
+        node.textContent = initialText;
+      }
+      measurements.push({ node, fullText, wordTrimmed, low: 0, high: fullText.length });
+    });
 
-      const ellipsis = "...";
-      let low = 0;
-      let high = fullText.length;
-      while (low < high) {
-        const mid = Math.ceil((low + high) / 2);
-        node.textContent = `${fullText.slice(0, mid).trimEnd()}${ellipsis}`;
-        const overflows =
-          node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1;
-        if (overflows) {
-          high = mid - 1;
+    // All labels share each layout flush instead of forcing one per label and
+    // binary-search step. Keep the same overflow tolerance and search bounds.
+    let pending = measurements.filter(
+      ({ node }) =>
+        node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1
+    );
+    const overflowing = new Set(pending);
+    while (pending.length) {
+      pending.forEach((entry) => {
+        entry.mid = Math.ceil((entry.low + entry.high) / 2);
+        entry.node.textContent = `${entry.fullText.slice(0, entry.mid).trimEnd()}...`;
+      });
+      pending.forEach((entry) => {
+        const { node } = entry;
+        if (node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1) {
+          entry.high = entry.mid - 1;
         } else {
-          low = mid;
+          entry.low = entry.mid;
+        }
+      });
+      pending = pending.filter((entry) => entry.low < entry.high);
+    }
+    measurements.forEach((entry) => {
+      const { node, fullText, low, wordTrimmed } = entry;
+      if (overflowing.has(entry)) {
+        const finalText = `${fullText.slice(0, Math.max(0, low)).trimEnd()}...`;
+        if (node.textContent !== finalText) {
+          node.textContent = finalText;
         }
       }
-      const finalText = `${fullText.slice(0, Math.max(0, low)).trimEnd()}${ellipsis}`;
-      node.textContent = finalText;
-      node.classList.add("is-truncated");
+      node.classList.toggle("is-truncated", overflowing.has(entry) || wordTrimmed);
     });
   },
 
@@ -7452,17 +7469,17 @@ export const HomeScreen = {
     const heroNodes = scope.classList?.contains("home-hero-card")
       ? [scope]
       : Array.from(scope.querySelectorAll(".home-hero-card"));
-    heroNodes.forEach((heroNode) => {
-      const description = heroNode.querySelector(".home-hero-description");
-      if (!(description instanceof HTMLElement)) {
-        return;
-      }
-
+    const descriptions = heroNodes
+      .map((heroNode) => heroNode.querySelector(".home-hero-description"))
+      .filter((description) => description instanceof HTMLElement);
+    descriptions.forEach((description) => {
       description.style.maxHeight = "";
       description.style.webkitLineClamp = "";
       description.style.lineClamp = "";
+    });
+    const bounds = descriptions.map((description) => {
       if (description.classList.contains("is-empty")) {
-        return;
+        return null;
       }
 
       const descriptionStyle = getComputedStyle(description);
@@ -7472,7 +7489,12 @@ export const HomeScreen = {
         1,
         Math.ceil(lineHeight || fontSize * 1.35 || description.offsetHeight || 1)
       );
-      description.style.maxHeight = `${lineBoxHeight * modernHeroDescriptionMaxLines}px`;
+      return { description, maxHeight: `${lineBoxHeight * modernHeroDescriptionMaxLines}px` };
+    });
+    bounds.forEach((entry) => {
+      if (entry) {
+        entry.description.style.maxHeight = entry.maxHeight;
+      }
     });
   },
 
