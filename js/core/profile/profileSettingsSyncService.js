@@ -568,11 +568,15 @@ function normalizeContinueWatchingSortModeForWeb(value) {
 }
 
 function normalizeTmdbLanguageForAndroid(value) {
-  const normalized = String(value || "en").trim();
+  const normalized = String(value || "")
+    .trim()
+    .replace(/_/g, "-");
   if (!normalized) {
     return "en";
   }
-  return normalized.split(/[-_]/)[0].toLowerCase() || "en";
+
+  // Android's TMDB catalogue stores Portuguese (Brazil) as lowercase "pt-br".
+  return normalized === "pt-BR" ? "pt-br" : normalized;
 }
 
 function normalizeTmdbLanguageForWeb(value) {
