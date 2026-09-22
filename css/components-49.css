@@ -291,6 +291,13 @@
   line-clamp: initial;
 }
 
+/* Legacy webOS cannot sustain a compositor layer for every Home track while
+   the modern rows are hydrating artwork. Keep native overflow scrolling, but
+   let the renderer retain the tracks in the normal layer tree. */
+.legacy-webos .home-screen-shell.home-layout-modern .home-track {
+  transform: none;
+}
+
 .performance-constrained .home-content-card.focused,
 .performance-constrained .home-continue-card.focused,
 .performance-constrained .home-poster-card.focused .home-poster-frame,

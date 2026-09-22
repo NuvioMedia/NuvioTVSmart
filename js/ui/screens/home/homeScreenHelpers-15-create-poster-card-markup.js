@@ -192,6 +192,7 @@ import { isCollectionFolderItem, normalizeCollectionPosterShape } from "./homeSc
 import { buildPosterSubtitle } from "./homeScreenHelpers-12-build-hero-indicators.js";
 import { buildLazyImageAttributes } from "./homeScreenHelpers-14-get-home-grid-column-count.js";
 import { normalizeCatalogItem } from "./homeScreenHelpers-08-partition-continue-watching-rows.js";
+import { normalizeTmdbBackdropUrl, normalizeTmdbPosterUrl } from "../../../core/tmdb/tmdbImageUrl.js";
 
 export function createPosterCardMarkup(
   item,
@@ -294,12 +295,14 @@ export function createPosterCardMarkup(
     normalized.poster,
     normalized.thumbnail
   );
-  const backdropSrc = useLandscapePoster
+  const rawBackdropSrc = useLandscapePoster
     ? landscapeVisualSrc
     : firstNonEmpty(preferredLandscapePosterSrc, normalized.background, normalized.backdrop, normalized.backdropUrl, normalized.poster);
-  const posterSrc = useLandscapePoster
+  const rawPosterSrc = useLandscapePoster
     ? landscapeVisualSrc
     : firstNonEmpty(normalized.poster, normalized.thumbnail, preferredLandscapePosterSrc, normalized.backdrop, normalized.backdropUrl);
+  const backdropSrc = normalizeTmdbBackdropUrl(rawBackdropSrc);
+  const posterSrc = useLandscapePoster ? backdropSrc : normalizeTmdbPosterUrl(rawPosterSrc);
   const expandedVisualSrc = firstNonEmpty(backdropSrc, posterSrc);
   const expandedClass = isExpanded ? " is-expanded" : "";
   const landscapeClass = useLandscapePoster ? " is-landscape" : "";

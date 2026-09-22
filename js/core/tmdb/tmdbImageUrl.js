@@ -1,7 +1,7 @@
 const TMDB_IMAGE_HOST_PATTERN = /^(?:https?:)?\/\/image\.tmdb\.org\//i;
 
 /**
- * Upgrade the legacy TMDB backdrop size used by cached/addon metadata.
+ * Keep Home artwork within the source sizes used by Android TV.
  * Keep unrelated artwork URLs byte-for-byte unchanged.
  */
 export function normalizeTmdbBackdropUrl(value) {
@@ -9,5 +9,13 @@ export function normalizeTmdbBackdropUrl(value) {
   if (!normalized || !TMDB_IMAGE_HOST_PATTERN.test(normalized)) {
     return normalized;
   }
-  return normalized.replace(/(\/t\/p\/)w780\//i, "$1w1280/");
+  return normalized.replace(/(\/t\/p\/)(?:original|w780)\//i, "$1w1280/");
+}
+
+export function normalizeTmdbPosterUrl(value) {
+  const normalized = String(value || "").trim();
+  if (!normalized || !TMDB_IMAGE_HOST_PATTERN.test(normalized)) {
+    return normalized;
+  }
+  return normalized.replace(/(\/t\/p\/)original\//i, "$1w500/");
 }
