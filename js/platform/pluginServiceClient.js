@@ -215,6 +215,7 @@ function normalizeResponse(payload, requestedUrl = "") {
     statusText: String(payload?.statusText || ""),
     url: String(payload?.url || requestedUrl),
     body: typeof payload?.body === "string" ? payload.body : "",
+    ...(typeof payload?.bodyBase64 === "string" ? { bodyBase64: payload.bodyBase64 } : {}),
     headers: payload?.headers && typeof payload.headers === "object" ? payload.headers : {},
     truncated: payload?.truncated === true
   };
@@ -243,13 +244,28 @@ async function directBrowserFetch(request) {
   request.signal?.addEventListener?.("abort", abort, { once: true });
   const timer = setTimeout(abort, Number(request.timeoutMs || 30000));
   try {
+    const requestBody =
+      validation.bodyBase64 === undefined
+        ? validation.body
+        : Uint8Array.from(atob(validation.bodyBase64), (char) => char.charCodeAt(0));
     const response = await fetch(validation.url, {
       method: validation.method,
       headers: normalizePluginHeaders(validation.headers),
-      body: ["POST", "PUT"].includes(validation.method) ? validation.body : undefined,
+      body: ["POST", "PUT"].includes(validation.method) ? requestBody : undefined,
       signal: controller?.signal || request.signal
     });
+    const binaryResponse =
+      request.responseEncoding === "base64" ? await response.clone().arrayBuffer() : null;
     const body = await response.text();
+    let bodyBase64;
+    if (binaryResponse) {
+      const bytes = new Uint8Array(binaryResponse);
+      const chunks = [];
+      for (let index = 0; index < bytes.length; index += 8192) {
+        chunks.push(String.fromCharCode.apply(null, bytes.subarray(index, index + 8192)));
+      }
+      bodyBase64 = btoa(chunks.join(""));
+    }
     return normalizeResponse(
       {
         returnValue: true,
@@ -258,6 +274,7 @@ async function directBrowserFetch(request) {
         statusText: response.statusText,
         url: response.url,
         body,
+        ...(bodyBase64 !== undefined ? { bodyBase64 } : {}),
         headers: {}
       },
       validation.url
@@ -426,6 +443,8 @@ export const PluginServiceClient = {
           method: validation.method,
           headers: validation.headers,
           body: validation.body,
+          ...(validation.bodyBase64 !== undefined ? { bodyBase64: validation.bodyBase64 } : {}),
+          ...(request.responseEncoding === "base64" ? { responseEncoding: "base64" } : {}),
           maxBodyBytes: Number(request.maxBodyBytes || 1024 * 1024),
           maxResponseBytes: Number(request.maxResponseBytes || request.maxBodyBytes || 1024 * 1024),
           executionId: String(request.executionId || ""),

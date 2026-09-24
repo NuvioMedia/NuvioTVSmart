@@ -295,11 +295,26 @@ function pluginPolyfill() {
     globalThis.SCRAPER_SETTINGS = JSON.parse(__get_scraper_settings());
     globalThis.TMDB_API_KEY = __get_tmdb_api_key();
 
+    function __nuvioEncodeBytes(bytes) {
+      var chunks = [];
+      for (var i = 0; i < bytes.length; i += 8192) {
+        chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)));
+      }
+      return btoa(chunks.join(''));
+    }
+    function __nuvioDecodeBytes(base64) {
+      var binary = atob(base64);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes.buffer;
+    }
     var fetch = function(url, options) {
       options = options || {};
       var method = String(options.method || 'GET').toUpperCase();
       var headers = options.headers || {};
       var body = options.body || '';
+      var binaryBody = body instanceof ArrayBuffer ? new Uint8Array(body) :
+        ArrayBuffer.isView(body) ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : null;
       var signal = options.signal;
       if (signal && signal.aborted) { var before = new Error('The operation was aborted.'); before.name = 'AbortError'; return Promise.reject(before); }
       if (!headers['User-Agent']) headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
@@ -307,7 +322,9 @@ function pluginPolyfill() {
       var abortListener = abortToken ? function() { try { __nuvioNativeCancel(abortToken); } catch (_) {} } : null;
       var cleanup = function() { if (signal && abortListener) signal.removeEventListener('abort', abortListener); };
       if (signal && abortListener) signal.addEventListener('abort', abortListener);
-      return __nuvioNativeFetch(JSON.stringify({ url: String(url && url.href || url || ''), method: method, headers: headers, body: String(body) }), abortToken).then(function(raw) {
+      var request = { url: String(url && url.href || url || ''), method: method, headers: headers, body: binaryBody ? '' : String(body), responseEncoding: 'base64' };
+      if (binaryBody) request.bodyBase64 = __nuvioEncodeBytes(binaryBody);
+      return __nuvioNativeFetch(JSON.stringify(request), abortToken).then(function(raw) {
         cleanup();
         var payload = JSON.parse(raw);
         if (signal && signal.aborted) { var after = new Error('The operation was aborted.'); after.name = 'AbortError'; return Promise.reject(after); }
@@ -322,6 +339,11 @@ function pluginPolyfill() {
             }
           },
           text: function() { return Promise.resolve(payload.body); },
+          arrayBuffer: function() {
+            var encoded = typeof payload.bodyBase64 === 'string' ? payload.bodyBase64 :
+              btoa(unescape(encodeURIComponent(payload.body || '')));
+            return Promise.resolve(__nuvioDecodeBytes(encoded));
+          },
           json: function() {
             try {
               if (payload.body === null || payload.body === undefined || payload.body === '') return Promise.resolve(null);

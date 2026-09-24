@@ -35,7 +35,7 @@ function getZlibModule() {
 }
 
 var MAX_REQUEST_BYTES = 1024 * 1024;
-var MAX_SERVICE_REQUEST_BYTES = MAX_REQUEST_BYTES + 64 * 1024;
+var MAX_SERVICE_REQUEST_BYTES = Math.ceil(MAX_REQUEST_BYTES / 3) * 4 + 64 * 1024;
 var DEFAULT_RESPONSE_BYTES = 1024 * 1024;
 // Keep the service envelope consistent with the modern app policy. Plugin
 // fetches still request the Android 1 MiB cap; this upper bound is for
@@ -178,7 +178,16 @@ function validatePayload(payload) {
   var requestedMethod = String((payload && payload.method) || "GET").toUpperCase();
   var method = ["POST", "PUT", "DELETE"].indexOf(requestedMethod) >= 0 ? requestedMethod : "GET";
   var body = typeof (payload && payload.body) === "string" ? payload.body : "";
-  if (Buffer.byteLength(body, "utf8") > MAX_REQUEST_BYTES)
+  var hasBinaryBody = payload && Object.prototype.hasOwnProperty.call(payload, "bodyBase64");
+  var encodedBody = hasBinaryBody ? payload.bodyBase64 : "";
+  if (
+    hasBinaryBody &&
+    (typeof encodedBody !== "string" ||
+      !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encodedBody))
+  )
+    return { ok: false, error: "Invalid binary request body" };
+  var requestBody = hasBinaryBody ? Buffer.from(encodedBody, "base64") : Buffer.from(body, "utf8");
+  if (requestBody.length > MAX_REQUEST_BYTES)
     return { ok: false, error: "Request body exceeds the plugin quota" };
   var headers = normalizeHeaders(payload && payload.headers);
   // Android's OkHttp RequestBody supplies these defaults when a plugin does
@@ -193,7 +202,8 @@ function validatePayload(payload) {
     url: parsed.toString(),
     method: method,
     headers: headers,
-    body: body,
+    body: requestBody,
+    responseEncoding: payload && payload.responseEncoding === "base64" ? "base64" : "text",
     requestId: String((payload && payload.requestId) || "").slice(0, 128),
     executionId: String((payload && payload.executionId) || "").slice(0, 128),
     profileId: String((payload && payload.profileId) || "").slice(0, 64),
@@ -432,7 +442,7 @@ function performFetch(payload, callback, redirects, trace) {
       ["POST", "PUT"].indexOf(validation.method) >= 0 &&
       !hasHeader(requestHeaders, "Content-Length")
     ) {
-      requestHeaders["Content-Length"] = String(Buffer.byteLength(validation.body, "utf8"));
+      requestHeaders["Content-Length"] = String(validation.body.length);
     }
     function isRetryableAddressError(error) {
       return (
@@ -594,6 +604,7 @@ function performFetch(payload, callback, redirects, trace) {
           ) {
             redirectedPayload.method = "GET";
             redirectedPayload.body = "";
+            delete redirectedPayload.bodyBase64;
             Object.keys(redirectedHeaders).forEach(function (headerName) {
               if (
                 ["content-length", "content-type", "transfer-encoding"].indexOf(
@@ -654,6 +665,10 @@ function performFetch(payload, callback, redirects, trace) {
             statusText: response.statusMessage || "",
             url: validation.url,
             body: Buffer.concat(chunks).toString(bodyEncoding),
+            bodyBase64:
+              validation.responseEncoding === "base64"
+                ? Buffer.concat(chunks).toString("base64")
+                : undefined,
             headers: headers,
             truncated: true
           });
@@ -689,6 +704,10 @@ function performFetch(payload, callback, redirects, trace) {
             statusText: response.statusMessage || "",
             url: validation.url,
             body: Buffer.concat(chunks).toString(bodyEncoding),
+            bodyBase64:
+              validation.responseEncoding === "base64"
+                ? Buffer.concat(chunks).toString("base64")
+                : undefined,
             headers: headers,
             truncated: truncated
           });

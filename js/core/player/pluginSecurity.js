@@ -33,7 +33,7 @@ export function normalizePluginHttpMethod(method) {
 }
 
 export function validatePluginFetchRequest(
-  { url, method = "GET", headers = {}, body = "" } = {},
+  { url, method = "GET", headers = {}, body = "", bodyBase64 } = {},
   limits = {}
 ) {
   const urlResult = validatePluginUrl(url);
@@ -46,7 +46,19 @@ export function validatePluginFetchRequest(
     typeof TextEncoder === "function"
       ? new TextEncoder().encode(bodyText).byteLength
       : unescape(encodeURIComponent(bodyText)).length;
-  if (bodyBytes > maxBodyBytes) {
+  const hasBinaryBody = bodyBase64 !== undefined;
+  if (
+    hasBinaryBody &&
+    (typeof bodyBase64 !== "string" ||
+      !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(bodyBase64))
+  ) {
+    return { ok: false, reason: "Invalid binary request body" };
+  }
+  const binaryBytes = hasBinaryBody
+    ? (bodyBase64.length / 4) * 3 -
+      (bodyBase64.endsWith("==") ? 2 : bodyBase64.endsWith("=") ? 1 : 0)
+    : 0;
+  if ((hasBinaryBody ? binaryBytes : bodyBytes) > maxBodyBytes) {
     return { ok: false, reason: "Request body exceeds the plugin quota" };
   }
   const normalizedMethod = normalizePluginHttpMethod(method);
@@ -61,6 +73,7 @@ export function validatePluginFetchRequest(
     url: urlResult.url,
     method: normalizedMethod,
     headers: normalizedHeaders,
-    body: bodyText
+    body: bodyText,
+    ...(hasBinaryBody ? { bodyBase64 } : {})
   };
 }
