@@ -308,13 +308,24 @@ function pluginPolyfill() {
       for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       return bytes.buffer;
     }
+    function __nuvioNormalizeFetchBody(body) {
+      if (body === undefined || body === null) return { kind: 'none', value: '' };
+      if (typeof body === 'string') return { kind: 'text', value: body };
+      var bytes = null;
+      if (typeof ArrayBuffer !== 'undefined' && body instanceof ArrayBuffer) {
+        bytes = new Uint8Array(body);
+      } else if (typeof ArrayBuffer !== 'undefined' &&
+                 typeof ArrayBuffer.isView === 'function' && ArrayBuffer.isView(body)) {
+        bytes = new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+      }
+      if (bytes !== null) return { kind: 'base64', value: __nuvioEncodeBytes(bytes) };
+      return { kind: 'text', value: String(body) };
+    }
     var fetch = function(url, options) {
       options = options || {};
       var method = String(options.method || 'GET').toUpperCase();
       var headers = options.headers || {};
-      var body = options.body || '';
-      var binaryBody = body instanceof ArrayBuffer ? new Uint8Array(body) :
-        ArrayBuffer.isView(body) ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : null;
+      var body = __nuvioNormalizeFetchBody(options.body);
       var signal = options.signal;
       if (signal && signal.aborted) { var before = new Error('The operation was aborted.'); before.name = 'AbortError'; return Promise.reject(before); }
       if (!headers['User-Agent']) headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
@@ -322,8 +333,8 @@ function pluginPolyfill() {
       var abortListener = abortToken ? function() { try { __nuvioNativeCancel(abortToken); } catch (_) {} } : null;
       var cleanup = function() { if (signal && abortListener) signal.removeEventListener('abort', abortListener); };
       if (signal && abortListener) signal.addEventListener('abort', abortListener);
-      var request = { url: String(url && url.href || url || ''), method: method, headers: headers, body: binaryBody ? '' : String(body), responseEncoding: 'base64' };
-      if (binaryBody) request.bodyBase64 = __nuvioEncodeBytes(binaryBody);
+      var request = { url: String(url && url.href || url || ''), method: method, headers: headers, bodyKind: body.kind, body: body.kind === 'text' ? body.value : '', responseEncoding: 'base64' };
+      if (body.kind === 'base64') request.bodyBase64 = body.value;
       return __nuvioNativeFetch(JSON.stringify(request), abortToken).then(function(raw) {
         cleanup();
         var payload = JSON.parse(raw);

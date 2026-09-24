@@ -29,11 +29,11 @@ export function normalizePluginHeaders(headers = {}, { addDefaultUserAgent = tru
 
 export function normalizePluginHttpMethod(method) {
   const normalized = String(method || "GET").toUpperCase();
-  return ["POST", "PUT", "DELETE"].includes(normalized) ? normalized : "GET";
+  return ["POST", "PUT", "PATCH", "DELETE"].includes(normalized) ? normalized : "GET";
 }
 
 export function validatePluginFetchRequest(
-  { url, method = "GET", headers = {}, body = "", bodyBase64 } = {},
+  { url, method = "GET", headers = {}, body = "", bodyBase64, bodyKind: requestedBodyKind } = {},
   limits = {}
 ) {
   const urlResult = validatePluginUrl(url);
@@ -54,26 +54,47 @@ export function validatePluginFetchRequest(
   ) {
     return { ok: false, reason: "Invalid binary request body" };
   }
+  const normalizedMethod = normalizePluginHttpMethod(method);
+  const bodyKind =
+    requestedBodyKind === undefined
+      ? hasBinaryBody
+        ? "base64"
+        : normalizedMethod === "DELETE" || !bodyText
+          ? "none"
+          : "text"
+      : String(requestedBodyKind).toLowerCase();
+  if (!["none", "text", "base64"].includes(bodyKind)) {
+    return { ok: false, reason: "Unsupported request body type" };
+  }
+  if ((bodyKind === "base64") !== hasBinaryBody) {
+    return { ok: false, reason: "Invalid binary request body" };
+  }
   const binaryBytes = hasBinaryBody
     ? (bodyBase64.length / 4) * 3 -
       (bodyBase64.endsWith("==") ? 2 : bodyBase64.endsWith("=") ? 1 : 0)
     : 0;
-  if ((hasBinaryBody ? binaryBytes : bodyBytes) > maxBodyBytes) {
+  const requestBodyBytes = bodyKind === "base64" ? binaryBytes : bodyKind === "text" ? bodyBytes : 0;
+  if (requestBodyBytes > maxBodyBytes) {
     return { ok: false, reason: "Request body exceeds the plugin quota" };
   }
-  const normalizedMethod = normalizePluginHttpMethod(method);
   const normalizedHeaders = normalizePluginHeaders(headers, limits);
   if (!Object.keys(normalizedHeaders).some((key) => key.toLowerCase() === "content-type")) {
     if (normalizedMethod === "POST")
       normalizedHeaders["Content-Type"] = "application/x-www-form-urlencoded";
-    if (normalizedMethod === "PUT") normalizedHeaders["Content-Type"] = "application/json";
+    if (
+      ["PUT", "PATCH"].includes(normalizedMethod) ||
+      (normalizedMethod === "DELETE" && bodyKind !== "none")
+    ) {
+      normalizedHeaders["Content-Type"] = "application/json";
+    }
   }
   return {
     ok: true,
     url: urlResult.url,
     method: normalizedMethod,
     headers: normalizedHeaders,
-    body: bodyText,
+    bodyKind,
+    body: bodyKind === "text" ? bodyText : "",
     ...(hasBinaryBody ? { bodyBase64 } : {})
   };
 }

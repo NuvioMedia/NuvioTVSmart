@@ -245,13 +245,18 @@ async function directBrowserFetch(request) {
   const timer = setTimeout(abort, Number(request.timeoutMs || 30000));
   try {
     const requestBody =
-      validation.bodyBase64 === undefined
-        ? validation.body
-        : Uint8Array.from(atob(validation.bodyBase64), (char) => char.charCodeAt(0));
+      validation.bodyKind === "base64"
+        ? Uint8Array.from(atob(validation.bodyBase64), (char) => char.charCodeAt(0))
+        : validation.bodyKind === "text"
+          ? validation.body
+          : new Uint8Array(0);
+    const methodHasBody =
+      ["POST", "PUT", "PATCH"].includes(validation.method) ||
+      (validation.method === "DELETE" && validation.bodyKind !== "none");
     const response = await fetch(validation.url, {
       method: validation.method,
       headers: normalizePluginHeaders(validation.headers),
-      body: ["POST", "PUT"].includes(validation.method) ? requestBody : undefined,
+      body: methodHasBody ? requestBody : undefined,
       signal: controller?.signal || request.signal
     });
     const binaryResponse =
@@ -442,6 +447,7 @@ export const PluginServiceClient = {
           url: validation.url,
           method: validation.method,
           headers: validation.headers,
+          bodyKind: validation.bodyKind,
           body: validation.body,
           ...(validation.bodyBase64 !== undefined ? { bodyBase64: validation.bodyBase64 } : {}),
           ...(request.responseEncoding === "base64" ? { responseEncoding: "base64" } : {}),
