@@ -28,9 +28,25 @@ export function allowDpadRepeat(owner, event, { horizontalMs = 80, verticalMs = 
     return true;
   }
 
+  // Tizen fast path: remotes emit hold-repeat every ~50-100ms. The default
+  // 80/112ms gates pass nearly every repeat and queue another full focus
+  // workload before the previous press finished layout. Back off on
+  // constrained runtimes so holds can't pile up backlog jank.
+  let effectiveThrottleMs = throttleMs;
+  try {
+    const body = globalThis?.document?.body?.classList || null;
+    const root = globalThis?.document?.documentElement?.classList || null;
+    if (body?.contains("performance-constrained") || root?.contains("performance-constrained")) {
+      effectiveThrottleMs = Math.max(
+        throttleMs,
+        direction === "left" || direction === "right" ? 120 : 160
+      );
+    }
+  } catch (_) {}
+
   const now = Date.now();
   const previous = Number(repeatStateByOwner.get(owner) || 0);
-  if (previous > 0 && now - previous < throttleMs) {
+  if (previous > 0 && now - previous < effectiveThrottleMs) {
     event.preventDefault?.();
     return false;
   }

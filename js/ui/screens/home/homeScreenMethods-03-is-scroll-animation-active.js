@@ -300,7 +300,15 @@ export function createHomeScreenMethods03() {
       return !this.isPerformanceConstrained();
     },
     getDirectionalRepeatThrottleMs(direction = null) {
-      if ((direction === "left" || direction === "right") && isFastHorizontalNavigationEnabled()) {
+      // Tizen fast path: the 48ms fast-horizontal gate passes nearly every
+      // native hold-repeat (~50-100ms) and queues another full focus workload
+      // before the previous press finished layout. Keep it for fast hardware.
+      if (
+        (direction === "left" || direction === "right") &&
+        isFastHorizontalNavigationEnabled() &&
+        !this.isPerformanceConstrained() &&
+        !this.isLegacyTvRuntime()
+      ) {
         // Match Android TV's fast-horizontal D-pad gate while preserving
         // the existing vertical and constrained-runtime throttles.
         return 48;
