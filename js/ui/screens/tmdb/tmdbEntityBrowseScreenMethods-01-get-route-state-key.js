@@ -235,7 +235,7 @@ export function createTmdbEntityBrowseScreenMethods01() {
               <div class="tmdb-entity-eyebrow">${escapeHtml(entityKindLabel(header.kind))}</div>
               ${
                 header.logo
-                  ? `<img class="tmdb-entity-logo" src="${escapeHtml(header.logo)}" alt="${escapeHtml(header.name || "")}" loading="eager" decoding="async" onerror="this.hidden=true" />`
+                  ? `<img class="tmdb-entity-logo" src="${escapeHtml(header.logo)}" alt="${escapeHtml(header.name || "")}" loading="${ScreenUtils.shouldSkipRouteEnter(this) ? "lazy" : "eager"}" decoding="async" onerror="this.hidden=true" />`
                   : ""
               }
               <h1 class="tmdb-entity-title">${escapeHtml(header.name || "Unknown")}</h1>

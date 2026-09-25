@@ -214,9 +214,11 @@ export function createStreamScreenMethods08() {
           }
         }
         const addonBadgeLabel = escapeHtml(getAddonBadgeLabel(stream.addonName || ""));
-        const performanceConstrained = isPerformanceConstrainedRuntime();
-        const addonLogoLoading = performanceConstrained ? "eager" : "lazy";
-        const addonLogoDecoding = performanceConstrained ? "sync" : "async";
+        // Tizen fast path: the old branch forced eager+sync decode on
+        // constrained runtimes (a decode storm mid-transition). Lazy+async
+        // everywhere: near-viewport logos still resolve immediately.
+        const addonLogoLoading = "lazy";
+        const addonLogoDecoding = "async";
         const addonBadge = displayAddonLogoUrl
           ? `<img src="${escapeHtml(displayAddonLogoUrl)}" alt="${escapeHtml(stream.addonName || "Addon")}" data-addon-logo="${escapeHtml(addonLogoUrl)}" decoding="${addonLogoDecoding}" loading="${addonLogoLoading}" referrerpolicy="no-referrer" /><span hidden>${addonBadgeLabel}</span>`
           : `<span>${addonBadgeLabel}</span>`;
