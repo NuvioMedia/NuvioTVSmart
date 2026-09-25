@@ -68,7 +68,7 @@ export function createSearchScreenMethods03() {
       this.cancelScheduledRender();
       const queryText = this.query || "";
       this.container.innerHTML = `
-          <div class="home-shell search-screen-shell${this.searchRouteEnterPending ? " search-route-enter" : ""}">
+          <div class="home-shell search-screen-shell${this.searchRouteEnterPending && !ScreenUtils.shouldSkipRouteEnter(this) ? " search-route-enter" : ""}">
             ${renderRootSidebar({
               selectedRoute: "search",
               profile: this.sidebarProfile,

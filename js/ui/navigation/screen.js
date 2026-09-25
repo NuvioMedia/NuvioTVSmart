@@ -1,4 +1,26 @@
 export const ScreenUtils = {
+  // Tizen fast path: route-enter animations (240-350ms full-screen
+  // slide/fade) drop frames on Chromium 56-76 while images mount.
+  // Screens call this before adding their *-route-enter class.
+  shouldSkipRouteEnter(host = null) {
+    try {
+      if (typeof host?.isPerformanceConstrained === "function" && host.isPerformanceConstrained()) {
+        return true;
+      }
+      if (typeof host?.isLegacyTvRuntime === "function" && host.isLegacyTvRuntime()) {
+        return true;
+      }
+    } catch (_) {}
+    const body = globalThis?.document?.body?.classList || null;
+    const root = globalThis?.document?.documentElement?.classList || null;
+    return Boolean(
+      body?.contains("performance-constrained") ||
+      root?.contains("performance-constrained") ||
+      body?.contains("legacy-tizen") ||
+      root?.contains("legacy-tizen")
+    );
+  },
+
   show(container) {
     if (!container) {
       return;

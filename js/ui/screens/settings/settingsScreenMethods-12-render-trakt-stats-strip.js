@@ -224,8 +224,11 @@ export function createSettingsScreenMethods12() {
       const shell = this.container.querySelector(".settings-shell");
       if (shell) {
         shell.dataset.settingsStyle = String(this.model.theme.settingsUiStyle || "CLASSIC").toLowerCase();
-        shell.classList.toggle("settings-route-enter", Boolean(this.settingsRouteEnterPending));
-        if (this.settingsRouteEnterPending) {
+        const skipEnter = ScreenUtils.shouldSkipRouteEnter(this);
+        shell.classList.toggle("settings-route-enter", Boolean(this.settingsRouteEnterPending) && !skipEnter);
+        if (this.settingsRouteEnterPending && !skipEnter) {
+          // Restart the enter animation. Skipped entirely on constrained
+          // runtimes: the read forces a sync layout on every settings open.
           void shell.offsetWidth;
         }
       }
