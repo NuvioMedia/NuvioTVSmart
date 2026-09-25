@@ -114,6 +114,13 @@ body {
   box-shadow: 0 0 0 2px rgba(245, 249, 255, 0.9);
 }
 
-*:focus {
+/* Tizen fast path: the old `*:focus` selector forced a full-tree style
+   recalc on every focus change (every D-pad press). Scoped instead. */
+.focusable:focus,
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+a:focus {
   outline: none !important;
 }
