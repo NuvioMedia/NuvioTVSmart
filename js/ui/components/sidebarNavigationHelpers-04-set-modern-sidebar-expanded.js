@@ -19,6 +19,45 @@ export function setModernSidebarExpanded(container, expanded) {
   if (!shell) {
     return false;
   }
+  // Tizen fast path: Chromium 56-76 cannot composite the 395ms width +
+  // 375ms panel scale animation at 60fps. Toggle instantly so menu
+  // open/close feels wired instead of laggy. Class hooks
+  // (performance-constrained / legacy-tizen) are set in js/app.js.
+  const doc = globalThis?.document || null;
+  const fastPath =
+    Boolean(doc?.body?.classList?.contains("performance-constrained")) ||
+    Boolean(doc?.documentElement?.classList?.contains("performance-constrained")) ||
+    Boolean(doc?.body?.classList?.contains("legacy-tizen")) ||
+    Boolean(doc?.documentElement?.classList?.contains("legacy-tizen"));
+  if (fastPath) {
+    if (shell._modernOpenTimer) {
+      clearTimeout(shell._modernOpenTimer);
+      shell._modernOpenTimer = null;
+    }
+    if (shell._modernCloseStartTimer) {
+      clearTimeout(shell._modernCloseStartTimer);
+      shell._modernCloseStartTimer = null;
+    }
+    if (shell._modernCloseEndTimer) {
+      clearTimeout(shell._modernCloseEndTimer);
+      shell._modernCloseEndTimer = null;
+    }
+    const panel = shell.querySelector(".modern-sidebar-panel");
+    const pill = shell.querySelector(".modern-sidebar-pill");
+    shell.classList.remove("opening", "collapsing");
+    if (expanded) {
+      shell.classList.add("panel-visible", "expanded");
+      if (panel) panel.setAttribute("aria-hidden", "false");
+      if (pill) pill.setAttribute("aria-expanded", "true");
+    } else {
+      shell.classList.remove("expanded", "panel-visible");
+      if (panel) panel.setAttribute("aria-hidden", "true");
+      if (pill) pill.setAttribute("aria-expanded", "false");
+    }
+    syncSidebarStateClasses(container);
+    scheduleRootSidebarTextFit(container);
+    return true;
+  }
   const panel = shell.querySelector(".modern-sidebar-panel");
   const pill = shell.querySelector(".modern-sidebar-pill");
   if (shell._modernOpenTimer) {
