@@ -87,8 +87,17 @@ export function createMetaDetailsScreenMethods16() {
         delete this._railWindows[railKey];
         return { list, offset: 0 };
       }
-      this._railWindows[railKey] = { items: list, shown: size, size };
-      return { list: list.slice(0, size), offset: 0 };
+      const currentShown = Number(this._railWindows[railKey]?.shown || size);
+      const commentsIndexMatch = String(this.pendingFocusRestore?.selector || "").match(
+        /detail-comment-card\[data-comment-index="(\d+)"\]/
+      );
+      const rememberedIndex = railKey.startsWith("comments:")
+        ? Number(commentsIndexMatch?.[1] || 0)
+        : Number(this.railFocusIndexByKey?.[railKey] || 0);
+      const restoredWindowSize = Number.isFinite(rememberedIndex) ? Math.ceil((rememberedIndex + 1) / size) * size : size;
+      const shown = Math.min(list.length, Math.max(size, currentShown, restoredWindowSize));
+      this._railWindows[railKey] = { items: list, shown, size };
+      return { list: list.slice(0, shown), offset: 0 };
     },
     renderPreviewCard(rawItem, fallbackType = "movie") {
       const item = normalizePreviewItem(rawItem, fallbackType);

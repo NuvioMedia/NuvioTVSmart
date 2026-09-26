@@ -264,7 +264,6 @@
 .legacy-tizen .modern-sidebar-nav-item,
 .legacy-tizen .modern-sidebar-profile {
   transition: transform 140ms ease-out !important;
-  will-change: transform !important;
 }
 
 .performance-constrained .series-episode-card.focused,
@@ -287,6 +286,7 @@
 .legacy-tizen .series-circle-btn.focused {
   animation: tizenCardLift 140ms ease-out both;
   transform: scale(1.03) !important;
+  will-change: transform !important;
 }
 
 .performance-constrained .modern-sidebar-nav-item.focused,
@@ -294,4 +294,5 @@
 .legacy-tizen .modern-sidebar-nav-item.focused,
 .legacy-tizen .modern-sidebar-profile.focused {
   transform: scale(1.04) !important;
+  will-change: transform !important;
 }

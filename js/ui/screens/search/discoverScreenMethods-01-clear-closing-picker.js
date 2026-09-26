@@ -22,6 +22,8 @@ export function createDiscoverScreenMethods01() {
     t,
     extractReleaseYear
   } = internals;
+  const DISCOVER_ITEM_WINDOW_SIZE = 40;
+  const DISCOVER_ITEM_WINDOW_AHEAD = 8;
 
   return {
     clearClosingPicker() {
@@ -91,6 +93,7 @@ export function createDiscoverScreenMethods01() {
         selectedCatalogKey: String(this.selectedCatalogKey || ""),
         selectedGenre: String(this.selectedGenre || "Default"),
         items: Array.isArray(this.items) ? [...this.items] : [],
+        renderedItemsLimit: Number(this.renderedItemsLimit || DISCOVER_ITEM_WINDOW_SIZE),
         nextSkip: Number(this.nextSkip || 0),
         hasMore: Boolean(this.hasMore),
         lastFocusedAction: String(this.lastFocusedAction || "discoverFilterType"),
@@ -115,6 +118,10 @@ export function createDiscoverScreenMethods01() {
       this.selectedCatalogKey = String(snapshot.selectedCatalogKey || "");
       this.selectedGenre = String(snapshot.selectedGenre || "Default");
       this.items = Array.isArray(snapshot.items) ? [...snapshot.items] : [];
+      const restoredItemsLimit = Number(snapshot.renderedItemsLimit);
+      this.renderedItemsLimit = Number.isFinite(restoredItemsLimit)
+        ? Math.max(DISCOVER_ITEM_WINDOW_SIZE, restoredItemsLimit)
+        : DISCOVER_ITEM_WINDOW_SIZE;
       this.nextSkip = Number(snapshot.nextSkip || 0);
       this.hasMore = Boolean(snapshot.hasMore);
       this.lastFocusedAction = String(snapshot.lastFocusedAction || "discoverFilterType");
@@ -163,6 +170,7 @@ export function createDiscoverScreenMethods01() {
       this.genreOptions = ["Default"];
       this.selectedGenre = "Default";
       this.items = [];
+      this.renderedItemsLimit = DISCOVER_ITEM_WINDOW_SIZE;
       this.loading = true;
 
       this.openPicker = null;
@@ -307,12 +315,17 @@ export function createDiscoverScreenMethods01() {
     },
     renderDiscoverCards(selectedCatalog = null) {
       // Tizen fast path: paged catalogs accumulate hundreds of items across
-      // loads and every mount re-parses them all. Cap the initial render on
-      // constrained runtimes while more pages remain; the existing
-      // focus/scroll auto-load (shouldAutoLoadMore) appends the rest on
-      // demand with stable original indices. Finite sets render fully.
+      // loads. Render bounded windows and expand as focus or scrolling nears
+      // the current end. Finite sets render fully.
       const allItems = Array.isArray(this.items) ? this.items : [];
-      const renderItems = allItems.length > 40 && this.hasMore && ScreenUtils.shouldSkipRouteEnter(this) ? allItems.slice(0, 40) : allItems;
+      const currentRenderLimit = Number(this.renderedItemsLimit);
+      const renderLimit = Number.isFinite(currentRenderLimit)
+        ? Math.max(DISCOVER_ITEM_WINDOW_SIZE, currentRenderLimit)
+        : DISCOVER_ITEM_WINDOW_SIZE;
+      const renderItems =
+        allItems.length > DISCOVER_ITEM_WINDOW_SIZE && this.hasMore && ScreenUtils.shouldSkipRouteEnter(this)
+          ? allItems.slice(0, Math.min(allItems.length, renderLimit))
+          : allItems;
       return renderItems.length
         ? renderItems
             .map(
@@ -351,6 +364,26 @@ export function createDiscoverScreenMethods01() {
             )
             .join("")
         : `<div class="seeall-empty">${escapeHtml(t("catalog_see_all_empty_title", {}, "No items available"))}</div>`;
+    },
+    maybeExpandRenderedItems(index) {
+      if (!this.hasMore || !ScreenUtils.shouldSkipRouteEnter(this)) {
+        return false;
+      }
+      const allItems = Array.isArray(this.items) ? this.items : [];
+      const rawLimit = Number(this.renderedItemsLimit);
+      const currentLimit = Number.isFinite(rawLimit) ? Math.max(DISCOVER_ITEM_WINDOW_SIZE, rawLimit) : DISCOVER_ITEM_WINDOW_SIZE;
+      const focusedIndex = Number(index);
+      if (allItems.length <= currentLimit || !Number.isFinite(focusedIndex) || focusedIndex < currentLimit - DISCOVER_ITEM_WINDOW_AHEAD) {
+        return false;
+      }
+      const nextLimit = Math.min(allItems.length, currentLimit + DISCOVER_ITEM_WINDOW_SIZE);
+      if (nextLimit <= currentLimit) {
+        return false;
+      }
+      this.renderedItemsLimit = nextLimit;
+      this.pendingRestoreFocus = true;
+      this.preserveViewportOnNextRender = true;
+      return true;
     },
     renderDiscoverLoadingMarkup() {
       return this.loading

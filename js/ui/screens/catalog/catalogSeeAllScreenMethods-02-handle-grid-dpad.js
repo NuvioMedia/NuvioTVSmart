@@ -217,11 +217,15 @@ export function createCatalogSeeAllScreenMethods02() {
     render() {
       const descriptor = this.params || {};
       const title = descriptor.catalogName || "Catalog";
-      // Tizen fast path: same paged-catalog cap as discover (see
-      // renderDiscoverCards). shouldAutoLoadMore appends further pages on
-      // demand; slice keeps original indices so focus restore stays stable.
+      // Keep large paged catalogs windowed on constrained TVs. The window
+      // expands as focus approaches its end, while original item indices stay stable.
       const allItems = Array.isArray(this.items) ? this.items : [];
-      const renderItems = allItems.length > 48 && this.hasMore && ScreenUtils.shouldSkipRouteEnter(this) ? allItems.slice(0, 48) : allItems;
+      const currentRenderLimit = Number(this.renderedItemsLimit);
+      const renderLimit = Number.isFinite(currentRenderLimit) ? Math.max(48, currentRenderLimit) : 48;
+      const renderItems =
+        allItems.length > 48 && this.hasMore && ScreenUtils.shouldSkipRouteEnter(this)
+          ? allItems.slice(0, Math.min(allItems.length, renderLimit))
+          : allItems;
       const cards = renderItems.length
         ? renderItems
             .map(
@@ -324,6 +328,12 @@ export function createCatalogSeeAllScreenMethods02() {
         () => {
           this.savedScrollTop = Number(shell.scrollTop || 0);
           if (this.shouldAutoLoadMoreFromScroll(shell)) {
+            if (this.maybeExpandRenderedItems(this.renderedItemsLimit - 1)) {
+              this.render();
+            }
+          }
+          const currentShell = this.container?.querySelector(".seeall-shell") || null;
+          if (this.shouldAutoLoadMoreFromScroll(currentShell)) {
             this.loadNextPage({ preserveViewport: true });
           }
         },

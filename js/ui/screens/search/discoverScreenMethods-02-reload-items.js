@@ -10,6 +10,7 @@ export function createDiscoverScreenMethods02() {
       this.captureViewState();
       this.nextSkip = 0;
       this.hasMore = true;
+      this.renderedItemsLimit = 40;
       this.loading = true;
       this.lastFocusedKey = null;
       this.lastFocusedDiscoverItemId = "";

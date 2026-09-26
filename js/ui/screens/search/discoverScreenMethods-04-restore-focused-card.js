@@ -128,6 +128,9 @@ export function createDiscoverScreenMethods04() {
       if (shouldLoadMore) {
         this.loadNextPage({ preserveViewport: true });
       }
+      if (this.maybeExpandRenderedItems(target.dataset.itemIndex)) {
+        this.updateRenderedDiscoverResults();
+      }
       if (!this.layoutPrefs?.modernSidebar) {
         setLegacySidebarExpanded(this.container, false);
       }
