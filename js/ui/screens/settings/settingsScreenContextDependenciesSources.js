@@ -47,6 +47,7 @@ export { WebOsAudioCompatibilityStore } from "../../../data/local/webOsAudioComp
 export { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 
 export { ExperienceModeStore } from "../../../data/local/experienceModeStore.js";
+export { DevicePerformancePreferences } from "../../../data/local/devicePerformancePreferences.js";
 
 export { MdbListSettingsStore } from "../../../data/local/mdbListSettingsStore.js";
 

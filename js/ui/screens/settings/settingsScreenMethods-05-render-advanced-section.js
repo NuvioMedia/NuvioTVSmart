@@ -9,6 +9,7 @@ export function createSettingsScreenMethods05() {
     availableThemeIds,
     LayoutPreferences,
     ExperienceModeStore,
+    DevicePerformancePreferences,
     ProfileManager,
     isFastHorizontalNavigationEnabled,
     CW_DISPLAY_SNAPSHOT_KEY,
@@ -30,6 +31,48 @@ export function createSettingsScreenMethods05() {
       this.actionMap.set("advanced:fastHorizontalNavigation", () => {
         LayoutPreferences.set({
           fastHorizontalNavigationEnabled: !isFastHorizontalNavigationEnabled()
+        });
+      });
+      const performanceModeOptions = [
+        {
+          id: "auto",
+          labelKey: "advanced_performance_mode_auto",
+          label: "Automatic"
+        },
+        {
+          id: "performance",
+          labelKey: "advanced_performance_mode_performance",
+          label: "Performance"
+        },
+        {
+          id: "quality",
+          labelKey: "advanced_performance_mode_quality",
+          label: "Quality"
+        }
+      ];
+      const currentPerformanceMode = DevicePerformancePreferences.getMode();
+      const currentPerformanceModeOption =
+        performanceModeOptions.find((option) => option.id === currentPerformanceMode) || performanceModeOptions[0];
+      this.actionMap.set("advanced:performanceMode", () => {
+        this.openOptionDialog({
+          title: t("advanced_performance_mode", {}, "Performance Mode"),
+          message: t("advanced_performance_mode_dialog_message", {}, "The app restarts to apply the new mode."),
+          options: performanceModeOptions,
+          selectedId: currentPerformanceMode,
+          returnFocusKey: "advanced:performanceMode",
+          onSelect: (option) => {
+            if (!option || option.id === DevicePerformancePreferences.getMode()) {
+              return;
+            }
+            DevicePerformancePreferences.setMode(option.id);
+            // Screens read the runtime profile while rendering and the root
+            // classes are applied once at boot, so restart for a consistent state.
+            setTimeout(() => {
+              try {
+                globalThis.location.reload();
+              } catch (_) {}
+            }, 150);
+          }
         });
       });
       this.actionMap.set("advanced:rememberLastProfile", () => {
@@ -106,6 +149,16 @@ export function createSettingsScreenMethods05() {
           </div>
           <div class="settings-group-card">
             <div class="settings-stack">
+              ${this.renderActionRow({
+                focusKey: "advanced:performanceMode",
+                title: t("advanced_performance_mode", {}, "Performance Mode"),
+                subtitle: t(
+                  "advanced_performance_mode_subtitle",
+                  {},
+                  "Performance turns off blur and heavy animations and loads rows in smaller batches. Automatic uses it on Samsung TVs."
+                ),
+                value: t(currentPerformanceModeOption.labelKey, {}, currentPerformanceModeOption.label)
+              })}
               ${this.renderToggleRow({
                 focusKey: "advanced:fastHorizontalNavigation",
                 title: t("advanced_fast_horizontal_navigation", {}, "Fast Horizontal Navigation"),

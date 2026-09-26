@@ -94,6 +94,29 @@ function readEnvelope(key, normalize, legacyProfileIds = null) {
   return migrated;
 }
 
+// Read-only envelope cache keyed by the raw stored string. Settings getters run
+// in render loops and player ticks; re-parsing and re-normalizing every profile
+// on each call costs several full JSON passes. Comparing the raw string keeps
+// the cache correct even when another module writes the key directly.
+const envelopeReadCache = new Map();
+
+function readEnvelopeForRead(key, normalize, legacyProfileIds) {
+  const raw = LocalStore.getRaw(key);
+  const cached = envelopeReadCache.get(key);
+  if (cached && raw !== null && cached.raw === raw) {
+    return cached.envelope;
+  }
+  const envelope = readEnvelope(key, normalize, legacyProfileIds);
+  // readEnvelope may have migrated or re-normalized the stored value.
+  const storedRaw = LocalStore.getRaw(key);
+  if (storedRaw !== null) {
+    envelopeReadCache.set(key, { raw: storedRaw, envelope });
+  } else {
+    envelopeReadCache.delete(key);
+  }
+  return envelope;
+}
+
 function persistEnvelope(key, envelope) {
   LocalStore.set(key, envelope);
 }
@@ -238,6 +261,13 @@ export function createProfileScopedStore({
 
   return {
     getForProfile(profileId) {
+      const cachedEnvelope = readEnvelopeForRead(key, normalize, legacyProfileIds);
+      const normalizedProfileId = normalizeProfileId(profileId);
+      if (Object.prototype.hasOwnProperty.call(cachedEnvelope.profiles, normalizedProfileId)) {
+        return cloneValue(cachedEnvelope.profiles[normalizedProfileId]);
+      }
+      // Seeding a missing profile mutates and persists the envelope, so work on
+      // a fresh copy instead of the shared read cache.
       const envelope = readEnvelope(key, normalize, legacyProfileIds);
       return cloneValue(ensureProfileValue(key, envelope, normalize, profileId, seedFromPrimary));
     },

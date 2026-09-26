@@ -164,9 +164,27 @@ const store = createProfileScopedStore({
   normalize: normalizeLayoutPreferences
 });
 
+let appliedCardDepthSignature = "";
+
 function applyCardDepthPresentation(settings) {
   const root = globalThis?.document?.documentElement;
   if (!root) return;
+  // get() runs in render loops; rewriting root attributes and custom
+  // properties with unchanged values still schedules document-wide style
+  // invalidation on TV Chromium builds.
+  const signature = [
+    settings.cardDepthEnabled,
+    settings.cardDepthPostersEnabled,
+    settings.cardDepthContinueWatchingEnabled,
+    settings.cardDepthEpisodeCardsEnabled,
+    settings.cardDepthCastEnabled,
+    settings.cardDepthTrailersEnabled,
+    settings.cardDepthEdgeStrength,
+    settings.cardDepthSheenStrength,
+    settings.cardDepthEdgeCoverage
+  ].join("|");
+  if (signature === appliedCardDepthSignature && root.dataset.cardDepth) return;
+  appliedCardDepthSignature = signature;
   root.dataset.cardDepth = settings.cardDepthEnabled ? "true" : "false";
   root.dataset.cardDepthPosters = settings.cardDepthPostersEnabled !== false ? "true" : "false";
   root.dataset.cardDepthContinueWatching =

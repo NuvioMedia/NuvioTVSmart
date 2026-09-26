@@ -452,6 +452,12 @@
     <string name="advanced_section_dv_diagnostics">DV Diagnostics</string>
     <string name="advanced_fast_horizontal_navigation">Fast Horizontal Navigation</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Increase D-pad repeat speed in rows while keeping repeat throttling enabled.</string>
+    <string name="advanced_performance_mode">Performance Mode</string>
+    <string name="advanced_performance_mode_subtitle">Performance turns off blur and heavy animations and loads rows in smaller batches. Automatic uses it on Samsung TVs.</string>
+    <string name="advanced_performance_mode_dialog_message">The app restarts to apply the new mode.</string>
+    <string name="advanced_performance_mode_auto">Automatic</string>
+    <string name="advanced_performance_mode_performance">Performance</string>
+    <string name="advanced_performance_mode_quality">Quality</string>
     <string name="advanced_nuvio_focus_scroll">Nuvio Focus Scrolling</string>
     <string name="advanced_nuvio_focus_scroll_subtitle">Use Nuvio\'s custom global focus scroll animation and positioning.</string>
     <string name="advanced_memory_only_vertical_scroll">Memory-only Vertical Scrolling</string>

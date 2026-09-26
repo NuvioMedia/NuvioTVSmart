@@ -190,6 +190,7 @@ import {
 import {
   continueWatchingEnrichmentCacheKey,
   readContinueWatchingEnrichmentCache,
+  readContinueWatchingEnrichmentCacheReadOnly,
   normalizeContinueWatchingItem,
   isRawContinueWatchingTitle,
   hasContinueWatchingArtwork,
@@ -206,14 +207,14 @@ export function getCachedContinueWatchingEnrichment(item = {}) {
   if (!key) {
     return null;
   }
-  const cached = readContinueWatchingEnrichmentCache()[key];
+  const cached = readContinueWatchingEnrichmentCacheReadOnly()[key];
   if (!cached || typeof cached !== "object") {
     return null;
   }
   if (Date.now() - Number(cached.cachedAt || 0) > CW_ENRICHMENT_CACHE_MAX_AGE_MS) {
     return null;
   }
-  return cached;
+  return { ...cached };
 }
 
 export function applyCachedContinueWatchingEnrichment(item = {}) {

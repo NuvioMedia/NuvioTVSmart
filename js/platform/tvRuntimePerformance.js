@@ -1,5 +1,6 @@
 import { Platform } from "./index.js";
 import { TizenCapabilities } from "./tizen/tizenCapabilities.js";
+import { DevicePerformancePreferences } from "../data/local/devicePerformancePreferences.js";
 
 // The first common TV generation with a modern Chromium baseline is Samsung
 // Tizen 6.5 / Chromium M85 (2022) and LG webOS TV 22 / Chromium M87 (2022).
@@ -110,6 +111,22 @@ function getTizenReleaseYear(tizenVersion) {
   return 0;
 }
 
+// "performance" and "quality" are explicit user overrides. "auto" keeps the
+// legacy detection and additionally treats every Samsung Tizen TV as
+// constrained: even 2023-2024 panels (Tizen 7/8, e.g. S94D) drop frames with
+// blur layers, full-length rows and boot-time HLS/DASH warmup enabled. The
+// legacy-only reductions (isLegacyTvRuntime) are never forced, and legacy
+// runtimes stay constrained because no code path expects legacy && !constrained.
+function resolvePerformanceConstrained(performanceMode, { isTizen, isLegacyTvRuntime }) {
+  if (performanceMode === "performance") {
+    return true;
+  }
+  if (performanceMode === "quality") {
+    return isLegacyTvRuntime;
+  }
+  return isLegacyTvRuntime || isTizen;
+}
+
 export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
   if (cachedProfile && !forceRefresh) {
     return cachedProfile;
@@ -119,6 +136,7 @@ export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
   const isTizen = Platform.isTizen();
   const isTvRuntime = isWebOS || isTizen;
   let chromiumMajorVersion = readChromiumMajorVersion();
+  const performanceMode = DevicePerformancePreferences.getMode();
   if (!isTvRuntime) {
     cachedProfile = Object.freeze({
       isTvRuntime: false,
@@ -128,7 +146,8 @@ export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
       tvYearKnown: false,
       chromiumVersionKnown: chromiumMajorVersion > 0,
       isLegacyTvRuntime: false,
-      isPerformanceConstrained: false
+      isPerformanceConstrained: performanceMode === "performance",
+      performanceMode
     });
     return cachedProfile;
   }
@@ -159,7 +178,11 @@ export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
     tvYearKnown,
     chromiumVersionKnown,
     isLegacyTvRuntime,
-    isPerformanceConstrained: isLegacyTvRuntime
+    isPerformanceConstrained: resolvePerformanceConstrained(performanceMode, {
+      isTizen,
+      isLegacyTvRuntime
+    }),
+    performanceMode
   });
   return cachedProfile;
 }

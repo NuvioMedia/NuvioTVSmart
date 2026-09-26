@@ -9,6 +9,15 @@ export const LocalStore = {
     }
   },
 
+  getRaw(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.error("LocalStore getRaw error:", e);
+      return null;
+    }
+  },
+
   set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));

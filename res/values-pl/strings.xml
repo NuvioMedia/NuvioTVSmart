@@ -1454,6 +1454,12 @@
     <string name="advanced_section_cache">Pamięć podręczna</string>
     <string name="advanced_fast_horizontal_navigation">Szybka nawigacja pozioma</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Zwiększ prędkość powtarzania D-pad w wierszach przy zachowaniu ograniczania powtórzeń.</string>
+    <string name="advanced_performance_mode">Tryb wydajności</string>
+    <string name="advanced_performance_mode_subtitle">Wydajność wyłącza rozmycie i ciężkie animacje oraz ładuje wiersze mniejszymi partiami. Automatyczny włącza go na telewizorach Samsung.</string>
+    <string name="advanced_performance_mode_dialog_message">Aplikacja uruchomi się ponownie, aby zastosować nowy tryb.</string>
+    <string name="advanced_performance_mode_auto">Automatyczny</string>
+    <string name="advanced_performance_mode_performance">Wydajność</string>
+    <string name="advanced_performance_mode_quality">Jakość</string>
     <string name="advanced_nuvio_focus_scroll">Przewijanie fokusa Nuvio</string>
     <string name="advanced_nuvio_focus_scroll_subtitle">Używaj niestandardowej globalnej animacji przewijania i pozycjonowania fokusa Nuvio.</string>
     <string name="advanced_memory_only_vertical_scroll">Przewijanie pionowe tylko z pamięci</string>

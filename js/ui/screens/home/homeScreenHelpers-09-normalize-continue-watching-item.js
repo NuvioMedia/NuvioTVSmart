@@ -368,3 +368,19 @@ export function readContinueWatchingEnrichmentCache() {
   const cache = LocalStore.get(CW_ENRICHMENT_CACHE_KEY, {});
   return cache && typeof cache === "object" ? cache : {};
 }
+
+// Continue Watching looks up one entry per card; parsing the whole cache for
+// every card made each Home render quadratic. Reuse the parsed cache until the
+// stored string changes. Callers must treat the result as read-only.
+let enrichmentReadCache = { raw: null, cache: {} };
+
+export function readContinueWatchingEnrichmentCacheReadOnly() {
+  const raw = LocalStore.getRaw(CW_ENRICHMENT_CACHE_KEY);
+  if (raw === null) {
+    return {};
+  }
+  if (enrichmentReadCache.raw !== raw) {
+    enrichmentReadCache = { raw, cache: readContinueWatchingEnrichmentCache() };
+  }
+  return enrichmentReadCache.cache;
+}
