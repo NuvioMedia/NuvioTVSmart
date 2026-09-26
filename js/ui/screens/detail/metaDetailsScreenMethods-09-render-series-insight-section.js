@@ -303,7 +303,11 @@ export function createMetaDetailsScreenMethods09() {
       // window up front — static cards are cheap, rebuilds are not.
       let windowOverscan = EPISODE_VIRTUALIZATION_OVERSCAN;
       try {
-        if (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) {
+        if (
+          (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) ||
+          globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+          globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
+        ) {
           windowOverscan = EPISODE_VIRTUALIZATION_OVERSCAN * 2;
         }
       } catch (_) {}

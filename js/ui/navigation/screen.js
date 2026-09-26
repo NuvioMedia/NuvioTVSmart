@@ -1,7 +1,15 @@
 export const ScreenUtils = {
   // Tizen fast path: route-enter animations (240-350ms full-screen
-  // slide/fade) drop frames on Chromium 56-76 while images mount.
-  // Screens call this before adding their *-route-enter class.
+  // slide/fade) drop frames on TV hardware while images mount. Screens
+  // call this before adding their *-route-enter class.
+  //
+  // IMPORTANT: this is also the shared "instant motion" gate for scroll,
+  // throttle and debounce fast paths (not data budgets like row limits).
+  // It covers performance-constrained runtimes AND every Samsung Tizen TV:
+  // modern engines on mid-range panels need it too.
+  isTizenFastPath(host = null) {
+    return this.shouldSkipRouteEnter(host);
+  },
   shouldSkipRouteEnter(host = null) {
     try {
       if (typeof host?.isPerformanceConstrained === "function" && host.isPerformanceConstrained()) {

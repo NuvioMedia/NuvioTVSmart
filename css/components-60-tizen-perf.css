@@ -1,8 +1,10 @@
-/* Tizen TV menu-transition fast path (Samsung Tizen 4-6, Chromium 56-76).
-   Width + blur + slide animations force layout/paint on every frame on the
-   legacy compositor. Constrained runtimes already set performance-constrained
-   on <html>/<body> (see js/app.js applyPerformanceMode). Make those menus
-   instant and keep only a cheap outline for focus. */
+/* Tizen TV menu-transition fast path (all Samsung Tizen TVs).
+   Width + blur + slide animations force layout/paint on every frame on TV
+   compositors — old Chromium (software raster) and modern engines on
+   mid-range panels alike. Constrained runtimes set performance-constrained
+   on <html>/<body> (see js/app.js applyPerformanceMode); .legacy-tizen is
+   set for every Tizen TV (see tizenAdapter). Make those menus instant and
+   keep only a cheap outline for focus. */
 
 .performance-constrained .nuvio-route-slide-enter,
 .performance-constrained .home-route-content-enter,
@@ -68,7 +70,10 @@
 .performance-constrained .series-stream-panel,
 .legacy-tizen .modern-sidebar-panel,
 .legacy-tizen .modern-sidebar-pill-chip,
-.legacy-tizen .stream-route-panel-shell {
+.legacy-tizen .stream-route-panel-shell,
+.legacy-tizen .series-episode-card,
+.legacy-tizen .series-stream-panel,
+.legacy-tizen .detail-trailer-control-bar {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -106,15 +111,22 @@
 
 /* Full-viewport settings surface: width/margin animation reflows the entire
    2-column grid per frame on the legacy compositor. Offset instantly. */
-.performance-constrained .settings-workspace {
+.performance-constrained .settings-workspace,
+.legacy-tizen .settings-workspace {
   transition: none !important;
   will-change: auto !important;
 }
 
-/* Brand gradient sweep animates background-position forever, which Chromium
-   56 cannot composite (repaint per tick). Static gradient on constrained. */
-.performance-constrained .member-brand-suffix {
+/* Brand gradient sweep animates background-position forever, which weak TV
+   compositors cannot sustain (repaint per tick). Static gradient. */
+.performance-constrained .member-brand-suffix,
+.legacy-tizen .member-brand-suffix {
   animation: none !important;
+}
+
+/* Modern poster expansion animates layout properties per focus step. */
+.legacy-tizen .home-screen-shell.home-layout-modern .home-poster-card {
+  transition: none !important;
 }
 
 /* Detail screen fast path (series/movie title screen). Every focus move
@@ -138,6 +150,23 @@
   will-change: auto !important;
 }
 
+.legacy-tizen .series-detail-actions .series-primary-btn,
+.legacy-tizen .series-detail-actions .series-circle-btn,
+.legacy-tizen .series-season-btn,
+.legacy-tizen .series-insight-tab,
+.legacy-tizen .detail-morelike-card,
+.legacy-tizen .movie-cast-card,
+.legacy-tizen .series-cast-card,
+.legacy-tizen .detail-company-card,
+.legacy-tizen .detail-comment-card,
+.legacy-tizen .detail-comments-mode,
+.legacy-tizen .series-episode-card,
+.legacy-tizen .series-episode-thumb {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
 .performance-constrained .series-episode-card.focused,
 .performance-constrained .detail-morelike-card.focused,
 .performance-constrained .movie-cast-card.focused,
@@ -152,13 +181,33 @@
   box-shadow: 0 0 0 2px var(--focus-color, #fff) !important;
 }
 
+.legacy-tizen .series-episode-card.focused,
+.legacy-tizen .detail-morelike-card.focused,
+.legacy-tizen .movie-cast-card.focused,
+.legacy-tizen .series-cast-card.focused,
+.legacy-tizen .detail-company-card.focused,
+.legacy-tizen .detail-comment-card.focused,
+.legacy-tizen .series-primary-btn.focused,
+.legacy-tizen .series-secondary-btn.focused,
+.legacy-tizen .series-circle-btn.focused,
+.legacy-tizen .series-season-btn.focused {
+  transform: none !important;
+  box-shadow: 0 0 0 2px var(--focus-color, #fff) !important;
+}
+
+.legacy-tizen .detail-comment-card.focused p {
+  -webkit-line-clamp: 5 !important;
+  line-clamp: 5 !important;
+}
+
 .performance-constrained .detail-comment-card.focused p {
   -webkit-line-clamp: 5 !important;
   line-clamp: 5 !important;
 }
 
 /* Static dim instead of per-pixel software blur on unwatched thumbs. */
-.performance-constrained .series-episode-image.is-blurred {
+.performance-constrained .series-episode-image.is-blurred,
+.legacy-tizen .series-episode-image.is-blurred {
   filter: none !important;
   transform: none !important;
   opacity: 0.5 !important;

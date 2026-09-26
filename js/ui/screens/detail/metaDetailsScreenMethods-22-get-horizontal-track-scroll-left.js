@@ -2,7 +2,7 @@
 import * as internals from "./metaDetailsScreenContext.js";
 
 export function createMetaDetailsScreenMethods22() {
-  const { DETAIL_TAB_FOCUS_TARGET, DETAIL_ROW_FOCUS_TARGET, isSeriesDetailMeta } = internals;
+  const { DETAIL_TAB_FOCUS_TARGET, DETAIL_ROW_FOCUS_TARGET, ScreenUtils, isSeriesDetailMeta } = internals;
 
   // Tizen fast path: paddingLeft via getComputedStyle forces a style recalc.
   // Cache per track element (tracks are replaced on re-render, so the cache
@@ -270,11 +270,12 @@ export function createMetaDetailsScreenMethods22() {
       }
       let preserveVerticalScroll = Boolean(options?.preserveVerticalScroll);
       // Tizen fast path: 260/280ms scroll animations per focus move cannot
-      // composite on Chromium 56-76 while episode artwork decodes. Move
-      // instantly on constrained runtimes unless explicitly requested.
+      // composite on TV hardware while episode artwork decodes. Move
+      // instantly on constrained runtimes and all Samsung Tizen TVs
+      // (shared helper covers both) unless explicitly requested.
       let constrainedFocus = false;
       try {
-        constrainedFocus = typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained();
+        constrainedFocus = ScreenUtils.shouldSkipRouteEnter(this);
       } catch (_) {}
       const animated = options?.animated !== false && !constrainedFocus;
       const index = Math.max(0, Math.min(list.length - 1, targetIndex));
@@ -335,6 +336,11 @@ export function createMetaDetailsScreenMethods22() {
       if (!preserveVerticalScroll && !animated) {
         this.syncDetailScrollBounds(target);
       }
+      // Windowed rails (morelike/comments): append the next chunk as focus
+      // nears the end so long rails never parse all at once.
+      try {
+        this.extendRailWindowIfNeeded?.(target);
+      } catch (_) {}
       this.syncEpisodeTitleMarquee();
       return true;
     },

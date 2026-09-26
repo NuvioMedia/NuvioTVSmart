@@ -170,14 +170,21 @@ export function resetTvRuntimePerformanceProfile() {
 
 // Android keeps the current hero scene alive while the next artwork is being
 // prepared, then crossfades the settled scene. On constrained TV runtimes
-// (including unidentified ones, which fail closed to constrained in the
-// profile above), avoid allocating a second full-screen artwork layer: the
-// Web fallback still waits for the asset and fades it in, but keeps only
-// one image layer alive. Unknown runtimes used to keep the ghost-clone
-// crossfade path, which drops frames on old Tizen compositors.
+// (including unidentified ones, which fail closed to constrained) and on all
+// Samsung Tizen TVs, avoid allocating a second full-screen artwork layer:
+// the Web fallback still waits for the asset and fades it in, but keeps only
+// one image layer alive.
 export function getTvHeroTransitionMode(profile = getTvRuntimePerformanceProfile()) {
   if (profile?.isTvRuntime && profile.isPerformanceConstrained) {
     return "single-layer";
   }
+  try {
+    if (
+      globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+      globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
+    ) {
+      return "single-layer";
+    }
+  } catch (_) {}
   return "crossfade";
 }
