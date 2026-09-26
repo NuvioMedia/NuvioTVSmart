@@ -2,22 +2,106 @@
 import * as internals from "./metaDetailsScreenContext.js";
 
 export function createMetaDetailsScreenMethods22() {
-  const { DETAIL_TAB_FOCUS_TARGET, DETAIL_ROW_FOCUS_TARGET, isSeriesDetailMeta } = internals;
+  const { DETAIL_TAB_FOCUS_TARGET, DETAIL_ROW_FOCUS_TARGET, ScreenUtils, isSeriesDetailMeta } = internals;
+
+  // Tizen fast path: paddingLeft via getComputedStyle forces a style recalc.
+  // Cache per track element (tracks are replaced on re-render, so the cache
+  // cannot go stale within a DOM generation).
+  const readCachedTrackPadLeft = (track) => {
+    const cached = Number.parseFloat(track?.dataset?.trackPadDetailLeft || "");
+    if (Number.isFinite(cached) && cached >= 0) {
+      return cached;
+    }
+    const styles = globalThis.getComputedStyle ? globalThis.getComputedStyle(track) : null;
+    const leftPad = Math.max(0, Number.parseFloat(styles?.paddingLeft || "0") || 0);
+    try {
+      track.dataset.trackPadDetailLeft = String(leftPad);
+    } catch (_) {}
+    return leftPad;
+  };
 
   return {
+    // Tizen fast path: the D-pad handlers used to run ~13 full
+    // querySelectorAll scans on EVERY keypress over hundreds of detail
+    // nodes. Cache per-section lists, validated O(1) by section-root
+    // identity + child count. Any re-render replaces section roots or
+    // changes child counts, which transparently invalidates the cache.
+    getDetailFocusLists() {
+      const container = this.container;
+      if (!container) {
+        return null;
+      }
+      const cached = this._detailFocusListCache || null;
+      if (
+        cached &&
+        cached.container === container &&
+        Array.isArray(cached.sections) &&
+        cached.sections.every(
+          (section) =>
+            section.root instanceof HTMLElement && section.root.isConnected && section.root.childElementCount === section.childCount
+        )
+      ) {
+        return cached.lists;
+      }
+      const queryRoot = (selector) => container.querySelector(selector);
+      const queryCards = (root, selector) => (root instanceof HTMLElement ? Array.from(root.querySelectorAll(selector)) : []);
+      const actionsRoot = queryRoot(".series-detail-actions");
+      const seasonRoot = queryRoot(".series-season-row");
+      const episodeTrack = queryRoot(".series-episode-track");
+      const insightTabsRoot = queryRoot(".series-insight-tabs");
+      const castTrack = queryRoot(".series-cast-track, .movie-cast-track");
+      const ratingSeasonsRoot = queryRoot(".series-rating-seasons");
+      const ratingGrid = queryRoot(".series-episode-ratings-grid");
+      const morelikeTrack = queryRoot(".detail-morelike-track");
+      const commentModesRoot = queryRoot(".detail-comments-modes");
+      const commentTrack = queryRoot(".detail-comments-track");
+      const companyTracks = Array.from(container.querySelectorAll(".detail-company-track"));
+      const sections = [
+        actionsRoot,
+        seasonRoot,
+        episodeTrack,
+        insightTabsRoot,
+        castTrack,
+        ratingSeasonsRoot,
+        ratingGrid,
+        morelikeTrack,
+        commentModesRoot,
+        commentTrack,
+        ...companyTracks
+      ]
+        .filter((root) => root instanceof HTMLElement)
+        .map((root) => ({ root, childCount: root.childElementCount }));
+      const lists = {
+        actions: queryCards(actionsRoot, ".focusable"),
+        seasons: queryCards(seasonRoot, ".series-season-btn.focusable"),
+        episodes: queryCards(episodeTrack, ".series-episode-card.focusable"),
+        insightTabs: queryCards(insightTabsRoot, ".series-insight-tab.focusable"),
+        castCards: queryCards(castTrack, ".series-cast-card.focusable, .movie-cast-card.focusable"),
+        ratingSeasons: queryCards(ratingSeasonsRoot, ".series-rating-season.focusable"),
+        ratingChips: queryCards(ratingGrid, ".series-episode-rating-chip.focusable"),
+        moreLikeCards: queryCards(morelikeTrack, ".detail-morelike-card.focusable"),
+        commentModes: queryCards(commentModesRoot, ".detail-comments-mode.focusable"),
+        commentCards: queryCards(commentTrack, ".detail-comment-card.focusable"),
+        companyTracks,
+        companyCards: companyTracks.map((track) => queryCards(track, ".detail-company-card.focusable")),
+        // DOM-order snapshot for scroll-bounds checks (one scan per DOM
+        // generation instead of per keypress in syncDetailScrollBounds).
+        all: Array.from(container.querySelectorAll(".focusable")).filter((node) => node instanceof HTMLElement)
+      };
+      this._detailFocusListCache = { container, sections, lists };
+      return lists;
+    },
     getHorizontalTrackScrollLeft(horizontalTrack, target) {
       if (!(horizontalTrack instanceof HTMLElement) || !(target instanceof HTMLElement)) {
         return 0;
       }
       const maxScrollLeft = Math.max(0, horizontalTrack.scrollWidth - horizontalTrack.clientWidth);
       if (horizontalTrack.classList.contains("series-episode-track")) {
-        const styles = globalThis.getComputedStyle ? globalThis.getComputedStyle(horizontalTrack) : null;
-        const leftPad = Math.max(0, Number.parseFloat(styles?.paddingLeft || "0") || 0);
+        const leftPad = readCachedTrackPadLeft(horizontalTrack);
         return Math.max(0, Math.min(maxScrollLeft, target.offsetLeft - leftPad));
       }
       if (horizontalTrack.classList.contains("detail-morelike-track") || horizontalTrack.classList.contains("detail-comments-track")) {
-        const styles = globalThis.getComputedStyle ? globalThis.getComputedStyle(horizontalTrack) : null;
-        const leftPad = Math.max(0, Number.parseFloat(styles?.paddingLeft || "0") || 0);
+        const leftPad = readCachedTrackPadLeft(horizontalTrack);
         return Math.max(0, Math.min(maxScrollLeft, target.offsetLeft - leftPad));
       }
 
@@ -46,7 +130,11 @@ export function createMetaDetailsScreenMethods22() {
       if (!detailContent || !(target instanceof HTMLElement) || !detailContent.contains(target)) {
         return;
       }
-      const focusables = Array.from(detailContent.querySelectorAll(".focusable")).filter((node) => node instanceof HTMLElement);
+      // Tizen fast path: reuse the cached DOM-order snapshot instead of a
+      // full .focusable scan on every keypress.
+      const focusables =
+        this.getDetailFocusLists?.()?.all ||
+        Array.from(detailContent.querySelectorAll(".focusable")).filter((node) => node instanceof HTMLElement);
       if (!focusables.length) {
         return;
       }
@@ -181,7 +269,15 @@ export function createMetaDetailsScreenMethods22() {
         return false;
       }
       let preserveVerticalScroll = Boolean(options?.preserveVerticalScroll);
-      const animated = options?.animated !== false;
+      // Tizen fast path: 260/280ms scroll animations per focus move cannot
+      // composite on TV hardware while episode artwork decodes. Move
+      // instantly on constrained runtimes and all Samsung Tizen TVs
+      // (shared helper covers both) unless explicitly requested.
+      let constrainedFocus = false;
+      try {
+        constrainedFocus = ScreenUtils.shouldSkipRouteEnter(this);
+      } catch (_) {}
+      const animated = options?.animated !== false && !constrainedFocus;
       const index = Math.max(0, Math.min(list.length - 1, targetIndex));
       const target = list[index];
       if (!target) {
@@ -240,6 +336,11 @@ export function createMetaDetailsScreenMethods22() {
       if (!preserveVerticalScroll && !animated) {
         this.syncDetailScrollBounds(target);
       }
+      // Windowed rails (morelike/comments): append the next chunk as focus
+      // nears the end so long rails never parse all at once.
+      try {
+        this.extendRailWindowIfNeeded?.(target);
+      } catch (_) {}
       this.syncEpisodeTitleMarquee();
       return true;
     },

@@ -49,6 +49,11 @@ export function createDiscoverScreenMethods06() {
           this.savedScrollTop = Number(scroller.scrollTop || 0);
           this.scheduleDiscoverPosterHydration();
           if (this.shouldAutoLoadMoreFromScroll(scroller)) {
+            if (this.maybeExpandRenderedItems(this.renderedItemsLimit - 1)) {
+              this.updateRenderedDiscoverResults();
+            }
+          }
+          if (this.shouldAutoLoadMoreFromScroll(scroller)) {
             this.loadNextPage({ preserveViewport: true });
           }
         },

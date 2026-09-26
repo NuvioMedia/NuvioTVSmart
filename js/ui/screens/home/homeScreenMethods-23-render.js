@@ -240,11 +240,11 @@ export function createHomeScreenMethods23() {
           `;
       }
 
-      const routeEnterClass = this.homeRouteEnterPending
-        ? this.pendingCollectionRouteReturnAnimation
-          ? " nuvio-route-slide-enter"
-          : " home-route-content-enter"
-        : "";
+      const routeEnterClass = ScreenUtils.routeEnterClass(
+        this,
+        this.homeRouteEnterPending,
+        this.pendingCollectionRouteReturnAnimation ? " nuvio-route-slide-enter" : " home-route-content-enter"
+      );
       this.pendingCollectionRouteReturnAnimation = false;
       // On Back, only keep the sidebar expanded if the restored focus actually
       // belonged to the sidebar.

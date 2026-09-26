@@ -357,28 +357,15 @@
   animation: streamRouteSkeletonShimmer 2.2s ease-in-out infinite !important;
 }
 
-.performance-constrained .settings-layout-preview-modern-row {
-  animation: settingsLayoutModernPreviewScroll 5.7s linear infinite !important;
-}
-
-.performance-constrained .settings-layout-preview-grid-canvas {
-  animation: settingsLayoutGridPreviewScroll 8.8s linear infinite !important;
-}
-
-.performance-constrained .settings-layout-preview-classic-row.is-featured {
-  animation: settingsLayoutClassicPreviewScroll 4s linear infinite !important;
-}
-
-.performance-constrained.no-css-math .settings-layout-preview-modern-row {
-  animation: settingsLayoutModernPreviewScrollLegacy 5.7s linear infinite !important;
-}
-
-.performance-constrained.no-css-math .settings-layout-preview-grid-canvas {
-  animation: settingsLayoutGridPreviewScrollLegacy 8.8s linear infinite !important;
-}
-
+.performance-constrained .settings-layout-preview-modern-row,
+.performance-constrained .settings-layout-preview-grid-canvas,
+.performance-constrained .settings-layout-preview-classic-row.is-featured,
+.performance-constrained.no-css-math .settings-layout-preview-modern-row,
+.performance-constrained.no-css-math .settings-layout-preview-grid-canvas,
 .performance-constrained.no-css-math .settings-layout-preview-classic-row.is-featured {
-  animation: settingsLayoutClassicPreviewScrollLegacy 4s linear infinite !important;
+  /* Tizen fast path: preview loops kept the legacy compositor busy through
+     the settings mount. Freeze on a static frame on constrained runtimes. */
+  animation: none !important;
 }
 
 .performance-constrained .nuvio-route-slide-enter,
@@ -393,8 +380,10 @@
 
 .performance-constrained .addons-route-content.nuvio-route-fade-enter,
 .performance-constrained .plugins-route-content.nuvio-route-fade-enter {
-  animation: nuvioRouteFadeEnter 350ms cubic-bezier(0.4, 0, 0.2, 1) both !important;
-  will-change: opacity;
+  /* Tizen fast path: whole-route fade repaints the full catalog layer in
+     software. Enter instantly like the other route-enters above. */
+  animation: none !important;
+  will-change: auto;
 }
 
 .performance-constrained .home-content-card,
@@ -458,9 +447,7 @@
   -webkit-backdrop-filter: none !important;
 }
 
-.performance-constrained.modern-sidebar-blur-capable
-  .modern-sidebar-shell.blur-enabled.expanded:not(.collapsing)
-  .modern-sidebar-panel {
-  backdrop-filter: blur(26px) saturate(1) !important;
-  -webkit-backdrop-filter: blur(26px) saturate(1) !important;
-}
+/* Removed: a .modern-sidebar-blur-capable override re-enabled
+   backdrop-filter: blur(26px) on the panel for constrained runtimes.
+   Software blur per frame stalls Tizen menu compositing; panels keep the
+   solid gradient fallback. */

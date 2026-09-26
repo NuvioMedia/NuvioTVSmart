@@ -10,6 +10,14 @@ export function createPlayerScreenMethods27() {
       if (!video) {
         return;
       }
+      // Idempotent bind: re-mounts/episode switches used to stack duplicate
+      // timeupdate/subtitle/track handlers, multiplying per-frame work on
+      // single-core Tizen. Unbind first; unbindVideoEvents is a no-op when empty.
+      try {
+        if (typeof this.unbindVideoEvents === "function") {
+          this.unbindVideoEvents();
+        }
+      } catch (_) {}
       const isTizenAvPlayPlayback = () =>
         Boolean(Environment.isTizen() && typeof PlayerController.isUsingAvPlay === "function" && PlayerController.isUsingAvPlay());
       const lifecycleHandlers = createPlayerVideoLifecycleHandlers.call(this, video, isTizenAvPlayPlayback);

@@ -87,6 +87,7 @@ export function createMetaDetailsScreenMethods02() {
       this.episodeThumbnailPrefetchCache = new Set();
       this.selectedSeasonEpisodeState = null;
       this.railFocusIndexByKey = {};
+      this._railWindows = {};
       this.watchedEpisodeKeys = new Set();
       this.autoOpenedContinueWatchingStream = false;
       this.playOnLoadTriggered = false;

@@ -1,0 +1,298 @@
+/* Tizen TV menu-transition fast path (all Samsung Tizen TVs).
+   Width + blur + slide animations force layout/paint on every frame on TV
+   compositors — old Chromium (software raster) and modern engines on
+   mid-range panels alike. Constrained runtimes set performance-constrained
+   on <html>/<body> (see js/app.js applyPerformanceMode); .legacy-tizen is
+   set for every Tizen TV (see tizenAdapter). Make those menus instant and
+   keep only a cheap outline for focus. */
+
+.performance-constrained .nuvio-route-slide-enter,
+.performance-constrained .home-route-content-enter,
+.performance-constrained .addons-route-enter,
+.performance-constrained .search-route-enter,
+.performance-constrained .library-route-enter,
+.performance-constrained .settings-route-enter,
+.performance-constrained .settings-slide-panel,
+.performance-constrained .search-screen-shell.search-route-enter,
+.performance-constrained .library-shell.library-route-enter,
+.performance-constrained .addons-shell.addons-route-enter,
+.performance-constrained .settings-shell.settings-route-enter,
+.performance-constrained .stream-route-panel-shell,
+.performance-constrained .modern-sidebar-shell.opening,
+.performance-constrained .modern-sidebar-shell.opening .modern-sidebar-panel,
+.legacy-tizen .nuvio-route-slide-enter,
+.legacy-tizen .home-route-content-enter,
+.legacy-tizen .search-screen-shell.search-route-enter,
+.legacy-tizen .library-shell.library-route-enter,
+.legacy-tizen .addons-shell.addons-route-enter,
+.legacy-tizen .settings-shell.settings-route-enter,
+.legacy-tizen .stream-route-panel-shell,
+.legacy-tizen .modern-sidebar-shell.opening,
+.legacy-tizen .modern-sidebar-shell.opening .modern-sidebar-panel {
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* Width transitions on the sidebar shells trigger a full reflow per frame.
+   Instant toggle is ~0ms vs 385ms of jank on Tizen. */
+.performance-constrained .modern-sidebar-shell,
+.performance-constrained .modern-sidebar-panel,
+.performance-constrained .modern-sidebar-pill,
+.performance-constrained .home-sidebar,
+.performance-constrained .home-nav-item,
+.performance-constrained .home-nav-label,
+.performance-constrained .home-profile-pill,
+.legacy-tizen .modern-sidebar-shell,
+.legacy-tizen .modern-sidebar-panel,
+.legacy-tizen .modern-sidebar-pill,
+.legacy-tizen .home-sidebar,
+.legacy-tizen .home-nav-item,
+.legacy-tizen .home-nav-label,
+.legacy-tizen .home-profile-pill {
+  transition: none !important;
+  animation: none !important;
+}
+
+.performance-constrained .modern-sidebar-shell.opening,
+.performance-constrained .modern-sidebar-shell.collapsing,
+.legacy-tizen .modern-sidebar-shell.opening,
+.legacy-tizen .modern-sidebar-shell.collapsing {
+  animation: none !important;
+}
+
+/* Blur is the single most expensive effect on Tizen (software raster).
+   Panels already fall back to solid gradients via .no-backdrop-filter;
+   extend the kill-switch to every constrained/legacy Tizen surface. */
+.performance-constrained .modern-sidebar-panel,
+.performance-constrained .modern-sidebar-pill-chip,
+.performance-constrained .stream-route-panel-shell,
+.performance-constrained .series-episode-card,
+.performance-constrained .series-stream-panel,
+.legacy-tizen .modern-sidebar-panel,
+.legacy-tizen .modern-sidebar-pill-chip,
+.legacy-tizen .stream-route-panel-shell,
+.legacy-tizen .series-episode-card,
+.legacy-tizen .series-stream-panel,
+.legacy-tizen .detail-trailer-control-bar {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Focus feedback: keep a 2px outline, drop scale + blurred shadows.
+   Scale forces a repaint of the whole poster image on Chromium 56-69. */
+.performance-constrained .home-content-card.focused,
+.performance-constrained .home-continue-card.focused,
+.performance-constrained .home-poster-card.focused .home-poster-frame,
+.performance-constrained .modern-sidebar-nav-item.focused,
+.performance-constrained .modern-sidebar-profile.focused,
+.performance-constrained .home-nav-item.focused,
+.performance-constrained .stream-route-card.focused,
+.legacy-tizen .home-content-card.focused,
+.legacy-tizen .home-continue-card.focused,
+.legacy-tizen .home-poster-card.focused .home-poster-frame,
+.legacy-tizen .modern-sidebar-nav-item.focused,
+.legacy-tizen .modern-sidebar-profile.focused,
+.legacy-tizen .stream-route-card.focused {
+  transform: none !important;
+  box-shadow: 0 0 0 2px var(--secondary-color) !important;
+  will-change: auto !important;
+}
+
+/* Skeleton shimmer + preview loops burn GPU while menus mount. Keep the
+   loading spinner (user feedback) but freeze decorative loops. */
+.performance-constrained .stream-route-skeleton-line,
+.performance-constrained .settings-layout-preview-modern-row,
+.performance-constrained .settings-layout-preview-grid-canvas,
+.performance-constrained .settings-layout-preview-classic-row.is-featured,
+.legacy-tizen .stream-route-skeleton-line {
+  animation: none !important;
+  opacity: 0.7 !important;
+}
+
+/* Full-viewport settings surface: width/margin animation reflows the entire
+   2-column grid per frame on the legacy compositor. Offset instantly. */
+.performance-constrained .settings-workspace,
+.legacy-tizen .settings-workspace {
+  transition: none !important;
+  will-change: auto !important;
+}
+
+/* Brand gradient sweep animates background-position forever, which weak TV
+   compositors cannot sustain (repaint per tick). Static gradient. */
+.performance-constrained .member-brand-suffix,
+.legacy-tizen .member-brand-suffix {
+  animation: none !important;
+}
+
+/* Modern poster expansion animates layout properties per focus step. */
+.legacy-tizen .home-screen-shell.home-layout-modern .home-poster-card {
+  transition: none !important;
+}
+
+/* Detail screen fast path (series/movie title screen). Every focus move
+   otherwise animates transform + box-shadow + colors across 10 selectors,
+   scales comment cards (plus a line-clamp layout change), and blurs every
+   unwatched episode thumb in software. Focus stays a cheap outline. */
+.performance-constrained .series-detail-actions .series-primary-btn,
+.performance-constrained .series-detail-actions .series-circle-btn,
+.performance-constrained .series-season-btn,
+.performance-constrained .series-insight-tab,
+.performance-constrained .detail-morelike-card,
+.performance-constrained .movie-cast-card,
+.performance-constrained .series-cast-card,
+.performance-constrained .detail-company-card,
+.performance-constrained .detail-comment-card,
+.performance-constrained .detail-comments-mode,
+.performance-constrained .series-episode-card,
+.performance-constrained .series-episode-thumb {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.legacy-tizen .series-detail-actions .series-primary-btn,
+.legacy-tizen .series-detail-actions .series-circle-btn,
+.legacy-tizen .series-season-btn,
+.legacy-tizen .series-insight-tab,
+.legacy-tizen .detail-morelike-card,
+.legacy-tizen .movie-cast-card,
+.legacy-tizen .series-cast-card,
+.legacy-tizen .detail-company-card,
+.legacy-tizen .detail-comment-card,
+.legacy-tizen .detail-comments-mode,
+.legacy-tizen .series-episode-card,
+.legacy-tizen .series-episode-thumb {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.performance-constrained .series-episode-card.focused,
+.performance-constrained .detail-morelike-card.focused,
+.performance-constrained .movie-cast-card.focused,
+.performance-constrained .series-cast-card.focused,
+.performance-constrained .detail-company-card.focused,
+.performance-constrained .detail-comment-card.focused,
+.performance-constrained .series-primary-btn.focused,
+.performance-constrained .series-secondary-btn.focused,
+.performance-constrained .series-circle-btn.focused,
+.performance-constrained .series-season-btn.focused {
+  transform: none !important;
+  box-shadow: 0 0 0 2px var(--focus-color, #fff) !important;
+}
+
+.legacy-tizen .series-episode-card.focused,
+.legacy-tizen .detail-morelike-card.focused,
+.legacy-tizen .movie-cast-card.focused,
+.legacy-tizen .series-cast-card.focused,
+.legacy-tizen .detail-company-card.focused,
+.legacy-tizen .detail-comment-card.focused,
+.legacy-tizen .series-primary-btn.focused,
+.legacy-tizen .series-secondary-btn.focused,
+.legacy-tizen .series-circle-btn.focused,
+.legacy-tizen .series-season-btn.focused {
+  transform: none !important;
+  box-shadow: 0 0 0 2px var(--focus-color, #fff) !important;
+}
+
+.legacy-tizen .detail-comment-card.focused p {
+  -webkit-line-clamp: 5 !important;
+  line-clamp: 5 !important;
+}
+
+.performance-constrained .detail-comment-card.focused p {
+  -webkit-line-clamp: 5 !important;
+  line-clamp: 5 !important;
+}
+
+/* Static dim instead of per-pixel software blur on unwatched thumbs. */
+.performance-constrained .series-episode-image.is-blurred,
+.legacy-tizen .series-episode-image.is-blurred {
+  filter: none !important;
+  transform: none !important;
+  opacity: 0.5 !important;
+}
+
+/* ---- Tizen micro-motion (all Samsung): transform/opacity only, <=160ms.
+   TV compositors handle these without dropping frames; layout props, blur
+   and shadow animation stay off (see kill-switches above). These rules come
+   last so they win ties against the transition:none overrides. ---- */
+@keyframes tizenFadeEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.performance-constrained .tizen-fade-enter,
+.legacy-tizen .tizen-fade-enter {
+  animation: tizenFadeEnter 150ms ease-out both;
+  will-change: opacity;
+}
+
+@keyframes tizenCardLift {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.03);
+  }
+}
+
+.performance-constrained .series-episode-card,
+.performance-constrained .detail-morelike-card,
+.performance-constrained .movie-cast-card,
+.performance-constrained .series-cast-card,
+.performance-constrained .detail-company-card,
+.performance-constrained .series-season-btn,
+.performance-constrained .series-insight-tab,
+.performance-constrained .series-primary-btn,
+.performance-constrained .series-circle-btn,
+.performance-constrained .modern-sidebar-nav-item,
+.performance-constrained .modern-sidebar-profile,
+.legacy-tizen .series-episode-card,
+.legacy-tizen .detail-morelike-card,
+.legacy-tizen .movie-cast-card,
+.legacy-tizen .series-cast-card,
+.legacy-tizen .detail-company-card,
+.legacy-tizen .series-season-btn,
+.legacy-tizen .series-insight-tab,
+.legacy-tizen .series-primary-btn,
+.legacy-tizen .series-circle-btn,
+.legacy-tizen .modern-sidebar-nav-item,
+.legacy-tizen .modern-sidebar-profile {
+  transition: transform 140ms ease-out !important;
+}
+
+.performance-constrained .series-episode-card.focused,
+.performance-constrained .detail-morelike-card.focused,
+.performance-constrained .movie-cast-card.focused,
+.performance-constrained .series-cast-card.focused,
+.performance-constrained .detail-company-card.focused,
+.performance-constrained .series-season-btn.focused,
+.performance-constrained .series-insight-tab.focused,
+.performance-constrained .series-primary-btn.focused,
+.performance-constrained .series-circle-btn.focused,
+.legacy-tizen .series-episode-card.focused,
+.legacy-tizen .detail-morelike-card.focused,
+.legacy-tizen .movie-cast-card.focused,
+.legacy-tizen .series-cast-card.focused,
+.legacy-tizen .detail-company-card.focused,
+.legacy-tizen .series-season-btn.focused,
+.legacy-tizen .series-insight-tab.focused,
+.legacy-tizen .series-primary-btn.focused,
+.legacy-tizen .series-circle-btn.focused {
+  animation: tizenCardLift 140ms ease-out both;
+  transform: scale(1.03) !important;
+  will-change: transform !important;
+}
+
+.performance-constrained .modern-sidebar-nav-item.focused,
+.performance-constrained .modern-sidebar-profile.focused,
+.legacy-tizen .modern-sidebar-nav-item.focused,
+.legacy-tizen .modern-sidebar-profile.focused {
+  transform: scale(1.04) !important;
+  will-change: transform !important;
+}

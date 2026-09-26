@@ -52,8 +52,6 @@ import { Environment } from "../../../platform/environment.js";
 
 import { Platform } from "../../../platform/index.js";
 
-import { getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
-
 import { TMDB_API_KEY, TRAKT_API_URL, TRAKT_CLIENT_ID, YOUTUBE_PROXY_URL } from "../../../config.js";
 
 import { I18n } from "../../../i18n/index.js";
@@ -138,7 +136,11 @@ export function isRtlDetailLocale(locale = I18n.getLocale()) {
 }
 
 export function detailImageLoadingMode() {
-  return getTvRuntimePerformanceProfile().isPerformanceConstrained ? "eager" : "lazy";
+  // NOTE: intentionally NOT inverted — lazy everywhere; near-viewport
+  // images still resolve immediately via IntersectionObserver hydration.
+  // (A previous revision returned "eager" on constrained runtimes, firing
+  // a decode storm for every cast/morelike image during detail mount.)
+  return "lazy";
 }
 
 export function resolveDetailBackdropUrl(meta = {}) {

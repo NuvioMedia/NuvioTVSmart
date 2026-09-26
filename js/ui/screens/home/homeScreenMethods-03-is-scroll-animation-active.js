@@ -184,7 +184,11 @@ export function createHomeScreenMethods03() {
       );
     },
     shouldUseImmediateFocusScroll() {
-      return this.isPerformanceConstrained();
+      return (
+        this.isPerformanceConstrained() ||
+        globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+        globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
+      );
     },
     hasCollectionHomeRows() {
       return Array.isArray(this.collections) && this.collections.length > 0;
@@ -300,7 +304,19 @@ export function createHomeScreenMethods03() {
       return !this.isPerformanceConstrained();
     },
     getDirectionalRepeatThrottleMs(direction = null) {
-      if ((direction === "left" || direction === "right") && isFastHorizontalNavigationEnabled()) {
+      // Tizen fast path: the 48ms fast-horizontal gate passes nearly every
+      // native hold-repeat (~50-100ms) and queues another full focus workload
+      // before the previous press finished layout. Keep it for fast hardware.
+      const legacyTizenTv =
+        globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+        globalThis?.document?.documentElement?.classList?.contains("legacy-tizen");
+      if (
+        (direction === "left" || direction === "right") &&
+        isFastHorizontalNavigationEnabled() &&
+        !this.isPerformanceConstrained() &&
+        !this.isLegacyTvRuntime() &&
+        !legacyTizenTv
+      ) {
         // Match Android TV's fast-horizontal D-pad gate while preserving
         // the existing vertical and constrained-runtime throttles.
         return 48;

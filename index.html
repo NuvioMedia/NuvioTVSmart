@@ -54,15 +54,19 @@
   </head>
   <body>
     <script src="boot-guard.js"></script>
+    <!-- Tizen fast path: deferred scripts keep document order but no longer
+         parser-block first paint / focus-engine init on single-core TVs. -->
     <script
+      defer
       src="core-js.bundle.js"
       onerror="window.NuvioBootGuard && window.NuvioBootGuard.scriptFailed(this.src)"
     ></script>
-    <script src="nuvio.env.js"></script>
+    <script defer src="nuvio.env.js"></script>
 
-    <script src="assets/libs/qrcode-generator.js"></script>
+    <script defer src="assets/libs/qrcode-generator.js"></script>
 
     <script
+      defer
       src="app.bundle.js?v=20260531supporters2"
       onerror="window.NuvioBootGuard && window.NuvioBootGuard.scriptFailed(this.src)"
     ></script>

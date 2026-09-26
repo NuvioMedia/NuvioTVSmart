@@ -554,7 +554,13 @@ async function bootstrapApp() {
 
   ThemeManager.apply();
   I18n.apply();
-  warmStreamingLibs({ delayMs: 1400 });
+  // Tizen fast path: Chromium 56 has no requestIdleCallback, so the warmup
+  // timer fires mid Home-catalog paint and parses ~1-2MB of HLS+DASH on the
+  // sole main thread. Constrained runtimes load libs lazily on first
+  // playback intent instead (see loadStreamingLibs callers).
+  if (!getTvRuntimePerformanceProfile().isPerformanceConstrained) {
+    warmStreamingLibs({ delayMs: 1400 });
+  }
   void checkForAppUpdateOnStartup();
 
   markBootStage("Restoring session");

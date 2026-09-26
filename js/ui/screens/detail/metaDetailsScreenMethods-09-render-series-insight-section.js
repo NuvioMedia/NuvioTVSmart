@@ -298,10 +298,20 @@ export function createMetaDetailsScreenMethods09() {
       }
 
       const visibleEstimate = Math.ceil(Math.max(1, metrics.viewportWidth || 0) / Math.max(1, metrics.stride || 1));
-      const windowSize = Math.min(
-        total,
-        Math.max(EPISODE_VIRTUALIZATION_MIN_WINDOW, visibleEstimate + EPISODE_VIRTUALIZATION_OVERSCAN * 2)
-      );
+      // Tizen fast path: crossing the window edge rebuilds the whole track
+      // (innerHTML + focus restore). On constrained runtimes render a wider
+      // window up front — static cards are cheap, rebuilds are not.
+      let windowOverscan = EPISODE_VIRTUALIZATION_OVERSCAN;
+      try {
+        if (
+          (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) ||
+          globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+          globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
+        ) {
+          windowOverscan = EPISODE_VIRTUALIZATION_OVERSCAN * 2;
+        }
+      } catch (_) {}
+      const windowSize = Math.min(total, Math.max(EPISODE_VIRTUALIZATION_MIN_WINDOW, visibleEstimate + windowOverscan * 2));
       const maxStart = Math.max(0, total - windowSize);
       const currentTrack = this.getEpisodeTrackElement();
       const currentScrollLeft = Number(currentTrack?.scrollLeft || 0);

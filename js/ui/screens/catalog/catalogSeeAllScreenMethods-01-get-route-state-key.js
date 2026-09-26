@@ -19,6 +19,8 @@ export function createCatalogSeeAllScreenMethods01() {
     setContainerScrollTop,
     scrollNodeIntoContainerView
   } = internals;
+  const CATALOG_ITEM_WINDOW_SIZE = 48;
+  const CATALOG_ITEM_WINDOW_AHEAD = 8;
 
   return {
     getRouteStateKey(params = {}) {
@@ -39,6 +41,7 @@ export function createCatalogSeeAllScreenMethods01() {
       return {
         params: this.params ? { ...this.params } : {},
         items: Array.isArray(this.items) ? [...this.items] : [],
+        renderedItemsLimit: Number(this.renderedItemsLimit || CATALOG_ITEM_WINDOW_SIZE),
         nextSkip: Number(this.nextSkip || 0),
         hasMore: Boolean(this.hasMore),
         lastFocusedKey: this.lastFocusedKey ? String(this.lastFocusedKey) : null,
@@ -58,6 +61,10 @@ export function createCatalogSeeAllScreenMethods01() {
       this.params = params || {};
       const snapshotItems = Array.isArray(snapshot.items) ? snapshot.items : [];
       this.items = this.layoutPrefs?.hideUnreleasedContent ? filterReleasedItems(snapshotItems) : [...snapshotItems];
+      const restoredItemsLimit = Number(snapshot.renderedItemsLimit);
+      this.renderedItemsLimit = Number.isFinite(restoredItemsLimit)
+        ? Math.max(CATALOG_ITEM_WINDOW_SIZE, restoredItemsLimit)
+        : CATALOG_ITEM_WINDOW_SIZE;
       this.nextSkip = Number(snapshot.nextSkip || 0);
       this.hasMore = params?.supportsSkip !== false && Boolean(snapshot.hasMore);
       this.lastFocusedKey = snapshot.lastFocusedKey ? String(snapshot.lastFocusedKey) : null;
@@ -106,6 +113,7 @@ export function createCatalogSeeAllScreenMethods01() {
       const hasExplicitInitialHasMore = typeof params?.initialHasMore === "boolean";
       const initialHasMore = hasExplicitInitialHasMore ? params.initialHasMore : true;
       this.items = this.layoutPrefs?.hideUnreleasedContent ? filterReleasedItems(initialItems) : [...initialItems];
+      this.renderedItemsLimit = CATALOG_ITEM_WINDOW_SIZE;
       const initialNextSkip = Number(params?.initialNextSkip);
       this.nextSkip =
         supportsSkip && initialHasMore && Number.isFinite(initialNextSkip) && initialNextSkip > 0
@@ -244,6 +252,26 @@ export function createCatalogSeeAllScreenMethods01() {
       const remaining = this.items.length - 1 - Number(index || 0);
       return remaining <= 10;
     },
+    maybeExpandRenderedItems(index) {
+      if (!this.hasMore || !ScreenUtils.shouldSkipRouteEnter(this)) {
+        return false;
+      }
+      const allItems = Array.isArray(this.items) ? this.items : [];
+      const rawLimit = Number(this.renderedItemsLimit);
+      const currentLimit = Number.isFinite(rawLimit) ? Math.max(CATALOG_ITEM_WINDOW_SIZE, rawLimit) : CATALOG_ITEM_WINDOW_SIZE;
+      const focusedIndex = Number(index);
+      if (allItems.length <= currentLimit || !Number.isFinite(focusedIndex) || focusedIndex < currentLimit - CATALOG_ITEM_WINDOW_AHEAD) {
+        return false;
+      }
+      const nextLimit = Math.min(allItems.length, currentLimit + CATALOG_ITEM_WINDOW_SIZE);
+      if (nextLimit <= currentLimit) {
+        return false;
+      }
+      this.renderedItemsLimit = nextLimit;
+      this.pendingRestoreFocus = true;
+      this.preserveViewportOnNextRender = true;
+      return true;
+    },
     shouldAutoLoadMoreFromScroll(shell) {
       if (!(shell instanceof HTMLElement) || this.loading || !this.hasMore) {
         return false;
@@ -315,6 +343,9 @@ export function createCatalogSeeAllScreenMethods01() {
       }
       if (shouldLoadMore) {
         this.loadNextPage({ preserveViewport: true });
+      }
+      if (this.maybeExpandRenderedItems(target.dataset.itemIndex)) {
+        this.render();
       }
       return true;
     }

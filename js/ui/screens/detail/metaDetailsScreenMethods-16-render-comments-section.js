@@ -4,6 +4,7 @@ import * as internals from "./metaDetailsScreenContext.js";
 export function createMetaDetailsScreenMethods16() {
   const {
     Router,
+    ScreenUtils,
     t,
     detailImageLoadingMode,
     isSeriesDetailMeta,
@@ -14,6 +15,13 @@ export function createMetaDetailsScreenMethods16() {
     normalizePreviewItem,
     extractPreviewYear
   } = internals;
+
+  // Tizen fast path: preview/comment rails can hold hundreds of cards.
+  // Render an initial window on fast-path runtimes and append more as focus
+  // nears the end (stable original indices, no focus jumps).
+  const PREVIEW_RAIL_WINDOW = 24;
+  const COMMENTS_WINDOW = 12;
+  const RAIL_EXTEND_AHEAD = 6;
 
   return {
     renderCommentsSection() {
@@ -58,38 +66,8 @@ export function createMetaDetailsScreenMethods16() {
             </div>
           `;
       }
-      const cards = this.commentsItems
-        .map((review, index) => {
-          const body =
-            review.spoiler || review.containsInlineSpoilers
-              ? t("detail_comments_spoiler_hidden", {}, "Spoiler review. Press OK to reveal.")
-              : review.comment;
-          const chips = [
-            review.review ? t("detail_comments_badge_review", {}, "Review") : "",
-            review.spoiler || review.containsInlineSpoilers ? t("detail_comments_badge_spoiler", {}, "Spoiler") : "",
-            review.rating != null
-              ? t(
-                  "detail_comments_badge_rating",
-                  {
-                    rating: formatRatingValue(review.rating, { digits: 0, stripTrailingZero: true })
-                  },
-                  "{{rating}}/10"
-                )
-              : ""
-          ]
-            .filter(Boolean)
-            .map((chip) => `<span>${escapeHtml(chip)}</span>`)
-            .join("");
-          return `
-            <article class="detail-comment-card focusable" data-action="openComment" data-comment-index="${index}">
-              <h4>${escapeHtml(review.authorDisplayName || "Trakt user")}</h4>
-              ${chips ? `<div class="detail-comment-chips">${chips}</div>` : ""}
-              <p>${escapeHtml(body)}</p>
-              <small>${escapeHtml(t("detail_comments_likes", { likes: review.likes || 0 }, "{{likes}} likes"))}</small>
-            </article>
-          `;
-        })
-        .join("");
+      const commentsWindow = this.getRailWindow(this.commentsItems, `comments:${this.commentsMode}`, COMMENTS_WINDOW);
+      const cards = commentsWindow.list.map((review, offset) => this.renderCommentCard(review, commentsWindow.offset + offset)).join("");
       const loadingMore = this.commentsLoadingMore
         ? `<article class="detail-comment-card is-loading"><span></span><span></span><span></span></article>`
         : "";
@@ -102,17 +80,31 @@ export function createMetaDetailsScreenMethods16() {
           </div>
         `;
     },
-    renderPreviewRail(items = [], fallbackType = "movie", railKey = "morelike") {
-      if (!Array.isArray(items) || !items.length) {
-        return "";
+    getRailWindow(items = [], railKey = "", size = PREVIEW_RAIL_WINDOW) {
+      const list = Array.isArray(items) ? items : [];
+      this._railWindows = this._railWindows || {};
+      if (list.length <= size || !ScreenUtils.shouldSkipRouteEnter(this)) {
+        delete this._railWindows[railKey];
+        return { list, offset: 0 };
       }
-      const cards = items
-        .map((rawItem) => {
-          const item = normalizePreviewItem(rawItem, fallbackType);
-          const year = extractPreviewYear(item.releaseInfo);
-          const primaryImage = item.landscapePoster || item.poster || "";
-          const fallbackImage = item.poster && item.poster !== primaryImage ? item.poster : "";
-          return `
+      const currentShown = Number(this._railWindows[railKey]?.shown || size);
+      const commentsIndexMatch = String(this.pendingFocusRestore?.selector || "").match(
+        /detail-comment-card\[data-comment-index="(\d+)"\]/
+      );
+      const rememberedIndex = railKey.startsWith("comments:")
+        ? Number(commentsIndexMatch?.[1] || 0)
+        : Number(this.railFocusIndexByKey?.[railKey] || 0);
+      const restoredWindowSize = Number.isFinite(rememberedIndex) ? Math.ceil((rememberedIndex + 1) / size) * size : size;
+      const shown = Math.min(list.length, Math.max(size, currentShown, restoredWindowSize));
+      this._railWindows[railKey] = { items: list, shown, size };
+      return { list: list.slice(0, shown), offset: 0 };
+    },
+    renderPreviewCard(rawItem, fallbackType = "movie") {
+      const item = normalizePreviewItem(rawItem, fallbackType);
+      const year = extractPreviewYear(item.releaseInfo);
+      const primaryImage = item.landscapePoster || item.poster || "";
+      const fallbackImage = item.poster && item.poster !== primaryImage ? item.poster : "";
+      return `
           <article class="detail-morelike-card focusable"
                data-action="openMoreLikeDetail"
                data-item-id="${item.id}"
@@ -132,8 +124,80 @@ export function createMetaDetailsScreenMethods16() {
             ${year ? `<div class="detail-morelike-type">${escapeHtml(year)}</div>` : ""}
           </article>
         `;
-        })
+    },
+    renderCommentCard(review, index) {
+      const body =
+        review.spoiler || review.containsInlineSpoilers
+          ? t("detail_comments_spoiler_hidden", {}, "Spoiler review. Press OK to reveal.")
+          : review.comment;
+      const chips = [
+        review.review ? t("detail_comments_badge_review", {}, "Review") : "",
+        review.spoiler || review.containsInlineSpoilers ? t("detail_comments_badge_spoiler", {}, "Spoiler") : "",
+        review.rating != null
+          ? t(
+              "detail_comments_badge_rating",
+              {
+                rating: formatRatingValue(review.rating, { digits: 0, stripTrailingZero: true })
+              },
+              "{{rating}}/10"
+            )
+          : ""
+      ]
+        .filter(Boolean)
+        .map((chip) => `<span>${escapeHtml(chip)}</span>`)
         .join("");
+      return `
+            <article class="detail-comment-card focusable" data-action="openComment" data-comment-index="${index}">
+              <h4>${escapeHtml(review.authorDisplayName || "Trakt user")}</h4>
+              ${chips ? `<div class="detail-comment-chips">${chips}</div>` : ""}
+              <p>${escapeHtml(body)}</p>
+              <small>${escapeHtml(t("detail_comments_likes", { likes: review.likes || 0 }, "{{likes}} likes"))}</small>
+            </article>
+          `;
+    },
+    extendRailWindowIfNeeded(target) {
+      if (!(target instanceof HTMLElement) || !this.container?.contains(target)) {
+        return false;
+      }
+      const track = target.closest?.(".detail-morelike-track, .detail-comments-track") || null;
+      if (!(track instanceof HTMLElement)) {
+        return false;
+      }
+      const windows = this._railWindows || {};
+      const railKey = String(track.dataset.scrollKey || "");
+      const windowState = windows[railKey];
+      if (!windowState || windowState.shown >= windowState.items.length) {
+        return false;
+      }
+      const cards = Array.from(track.querySelectorAll(":scope > article.focusable"));
+      if (!cards.length) {
+        return false;
+      }
+      const focusedIndex = cards.indexOf(target);
+      if (focusedIndex < 0 || focusedIndex < cards.length - RAIL_EXTEND_AHEAD) {
+        return false;
+      }
+      const nextShown = Math.min(windowState.items.length, windowState.shown + windowState.size);
+      if (nextShown <= windowState.shown) {
+        return false;
+      }
+      const isComments = track.classList.contains("detail-comments-track");
+      let html = "";
+      for (let i = windowState.shown; i < nextShown; i += 1) {
+        html += isComments
+          ? this.renderCommentCard(windowState.items[i], i)
+          : this.renderPreviewCard(windowState.items[i], this.params?.itemType || "movie");
+      }
+      windowState.shown = nextShown;
+      track.insertAdjacentHTML("beforeend", html);
+      return true;
+    },
+    renderPreviewRail(items = [], fallbackType = "movie", railKey = "morelike") {
+      if (!Array.isArray(items) || !items.length) {
+        return "";
+      }
+      const windowed = this.getRailWindow(items, railKey, PREVIEW_RAIL_WINDOW);
+      const cards = windowed.list.map((rawItem) => this.renderPreviewCard(rawItem, fallbackType)).join("");
       return `<div class="detail-morelike-track" data-scroll-key="${escapeHtml(railKey)}">${cards}</div>`;
     },
     renderMoreLikeCards() {
@@ -233,6 +297,33 @@ export function createMetaDetailsScreenMethods16() {
         if (target.matches(".series-season-btn.focusable")) {
           const season = Number(target.dataset.season || 0);
           if (season >= 0 && season !== this.selectedSeason) {
+            // Tizen fast path: moving focus across the season row rebuilt the
+            // whole episode track per button. Wait for focus to settle on
+            // fast-path runtimes; only the last season loads.
+            let deferSeason = false;
+            try {
+              deferSeason =
+                (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) ||
+                globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+                globalThis?.document?.documentElement?.classList?.contains("legacy-tizen");
+            } catch (_) {}
+            if (deferSeason) {
+              if (this.seasonSwitchTimer) {
+                clearTimeout(this.seasonSwitchTimer);
+              }
+              const pendingSeason = season;
+              this.seasonSwitchTimer = setTimeout(() => {
+                this.seasonSwitchTimer = null;
+                if (Router.getCurrent?.() !== "detail") {
+                  return;
+                }
+                const live = this.container?.querySelector(".series-season-btn.focusable.focused") || null;
+                if (Number(live?.dataset?.season ?? -1) === pendingSeason && pendingSeason !== this.selectedSeason) {
+                  this.selectSeason(pendingSeason);
+                }
+              }, 250);
+              return;
+            }
             this.selectSeason(season);
           }
           return;

@@ -106,6 +106,22 @@ export function createHomeScreenMethods14() {
       if (!this.container) {
         return;
       }
+      // Tizen fast path: the binary-search textContent loop below forces
+      // dozens of reflows per render. Fast-path runtimes already get pure
+      // CSS ellipsis/line-clamp (see components-45.css), so skip the JS pass.
+      try {
+        if (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) {
+          return;
+        }
+      } catch (_) {}
+      try {
+        if (
+          globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+          globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
+        ) {
+          return;
+        }
+      } catch (_) {}
       this.homeTruncationScope = scope || null;
       if (this.homeTruncationFrame) {
         cancelAnimationFrame(this.homeTruncationFrame);

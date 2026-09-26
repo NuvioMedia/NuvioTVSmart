@@ -290,8 +290,16 @@ export function createHomeScreenMethods15() {
       if (!track) {
         return null;
       }
-      const styles = globalThis.getComputedStyle ? globalThis.getComputedStyle(track) : null;
-      const leftPad = Math.max(0, Number.parseFloat(styles?.paddingLeft || "0") || 0);
+      // Tizen fast path: getComputedStyle forces a full style recalc on every
+      // D-pad press. Cache the padding on the track (same pattern as
+      // getTrackViewportMetrics); tracks are rebuilt on render so the cache
+      // cannot go stale within a DOM generation.
+      let leftPad = Number.parseFloat(track?.dataset?.trackPadAlignLeft || "");
+      if (!Number.isFinite(leftPad) || leftPad < 0) {
+        const styles = globalThis.getComputedStyle ? globalThis.getComputedStyle(track) : null;
+        leftPad = Math.max(0, Number.parseFloat(styles?.paddingLeft || "0") || 0);
+        track.dataset.trackPadAlignLeft = String(leftPad);
+      }
       const trackRect = track.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
       const targetLeft = targetRect.left - trackRect.left + Number(track.scrollLeft || 0) - Number(layoutAdjustment || 0);
