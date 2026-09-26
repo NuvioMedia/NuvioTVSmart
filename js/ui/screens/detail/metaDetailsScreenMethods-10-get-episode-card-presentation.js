@@ -186,6 +186,9 @@ export function createMetaDetailsScreenMethods10() {
       if (this.episodeMarqueeTitle === title) {
         this.episodeMarqueeTitle = null;
       }
+      if (this.episodeMarqueeMeasuredNode === title) {
+        this.episodeMarqueeMeasuredNode = null;
+      }
     },
     syncEpisodeTitleMarquee() {
       const focusedTitle = this.container?.querySelector(".series-episode-card.focused .series-episode-title") || null;
@@ -195,6 +198,13 @@ export function createMetaDetailsScreenMethods10() {
       if (!(focusedTitle instanceof HTMLElement)) {
         return;
       }
+      // Tizen fast path: measuring every press forces layout per keypress.
+      // A title's overflow verdict cannot change without a DOM/text change,
+      // which replaces the node and drops this cache naturally.
+      if (this.episodeMarqueeMeasuredNode === focusedTitle) {
+        return;
+      }
+      this.episodeMarqueeMeasuredNode = focusedTitle;
       const text = focusedTitle.querySelector(".series-episode-title-text");
       if (!(text instanceof HTMLElement)) {
         return;

@@ -145,6 +145,9 @@ export function createMetaDetailsScreenMethods08() {
       const backdrop = resolveDetailBackdropUrl(meta);
       const heroMarkup = this.renderMovieHeroMarkup(meta);
       const detailDirectionClass = isRtlDetailLocale() ? " detail-rtl" : "";
+      const insightMarkup = this.renderMovieInsightSection(meta);
+      const commentsMarkup = this.renderStandaloneCommentsSection();
+      const companyMarkup = this.renderCompanySections(meta);
 
       this.container.innerHTML = `
           <div class="series-detail-shell movie-detail-shell${detailDirectionClass}${this.getTrailerShellStateClasses()}">
@@ -156,9 +159,9 @@ export function createMetaDetailsScreenMethods08() {
 
             <div class="series-detail-content movie-detail-content">
               <div id="detailHeroSection">${heroMarkup}</div>
-              <div id="detailInsightSectionMount">${this.renderMovieInsightSection(meta)}</div>
-              <div id="detailCommentsSectionMount">${this.renderStandaloneCommentsSection()}</div>
-              <div id="detailCompanySectionsMount">${this.renderCompanySections(meta)}</div>
+              <div id="detailInsightSectionMount">${insightMarkup}</div>
+              <div id="detailCommentsSectionMount">${commentsMarkup}</div>
+              <div id="detailCompanySectionsMount">${companyMarkup}
             </div>
             <div id="movieStreamChooserMount"></div>
           </div>
@@ -169,6 +172,9 @@ export function createMetaDetailsScreenMethods08() {
         ScreenUtils.setInitialFocus(this.container, ".movie-detail-content .focusable");
       }
       this._detailHeroMarkup = heroMarkup;
+      this._detailInsightMarkup = insightMarkup;
+      this._detailCommentsMarkup = commentsMarkup;
+      this._detailCompanyMarkup = companyMarkup;
       this.bindDetailChrome();
     },
     captureRenderedChromeState() {
@@ -263,17 +269,31 @@ export function createMetaDetailsScreenMethods08() {
 
       const insightMount = this.container.querySelector("#detailInsightSectionMount");
       if (insightMount) {
-        insightMount.innerHTML = isSeries ? this.renderSeriesInsightSection() : this.renderMovieInsightSection(meta);
+        // Tizen fast path: blind re-parses destroy live focus nodes and
+        // force full layout per data arrival. Write only on change.
+        const insightMarkup = isSeries ? this.renderSeriesInsightSection() : this.renderMovieInsightSection(meta);
+        if (insightMarkup !== this._detailInsightMarkup) {
+          insightMount.innerHTML = insightMarkup;
+          this._detailInsightMarkup = insightMarkup;
+        }
       }
 
       const commentsMount = this.container.querySelector("#detailCommentsSectionMount");
       if (commentsMount) {
-        commentsMount.innerHTML = this.renderStandaloneCommentsSection();
+        const commentsMarkup = this.renderStandaloneCommentsSection();
+        if (commentsMarkup !== this._detailCommentsMarkup) {
+          commentsMount.innerHTML = commentsMarkup;
+          this._detailCommentsMarkup = commentsMarkup;
+        }
       }
 
       const companyMount = this.container.querySelector("#detailCompanySectionsMount");
       if (companyMount) {
-        companyMount.innerHTML = this.renderCompanySections(meta);
+        const companyMarkup = this.renderCompanySections(meta);
+        if (companyMarkup !== this._detailCompanyMarkup) {
+          companyMount.innerHTML = companyMarkup;
+          this._detailCompanyMarkup = companyMarkup;
+        }
       }
 
       ScreenUtils.indexFocusables(this.container);

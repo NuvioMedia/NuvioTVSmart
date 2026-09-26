@@ -85,6 +85,10 @@ export function createMetaDetailsScreenMethods27() {
     },
     cleanup() {
       this.detailLoadToken = (this.detailLoadToken || 0) + 1;
+      if (this.seasonSwitchTimer) {
+        clearTimeout(this.seasonSwitchTimer);
+        this.seasonSwitchTimer = null;
+      }
       this.cancelPendingEpisodeHold();
       this.cancelPendingSeasonHold();
       this.cancelPendingPosterHold();

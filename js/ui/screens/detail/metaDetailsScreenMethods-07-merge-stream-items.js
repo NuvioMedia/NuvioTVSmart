@@ -151,6 +151,9 @@ export function createMetaDetailsScreenMethods07() {
       if (!this.selectedRatingSeason || !this.seriesRatingsBySeason?.[this.selectedRatingSeason]) {
         this.selectedRatingSeason = this.selectedSeason || this.episodes?.[0]?.season || 1;
       }
+      const insightMarkup = this.renderSeriesInsightSection();
+      const commentsMarkup = this.renderStandaloneCommentsSection();
+      const companyMarkup = this.renderCompanySections(meta);
 
       this.container.innerHTML = `
           <div class="series-detail-shell${detailDirectionClass}${this.getTrailerShellStateClasses()}">
@@ -168,9 +171,9 @@ export function createMetaDetailsScreenMethods07() {
               <div id="detailEpisodeTrackMount">
                 <div class="series-episode-track${this.getSelectedSeasonEpisodes().length > EPISODE_VIRTUALIZATION_THRESHOLD ? " is-virtualized" : ""}" data-scroll-key="episodes:${this.selectedSeason ?? 1}">${this.renderEpisodeCards()}</div>
               </div>
-              <div id="detailInsightSectionMount">${this.renderSeriesInsightSection()}</div>
-              <div id="detailCommentsSectionMount">${this.renderStandaloneCommentsSection()}</div>
-              <div id="detailCompanySectionsMount">${this.renderCompanySections(meta)}</div>
+              <div id="detailInsightSectionMount">${insightMarkup}</div>
+              <div id="detailCommentsSectionMount">${commentsMarkup}</div>
+              <div id="detailCompanySectionsMount">${companyMarkup}</div>
             </div>
 
             <div id="episodeStreamChooserMount"></div>
@@ -182,6 +185,9 @@ export function createMetaDetailsScreenMethods07() {
         ScreenUtils.setInitialFocus(this.container);
       }
       this._detailHeroMarkup = heroMarkup;
+      this._detailInsightMarkup = insightMarkup;
+      this._detailCommentsMarkup = commentsMarkup;
+      this._detailCompanyMarkup = companyMarkup;
       this.bindDetailChrome();
       this.scheduleEpisodeVirtualizationSync(this.getRememberedEpisodeIndex());
     },

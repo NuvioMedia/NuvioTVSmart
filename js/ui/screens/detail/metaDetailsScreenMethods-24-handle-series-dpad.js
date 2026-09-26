@@ -20,19 +20,25 @@ export function createMetaDetailsScreenMethods24() {
         return false;
       }
 
-      const actions = Array.from(this.container.querySelectorAll(".series-detail-actions .focusable"));
-      const seasons = Array.from(this.container.querySelectorAll(".series-season-row .series-season-btn.focusable"));
-      const episodes = Array.from(this.container.querySelectorAll(".series-episode-track .series-episode-card.focusable"));
-      const insightTabs = Array.from(this.container.querySelectorAll(".series-insight-tabs .series-insight-tab.focusable"));
-      const castCards = Array.from(this.container.querySelectorAll(".series-cast-track .series-cast-card.focusable"));
-      const ratingSeasons = Array.from(this.container.querySelectorAll(".series-rating-seasons .series-rating-season.focusable"));
-      const ratingChips = Array.from(this.container.querySelectorAll(".series-episode-ratings-grid .series-episode-rating-chip.focusable"));
-      const moreLikeCards = Array.from(this.container.querySelectorAll(".detail-morelike-track .detail-morelike-card.focusable"));
-      const commentModes = Array.from(this.container.querySelectorAll(".detail-comments-modes .detail-comments-mode.focusable"));
-      const commentCards = Array.from(this.container.querySelectorAll(".detail-comments-track .detail-comment-card.focusable"));
+      const focusLists = this.getDetailFocusLists();
+      if (!focusLists) {
+        return false;
+      }
+      const {
+        actions,
+        seasons,
+        episodes,
+        insightTabs,
+        castCards,
+        ratingSeasons,
+        ratingChips,
+        moreLikeCards,
+        commentModes,
+        commentCards,
+        companyTracks,
+        companyCards
+      } = focusLists;
       const moreLikeRememberedIndex = this.getRememberedRailIndex(this.getActivePreviewRailKey(), moreLikeCards);
-      const companyTracks = Array.from(this.container.querySelectorAll(".detail-company-track"));
-      const companyCards = companyTracks.map((track) => Array.from(track.querySelectorAll(".detail-company-card.focusable")));
       const rememberedCompanyIndex = (trackIndex = 0) => this.getRememberedCompanyIndex(companyTracks, companyCards, trackIndex);
       const focusCommentsEntry = (index = 0, options = {}) => {
         if (commentModes.length) {

@@ -116,3 +116,50 @@
 .performance-constrained .member-brand-suffix {
   animation: none !important;
 }
+
+/* Detail screen fast path (series/movie title screen). Every focus move
+   otherwise animates transform + box-shadow + colors across 10 selectors,
+   scales comment cards (plus a line-clamp layout change), and blurs every
+   unwatched episode thumb in software. Focus stays a cheap outline. */
+.performance-constrained .series-detail-actions .series-primary-btn,
+.performance-constrained .series-detail-actions .series-circle-btn,
+.performance-constrained .series-season-btn,
+.performance-constrained .series-insight-tab,
+.performance-constrained .detail-morelike-card,
+.performance-constrained .movie-cast-card,
+.performance-constrained .series-cast-card,
+.performance-constrained .detail-company-card,
+.performance-constrained .detail-comment-card,
+.performance-constrained .detail-comments-mode,
+.performance-constrained .series-episode-card,
+.performance-constrained .series-episode-thumb {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.performance-constrained .series-episode-card.focused,
+.performance-constrained .detail-morelike-card.focused,
+.performance-constrained .movie-cast-card.focused,
+.performance-constrained .series-cast-card.focused,
+.performance-constrained .detail-company-card.focused,
+.performance-constrained .detail-comment-card.focused,
+.performance-constrained .series-primary-btn.focused,
+.performance-constrained .series-secondary-btn.focused,
+.performance-constrained .series-circle-btn.focused,
+.performance-constrained .series-season-btn.focused {
+  transform: none !important;
+  box-shadow: 0 0 0 2px var(--focus-color, #fff) !important;
+}
+
+.performance-constrained .detail-comment-card.focused p {
+  -webkit-line-clamp: 5 !important;
+  line-clamp: 5 !important;
+}
+
+/* Static dim instead of per-pixel software blur on unwatched thumbs. */
+.performance-constrained .series-episode-image.is-blurred {
+  filter: none !important;
+  transform: none !important;
+  opacity: 0.5 !important;
+}

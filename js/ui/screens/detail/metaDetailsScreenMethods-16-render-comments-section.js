@@ -233,6 +233,30 @@ export function createMetaDetailsScreenMethods16() {
         if (target.matches(".series-season-btn.focusable")) {
           const season = Number(target.dataset.season || 0);
           if (season >= 0 && season !== this.selectedSeason) {
+            // Tizen fast path: moving focus across the season row rebuilt the
+            // whole episode track per button. Wait for focus to settle on
+            // constrained runtimes; only the last season loads.
+            let deferSeason = false;
+            try {
+              deferSeason = typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained();
+            } catch (_) {}
+            if (deferSeason) {
+              if (this.seasonSwitchTimer) {
+                clearTimeout(this.seasonSwitchTimer);
+              }
+              const pendingSeason = season;
+              this.seasonSwitchTimer = setTimeout(() => {
+                this.seasonSwitchTimer = null;
+                if (Router.getCurrent?.() !== "detail") {
+                  return;
+                }
+                const live = this.container?.querySelector(".series-season-btn.focusable.focused") || null;
+                if (Number(live?.dataset?.season ?? -1) === pendingSeason && pendingSeason !== this.selectedSeason) {
+                  this.selectSeason(pendingSeason);
+                }
+              }, 250);
+              return;
+            }
             this.selectSeason(season);
           }
           return;
