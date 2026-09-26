@@ -26,9 +26,37 @@ export function createPlayerScreenMethods46() {
           this.htmlSubtitleRenderTimer = null;
           return;
         }
-        this.htmlSubtitleRenderTimer = setTimeout(render, 120);
+        // Tizen fast path: the old fixed 120ms poll woke the main thread
+        // ~8x/sec for the whole playback (plus a full cue filter each tick).
+        // Tick on cue boundaries instead; DOM writes stay keyed (see
+        // renderHtmlSubtitleOverlayCue) so unchanged cues cost nothing.
+        this.htmlSubtitleRenderTimer = setTimeout(render, this.getHtmlSubtitleOverlayPollDelayMs());
       };
       render();
+    },
+    getHtmlSubtitleOverlayPollDelayMs() {
+      try {
+        const currentTime = Number(this.getPlaybackCurrentSeconds?.() || 0);
+        const delaySeconds = Number(this.subtitleDelayMs || 0) / 1000;
+        const subtitleTime = currentTime - delaySeconds;
+        let nextBoundarySec = Number.POSITIVE_INFINITY;
+        for (const cue of this.htmlSubtitleCues || []) {
+          const start = Number(cue?.start);
+          const end = Number(cue?.end);
+          if (Number.isFinite(end) && end > subtitleTime) {
+            nextBoundarySec = Math.min(nextBoundarySec, end - subtitleTime);
+          }
+          if (Number.isFinite(start) && start > subtitleTime) {
+            nextBoundarySec = Math.min(nextBoundarySec, start - subtitleTime);
+          }
+        }
+        if (!Number.isFinite(nextBoundarySec)) {
+          return 120;
+        }
+        return Math.max(250, Math.min(3000, Math.round(nextBoundarySec * 1000) + 50));
+      } catch (_) {
+        return 120;
+      }
     },
     isAvPlaySubtitleControlPayload(value = "") {
       const text = String(value || "").trim();

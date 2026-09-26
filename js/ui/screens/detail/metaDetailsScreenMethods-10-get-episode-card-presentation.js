@@ -18,13 +18,17 @@ export function createMetaDetailsScreenMethods10() {
   } = internals;
 
   return {
-    getEpisodeCardPresentation(episode) {
+    getEpisodeCardPresentation(episode, sharedPrefs = null) {
       const progress = this.episodeProgressMap.get(`${episode.season}:${episode.episode}`) || null;
       const position = Number(progress?.positionMs || 0);
       const duration = Number(progress?.durationMs || 0);
       const progressRatio = duration > 0 ? Math.min(1, Math.max(0, position / duration)) : 0;
       const isWatched = this.isEpisodeMarkedWatched(episode);
-      const shouldBlur = Boolean(LayoutPreferences.get().blurUnwatchedEpisodes) && !isWatched;
+      // Tizen fast path: LayoutPreferences.get() does sync flash I/O per
+      // call. renderEpisodeCards reads it once per track render and passes
+      // it down; fall back to a live read for standalone callers.
+      const prefs = sharedPrefs || LayoutPreferences.get();
+      const shouldBlur = Boolean(prefs.blurUnwatchedEpisodes) && !isWatched;
       const rating = resolveEpisodeImdbRating(episode, this.seriesRatingsBySeason);
       const dateLabel = formatEpisodeCardDate(episode.released || "");
       const isUnavailable = episode.available === false;
@@ -46,8 +50,8 @@ export function createMetaDetailsScreenMethods10() {
         title: normalizeEpisodeTitle(episode.title, episode.episode)
       };
     },
-    renderEpisodeCard(episode, absoluteIndex) {
-      const presentation = this.getEpisodeCardPresentation(episode);
+    renderEpisodeCard(episode, absoluteIndex, sharedPrefs = null) {
+      const presentation = this.getEpisodeCardPresentation(episode, sharedPrefs);
       return `
           <article class="series-episode-card focusable${presentation.isWatched ? " watched" : ""}"
                 data-action="openEpisodeStreams"
@@ -125,8 +129,12 @@ export function createMetaDetailsScreenMethods10() {
       this.episodeVirtualWindow = windowState;
       const visibleEpisodes = windowState.virtualized ? episodes.slice(windowState.start, windowState.end + 1) : episodes;
       this.warmEpisodeThumbnails(episodes, windowState.start, windowState.end);
+      // Single prefs read per track render (see getEpisodeCardPresentation).
+      const sharedPrefs = LayoutPreferences.get();
       const cards = visibleEpisodes
-        .map((episode, offset) => this.renderEpisodeCard(episode, windowState.virtualized ? windowState.start + offset : offset))
+        .map((episode, offset) =>
+          this.renderEpisodeCard(episode, windowState.virtualized ? windowState.start + offset : offset, sharedPrefs)
+        )
         .join("");
       if (!windowState.virtualized) {
         return cards;

@@ -217,8 +217,13 @@ export function createCatalogSeeAllScreenMethods02() {
     render() {
       const descriptor = this.params || {};
       const title = descriptor.catalogName || "Catalog";
-      const cards = this.items.length
-        ? this.items
+      // Tizen fast path: same paged-catalog cap as discover (see
+      // renderDiscoverCards). shouldAutoLoadMore appends further pages on
+      // demand; slice keeps original indices so focus restore stays stable.
+      const allItems = Array.isArray(this.items) ? this.items : [];
+      const renderItems = allItems.length > 48 && this.hasMore && ScreenUtils.shouldSkipRouteEnter(this) ? allItems.slice(0, 48) : allItems;
+      const cards = renderItems.length
+        ? renderItems
             .map(
               (item, index) => `
               <article class="seeall-card focusable"

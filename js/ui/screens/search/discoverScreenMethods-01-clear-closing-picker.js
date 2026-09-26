@@ -306,8 +306,15 @@ export function createDiscoverScreenMethods01() {
         : "Choose a catalog to start browsing";
     },
     renderDiscoverCards(selectedCatalog = null) {
-      return this.items.length
-        ? this.items
+      // Tizen fast path: paged catalogs accumulate hundreds of items across
+      // loads and every mount re-parses them all. Cap the initial render on
+      // constrained runtimes while more pages remain; the existing
+      // focus/scroll auto-load (shouldAutoLoadMore) appends the rest on
+      // demand with stable original indices. Finite sets render fully.
+      const allItems = Array.isArray(this.items) ? this.items : [];
+      const renderItems = allItems.length > 40 && this.hasMore && ScreenUtils.shouldSkipRouteEnter(this) ? allItems.slice(0, 40) : allItems;
+      return renderItems.length
+        ? renderItems
             .map(
               (item, index) => `
                   <article class="discover-card seeall-card focusable"

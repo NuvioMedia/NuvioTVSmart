@@ -274,7 +274,11 @@ export function shouldDeferHomeRowImages(rowIndex = 0, rowKey = "", focusedRowKe
 export function buildLazyImageAttributes(src = "", { defer = false, highPriority = false } = {}) {
   const safeSrc = escapeAttribute(src);
   const priority = highPriority ? ' fetchpriority="high"' : "";
-  const loadingMode = getTvRuntimePerformanceProfile().isPerformanceConstrained ? "eager" : "lazy";
+  // Tizen fast path: the old branch forced loading="eager" on constrained
+  // runtimes, firing a decode storm for every mounted poster mid-transition.
+  // Lazy everywhere except explicit hero priority; near-viewport images
+  // still resolve immediately via the hydration pass.
+  const loadingMode = highPriority ? "eager" : "lazy";
   if (defer) {
     return `data-src="${safeSrc}" loading="${loadingMode}" decoding="async"${priority}`;
   }
