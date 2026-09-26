@@ -195,7 +195,22 @@ export function createHomeScreenMethods04() {
       this.requestRender({ delayMs: this.getBackgroundRenderDelay() });
     },
     shouldDeferHomeRenderForInput() {
-      return Boolean(this.layoutMode === "modern" && this.hasUserInteractedSinceHomePaint && this.shouldSuspendModernViewportFocusSync());
+      if (this.layoutMode === "modern" && this.hasUserInteractedSinceHomePaint && this.shouldSuspendModernViewportFocusSync()) {
+        return true;
+      }
+      // Tizen fast path: on constrained/legacy runtimes a full innerHTML
+      // render mid-navigation steals frames and invalidates the nav model.
+      // Defer background renders until 800ms after the last D-pad press on
+      // every layout, not just modern.
+      try {
+        const constrained =
+          (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) ||
+          (typeof this.isLegacyTvRuntime === "function" && this.isLegacyTvRuntime());
+        if (constrained && Date.now() - Number(this.lastHomeInputAt || 0) < 800) {
+          return true;
+        }
+      } catch (_) {}
+      return false;
     },
     maybeStartPendingHomeBackgroundRefresh() {
       if (this.homeBackgroundRefreshPending) {

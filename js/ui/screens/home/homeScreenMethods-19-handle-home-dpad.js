@@ -37,6 +37,11 @@ export function createHomeScreenMethods19() {
       if (typeof event?.preventDefault === "function") {
         event.preventDefault();
       }
+      // Tizen fast path: background catalog/CW batches must not trigger a
+      // full re-render while D-pad input is settling (see
+      // shouldDeferHomeRenderForInput). One timestamp covers first presses
+      // and repeats on every layout.
+      this.lastHomeInputAt = Date.now();
 
       const inputMeta = {
         repeat: Boolean(event?.repeat)
