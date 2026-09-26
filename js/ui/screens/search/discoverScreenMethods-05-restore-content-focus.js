@@ -216,7 +216,7 @@ export function createDiscoverScreenMethods05() {
       const contextLabel = this.getDiscoverContextLabel(selectedCatalog);
       const cards = this.renderDiscoverCards(selectedCatalog);
 
-      const enterClass = this.discoverRouteEnterPending && !ScreenUtils.shouldSkipRouteEnter(this) ? " nuvio-route-slide-enter" : "";
+      const enterClass = ScreenUtils.routeEnterClass(this, this.discoverRouteEnterPending, " nuvio-route-slide-enter");
       this.discoverRouteEnterPending = false;
 
       this.container.innerHTML = `

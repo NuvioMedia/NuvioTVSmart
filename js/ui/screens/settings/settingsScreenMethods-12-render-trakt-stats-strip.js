@@ -224,11 +224,12 @@ export function createSettingsScreenMethods12() {
       const shell = this.container.querySelector(".settings-shell");
       if (shell) {
         shell.dataset.settingsStyle = String(this.model.theme.settingsUiStyle || "CLASSIC").toLowerCase();
-        const skipEnter = ScreenUtils.shouldSkipRouteEnter(this);
-        shell.classList.toggle("settings-route-enter", Boolean(this.settingsRouteEnterPending) && !skipEnter);
-        if (this.settingsRouteEnterPending && !skipEnter) {
-          // Restart the enter animation. Skipped entirely on constrained
-          // runtimes: the read forces a sync layout on every settings open.
+        const enterClass = ScreenUtils.routeEnterClass(this, this.settingsRouteEnterPending, " settings-route-enter");
+        shell.classList.toggle("settings-route-enter", enterClass === " settings-route-enter");
+        shell.classList.toggle("tizen-fade-enter", enterClass === " tizen-fade-enter");
+        if (enterClass === " settings-route-enter") {
+          // Restart the enter animation. Skipped on fast-path runtimes: the
+          // read forces a sync layout on every settings open.
           void shell.offsetWidth;
         }
       }

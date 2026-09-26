@@ -32,7 +32,7 @@ export function createFolderDetailScreenMethods03() {
         this.renderFollowLayout();
         return;
       }
-      const enterClass = this.folderRouteEnterPending && !ScreenUtils.shouldSkipRouteEnter(this) ? " nuvio-route-slide-enter" : "";
+      const enterClass = ScreenUtils.routeEnterClass(this, this.folderRouteEnterPending, " nuvio-route-slide-enter");
       this.folderRouteEnterPending = false;
       const sourceRows = this.viewMode === "TABBED_GRID" ? this.sourceTabs || [] : this.tabs.filter((tab) => !tab.isAllTab);
       const heroDisplay = buildHeroDisplay(this.heroItem) || buildHeroDisplay(buildFolderHeroSeed(this.folder));
@@ -216,7 +216,7 @@ export function createFolderDetailScreenMethods03() {
       HomeScreen.cancelModernCameraFollow.call(this, { stopAnimations: true });
       HomeScreen.teardownModernTrackScrollPagination.call(this);
       HomeScreen.cancelFocusedPosterFlow.call(this);
-      const enterClass = this.folderRouteEnterPending && !ScreenUtils.shouldSkipRouteEnter(this) ? " nuvio-route-slide-enter" : "";
+      const enterClass = ScreenUtils.routeEnterClass(this, this.folderRouteEnterPending, " nuvio-route-slide-enter");
       this.folderRouteEnterPending = false;
       this.expandedPosterNode = null;
       this.rows = buildFolderSourceRows(this.tabs || []);

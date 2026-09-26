@@ -240,21 +240,11 @@ export function createHomeScreenMethods23() {
           `;
       }
 
-      const routeEnterClass = (() => {
-        if (!this.homeRouteEnterPending) return "";
-        // Tizen fast path: skip the 240-350ms full-screen slide/fade while
-        // posters + hero artwork mount. The compositor on Chromium 56-76
-        // drops frames when animation and image decode overlap.
-        try {
-          if (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) return "";
-          if (typeof this.isLegacyTvRuntime === "function" && this.isLegacyTvRuntime()) return "";
-        } catch (_) {}
-        const body = globalThis?.document?.body?.classList || null;
-        const root = globalThis?.document?.documentElement?.classList || null;
-        if (body?.contains("performance-constrained") || root?.contains("performance-constrained")) return "";
-        if (body?.contains("legacy-tizen") || root?.contains("legacy-tizen")) return "";
-        return this.pendingCollectionRouteReturnAnimation ? " nuvio-route-slide-enter" : " home-route-content-enter";
-      })();
+      const routeEnterClass = ScreenUtils.routeEnterClass(
+        this,
+        this.homeRouteEnterPending,
+        this.pendingCollectionRouteReturnAnimation ? " nuvio-route-slide-enter" : " home-route-content-enter"
+      );
       this.pendingCollectionRouteReturnAnimation = false;
       // On Back, only keep the sidebar expanded if the restored focus actually
       // belonged to the sidebar.

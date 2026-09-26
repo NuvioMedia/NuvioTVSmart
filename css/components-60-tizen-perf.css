@@ -212,3 +212,86 @@
   transform: none !important;
   opacity: 0.5 !important;
 }
+
+/* ---- Tizen micro-motion (all Samsung): transform/opacity only, <=160ms.
+   TV compositors handle these without dropping frames; layout props, blur
+   and shadow animation stay off (see kill-switches above). These rules come
+   last so they win ties against the transition:none overrides. ---- */
+@keyframes tizenFadeEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.performance-constrained .tizen-fade-enter,
+.legacy-tizen .tizen-fade-enter {
+  animation: tizenFadeEnter 150ms ease-out both;
+  will-change: opacity;
+}
+
+@keyframes tizenCardLift {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.03);
+  }
+}
+
+.performance-constrained .series-episode-card,
+.performance-constrained .detail-morelike-card,
+.performance-constrained .movie-cast-card,
+.performance-constrained .series-cast-card,
+.performance-constrained .detail-company-card,
+.performance-constrained .series-season-btn,
+.performance-constrained .series-insight-tab,
+.performance-constrained .series-primary-btn,
+.performance-constrained .series-circle-btn,
+.performance-constrained .modern-sidebar-nav-item,
+.performance-constrained .modern-sidebar-profile,
+.legacy-tizen .series-episode-card,
+.legacy-tizen .detail-morelike-card,
+.legacy-tizen .movie-cast-card,
+.legacy-tizen .series-cast-card,
+.legacy-tizen .detail-company-card,
+.legacy-tizen .series-season-btn,
+.legacy-tizen .series-insight-tab,
+.legacy-tizen .series-primary-btn,
+.legacy-tizen .series-circle-btn,
+.legacy-tizen .modern-sidebar-nav-item,
+.legacy-tizen .modern-sidebar-profile {
+  transition: transform 140ms ease-out !important;
+  will-change: transform !important;
+}
+
+.performance-constrained .series-episode-card.focused,
+.performance-constrained .detail-morelike-card.focused,
+.performance-constrained .movie-cast-card.focused,
+.performance-constrained .series-cast-card.focused,
+.performance-constrained .detail-company-card.focused,
+.performance-constrained .series-season-btn.focused,
+.performance-constrained .series-insight-tab.focused,
+.performance-constrained .series-primary-btn.focused,
+.performance-constrained .series-circle-btn.focused,
+.legacy-tizen .series-episode-card.focused,
+.legacy-tizen .detail-morelike-card.focused,
+.legacy-tizen .movie-cast-card.focused,
+.legacy-tizen .series-cast-card.focused,
+.legacy-tizen .detail-company-card.focused,
+.legacy-tizen .series-season-btn.focused,
+.legacy-tizen .series-insight-tab.focused,
+.legacy-tizen .series-primary-btn.focused,
+.legacy-tizen .series-circle-btn.focused {
+  animation: tizenCardLift 140ms ease-out both;
+  transform: scale(1.03) !important;
+}
+
+.performance-constrained .modern-sidebar-nav-item.focused,
+.performance-constrained .modern-sidebar-profile.focused,
+.legacy-tizen .modern-sidebar-nav-item.focused,
+.legacy-tizen .modern-sidebar-profile.focused {
+  transform: scale(1.04) !important;
+}
