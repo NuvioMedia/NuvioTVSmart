@@ -102,8 +102,13 @@ export const PluginScreen = {
     } finally {
       // Android emits its manual refresh event even when addon reconciliation fails.
       // Smart has a response cache where Android re-requests the visible catalogs,
-      // so invalidate it for the explicit refresh before Home resumes.
+      // so refresh enabled manifests and invalidate responses for the explicit action.
       if (refreshCatalogs) {
+        try {
+          await addonRepository.refreshInstalledAddons();
+        } catch (error) {
+          console.warn("Addon manifest refresh failed", error);
+        }
         catalogRepository.clearCache();
       }
     }
