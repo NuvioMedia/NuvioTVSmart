@@ -806,6 +806,7 @@ class AddonRepository {
     const result = await this.fetchAddon(clean, { force: true });
     if (result.status === "success") {
       this.notifyAddonsChanged("refresh");
+      this.notifyManifestCacheChanged();
     }
     return result;
   }
