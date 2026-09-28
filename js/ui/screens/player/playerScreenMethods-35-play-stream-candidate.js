@@ -78,9 +78,15 @@ export function createPlayerScreenMethods35() {
                   )
                 : result.status === "not_cached"
                   ? t("stream.debrid.notCached", {}, "Not cached on this service.")
-                  : result.status === "stale"
-                    ? t("stream.debrid.stale", {}, "This Debrid result expired. Refreshing streams.")
-                    : t("stream.debrid.failed", {}, "Could not resolve this Debrid stream.");
+                  : result.status === "dvd_unsupported"
+                    ? t(
+                        "stream.debrid.dvdUnsupported",
+                        {},
+                        "This is a DVD image (ISO/VIDEO_TS). It is not directly playable on TV. Choose an mp4/mkv release instead."
+                      )
+                    : result.status === "stale"
+                      ? t("stream.debrid.stale", {}, "This Debrid result expired. Refreshing streams.")
+                      : t("stream.debrid.failed", {}, "Could not resolve this Debrid stream.");
             resolveFailureStatus = result.status || "debrid-failed";
             resolveFailureDetail = result.detail || result.error || "";
             if (result.status === "service_degraded") {
