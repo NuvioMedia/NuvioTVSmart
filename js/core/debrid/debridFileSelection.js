@@ -18,6 +18,70 @@ export function hasDebridVideoExtension(value) {
   return Array.from(VIDEO_EXTENSIONS).some((extension) => name.endsWith(extension));
 }
 
+const DVD_IMAGE_EXTENSIONS = new Set([".iso", ".img", ".dvd", ".nrg", ".mdf", ".mds"]);
+
+const DVD_VIDEO_EXTENSIONS = new Set([".vob", ".ifo", ".bup"]);
+
+function fullFilePath(file = {}) {
+  return [
+    file.name,
+    file.short_name,
+    file.shortName,
+    file.path,
+    file.absolute_path,
+    file.absolutePath
+  ]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function isDvdImageFile(file = {}) {
+  const name = displayName(file).toLowerCase();
+  return Array.from(DVD_IMAGE_EXTENSIONS).some((extension) => name.endsWith(extension));
+}
+
+export function isDvdVideoFile(file = {}) {
+  const name = displayName(file).toLowerCase();
+  if (Array.from(DVD_VIDEO_EXTENSIONS).some((extension) => name.endsWith(extension))) {
+    return true;
+  }
+  const fullPath = fullFilePath(file);
+  return (
+    fullPath.includes("/video_ts/") ||
+    fullPath.includes("\\video_ts\\") ||
+    fullPath.includes("/audio_ts/") ||
+    fullPath.includes("\\audio_ts\\") ||
+    fullPath.includes("/bdmv/") ||
+    fullPath.includes("\\bdmv\\")
+  );
+}
+
+export function getDvdPayloadKind(files = []) {
+  const list = Array.isArray(files) ? files : [];
+  if (!list.length) {
+    return null;
+  }
+  if (list.some((file) => isDvdImageFile(file))) {
+    return "iso";
+  }
+  if (list.some((file) => isDvdVideoFile(file))) {
+    return "video_ts";
+  }
+  return null;
+}
+
+export function hasDvdOnlyPayload(files = [], kind = "") {
+  const list = Array.isArray(files) ? files : [];
+  if (!list.length) {
+    return false;
+  }
+  if (list.some((file) => isPlayableVideo(file, kind))) {
+    return false;
+  }
+  return getDvdPayloadKind(list) != null;
+}
+
 function displayName(file = {}) {
   return (
     String(
