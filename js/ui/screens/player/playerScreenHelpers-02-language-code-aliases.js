@@ -335,6 +335,8 @@ export const LANGUAGE_NAME_ALIASES = {
   dutch: "nl",
   english: "en",
   inglese: "en",
+  finnish: "fi",
+  suomi: "fi",
   french: "fr",
   francais: "fr",
   francese: "fr",
