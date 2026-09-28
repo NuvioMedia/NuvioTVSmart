@@ -352,17 +352,22 @@ export function inferAudioTrackDisplayLanguageCode(track = {}, entry = {}) {
 export function inferAudioTrackLanguageKey(track = {}, entry = {}) {
   const explicit = detectTrackLanguageVariant(track, getUsableAudioTrackLanguageValue(track));
   const displayCode = inferAudioTrackDisplayLanguageCode(track, entry);
-  if (
-    displayCode &&
-    (!explicit || explicit.split("-")[0] !== displayCode.split("-")[0] || (!explicit.includes("-") && displayCode.includes("-")))
-  ) {
-    return displayCode;
+  if (displayCode) {
+    if (!explicit) {
+      return displayCode;
+    }
+    const explicitBase = explicit.split("-")[0];
+    const displayBase = displayCode.split("-")[0];
+    if (explicitBase === displayBase) {
+      if (!explicit.includes("-") && displayCode.includes("-")) {
+        return displayCode;
+      }
+      return explicit;
+    }
+    return explicit;
   }
   if (explicit) {
     return explicit;
-  }
-  if (displayCode) {
-    return displayCode;
   }
 
   const candidates = [track?.name, track?.label, track?.title, entry?.label, entry?.secondary, ...getTrackMetadataStrings(track)];
