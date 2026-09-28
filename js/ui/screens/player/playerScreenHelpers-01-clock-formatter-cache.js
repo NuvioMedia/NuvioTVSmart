@@ -425,6 +425,7 @@ export const AUDIO_TRACK_LANGUAGE_KEY_BY_CODE = {
   de: "common.german",
   en: "common.english",
   es: "common.spanish",
+  fi: "common.finnish",
   fr: "common.french",
   hi: "common.hindi",
   hu: "common.hungarian",
