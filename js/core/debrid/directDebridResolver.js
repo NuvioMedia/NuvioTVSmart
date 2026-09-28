@@ -4,6 +4,7 @@ import { DEBRID_CAPABILITIES, DEBRID_PROVIDER_IDS, DebridProviders } from "./deb
 import {
   getDebridFileDisplayName,
   getDebridFileSize,
+  getDvdPayloadKind,
   selectDebridFile
 } from "./debridFileSelection.js";
 
@@ -205,6 +206,19 @@ function serviceDegradedFailure(response = {}, providerName = "Debrid") {
   return failure("service_degraded", `${providerName} service returned HTTP ${status}.`);
 }
 
+function dvdUnsupportedFailure(files = []) {
+  const kind = getDvdPayloadKind(files);
+  if (!kind) {
+    return null;
+  }
+  return failure(
+    "dvd_unsupported",
+    kind === "iso"
+      ? "DVD image (.iso) payload without directly playable video file."
+      : "DVD video (VIDEO_TS/VOB/IFO) payload without directly playable video file."
+  );
+}
+
 async function resolveTorbox(resolve, apiKey, season, episode) {
   const magnet = buildMagnetUri(resolve);
   if (!magnet) {
@@ -232,7 +246,7 @@ async function resolveTorbox(resolve, apiKey, season, episode) {
   }
   const file = selectDebridFile(files, resolve, { season, episode, kind: "torbox" });
   if (!file) {
-    return failure("stale");
+    return dvdUnsupportedFailure(files) || failure("stale");
   }
   const link = await DebridApi.torboxRequestDownloadLink(apiKey, torrentId, file.id);
   const url = typeof link.data?.data === "string" ? link.data.data : "";
@@ -269,7 +283,10 @@ async function resolvePremiumize(resolve, apiKey, season, episode, stream = {}) 
     kind: "premiumize"
   });
   const url = file?.link || "";
-  if (!file || !url) {
+  if (!file) {
+    return dvdUnsupportedFailure(body.content || []) || failure("stale");
+  }
+  if (!url) {
     return failure("stale");
   }
   return success(
@@ -298,7 +315,7 @@ async function resolveRealDebrid(resolve, apiKey, season, episode) {
     }
     const file = selectDebridFile(files, resolve, { season, episode, kind: "realdebrid" });
     if (file?.id == null) {
-      return failure("stale");
+      return dvdUnsupportedFailure(files) || failure("stale");
     }
     const select = await DebridApi.realDebridSelectFiles(apiKey, torrentId, String(file.id));
     if (!select.ok && select.status !== 202) {
