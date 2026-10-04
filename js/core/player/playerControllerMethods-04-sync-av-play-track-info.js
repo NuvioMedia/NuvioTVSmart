@@ -39,6 +39,11 @@ export function createPlayerControllerMethods04() {
         }
       })();
 
+      // prepareAsync READY and transient firmware failures must not erase tracks.
+      if (!totalTracks.length) {
+        return;
+      }
+
       const currentTracks = (() => {
         try {
           const value = avplay.getCurrentStreamInfo?.();

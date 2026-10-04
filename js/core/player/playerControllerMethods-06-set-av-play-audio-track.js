@@ -29,6 +29,7 @@ export function createPlayerControllerMethods06() {
         return false;
       }
 
+      const selectionToken = this.playRequestToken;
       this.desiredAvPlayAudioTrackIndex = targetIndex;
       this.desiredAvPlayAudioTrackUntil = Date.now() + 5000;
       const state = this.getAvPlayState();
@@ -59,7 +60,8 @@ export function createPlayerControllerMethods06() {
         this.syncAvPlayTrackInfo({ force: true });
         this.emitVideoEvent("avplaytrackschanged", { playbackEngine: this.playbackEngine });
         setTimeout(() => {
-          if (!this.isUsingAvPlay()) {
+          if (!this.isUsingAvPlay() || this.playRequestToken !== selectionToken ||
+              this.desiredAvPlayAudioTrackIndex !== targetIndex) {
             return;
           }
           this.retryAvPlayAudioTrackSelection(targetIndex);
@@ -68,7 +70,8 @@ export function createPlayerControllerMethods06() {
           this.emitVideoEvent("avplaytrackschanged", { playbackEngine: this.playbackEngine });
         }, 400);
         setTimeout(() => {
-          if (!this.isUsingAvPlay()) {
+          if (!this.isUsingAvPlay() || this.playRequestToken !== selectionToken ||
+              this.desiredAvPlayAudioTrackIndex !== targetIndex) {
             return;
           }
           this.retryAvPlayAudioTrackSelection(targetIndex);

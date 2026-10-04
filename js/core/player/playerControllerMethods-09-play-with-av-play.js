@@ -2,7 +2,7 @@
 import * as internals from "./playerController.js";
 
 export function createPlayerControllerMethods09() {
-  const { Platform, logTizenAvPlayDebug } = internals;
+  const { Platform, TizenPlaybackProxy, logTizenAvPlayDebug } = internals;
 
   return {
     playWithAvPlay(url, requestHeaders = {}, _sourceType = null, playToken = null) {
@@ -38,11 +38,42 @@ export function createPlayerControllerMethods09() {
         this.configureAvPlayForSource(requestHeaders);
         this.configureAvPlayBuffering();
       } catch (error) {
-        this.lastPlaybackErrorCode = this.mapAvPlayErrorToMediaCode(error?.name || error?.message || error);
+        this.lastPlaybackErrorCode = this.mapAvPlayErrorToMediaCode([error?.name, error?.message].filter(Boolean).join(": ") || error);
         this.teardownAvPlay();
         this.playbackEngine = "none";
         return false;
       }
+
+      let recoveryPending = false;
+      let recoveryAttempted = false;
+      const recoverStartupConnection = (errorValue, reportFailure) => {
+        if (recoveryPending) return true;
+        if (recoveryAttempted || !Platform.isTizen() || Number(this.avplayCurrentTimeMs || 0) > 0 ||
+            !/CONNECTION_FAILED|NETWORK|CONNECTION_LOST/i.test(String(errorValue || "") + JSON.stringify(this.getLastAvPlayErrorDiagnostic() || "")) ||
+            (String(url).includes("/proxy/") && ["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))) return false;
+        recoveryPending = true;
+        recoveryAttempted = true;
+        TizenPlaybackProxy.resolve(url, requestHeaders, { forceProxy: true }).then((result) => {
+          if (!this.isPlaybackRequestActive(playToken, url)) return;
+          if (!result.proxied || !result.url) {
+            recoveryPending = false;
+            reportFailure();
+            return;
+          }
+          this.currentPlaybackUrl = result.url;
+          this.startWebOsPlaybackKeepAlive();
+          if (!this.playWithAvPlay(result.url, {}, _sourceType, playToken)) {
+            this.lastPlaybackErrorCode = 2;
+            this.emitVideoEvent("error", { mediaErrorCode: 2, avplayError: String(errorValue), playbackEngine: this.getPlatformAvplayEngineName() });
+          }
+        }).catch(() => {
+          if (this.isPlaybackRequestActive(playToken, url)) {
+            recoveryPending = false;
+            reportFailure();
+          }
+        });
+        return true;
+      };
 
       try {
         avplay.setListener?.({
@@ -161,6 +192,7 @@ export function createPlayerControllerMethods09() {
             if (!this.isPlaybackRequestActive(playToken, url)) {
               return;
             }
+            if (recoverStartupConnection(errorValue, () => onPrepareError(errorValue))) return;
             const avplayErrorDetail = this.getLastAvPlayErrorDiagnostic();
             const avplaySnapshot = this.getAvPlayDiagnosticSnapshot();
             this.clearAvPlaySeekTimeout();
@@ -202,7 +234,7 @@ export function createPlayerControllerMethods09() {
       this.setAvPlayDisplayRect();
 
       const onPrepared = () => {
-        if (!this.isUsingAvPlay() || !this.isPlaybackRequestActive(playToken, url)) {
+        if (recoveryPending || !this.isUsingAvPlay() || !this.isPlaybackRequestActive(playToken, url)) {
           return;
         }
         this.avplayReady = true;
@@ -225,6 +257,7 @@ export function createPlayerControllerMethods09() {
         if (!this.isPlaybackRequestActive(playToken, url)) {
           return;
         }
+        if (recoverStartupConnection(errorValue, () => onPrepareError(errorValue))) return;
         const avplayErrorDetail = this.getLastAvPlayErrorDiagnostic();
         const avplaySnapshot = this.getAvPlayDiagnosticSnapshot();
         this.lastPlaybackErrorCode = this.mapAvPlayErrorToMediaCode(errorValue);
@@ -251,7 +284,7 @@ export function createPlayerControllerMethods09() {
           onPrepareError("prepare_not_supported");
         }
       } catch (error) {
-        onPrepareError(error?.name || error?.message || error);
+        onPrepareError([error?.name, error?.message].filter(Boolean).join(": ") || error);
       }
 
       return true;

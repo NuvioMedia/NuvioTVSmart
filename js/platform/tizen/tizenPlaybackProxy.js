@@ -44,7 +44,7 @@ export function buildTizenPlaybackProxyUrl(baseUrl, sourceUrl, headers = {}) {
   const base = parseHttpUrl(baseUrl);
   const source = parseHttpUrl(sourceUrl);
   const entries = normalizeHeaderEntries(headers);
-  if (!base || !source || !entries.length) {
+  if (!base || !source) {
     return "";
   }
 
@@ -59,7 +59,7 @@ export function buildTizenPlaybackProxyUrl(baseUrl, sourceUrl, headers = {}) {
 }
 
 export const TizenPlaybackProxy = {
-  requiresProxy(sourceUrl = "", headers = {}, { playbackEngine = "" } = {}) {
+  requiresProxy(sourceUrl = "", headers = {}, { playbackEngine = "", forceProxy = false, resolveRedirects = true } = {}) {
     const engine = String(playbackEngine || "")
       .trim()
       .toLowerCase();
@@ -71,13 +71,14 @@ export const TizenPlaybackProxy = {
     return Boolean(
       parseHttpUrl(sourceUrl) &&
       !isLocalProxyUrl(sourceUrl) &&
-      (hasTizenUnsupportedPlaybackHeaders(headers) || browserHlsNeedsRestrictedHeaders)
+      (forceProxy || (resolveRedirects && /(^|[.-])aiostreams([.-]|$)/i.test(parseHttpUrl(sourceUrl).hostname)) ||
+        hasTizenUnsupportedPlaybackHeaders(headers) || browserHlsNeedsRestrictedHeaders)
     );
   },
 
-  async resolve(sourceUrl = "", headers = {}, { playbackEngine = "" } = {}) {
+  async resolve(sourceUrl = "", headers = {}, options = {}) {
     const originalUrl = String(sourceUrl || "").trim();
-    if (!this.requiresProxy(originalUrl, headers, { playbackEngine })) {
+    if (!this.requiresProxy(originalUrl, headers, options)) {
       return { status: "not-required", url: originalUrl, proxied: false };
     }
 

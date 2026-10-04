@@ -2,11 +2,24 @@ export function createPlayerControllerMethods03() {
   return {
     startAvPlayTickTimer() {
       this.stopAvPlayTickTimer();
+      let trackPollTicks = 0;
       this.avplayTickTimer = setInterval(() => {
         if (!this.isUsingAvPlay()) {
           return;
         }
         this.refreshAvPlayTimeline();
+        trackPollTicks += 1;
+        if (trackPollTicks <= 15 || trackPollTicks % 5 === 0) {
+          const fingerprint = () => JSON.stringify([
+            this.avplayAudioTracks, this.avplaySubtitleTracks,
+            this.selectedAvPlayAudioTrackIndex, this.selectedAvPlaySubtitleTrackIndex
+          ]);
+          const previous = fingerprint();
+          this.syncAvPlayTrackInfo({ force: true });
+          if (previous !== fingerprint()) {
+            this.emitVideoEvent("avplaytrackschanged", { playbackEngine: this.playbackEngine });
+          }
+        }
         this.emitVideoEvent("timeupdate", { playbackEngine: this.playbackEngine });
       }, 1000);
     },

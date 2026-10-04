@@ -114,7 +114,7 @@ export function createPlayerControllerMethods18() {
         if (Platform.isTizen() && proxyResult?.status === "unavailable") {
           const avplayEngine = this.getPlatformAvplayEngineName();
           const canPreserveHeadersWithAvPlay = !TizenPlaybackProxy.requiresProxy(requestedUrl, requestHeaders, {
-            playbackEngine: avplayEngine
+            playbackEngine: avplayEngine, resolveRedirects: false
           });
           const canFallbackToAvPlay =
             !forceEngine &&
@@ -130,7 +130,9 @@ export function createPlayerControllerMethods18() {
           } else {
             // Never start a raw browser request after EngineFS failed to
             // preserve headers that Android's HTTP data source would send.
-            tizenProxyUnavailable = true;
+            tizenProxyUnavailable = TizenPlaybackProxy.requiresProxy(requestedUrl, requestHeaders, {
+              playbackEngine: preferredEngine, resolveRedirects: false
+            });
           }
         }
         playbackUrl = String(proxyResult?.url || requestedUrl).trim() || requestedUrl;

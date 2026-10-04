@@ -296,3 +296,34 @@
   transform: scale(1.04) !important;
   will-change: transform !important;
 }
+
+/* FIX: keep remote focus immediate on Samsung CU-series hardware. */
+.legacy-tizen .focusable,
+.legacy-tizen .series-episode-card,
+.legacy-tizen .detail-morelike-card,
+.legacy-tizen .movie-cast-card,
+.legacy-tizen .series-cast-card,
+.legacy-tizen .detail-company-card,
+.legacy-tizen .series-season-btn,
+.legacy-tizen .series-insight-tab,
+.legacy-tizen .series-primary-btn,
+.legacy-tizen .series-circle-btn,
+.legacy-tizen .modern-sidebar-nav-item,
+.legacy-tizen .modern-sidebar-profile {
+  transition: none !important;
+}
+.legacy-tizen .series-episode-card.focused,
+.legacy-tizen .detail-morelike-card.focused,
+.legacy-tizen .movie-cast-card.focused,
+.legacy-tizen .series-cast-card.focused,
+.legacy-tizen .detail-company-card.focused,
+.legacy-tizen .series-season-btn.focused,
+.legacy-tizen .series-insight-tab.focused,
+.legacy-tizen .series-primary-btn.focused,
+.legacy-tizen .series-circle-btn.focused,
+.legacy-tizen .modern-sidebar-nav-item.focused,
+.legacy-tizen .modern-sidebar-profile.focused {
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
+}
