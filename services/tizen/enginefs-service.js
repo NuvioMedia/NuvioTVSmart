@@ -120,7 +120,10 @@ function loadTizenMediaRuntime() {
   var mod = new RuntimeModule(filename, module);
   mod.filename = filename;
   mod.paths = RuntimeModule._nodeModulePaths(runtimePath.dirname(filename));
-  mod._compile(require("./runtime/playback-proxy-patch.cjs")(patchTizenMediaRuntimeCode(source, filename)), filename);
+  mod._compile(
+    require("./runtime/playback-proxy-patch.cjs")(patchTizenMediaRuntimeCode(source, filename)),
+    filename
+  );
   return mod.exports;
 }
 
