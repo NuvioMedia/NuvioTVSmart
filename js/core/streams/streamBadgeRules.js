@@ -276,12 +276,46 @@ function stableStringify(value) {
 }
 
 const compiledBadgeCache = new Map();
+const preparedBadgeRules = new WeakMap();
+const MAX_COMPILED_RULES = 8;
+const MAX_MATCHES_PER_RULES = 256;
+
+// Only zero-width positive lookaheads whose conditions search the entire
+// remaining single line. Captures/backreferences and other shapes are excluded.
+function isWholeLineLookaheadPattern(source) {
+  let position = 0;
+  while (position < source.length) {
+    if (!source.startsWith("(?=.*", position)) return false;
+    position += 5;
+    let depth = 1;
+    let inClass = false;
+    while (position < source.length && depth) {
+      const character = source[position++];
+      if (character === "\\") {
+        if (/[1-9k]/.test(source[position] || "")) return false;
+        position++;
+      } else if (!inClass && depth === 1 && character === "|") return false;
+      else if (character === "[" && !inClass) inClass = true;
+      else if (character === "]" && inClass) inClass = false;
+      else if (!inClass && character === "(") {
+        if (!/^\(\?[=:!]/.test(source.slice(position - 1))) return false;
+        depth++;
+      } else if (!inClass && character === ")") depth--;
+    }
+    if (depth || inClass) return false;
+  }
+  return position > 0;
+}
 
 function compileStreamBadgeFilters(rules = {}) {
+  const prepared = preparedBadgeRules.get(rules);
+  if (prepared) return prepared;
   const normalized = normalizeStreamBadgeRules(rules);
   const fingerprint = stableStringify(normalized);
   const cached = compiledBadgeCache.get(fingerprint);
   if (cached) {
+    compiledBadgeCache.delete(fingerprint);
+    compiledBadgeCache.set(fingerprint, cached);
     return cached;
   }
 
@@ -321,7 +355,10 @@ function compileStreamBadgeFilters(rules = {}) {
                 textColor: filter.textColor,
                 borderColor: filter.borderColor
               },
-              regex: new RegExp(source, flags)
+              regex: new RegExp(source, flags),
+              lineRegex: isWholeLineLookaheadPattern(source)
+                ? new RegExp(`^(?:${source})`, flags)
+                : null
             };
           } catch {
             return null;
@@ -330,12 +367,31 @@ function compileStreamBadgeFilters(rules = {}) {
         .filter(Boolean)
     );
 
-  compiledBadgeCache.set(fingerprint, compiled);
-  return compiled;
+  const entry = { filters: compiled, matches: new Map() };
+  compiledBadgeCache.set(fingerprint, entry);
+  if (compiledBadgeCache.size > MAX_COMPILED_RULES) {
+    compiledBadgeCache.delete(compiledBadgeCache.keys().next().value);
+  }
+  return entry;
+}
+
+export function prepareStreamBadgeRules(rules = {}) {
+  if (preparedBadgeRules.has(rules)) return rules;
+  const normalized = normalizeStreamBadgeRules(rules);
+  preparedBadgeRules.set(normalized, compileStreamBadgeFilters(normalized));
+  normalized.imports.forEach((entry) => {
+    entry.filters.forEach(Object.freeze);
+    entry.groups.forEach(Object.freeze);
+    Object.freeze(entry.filters);
+    Object.freeze(entry.groups);
+    Object.freeze(entry);
+  });
+  Object.freeze(normalized.imports);
+  return Object.freeze(normalized);
 }
 
 export function matchStreamBadges(stream = {}, rules = {}) {
-  const filters = compileStreamBadgeFilters(rules);
+  const { filters, matches } = compileStreamBadgeFilters(rules);
   if (!filters.length) {
     return [];
   }
@@ -343,10 +399,24 @@ export function matchStreamBadges(stream = {}, rules = {}) {
   if (!candidates.length) {
     return [];
   }
+  const cacheKey = JSON.stringify(candidates);
+  const cached = matches.get(cacheKey);
+  if (cached) {
+    matches.delete(cacheKey);
+    matches.set(cacheKey, cached);
+    return cached.map((badge) => ({ ...badge }));
+  }
 
   const matched = new Map();
   filters.forEach((filter) => {
-    if (candidates.some((candidate) => filter.regex.test(candidate))) {
+    if (
+      candidates.some((candidate) =>
+        (filter.lineRegex && !/[\r\n\u2028\u2029]/.test(candidate)
+          ? filter.lineRegex
+          : filter.regex
+        ).test(candidate)
+      )
+    ) {
       const key = streamBadgeDedupeKey(filter.badge);
       if (!key || matched.has(key)) {
         return;
@@ -354,11 +424,14 @@ export function matchStreamBadges(stream = {}, rules = {}) {
       matched.set(key, filter.badge);
     }
   });
-  return Array.from(matched.values());
+  const result = Array.from(matched.values());
+  matches.set(cacheKey, result);
+  if (matches.size > MAX_MATCHES_PER_RULES) matches.delete(matches.keys().next().value);
+  return result.map((badge) => ({ ...badge }));
 }
 
 export function applyStreamBadgePresentation(groups = [], rules = {}) {
-  const normalizedRules = normalizeStreamBadgeRules(rules);
+  const normalizedRules = prepareStreamBadgeRules(rules);
   if (!normalizedRules.imports.length) {
     return groups;
   }

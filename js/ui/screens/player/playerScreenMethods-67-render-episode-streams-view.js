@@ -251,7 +251,7 @@ export function createPlayerScreenMethods67() {
       }
       streamRepository.setLocalPluginSearchPaused(true);
       if (!selectedStream && this.episodePanelMode !== "streams") {
-        await this.openEpisodeStreamsView({ forceReload: true });
+        await this.openEpisodeStreamsView();
         return;
       }
       this.switchingEpisode = true;

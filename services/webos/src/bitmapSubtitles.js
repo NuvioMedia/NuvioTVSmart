@@ -1,5 +1,6 @@
 var http = require("http");
 var https = require("https");
+var net = require("net");
 var zlib = require("zlib");
 
 var HEADER_PROBE_BYTES = 2 * 1024 * 1024;
@@ -15,6 +16,7 @@ var MIN_CLUSTER_HEADER_BYTES = 5;
 var MAX_CLUSTER_HEADER_BYTES = 12;
 var MAX_REDIRECTS = 4;
 var REQUEST_TIMEOUT_MS = 15000;
+var MIN_ADDRESS_ATTEMPT_TIMEOUT_MS = 2500;
 var METADATA_CACHE_TTL_MS = 10 * 60 * 1000;
 var WINDOW_CACHE_TTL_MS = 5 * 60 * 1000;
 var MAX_METADATA_CACHE_ENTRIES = 6;
@@ -219,6 +221,16 @@ function requestRange(url, start, end, maxBytes, redirects, requestContext) {
       parsed,
       {
         method: "GET",
+        // Node 20 can abandon a viable IPv4 connection after 250 ms, then
+        // fail on unroutable IPv6. Keep dual-stack selection, but allow the
+        // measured slow handshakes without changing process-wide defaults.
+        autoSelectFamilyAttemptTimeout:
+          typeof net.getDefaultAutoSelectFamilyAttemptTimeout === "function"
+            ? Math.max(
+                MIN_ADDRESS_ATTEMPT_TIMEOUT_MS,
+                net.getDefaultAutoSelectFamilyAttemptTimeout()
+              )
+            : undefined,
         headers: {
           Range: "bytes=" + start + "-" + end,
           "Accept-Encoding": "identity",

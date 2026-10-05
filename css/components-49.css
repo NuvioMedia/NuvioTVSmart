@@ -285,10 +285,15 @@
   -webkit-line-clamp: 2;
 }
 
-.performance-constrained .home-screen-shell.home-layout-modern .home-hero-description {
-  max-height: none;
-  -webkit-line-clamp: initial;
-  line-clamp: initial;
+.performance-constrained .home-screen-shell.home-layout-modern .home-hero-description,
+.legacy-tizen .home-screen-shell.home-layout-modern .home-hero-description {
+  /* The measured truncation pass is skipped on these runtimes. Keep the
+     Android TV four-line limit in CSS so long synopses cannot lift the title. */
+  max-height: 5.4em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
 }
 
 /* Legacy webOS cannot sustain a compositor layer for every Home track while

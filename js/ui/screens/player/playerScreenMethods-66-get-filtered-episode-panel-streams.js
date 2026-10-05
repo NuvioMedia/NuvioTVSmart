@@ -2,7 +2,7 @@
 import * as internals from "./playerScreenContext.js";
 
 export function createPlayerScreenMethods66() {
-  const { streamRepository, isSelectKeyCode, t, clamp, normalizeItemType } = internals;
+  const { streamRepository, isSelectKeyCode, t, clamp, normalizeItemType, streamMergeKey } = internals;
 
   return {
     getFilteredEpisodePanelStreams() {
@@ -14,13 +14,14 @@ export function createPlayerScreenMethods66() {
     },
     closeEpisodeStreamsView() {
       streamRepository.setLocalPluginSearchPaused(true);
+      this.episodePanelStreamLoadToken = Number(this.episodePanelStreamLoadToken || 0) + 1;
       this.episodePanelMode = "episodes";
       this.episodePanelStreamsLoading = false;
       this.episodePanelStreamsError = "";
       this.episodePanelFocusZone = "episodes";
       this.renderEpisodePanel();
     },
-    async openEpisodeStreamsView({ forceReload = true } = {}) {
+    async openEpisodeStreamsView({ forceReload = false } = {}) {
       streamRepository.setLocalPluginSearchPaused(false);
       const selected = this.episodes[this.episodePanelIndex] || null;
       if (!selected?.id) {
@@ -32,6 +33,7 @@ export function createPlayerScreenMethods66() {
       this.episodePanelStreamFocus = { zone: "actions", index: 0 };
       this.episodePanelStreamsError = "";
       this.episodePanelStreamsLoading = true;
+      this.episodePanelStreams = [];
       this.renderEpisodePanel();
 
       const itemType = this.params?.itemType || "series";
@@ -41,33 +43,73 @@ export function createPlayerScreenMethods66() {
       }
       const token = Number(this.episodePanelStreamLoadToken || 0) + 1;
       this.episodePanelStreamLoadToken = token;
+      const isCurrentRequest = () =>
+        token === this.episodePanelStreamLoadToken &&
+        this.episodePanelVisible &&
+        this.episodePanelMode === "streams" &&
+        !this.switchingEpisode &&
+        String(this.episodePanelStreamVideoId || "") === String(selected.id);
+      const applyStreams = (streams) => {
+        if (!isCurrentRequest()) return;
+        const previousStreams = this.getFilteredEpisodePanelStreams();
+        const focus = this.episodePanelStreamFocus;
+        const previousStream = focus?.zone === "streams" ? previousStreams[focus.index] : null;
+        const previousFilter = this.getEpisodePanelStreamFilters()[focus?.index];
+        const firstResults = this.episodePanelStreamsLoading && streams.length > 0;
+        this.episodePanelStreams = streams;
+        if (streams.length) this.episodePanelStreamsLoading = false;
+        if (previousStream) {
+          const key = streamMergeKey(previousStream);
+          const filtered = this.getFilteredEpisodePanelStreams();
+          const index = filtered.findIndex((stream) => stream === previousStream || (key && streamMergeKey(stream) === key));
+          this.episodePanelStreamFocus = {
+            zone: "streams",
+            index: index >= 0 ? index : clamp(focus.index, 0, Math.max(0, filtered.length - 1))
+          };
+        } else if (focus?.zone === "filters") {
+          this.episodePanelStreamFocus = {
+            zone: "filters",
+            index: Math.max(0, this.getEpisodePanelStreamFilters().indexOf(previousFilter))
+          };
+        } else if (firstResults && focus?.zone === "actions" && focus.index === 0) {
+          this.episodePanelStreamFocus = { zone: "streams", index: 0 };
+        }
+        this.renderEpisodePanel();
+      };
       try {
         const streams = await this.getPlayableStreamsForVideo(selected.id, itemType, {
           season: selected.season,
           episode: selected.episode,
-          forceRefresh: forceReload
+          forceRefresh: forceReload,
+          onChunk: applyStreams
         });
-        if (
-          token !== this.episodePanelStreamLoadToken ||
-          !this.episodePanelVisible ||
-          this.episodePanelMode !== "streams" ||
-          String(this.episodePanelStreamVideoId || "") !== String(selected.id)
-        ) {
-          return;
+        if (!isCurrentRequest()) return;
+        applyStreams(streams);
+        if (this.episodePanelStreamsLoading) {
+          this.episodePanelStreamsLoading = false;
+          this.renderEpisodePanel();
         }
-        this.episodePanelStreams = streams;
-        this.episodePanelStreamsLoading = false;
-        this.episodePanelStreamFocus = streams.length ? { zone: "streams", index: 0 } : { zone: "actions", index: 0 };
       } catch (_error) {
-        if (token !== this.episodePanelStreamLoadToken) {
-          return;
-        }
-        this.episodePanelStreams = [];
+        if (!isCurrentRequest()) return;
         this.episodePanelStreamsLoading = false;
         this.episodePanelStreamsError = t("panel_failed_load_streams", {}, "Failed to load streams");
-        this.episodePanelStreamFocus = { zone: "actions", index: 0 };
+        this.renderEpisodePanel();
       }
-      this.renderEpisodePanel();
+    },
+    updateEpisodeStreamFocus() {
+      const panel = this.uiRefs?.root?.querySelector("#episodeSidePanel");
+      if (!panel || !this.episodePanelVisible || this.episodePanelMode !== "streams") return;
+      const focus = this.episodePanelStreamFocus || { zone: "actions", index: 0 };
+      const selectors = {
+        close: "[data-episode-action='close']",
+        actions: `[data-episode-stream-action='${focus.index === 1 ? "reload" : "back"}']`,
+        filters: `[data-episode-stream-filter-index="${Number(focus.index) || 0}"]`,
+        streams: `[data-episode-stream-index="${Number(focus.index) || 0}"]`
+      };
+      const target = panel.querySelector(selectors[focus.zone] || selectors.actions);
+      panel.querySelectorAll(".focused").forEach((node) => node.classList.remove("focused"));
+      target?.classList.add("focused");
+      this.scrollEpisodePanelIntoView();
     },
     moveEpisodeStreamFocus(direction) {
       const filters = this.getEpisodePanelStreamFilters();
@@ -185,7 +227,7 @@ export function createPlayerScreenMethods66() {
           void this.activateEpisodeStreamFocus();
           return true;
         }
-        this.renderEpisodePanel();
+        this.updateEpisodeStreamFocus();
         return true;
       }
 

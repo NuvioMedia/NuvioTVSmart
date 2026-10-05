@@ -64,7 +64,10 @@ export function createLibraryScreenMethods03() {
       });
     },
     updateRenderedLibraryContent(state, { preservePickerRow = true, preserveFocus = null } = {}) {
-      if (!this.container || !this.container.querySelector(".library-shell")) {
+      const contentMount = this.container?.querySelector("#libraryContentAreaMount");
+      // The loading shell has no content to refresh or restore focus into.
+      // Let the full render consume the latest controller state first.
+      if (!(contentMount instanceof HTMLElement)) {
         this.requestRender();
         return;
       }
@@ -96,10 +99,7 @@ export function createLibraryScreenMethods03() {
             </div>
           `;
       } else {
-        const contentMount = this.container.querySelector("#libraryContentAreaMount");
-        if (contentMount instanceof HTMLElement) {
-          contentMount.outerHTML = this.renderLibraryContentArea(state);
-        }
+        contentMount.outerHTML = this.renderLibraryContentArea(state);
       }
 
       this.applyNoCssGridPosterLayout();

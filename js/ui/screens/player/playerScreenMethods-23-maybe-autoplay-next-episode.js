@@ -108,7 +108,9 @@ export function createPlayerScreenMethods23() {
       if (forceRefresh) {
         loadPromises.delete(cacheKey);
       }
-      if (!forceRefresh && loadPromises.has(cacheKey)) {
+      // Progressive callers must subscribe to the repository session, including
+      // an already running next-episode prefetch, rather than await its final result.
+      if (!forceRefresh && !options.onChunk && loadPromises.has(cacheKey)) {
         const loaded = await loadPromises.get(cacheKey);
         const loadedStreams = orderStreamsByAddonOrder(Array.isArray(loaded) ? loaded.map((stream) => ({ ...stream })) : [], [], {
           isDirectDebrid: (stream) => DebridStreamPresentation.isDirectDebrid(stream)

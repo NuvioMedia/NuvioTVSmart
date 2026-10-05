@@ -1,6 +1,7 @@
 import { createProfileScopedStore } from "./profileScopedStore.js";
 import {
   normalizeStreamBadgeRules,
+  prepareStreamBadgeRules,
   parseStreamBadgeRulesFromPayload,
   STREAM_BADGE_IMPORT_LIMIT
 } from "../../core/streams/streamBadgeRules.js";
@@ -205,7 +206,9 @@ export const StreamBadgeSettingsStore = {
   },
 
   snapshot() {
-    return normalizeStreamBadgeSettings(this.get());
+    const settings = normalizeStreamBadgeSettings(this.get());
+    settings.rules = prepareStreamBadgeRules(settings.rules);
+    return settings;
   }
 };
 

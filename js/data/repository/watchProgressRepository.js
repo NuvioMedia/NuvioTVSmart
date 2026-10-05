@@ -290,39 +290,33 @@ function filterForSelectedContinueWatchingSource(items = []) {
   return all.filter((item) => !isTraktProgressItem(item) && !isSimklProgressItem(item));
 }
 
-function deduplicateInProgress(items = []) {
-  const nonSeriesItems = [];
-  const latestSeriesItems = [];
+function deduplicateInProgress(items = [], recentLimit = 300) {
   const seenContentIds = new Set();
 
-  (Array.isArray(items) ? items : [])
-    .slice()
-    .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0))
-    .forEach((item) => {
-      if (!isSeriesType(item?.contentType)) {
-        if (shouldTreatAsInProgressForContinueWatching(item)) {
-          nonSeriesItems.push(item);
+  return (
+    (Array.isArray(items) ? items : [])
+      .slice()
+      .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0))
+      .filter((item) => {
+        if (!isSeriesType(item?.contentType)) {
+          return true;
         }
-        return;
-      }
 
-      const identities = Array.from(watchedItemIdentityValues(item))
-        .map((value) => value.toLowerCase())
-        .filter(Boolean);
-      if (!identities.length || identities.some((identity) => seenContentIds.has(identity))) {
-        return;
-      }
-      identities.forEach((identity) => seenContentIds.add(identity));
-      // Decide Continue Watching eligibility only after selecting the newest
-      // episode state for the series. Otherwise a completed episode is removed
-      // first and an older partial record can reappear beside the real Next Up.
-      if (shouldTreatAsInProgressForContinueWatching(item)) {
-        latestSeriesItems.push(item);
-      }
-    });
-
-  return [...nonSeriesItems, ...latestSeriesItems].sort(
-    (left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0)
+        const identities = Array.from(watchedItemIdentityValues(item))
+          .map((value) => value.toLowerCase())
+          .filter(Boolean);
+        if (!identities.length || identities.some((identity) => seenContentIds.has(identity))) {
+          return false;
+        }
+        identities.forEach((identity) => seenContentIds.add(identity));
+        return true;
+      })
+      // Apply the recent-item budget after choosing one state per series.
+      // A batch of completed episodes must not displace other titles.
+      .slice(0, recentLimit)
+      // Check eligibility after selecting the newest episode, so an older
+      // partial record cannot reappear beside the real Next Up.
+      .filter(shouldTreatAsInProgressForContinueWatching)
   );
 }
 
@@ -854,9 +848,7 @@ class WatchProgressRepository {
       // Cloud progress is device-local and must remain visible independently
       // of the selected Trakt/Simkl history window, just like Android.
       ...CloudLibraryPlaybackProgressStore.listForContinueWatching()
-    ]
-      .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0))
-      .slice(0, 300);
+    ].sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0));
 
     const inProgressOnly = deduplicateInProgress(recentItems);
 

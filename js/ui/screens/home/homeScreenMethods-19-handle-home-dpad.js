@@ -257,14 +257,29 @@ export function createHomeScreenMethods19() {
         this.homeViewportScrollFrame = 0;
       }
       if (this.boundHomeViewport && this.boundHomeViewportScrollHandler) {
-        this.boundHomeViewport.removeEventListener("scroll", this.boundHomeViewportScrollHandler);
+        this.boundHomeViewport.removeEventListener("scroll", this.boundHomeViewportScrollHandler, true);
       }
       this.boundHomeViewport = viewport || null;
       if (!viewport) {
         return;
       }
       if (!this.boundHomeViewportScrollHandler) {
-        this.boundHomeViewportScrollHandler = () => {
+        this.boundHomeViewportScrollHandler = (event) => {
+          if (event.target !== this.boundHomeViewport) {
+            // Scroll does not bubble. Capture row scrolling so bounded image
+            // prefetch follows the visible window, independently of focus.
+            const track = event.target;
+            if (track?.matches?.(".home-track, .home-grid-track") && this.shouldUseBoundedHomeImageHydration()) {
+              const anchor = track.querySelector(".focusable.focused") || track.querySelector(".focusable");
+              if (anchor) {
+                this.scheduleHomeLazyImageHydration(anchor, {
+                  viewportChanged: true,
+                  focusedRowOnly: this.isLegacyTvRuntime()
+                });
+              }
+            }
+            return;
+          }
           if (this.homeViewportScrollFrame) {
             return;
           }
@@ -288,7 +303,7 @@ export function createHomeScreenMethods19() {
           });
         };
       }
-      viewport.addEventListener("scroll", this.boundHomeViewportScrollHandler, { passive: true });
+      viewport.addEventListener("scroll", this.boundHomeViewportScrollHandler, { passive: true, capture: true });
     }
   };
 }

@@ -241,7 +241,7 @@ export function createMetaDetailsScreenMethods14() {
       return (this.episodes || []).filter((entry) => {
         const entrySeason = Number(entry?.season || 0);
         const entryEpisode = Number(entry?.episode || 0);
-        return entrySeason < targetSeason || (entrySeason === targetSeason && entryEpisode < targetEpisode);
+        return entrySeason === targetSeason && entryEpisode < targetEpisode;
       });
     },
     async setEpisodesWatchedState(episodes = [], watched = true) {
@@ -315,7 +315,7 @@ export function createMetaDetailsScreenMethods14() {
       return true;
     },
     async markPreviousEpisodesWatched(episode) {
-      const previousEpisodes = this.getPreviousEpisodes(episode);
+      const previousEpisodes = this.getPreviousEpisodes(episode).filter((entry) => !this.isEpisodeMarkedWatched(entry));
       if (!previousEpisodes.length) {
         return false;
       }

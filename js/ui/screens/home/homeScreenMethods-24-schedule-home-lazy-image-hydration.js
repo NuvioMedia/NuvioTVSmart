@@ -23,7 +23,13 @@ export function createHomeScreenMethods24() {
     },
     scheduleHomeLazyImageHydration(
       anchorNode = null,
-      { refreshIndex = false, deferUntilVerticalSettle = false, focusedRowOnly = false, includeNeighborRows = false } = {}
+      {
+        refreshIndex = false,
+        deferUntilVerticalSettle = false,
+        focusedRowOnly = false,
+        includeNeighborRows = false,
+        viewportChanged = false
+      } = {}
     ) {
       const anchorRow = anchorNode instanceof HTMLElement ? anchorNode.closest(HOME_LAZY_IMAGE_ROW_SELECTOR) : null;
       const anchorImagePending = Boolean(
@@ -49,6 +55,7 @@ export function createHomeScreenMethods24() {
         !this.homeLazyImageHydrationNeedsIndexRefresh &&
         !this.homeLazyImageHydrationRaf &&
         !includeNeighborRows &&
+        !viewportChanged &&
         !(this.shouldUseBoundedHomeImageHydration() && anchorImagePending)
       ) {
         // Avoid scheduling another animation-frame callback until the DOM,
