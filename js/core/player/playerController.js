@@ -130,7 +130,7 @@ const AVPLAY_BUFFER_FOR_PLAY_SECONDS = 5;
 const AVPLAY_BUFFER_FOR_RESUME_SECONDS = 4;
 const AVPLAY_BUFFERING_TIMEOUT_SECONDS = 10;
 const TIZEN_AVPLAY_DISPLAY_RECT_STATES = new Set(["IDLE", "READY", "PLAYING", "PAUSED"]);
-// Tizen uses a 30-second buffering timeout; allow the seek callback a short
+// Tizen keeps Samsung's default 20-second buffering timeout; allow a short
 // grace period for the seek callback before treating the native session as stuck.
 const AVPLAY_SEEK_TIMEOUT_MS = 30_000;
 // Keep webOS live HLS startup away from the moving playlist edge. This matches
@@ -166,7 +166,7 @@ function logWebOsPlaybackDebug(...args) {
 }
 
 function isValidAvPlayAudioTrackSelectionState(state) {
-  return state === "PLAYING" || state === "PAUSED";
+  return state === "PLAYING";
 }
 
 function isValidAvPlaySubtitleTrackSelectionState(state) {

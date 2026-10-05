@@ -195,23 +195,25 @@ export function createPlayerControllerMethods08() {
     },
     configureAvPlayBuffering() {
       const avplay = this.getAvPlay();
-      if (!avplay) {
+      if (!avplay || Platform.isTizen()) {
+        // Match Stremio's Tizen AVPlay path: leave buffering thresholds and the
+        // timeout to Samsung's model-specific defaults. Small fixed buffers can
+        // make high-bitrate REMUX playback repeatedly drain and resume.
         return;
       }
-      // Configure while IDLE; firmware that rejects a setting retains its default.
 
       try {
-        avplay.setBufferingParam?.("PLAYER_BUFFER_FOR_PLAY", "PLAYER_BUFFER_SIZE_IN_SECOND", Platform.isTizen() ? 10 : AVPLAY_BUFFER_FOR_PLAY_SECONDS);
+        avplay.setBufferingParam?.("PLAYER_BUFFER_FOR_PLAY", "PLAYER_BUFFER_SIZE_IN_SECOND", AVPLAY_BUFFER_FOR_PLAY_SECONDS);
       } catch (_) {
         // Older firmware can reject custom buffering parameters.
       }
       try {
-        avplay.setBufferingParam?.("PLAYER_BUFFER_FOR_RESUME", "PLAYER_BUFFER_SIZE_IN_SECOND", Platform.isTizen() ? 15 : AVPLAY_BUFFER_FOR_RESUME_SECONDS);
+        avplay.setBufferingParam?.("PLAYER_BUFFER_FOR_RESUME", "PLAYER_BUFFER_SIZE_IN_SECOND", AVPLAY_BUFFER_FOR_RESUME_SECONDS);
       } catch (_) {
         // Keep AVPlay's default resume buffer when unsupported.
       }
       try {
-        avplay.setTimeoutForBuffering?.(Platform.isTizen() ? 30 : AVPLAY_BUFFERING_TIMEOUT_SECONDS);
+        avplay.setTimeoutForBuffering?.(AVPLAY_BUFFERING_TIMEOUT_SECONDS);
       } catch (_) {
         // Keep AVPlay's default timeout when unsupported.
       }

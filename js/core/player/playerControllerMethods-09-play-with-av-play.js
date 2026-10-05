@@ -2,7 +2,7 @@
 import * as internals from "./playerController.js";
 
 export function createPlayerControllerMethods09() {
-  const { Platform, TizenPlaybackProxy, logTizenAvPlayDebug } = internals;
+  const { Platform, logTizenAvPlayDebug } = internals;
 
   return {
     playWithAvPlay(url, requestHeaders = {}, _sourceType = null, playToken = null) {
@@ -43,37 +43,6 @@ export function createPlayerControllerMethods09() {
         this.playbackEngine = "none";
         return false;
       }
-
-      let recoveryPending = false;
-      let recoveryAttempted = false;
-      const recoverStartupConnection = (errorValue, reportFailure) => {
-        if (recoveryPending) return true;
-        if (recoveryAttempted || !Platform.isTizen() || Number(this.avplayCurrentTimeMs || 0) > 0 ||
-            !/CONNECTION_FAILED|NETWORK|CONNECTION_LOST/i.test(String(errorValue || "") + JSON.stringify(this.getLastAvPlayErrorDiagnostic() || "")) ||
-            (String(url).includes("/proxy/") && ["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))) return false;
-        recoveryPending = true;
-        recoveryAttempted = true;
-        TizenPlaybackProxy.resolve(url, requestHeaders, { forceProxy: true }).then((result) => {
-          if (!this.isPlaybackRequestActive(playToken, url)) return;
-          if (!result.proxied || !result.url) {
-            recoveryPending = false;
-            reportFailure();
-            return;
-          }
-          this.currentPlaybackUrl = result.url;
-          this.startWebOsPlaybackKeepAlive();
-          if (!this.playWithAvPlay(result.url, {}, _sourceType, playToken)) {
-            this.lastPlaybackErrorCode = 2;
-            this.emitVideoEvent("error", { mediaErrorCode: 2, avplayError: String(errorValue), playbackEngine: this.getPlatformAvplayEngineName() });
-          }
-        }).catch(() => {
-          if (this.isPlaybackRequestActive(playToken, url)) {
-            recoveryPending = false;
-            reportFailure();
-          }
-        });
-        return true;
-      };
 
       try {
         avplay.setListener?.({
@@ -192,7 +161,6 @@ export function createPlayerControllerMethods09() {
             if (!this.isPlaybackRequestActive(playToken, url)) {
               return;
             }
-            if (recoverStartupConnection(errorValue, () => onPrepareError(errorValue))) return;
             const avplayErrorDetail = this.getLastAvPlayErrorDiagnostic();
             const avplaySnapshot = this.getAvPlayDiagnosticSnapshot();
             this.clearAvPlaySeekTimeout();
@@ -234,7 +202,7 @@ export function createPlayerControllerMethods09() {
       this.setAvPlayDisplayRect();
 
       const onPrepared = () => {
-        if (recoveryPending || !this.isUsingAvPlay() || !this.isPlaybackRequestActive(playToken, url)) {
+        if (!this.isUsingAvPlay() || !this.isPlaybackRequestActive(playToken, url)) {
           return;
         }
         this.avplayReady = true;
@@ -257,7 +225,6 @@ export function createPlayerControllerMethods09() {
         if (!this.isPlaybackRequestActive(playToken, url)) {
           return;
         }
-        if (recoverStartupConnection(errorValue, () => onPrepareError(errorValue))) return;
         const avplayErrorDetail = this.getLastAvPlayErrorDiagnostic();
         const avplaySnapshot = this.getAvPlayDiagnosticSnapshot();
         this.lastPlaybackErrorCode = this.mapAvPlayErrorToMediaCode(errorValue);

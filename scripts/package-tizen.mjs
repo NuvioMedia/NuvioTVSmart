@@ -595,6 +595,7 @@ function requiredTizenServiceFiles({
       ? [
           tizenEngineFsServiceRelativePath,
           `${tizenEngineFsRuntimeDirRelativePath}/media-http.cjs`,
+          `${tizenEngineFsRuntimeDirRelativePath}/playback-proxy-patch.cjs`,
           `${tizenEngineFsRuntimeDirRelativePath}/tx3g-subtitle-parser.cjs`,
           `${tizenEngineFsRuntimeDirRelativePath}/tx3g-subtitle-service.cjs`,
           `${tizenEngineFsRuntimeDirRelativePath}/embedded-text-subtitle-parser.cjs`

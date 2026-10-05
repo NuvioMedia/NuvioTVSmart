@@ -159,7 +159,7 @@ export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
     tvYearKnown,
     chromiumVersionKnown,
     isLegacyTvRuntime,
-    isPerformanceConstrained: isTizen || isLegacyTvRuntime
+    isPerformanceConstrained: isLegacyTvRuntime
   });
   return cachedProfile;
 }
