@@ -5,6 +5,7 @@ export function createHomeScreenMethods21() {
   const {
     Router,
     addonRepository,
+    catalogRepository,
     watchProgressRepository,
     watchedItemsRepository,
     LayoutPreferences,
@@ -150,6 +151,25 @@ export function createHomeScreenMethods21() {
       const initialCatalogLoad = this.getInitialCatalogLoadCount();
       const initialDescriptors = uniqueCatalogDescriptors.slice(0, initialCatalogLoad);
       const deferredDescriptors = uniqueCatalogDescriptors.slice(initialCatalogLoad);
+
+      // Kick off the deferred rows' network fetch immediately alongside the
+      // initial batch. CatalogRepository caches successful rows, so the
+      // deferred fetchCatalogRows pass below resolves from cache instead of
+      // paying its network cost ~500ms late (after the initial wave completes).
+      const deferredPrefetch = deferredDescriptors.slice(0, 8).map((catalog) =>
+        catalogRepository.getCatalog({
+          addonBaseUrl: catalog.addonBaseUrl,
+          addonId: catalog.addonId,
+          addonName: catalog.addonName,
+          catalogId: catalog.catalogId,
+          catalogName: catalog.catalogName,
+          type: catalog.type,
+          skip: 0,
+          skipStep: catalog.skipStep,
+          supportsSkip: catalog.supportsSkip !== false
+        })
+      );
+      void Promise.allSettled(deferredPrefetch);
 
       const progressiveInitialRows = new Map();
       const initialRows = await this.fetchCatalogRows(initialDescriptors, {
