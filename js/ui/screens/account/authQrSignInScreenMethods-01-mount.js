@@ -36,6 +36,35 @@ export function createAuthQrSignInScreenMethods01() {
       this.isServerMenuOpen = false;
       this.focusAfterRender = null;
       this.showSignOutConfirmation = false;
+      this.lastActivationAt = 0;
+      if (!this.container.__nuvioActivationDedupe) {
+        // webOS pointer remotes synthesize BOTH a keydown(Enter) and a
+        // native click for a single OK press on a focused control, in
+        // either order. Both paths can activate a control, which would
+        // double-activate (and, right after the server menu opens, the
+        // stray event lands on the first menu item - the login toggle).
+        // A genuine pointer click marks the activation so the paired
+        // keydown is dropped, and vice versa.
+        this.container.__nuvioActivationDedupe = true;
+        this.container.addEventListener(
+          "click",
+          (event) => {
+            if (this.isActivationDuplicated()) {
+              event.stopPropagation();
+              event.preventDefault();
+              return;
+            }
+            const target = event.target?.closest?.("[data-action], .focusable, button");
+            // Do not mark for text inputs: their typing must never be
+            // treated as a duplicate of a prior activation.
+            const isTextInput = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+            if (target && !isTextInput && this.container.contains(target)) {
+              this.markActivation();
+            }
+          },
+          true
+        );
+      }
       this.isSignedIn = AuthManager.isAuthenticated;
       this.connectedStats = null;
       this.isConnectedStatsLoading = this.isSignedIn;
