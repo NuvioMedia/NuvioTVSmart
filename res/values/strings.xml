@@ -1764,6 +1764,8 @@
     <string name="server_options_connect_custom">Connect to custom server</string>
     <string name="server_options_change_custom">Connect to another server</string>
     <string name="server_options_use_official">Use official server</string>
+    <string name="server_options_login_with_qr">Sign in with QR</string>
+    <string name="server_options_login_with_email">Sign in with email</string>
     <string name="custom_server_title">Connect to custom server</string>
     <string name="custom_server_description">Enter the Backend URL provided by your server administrator.</string>
     <string name="custom_server_url_placeholder">https://backend.example.com</string>

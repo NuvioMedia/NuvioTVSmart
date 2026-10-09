@@ -207,6 +207,8 @@ export function createAuthQrSignInScreenMethods03() {
         this.toggleServerMenu();
       } else if (action === "use-official" || action === "connect-custom") {
         this.openServerConnection(action === "use-official" ? "officialReview" : "input");
+      } else if (action === "login-qr" || action === "login-email") {
+        this.toggleLoginMode(action === "login-email");
       } else if (action === "refresh") {
         this.handleRefreshAction();
       } else if (action === "signout") {
