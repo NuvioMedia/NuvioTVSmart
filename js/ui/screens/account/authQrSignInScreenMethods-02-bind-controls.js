@@ -63,6 +63,19 @@ export function createAuthQrSignInScreenMethods02() {
       this.isServerMenuOpen = !this.isServerMenuOpen;
       this.render();
     },
+    suppressNativeActivation(event) {
+      this.markActivation();
+      if (typeof event?.preventDefault === "function") {
+        event.preventDefault();
+      }
+    },
+    markActivation() {
+      this.lastActivationAt = Date.now();
+    },
+    isActivationDuplicated() {
+      const since = Date.now() - Number(this.lastActivationAt || 0);
+      return since > 0 && since <= 400;
+    },
     toggleLoginMode(useEmail) {
       // Auth requests already in flight cannot safely be cancelled.
       if (!this.isMounted || this.isLeaving || this.isSignedIn || this.isStartingQr || this.isPolling || this.isEmailSubmitting) return;
