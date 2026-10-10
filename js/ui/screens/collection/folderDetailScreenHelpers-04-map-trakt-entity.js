@@ -83,6 +83,7 @@ export async function fetchTraktSourceItems(source = {}, page = 1) {
   const url = new URL(
     `${String(TRAKT_API_URL || "https://api.trakt.tv").replace(/\/+$/, "")}/lists/${encodeURIComponent(String(source.traktListId || ""))}/items/${mediaType}`
   );
+  url.searchParams.set("extended", "full,images");
   url.searchParams.set("page", String(page));
   url.searchParams.set("limit", String(TRAKT_PAGE_SIZE));
   url.searchParams.set("sort_by", String(source.sortBy || "rank"));

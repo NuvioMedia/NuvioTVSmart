@@ -66,17 +66,18 @@ export function createHomeScreenMethods22() {
           batchDescriptors.map(async (catalog) => {
             const result = this.filterUnreleasedResult(
               await withTimeout(
-                catalogRepository.getCatalog({
-                  addonBaseUrl: catalog.addonBaseUrl,
-                  addonId: catalog.addonId,
-                  addonName: catalog.addonName,
-                  catalogId: catalog.catalogId,
-                  catalogName: catalog.catalogName,
-                  type: catalog.type,
-                  skip: 0,
-                  skipStep: catalog.skipStep,
-                  supportsSkip: catalog.supportsSkip !== false
-                }),
+                options.prefetchedResults?.get(catalog) ??
+                  catalogRepository.getCatalog({
+                    addonBaseUrl: catalog.addonBaseUrl,
+                    addonId: catalog.addonId,
+                    addonName: catalog.addonName,
+                    catalogId: catalog.catalogId,
+                    catalogName: catalog.catalogName,
+                    type: catalog.type,
+                    skip: 0,
+                    skipStep: catalog.skipStep,
+                    supportsSkip: catalog.supportsSkip !== false
+                  }),
                 timeoutMs,
                 { status: "error", message: "timeout" }
               )
