@@ -54,6 +54,7 @@ export function createAuthQrSignInScreenMethods03() {
       });
     },
     setStatus(text) {
+      this.qrStatusText = text;
       const statusNode = this.container?.querySelector("#qr-status");
       if (statusNode) statusNode.innerText = text;
     },
@@ -253,6 +254,8 @@ export function createAuthQrSignInScreenMethods03() {
       this.isLeaving = true;
       this.showSignOutConfirmation = false;
       this.stopIntervals();
+      this.qrResult = null;
+      this.qrStatusText = "";
       if (this.container) ScreenUtils.hide(this.container);
       this.container = null;
     }

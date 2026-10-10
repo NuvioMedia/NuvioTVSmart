@@ -64,7 +64,8 @@ export function createAuthQrSignInScreenMethods02() {
       this.render();
     },
     toggleLoginMode(useEmail) {
-      if (this.isLeaving || this.isSignedIn) return;
+      // Auth requests already in flight cannot safely be cancelled.
+      if (!this.isMounted || this.isLeaving || this.isSignedIn || this.isStartingQr || this.isPolling || this.isEmailSubmitting) return;
       if (!this.supportsEmailAuth || !this.supportsQrAuth) return;
       if (this.useEmailLogin === useEmail) {
         this.isServerMenuOpen = false;
@@ -74,10 +75,9 @@ export function createAuthQrSignInScreenMethods02() {
       this.useEmailLogin = useEmail;
       this.useQrLogin = !useEmail;
       this.isServerMenuOpen = false;
-      if (!useEmail) {
-        this.stopIntervals();
-        this.clearQr();
-      }
+      this.stopIntervals();
+      this.clearQr();
+      this.qrStatusText = "";
       this.render();
       if (this.useQrLogin) {
         void this.startQr().catch((error) => {
@@ -134,7 +134,9 @@ export function createAuthQrSignInScreenMethods02() {
         }
       }
     },
-    renderQr({ loginUrl, verificationUri, displayCode, code, expiresAt }) {
+    renderQr(result) {
+      this.qrResult = result;
+      const { loginUrl, verificationUri, displayCode, code, expiresAt } = result;
       const qrContainer = this.container?.querySelector("#qr-container");
       const codeText = this.container?.querySelector("#qr-code-text");
       const manualText = this.container?.querySelector("#qr-manual-text");
@@ -165,6 +167,7 @@ export function createAuthQrSignInScreenMethods02() {
       this.startCountdown(expiresAt);
     },
     clearQr() {
+      this.qrResult = null;
       const qrContainer = this.container?.querySelector("#qr-container");
       const manualText = this.container?.querySelector("#qr-manual-text");
       const codeText = this.container?.querySelector("#qr-code-text");

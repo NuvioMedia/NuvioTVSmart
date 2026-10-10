@@ -33,6 +33,8 @@ export function createAuthQrSignInScreenMethods01() {
       this.email = "";
       this.password = "";
       this.emailError = "";
+      this.qrResult = null;
+      this.qrStatusText = "";
       this.isServerMenuOpen = false;
       this.focusAfterRender = null;
       this.showSignOutConfirmation = false;
@@ -42,10 +44,10 @@ export function createAuthQrSignInScreenMethods01() {
       this.serverConfiguration = ServerConfigurationStore.getActive();
       this.supportsEmailAuth = supportsEmailPasswordAuth(this.serverConfiguration);
       this.supportsQrAuth = supportsTvLogin(this.serverConfiguration);
-      // Prefer QR sign-in on TV when the server supports it; fall back to
-      // direct email/password. The user can switch via the server menu.
-      this.useEmailLogin = !this.supportsQrAuth && this.supportsEmailAuth;
-      this.useQrLogin = this.supportsQrAuth;
+      // Preserve Android TV's email default for custom servers; expose QR
+      // explicitly when the server supports both authentication methods.
+      this.useEmailLogin = this.supportsEmailAuth;
+      this.useQrLogin = this.supportsQrAuth && !this.useEmailLogin;
       ScreenUtils.show(this.container);
       this.render();
 
@@ -128,6 +130,10 @@ export function createAuthQrSignInScreenMethods01() {
           </div>
         `;
 
+      if (this.useQrLogin && !this.isSignedIn) {
+        this.setStatus(this.qrStatusText);
+        if (this.qrResult) this.renderQr(this.qrResult);
+      }
       this.bindControls();
       ScreenUtils.indexFocusables(this.container);
       const initialSelector = this.showSignOutConfirmation
