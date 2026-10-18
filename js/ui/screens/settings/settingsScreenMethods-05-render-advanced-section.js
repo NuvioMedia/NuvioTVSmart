@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./settingsScreenContext.js";
+import { TizenPlaybackSettingsStore } from "../../../data/local/tizenPlaybackSettingsStore.js";
 
 export function createSettingsScreenMethods05() {
   const {
@@ -16,6 +17,7 @@ export function createSettingsScreenMethods05() {
     LayoutPreferences,
     ExperienceModeStore,
     ProfileManager,
+    Platform,
     isFastHorizontalNavigationEnabled,
     CW_DISPLAY_SNAPSHOT_KEY,
     CW_ENRICHMENT_CACHE_KEY,
@@ -71,6 +73,13 @@ export function createSettingsScreenMethods05() {
         LocalStore.remove(CW_DISPLAY_SNAPSHOT_KEY);
         this.advancedCacheCleared = true;
       });
+      if (Platform.isTizen() && !isEssential) {
+        this.actionMap.set("advanced:alwaysUsePlaybackProxy", () => {
+          TizenPlaybackSettingsStore.set({
+            alwaysUsePlaybackProxy: !TizenPlaybackSettingsStore.get().alwaysUsePlaybackProxy
+          });
+        });
+      }
 
       if (isEssential) {
         return `
@@ -130,6 +139,26 @@ export function createSettingsScreenMethods05() {
               })}
             </div>
           </div>
+          ${
+            Platform.isTizen()
+              ? `
+          <div class="settings-group-heading">
+            <div class="settings-group-title">${escapeHtml(t("advanced_section_playback", {}, "Playback"))}</div>
+          </div>
+          <div class="settings-group-card"><div class="settings-stack">
+            ${this.renderToggleRow({
+              focusKey: "advanced:alwaysUsePlaybackProxy",
+              title: t("advanced_always_use_playback_proxy", {}, "Always use playback proxy"),
+              subtitle: t(
+                "advanced_always_use_playback_proxy_subtitle",
+                {},
+                "Use the built-in proxy on this TV for remote streams. Off uses automatic routing. Applies to the next stream."
+              ),
+              checked: TizenPlaybackSettingsStore.get().alwaysUsePlaybackProxy
+            })}
+          </div></div>`
+              : ""
+          }
           <div class="settings-group-heading">
             <div class="settings-group-title">${escapeHtml(t("advanced_section_cache", {}, "Cache"))}</div>
           </div>

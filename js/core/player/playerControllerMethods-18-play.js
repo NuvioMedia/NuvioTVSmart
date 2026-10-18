@@ -107,8 +107,12 @@ export function createPlayerControllerMethods18() {
       let playbackUrl = requestedUrl;
       let tizenProxyUnavailable = false;
       let tizenAvPlayFallbackForProxyUnavailable = false;
+      // The device's opt-in proxy setting takes precedence over direct-redirect
+      // optimizations, including when browser redirect probing would succeed.
+      const tizenForcedRemoteProxy = Platform.isTizen() && TizenPlaybackProxy.isForcedRemoteSource(requestedUrl);
       const canUseTizenPlaybackProxy =
-        Platform.isTizen() && (this.canUseAvPlay() || preferredEngine === "hls.js" || preferredEngine === "native-hls");
+        Platform.isTizen() &&
+        (tizenForcedRemoteProxy || this.canUseAvPlay() || preferredEngine === "hls.js" || preferredEngine === "native-hls");
       const playbackProxy = canUseTizenPlaybackProxy ? TizenPlaybackProxy : Platform.isWebOS() ? WebOsPlaybackProxy : null;
       const isTizenAvPlayVod =
         Platform.isTizen() &&
@@ -123,6 +127,7 @@ export function createPlayerControllerMethods18() {
       let tizenDirectResolution = null;
       if (
         isTizenAvPlayVod &&
+        !tizenForcedRemoteProxy &&
         playbackProxy === TizenPlaybackProxy &&
         TizenPlaybackProxy.requiresProxy(requestedUrl, requestHeaders, { playbackEngine: preferredEngine }) &&
         !TizenPlaybackProxy.requiresProxy(requestedUrl, requestHeaders, {
@@ -164,6 +169,7 @@ export function createPlayerControllerMethods18() {
             resolveRedirects: false
           });
           const canFallbackToAvPlay =
+            !tizenForcedRemoteProxy &&
             !forceEngine &&
             this.isLikelyHlsMimeType(sourceType) &&
             (preferredEngine === "hls.js" || preferredEngine === "native-hls") &&
@@ -177,10 +183,12 @@ export function createPlayerControllerMethods18() {
           } else {
             // Never start a raw browser request after EngineFS failed to
             // preserve headers that Android's HTTP data source would send.
-            tizenProxyUnavailable = TizenPlaybackProxy.requiresProxy(requestedUrl, requestHeaders, {
-              playbackEngine: preferredEngine,
-              resolveRedirects: false
-            });
+            tizenProxyUnavailable =
+              tizenForcedRemoteProxy ||
+              TizenPlaybackProxy.requiresProxy(requestedUrl, requestHeaders, {
+                playbackEngine: preferredEngine,
+                resolveRedirects: false
+              });
           }
         }
         playbackUrl = String(proxyResult?.url || requestedUrl).trim() || requestedUrl;
@@ -220,7 +228,7 @@ export function createPlayerControllerMethods18() {
       // Direct AVPlay sources are often redirect endpoints. AVPlay plays them
       // but rejects every seek with PLAYER_ERROR_INVALID_STATE, so hand it the
       // final media URL when the local proxy is not handling the source.
-      if (isTizenAvPlayVod && !tizenDirectResolution && playbackUrl === requestedUrl) {
+      if (isTizenAvPlayVod && !tizenForcedRemoteProxy && !tizenDirectResolution && playbackUrl === requestedUrl) {
         const resolution = await resolveTizenDirectRedirect(playbackUrl, requestHeaders);
         if (!this.isPlaybackRequestActive(playToken, requestedUrl)) {
           return;
@@ -280,7 +288,11 @@ export function createPlayerControllerMethods18() {
       if (tizenProxyUnavailable) {
         this.isPlaying = false;
         this.stopProgressSaving();
-        throw new Error("Tizen playback proxy unavailable; declared request headers cannot be forwarded");
+        throw new Error(
+          tizenForcedRemoteProxy
+            ? 'Playback proxy could not start. Try again or turn off "Always use playback proxy" in Advanced settings.'
+            : "Tizen playback proxy unavailable; declared request headers cannot be forwarded"
+        );
       }
       const nativeFallbackEngine = this.isLikelyHlsMimeType(sourceType)
         ? "native-hls"

@@ -1,3 +1,5 @@
+import { createRequiresProxy, isRemoteHttpProxySource } from "./tizenRemoteProxyPolicy.js";
+import { TizenPlaybackSettingsStore } from "../../data/local/tizenPlaybackSettingsStore.js";
 import { createPlaybackProxyRedirectTrace } from "../playbackProxyRedirectTrace.js";
 import { TizenEngineFsService } from "./tizenEngineFsService.js";
 
@@ -63,6 +65,9 @@ export function buildTizenPlaybackProxyUrl(baseUrl, sourceUrl, headers = {}, tra
 }
 
 export const TizenPlaybackProxy = {
+  isForcedRemoteSource(sourceUrl = "") {
+    return TizenPlaybackSettingsStore.get().alwaysUsePlaybackProxy && isRemoteHttpProxySource(sourceUrl);
+  },
   requiresProxy(sourceUrl = "", headers = {}, { playbackEngine = "", resolveRedirects = true } = {}) {
     const engine = String(playbackEngine || "")
       .trim()
@@ -129,3 +134,8 @@ export const TizenPlaybackProxy = {
     };
   }
 };
+
+TizenPlaybackProxy.requiresProxy = createRequiresProxy(
+  TizenPlaybackProxy.requiresProxy,
+  () => TizenPlaybackSettingsStore.get().alwaysUsePlaybackProxy
+);

@@ -467,6 +467,9 @@
     <string name="advanced_section_performance">Performance &amp; navigation</string>
     <string name="advanced_section_diagnostics">Diagnostics</string>
     <string name="advanced_section_cache">Cache</string>
+    <string name="advanced_section_playback">Playback</string>
+    <string name="advanced_always_use_playback_proxy">Always use playback proxy</string>
+    <string name="advanced_always_use_playback_proxy_subtitle">Use the built-in proxy on this TV for remote streams. Off uses automatic routing. Applies to the next stream.</string>
     <string name="advanced_section_dv_diagnostics">DV Diagnostics</string>
     <string name="advanced_fast_horizontal_navigation">Fast Horizontal Navigation</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Increase D-pad repeat speed in rows while keeping repeat throttling enabled.</string>
