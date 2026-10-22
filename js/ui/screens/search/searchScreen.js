@@ -5,6 +5,7 @@ import { catalogRepository } from "../../../data/repository/catalogRepository.js
 import { watchedItemsRepository } from "../../../data/repository/watchedItemsRepository.js";
 import { watchedTitleStateRepository } from "../../../data/repository/watchedTitleStateRepository.js";
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
+import { ProfileManager } from "../../../core/profile/profileManager.js";
 import {
   SEARCH_HISTORY_MAX_ITEMS,
   SearchHistoryStore
@@ -62,6 +63,7 @@ export {
   watchedItemsRepository,
   watchedTitleStateRepository,
   LayoutPreferences,
+  ProfileManager,
   SEARCH_HISTORY_MAX_ITEMS,
   SearchHistoryStore,
   I18n,

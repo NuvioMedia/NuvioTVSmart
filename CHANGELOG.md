@@ -1,3 +1,9 @@
+## Unreleased
+
+### Improvements & Fixes
+
+- Keep Search queries and results isolated per profile when switching profiles.
+
 ## 1.2.8
 
 ### Improvements & Fixes
