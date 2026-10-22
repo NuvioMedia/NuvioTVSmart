@@ -296,7 +296,7 @@ export function createPlayerScreenMethods35() {
     mediaErrorMessage(errorCode = 0, detail = "", streamCandidate = this.getCurrentStreamCandidate()) {
       const code = Number(errorCode || 0);
       const text = String(detail || "").toLowerCase();
-      const httpStatus = extractPlaybackHttpStatus(detail);
+      const httpStatus = this.resolvePlaybackHttpStatus(detail);
       const httpMessage = this.getHttpPlaybackErrorMessage(httpStatus);
       if (httpMessage) {
         return httpMessage;

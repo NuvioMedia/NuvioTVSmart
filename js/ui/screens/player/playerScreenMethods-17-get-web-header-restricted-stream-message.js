@@ -6,6 +6,19 @@ export function createPlayerScreenMethods17() {
     internals;
 
   return {
+    // hls.js keeps the HTTP status in its own error text ("status 404", "HTTP
+    // Error 403 Forbidden") rather than in the media element detail, so a status
+    // read from the detail alone comes back empty for every hls.js failure. The
+    // caller then falls through to the request header message and an expired
+    // link is reported as an unsupported source.
+    resolvePlaybackHttpStatus(detail = "") {
+      const fromDetail = extractPlaybackHttpStatus(detail);
+      if (fromDetail) {
+        return fromDetail;
+      }
+      const hlsDetail = typeof PlayerController.getLastHlsErrorDetail === "function" ? PlayerController.getLastHlsErrorDetail() : "";
+      return extractPlaybackHttpStatus(hlsDetail);
+    },
     getWebHeaderRestrictedStreamMessage(streamCandidate = this.getCurrentStreamCandidate()) {
       const candidate = streamCandidate || {};
       const raw = candidate?.raw || {};
