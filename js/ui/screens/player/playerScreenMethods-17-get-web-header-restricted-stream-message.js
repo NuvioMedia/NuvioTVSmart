@@ -6,6 +6,18 @@ export function createPlayerScreenMethods17() {
     internals;
 
   return {
+    resolvePlaybackHttpStatus(detail = "") {
+      const fromDetail = extractPlaybackHttpStatus(detail);
+      if (fromDetail) {
+        return fromDetail;
+      }
+      // Recovered HLS errors remain cached; only use a terminated HLS failure.
+      const diagnostic = PlayerController.getLastHlsErrorDiagnostic?.();
+      if (PlayerController.playbackEngine !== "hls.js" || PlayerController.hlsInstance || !diagnostic?.fatal) {
+        return 0;
+      }
+      return extractPlaybackHttpStatus(PlayerController.getLastHlsErrorDetail?.());
+    },
     getWebHeaderRestrictedStreamMessage(streamCandidate = this.getCurrentStreamCandidate()) {
       const candidate = streamCandidate || {};
       const raw = candidate?.raw || {};

@@ -96,7 +96,7 @@ export function createPlayerScreenMethods18() {
     getStartupErrorMessage(mediaErrorCode = 0, detail = "", streamCandidate = this.getCurrentStreamCandidate()) {
       const code = Number(mediaErrorCode || 0);
       const compatibilityMessage = this.getWebHeaderRestrictedStreamMessage(streamCandidate);
-      if (compatibilityMessage && (code === 0 || code === 2 || code === 4)) {
+      if (compatibilityMessage && (code === 0 || code === 2 || code === 4) && !this.resolvePlaybackHttpStatus(detail)) {
         return compatibilityMessage;
       }
       const baseMessage = this.mediaErrorMessage(code, detail, streamCandidate);
