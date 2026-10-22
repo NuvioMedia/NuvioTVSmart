@@ -14,7 +14,6 @@ export function createPlayerScreenMethods35() {
     logEngineFsDebug,
     getP2pInfoHash,
     t,
-    extractPlaybackHttpStatus,
     streamDirectPlaybackUrl
   } = internals;
 

@@ -96,9 +96,6 @@ export function createPlayerScreenMethods18() {
     getStartupErrorMessage(mediaErrorCode = 0, detail = "", streamCandidate = this.getCurrentStreamCandidate()) {
       const code = Number(mediaErrorCode || 0);
       const compatibilityMessage = this.getWebHeaderRestrictedStreamMessage(streamCandidate);
-      // A source that declares proxy headers can still fail for an ordinary
-      // reason. Report the status the server actually returned when there is
-      // one, and keep the header message for failures that carry no status.
       if (compatibilityMessage && (code === 0 || code === 2 || code === 4) && !this.resolvePlaybackHttpStatus(detail)) {
         return compatibilityMessage;
       }
