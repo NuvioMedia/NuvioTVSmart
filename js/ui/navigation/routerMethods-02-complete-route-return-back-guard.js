@@ -11,6 +11,7 @@ export function createRouterMethods02() {
     routerPerfNow,
     logRouterPerf,
     NON_BACKSTACK_ROUTES,
+    openPendingLaunchDeepLink,
     WEBOS_RESUME_ROUTE_KEY,
     WEBOS_RESUME_ROUTE_TTL_MS,
     TIZEN_ROUTE_RETURN_BACK_GUARD_MS,
@@ -200,6 +201,8 @@ export function createRouterMethods02() {
         }
       }
       this.persistWebOsResumeRoute(this.current, this.currentParams);
+      // A title deep link from a webOS launch opens here, once navigation is past startup (sign-in, profiles, setup).
+      await openPendingLaunchDeepLink(this, NON_BACKSTACK_ROUTES);
     },
     navigateFromPostPlayRecommendation(routeName, params = {}, options = {}) {
       const targetRoute = String(routeName || "").trim();
