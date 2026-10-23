@@ -114,6 +114,7 @@ async function signedMemberAvatarUrl(storagePath) {
   const { backendUrl, publishableKey } = ServerConfigurationStore.getActive();
   const { httpRequest } = await import("../network/httpClient.js");
   const path = String(storagePath || "")
+    .trim()
     .replace(/^\/+/, "")
     .split("/")
     .map(encodeURIComponent)

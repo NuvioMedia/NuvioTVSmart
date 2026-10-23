@@ -40,6 +40,9 @@ function avatarImageUrl(storagePath = "") {
   if (!normalizedPath) {
     return null;
   }
+  if (/^https?:\/\//.test(normalizedPath)) {
+    return normalizedPath;
+  }
   const configuration = ServerConfigurationStore.getActive();
   const configuredBaseUrl = String(configuration.avatarPublicBaseUrl || "")
     .trim()
@@ -108,6 +111,13 @@ function hasStoredMemberCatalog() {
   return stored?.memberLoaded === true && Array.isArray(stored.memberItems);
 }
 
+function memberAvatarFallback(avatar, generation) {
+  if (generation !== memberCacheGeneration) {
+    return null;
+  }
+  return { ...avatar, imageUrl: avatarImageUrl(avatar.storagePath) };
+}
+
 async function loadMemberAvatarAsset(avatar, generation = memberCacheGeneration) {
   if (!avatar?.id || !avatar.storagePath || avatar.imageUrl) {
     return avatar;
@@ -134,7 +144,7 @@ async function loadMemberAvatarAsset(avatar, generation = memberCacheGeneration)
     }
     const imageUrl = await createStorageAssetUrl(blob);
     if (!imageUrl) {
-      return null;
+      return memberAvatarFallback(avatar, generation);
     }
     if (generation !== memberCacheGeneration) {
       revokeStorageAssetUrl(imageUrl);
@@ -144,8 +154,22 @@ async function loadMemberAvatarAsset(avatar, generation = memberCacheGeneration)
     return { ...avatar, imageUrl };
   } catch (error) {
     console.warn(`Unable to load supporter avatar ${avatar.id}`, error);
-    return null;
+    return memberAvatarFallback(avatar, generation);
   }
+}
+
+async function loadMemberAvatarAssets(entries, generation) {
+  const loaded = new Array(entries.length);
+  let nextIndex = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(6, entries.length) }, async () => {
+      while (nextIndex < entries.length && generation === memberCacheGeneration) {
+        const index = nextIndex++;
+        loaded[index] = await loadMemberAvatarAsset(entries[index], generation);
+      }
+    })
+  );
+  return loaded.filter(Boolean);
 }
 
 async function hydrateStoredMemberCatalog() {
@@ -166,11 +190,9 @@ async function hydrateStoredMemberCatalog() {
     const entries = stored.memberItems
       .map((row) => mapMemberAvatar(row))
       .filter((avatar) => avatar.id && avatar.storagePath);
-    const loaded = await Promise.all(
-      entries.map((avatar) => loadMemberAvatarAsset(avatar, generation))
-    );
+    const loaded = await loadMemberAvatarAssets(entries, generation);
     if (generation === memberCacheGeneration) {
-      cachedMemberCatalog = loaded.filter(Boolean);
+      cachedMemberCatalog = loaded;
     }
   })().finally(() => {
     if (memberCatalogHydrationPromise === requestPromise) {
@@ -245,14 +267,12 @@ async function fetchMemberAvatarCatalog() {
     const entries = (Array.isArray(response) ? response : [])
       .map((row) => mapMemberAvatar(row))
       .filter((avatar) => avatar.id && avatar.storagePath);
-    const loaded = await Promise.all(
-      entries.map((avatar) => loadMemberAvatarAsset(avatar, generation))
-    );
+    const loaded = await loadMemberAvatarAssets(entries, generation);
     if (generation !== memberCacheGeneration) {
       return [];
     }
     saveStoredCatalog({ memberItems: response, memberLoaded: true });
-    cachedMemberCatalog = loaded.filter(Boolean);
+    cachedMemberCatalog = loaded;
     lastMemberRefreshAtMs = Date.now();
     memberCatalogHydrated = true;
     return cachedMemberCatalog;
