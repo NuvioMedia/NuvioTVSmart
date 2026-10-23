@@ -120,15 +120,20 @@ export function createPlayerScreenMethods61() {
           const nativeTrackIndex = Number(embeddedTrack?.nativeTrackIndex);
           const targetTrackIndex =
             Number.isFinite(nativeTrackIndex) && nativeTrackIndex >= 0 ? nativeTrackIndex : selectedEntry.embeddedAudioTrackIndex;
-          this.pendingWebOsAudioSelection = {
-            selectionKind: "embedded",
-            targetTrackIndex,
-            selectedTrackIndex: selectedEntry.embeddedAudioTrackIndex,
-            entryId: selectedEntry.id || "",
-            automaticFallback: Boolean(automaticFallback),
-            rememberSelection: Boolean(rememberSelection),
-            trackPreference: this.getAudioTrackPreference(selectedEntry)
-          };
+          // Only webOS confirms (and clears) a pending selection through its track
+          // events. Elsewhere, e.g. a desktop browser, a pending entry would hold the
+          // startup audio gate closed forever and playback never starts.
+          if (Environment.isWebOS()) {
+            this.pendingWebOsAudioSelection = {
+              selectionKind: "embedded",
+              targetTrackIndex,
+              selectedTrackIndex: selectedEntry.embeddedAudioTrackIndex,
+              entryId: selectedEntry.id || "",
+              automaticFallback: Boolean(automaticFallback),
+              rememberSelection: Boolean(rememberSelection),
+              trackPreference: this.getAudioTrackPreference(selectedEntry)
+            };
+          }
           applied =
             Environment.isWebOS() && (selectedEntry.canTryAudioConversion || PlayerController.webOsDtsAudioState)
               ? PlayerController.setWebOsAudioTrackWithDtsConversion(
