@@ -188,6 +188,12 @@ export function createPlayerScreenMethods31() {
         if (this.isStartupGateReleaseReady()) {
           this.releaseStartupAudioGate();
         }
+        // The stall guard and a resume seek can hide the startup overlay without
+        // presentStartedPlayback(); lift its presentation mute there as well, or
+        // playback continues silently.
+        if (!this.loadingVisible && this.hasPresentedPlaybackFrame && !this.startupAudioGateActive) {
+          PlayerController.setStartupPresentationAudioMuted?.(false);
+        }
         if (this.paused) {
           this.schedulePauseOverlay();
         }
