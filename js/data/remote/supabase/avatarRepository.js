@@ -112,12 +112,13 @@ async function loadMemberAvatarAsset(avatar, generation = memberCacheGeneration)
   if (!avatar?.id || !avatar.storagePath || avatar.imageUrl) {
     return avatar;
   }
+  const sanitizedPath = String(avatar.storagePath || "").trim().replace(/^\/+/, "");
   try {
     let blob = await MemberCatalogStorage.loadAsset("avatar", avatar.id, avatar.assetVersion);
     if (!blob) {
       blob = await SupabaseApi.downloadStorageObject(
         MEMBER_AVATAR_BUCKET,
-        avatar.storagePath,
+        sanitizedPath,
         true
       );
       if (blob) {
@@ -134,7 +135,7 @@ async function loadMemberAvatarAsset(avatar, generation = memberCacheGeneration)
     }
     const imageUrl = await createStorageAssetUrl(blob);
     if (!imageUrl) {
-      return null;
+      return { ...avatar, imageUrl: null };
     }
     if (generation !== memberCacheGeneration) {
       revokeStorageAssetUrl(imageUrl);
@@ -144,7 +145,7 @@ async function loadMemberAvatarAsset(avatar, generation = memberCacheGeneration)
     return { ...avatar, imageUrl };
   } catch (error) {
     console.warn(`Unable to load supporter avatar ${avatar.id}`, error);
-    return null;
+    return { ...avatar, imageUrl: null };
   }
 }
 
