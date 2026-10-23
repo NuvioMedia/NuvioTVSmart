@@ -15,7 +15,7 @@ const deferred = () => {
   return { promise, resolve };
 };
 
-async function setup() {
+async function setup(platform = "browser") {
   const storage = new Map();
   const frames = new Map();
   const timers = new Map();
@@ -33,7 +33,7 @@ async function setup() {
     HomeScreen: emptyScreen,
     MetaDetailsScreen: emptyScreen,
     ProfileSelectionScreen: emptyScreen,
-    Platform: { isBrowser: () => true, isTizen: () => false, isWebOS: () => false },
+    Platform: { isBrowser: () => platform === "browser", isTizen: () => platform === "tizen", isWebOS: () => platform === "webos" },
     ScreenUtils: { show() {}, hide() {} },
     LayoutPreferences: { get: () => ({ modernSidebar: false }) },
     getSidebarProfileState: async () => null,
@@ -136,7 +136,7 @@ async function setup() {
   ]);
   await ProfileManager.setActiveProfile("1");
   return {
-    Router, SearchScreen, SearchHistoryStore, fixtures, requests, paints, visible, flush,
+    Router, SearchScreen, ProfileManager, SearchHistoryStore, fixtures, requests, paints, visible, flush,
     async enter(params = {}) {
       await Router.navigate("search", params);
       await flush();
@@ -156,7 +156,7 @@ async function setup() {
   };
 }
 
-test("profile switches isolate query/results without deleting either profile's history or snapshots", async () => {
+test("profile switches reset active query/results while retaining each profile history", async () => {
   const h = await setup();
   h.SearchHistoryStore.save("B earlier search", "2");
   await h.enter();
@@ -172,13 +172,13 @@ test("profile switches isolate query/results without deleting either profile's h
 
   await h.switchProfile("1");
   assert.deepEqual(h.visible(), {
-    query: "A movie", mode: "search", items: ["fixture:A movie"], history: ["A movie"]
+    query: "", mode: "idle", items: [], history: ["A movie"]
   });
   await h.switchProfile("2");
   assert.deepEqual(h.visible(), {
-    query: "B movie", mode: "search", items: ["fixture:B movie"], history: ["B movie", "B earlier search"]
+    query: "", mode: "idle", items: [], history: ["B movie", "B earlier search"]
   });
-  assert.equal(h.requests.length, 2, "restoring each profile must not repeat its catalog search");
+  assert.equal(h.requests.length, 2, "entering a profile must not repeat the previous catalog search");
 });
 
 test("same-profile detail Back and Search re-entry retain query and result rows", async () => {
@@ -241,4 +241,62 @@ test("a cancelled outgoing profile request cannot overwrite incoming query, rows
   assert.ok(h.paints.slice(firstPaint).every((paint) => !paint.items.includes("fixture:A delayed movie")));
   assert.deepEqual(plain(h.SearchHistoryStore.list("1")), []);
   assert.deepEqual(plain(h.SearchHistoryStore.list("2")), ["B current movie"]);
+});
+
+test("a newly created profile cannot inherit a deleted profile slot search", async () => {
+  const h = await setup();
+  await h.switchProfile("2");
+  await h.search("Deleted profile query");
+  await h.switchProfile("1");
+  assert.equal(await h.ProfileManager.deleteProfile("2"), true);
+  assert.equal(await h.ProfileManager.createProfile({ name: "New person" }), true);
+  await h.switchProfile("2");
+  assert.equal(h.visible().query, "");
+  assert.deepEqual(h.visible().items, []);
+});
+
+test("profile selection resets Search even when reselecting the same profile", async () => {
+  const h = await setup();
+  await h.enter();
+  await h.search("Own movie");
+  await h.switchProfile("1");
+  assert.equal(h.visible().query, "");
+  assert.deepEqual(h.visible().items, []);
+  assert.deepEqual(h.visible().history, ["Own movie"]);
+});
+
+test("profile management preserves same-profile Search snapshots", async () => {
+  const h = await setup();
+  await h.enter();
+  await h.search("Own movie");
+  const expected = h.visible();
+  await h.Router.navigate("profileSelection", { mode: "management", returnRoute: "settings" });
+  await h.Router.navigate("home");
+  await h.enter();
+  assert.deepEqual(h.visible(), expected);
+  assert.equal(h.requests.length, 1);
+});
+
+for (const platform of ["tizen", "webos"]) {
+  test(`${platform}: switching profiles clears Search and retains recent history`, async () => {
+    const h = await setup(platform);
+    h.SearchHistoryStore.save("B history", "2");
+    await h.enter();
+    await h.search("A movie");
+    await h.switchProfile("2");
+    assert.deepEqual(h.visible(), { query: "", mode: "idle", items: [], history: ["B history"] });
+    await h.search("B movie");
+    await h.switchProfile("1");
+    assert.deepEqual(h.visible(), { query: "", mode: "idle", items: [], history: ["A movie"] });
+  });
+}
+
+test("entering profile selection from details also invalidates the earlier Search snapshot", async () => {
+  const h = await setup();
+  await h.enter();
+  await h.search("A movie");
+  await h.Router.navigate("detail", { itemId: "fixture:A movie", itemType: "movie" });
+  await h.switchProfile("2");
+  assert.equal(h.visible().query, "");
+  assert.deepEqual(h.visible().items, []);
 });

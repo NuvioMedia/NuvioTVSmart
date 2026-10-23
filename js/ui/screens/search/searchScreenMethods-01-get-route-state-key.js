@@ -8,7 +8,6 @@ export function createSearchScreenMethods01() {
     watchedItemsRepository,
     watchedTitleStateRepository,
     LayoutPreferences,
-    ProfileManager,
     SearchHistoryStore,
     Platform,
     getSidebarProfileState,
@@ -24,7 +23,7 @@ export function createSearchScreenMethods01() {
 
   return {
     getRouteStateKey() {
-      return `route:search:${ProfileManager.getActiveProfileId()}`;
+      return "route:search";
     },
     clearRouteStateOnMount(params = {}) {
       const incomingQuery = String(params.query || "").trim();

@@ -2,7 +2,7 @@
 
 ### Improvements & Fixes
 
-- Keep Search queries and results isolated per profile when switching profiles.
+- Reset active Search queries and results when entering profile selection, preserving per-profile recent history and same-profile detail navigation.
 
 ## 1.2.8
 
