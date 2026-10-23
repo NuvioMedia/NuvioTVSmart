@@ -1,3 +1,9 @@
+## Unreleased
+
+### Improvements & Fixes
+
+- Reset active Search queries and results when entering profile selection, preserving per-profile recent history and same-profile detail navigation.
+
 ## 1.2.8
 
 ### Improvements & Fixes
