@@ -1,5 +1,4 @@
 import * as internals from "./homeScreenContext.js";
-import { releaseAnimatedImageCanvases } from "../../../core/media/animatedImageCanvas.js";
 
 export function createHomeScreenMethods30() {
   const { ScreenUtils, Platform } = internals;
@@ -45,8 +44,6 @@ export function createHomeScreenMethods30() {
       this.clearFocusedPosterFlowState();
       this.collapseFocusedPoster();
       this.clearHomeTrailerLayers();
-      // Free GIF decoders while Home is hidden; mount attaches them again.
-      releaseAnimatedImageCanvases(this.container);
       this.teardownGridStickyHeader();
       this.teardownModernTrackScrollPagination();
       this.teardownContinueWatchingProgressiveRendering();

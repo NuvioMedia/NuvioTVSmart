@@ -2,8 +2,8 @@
 
 ### Improvements & Fixes
 
+- Use regular collection covers when Focus GIF is disabled, matching Android TV and avoiding unintended always-on GIF decoding on Home.
 - Reset active Search queries and results when entering profile selection, preserving per-profile recent history and same-profile detail navigation.
-- Fixed slow remote navigation on LG webOS when Home shows collections with animated GIF covers. GIFs now play from a background worker, pause while the remote is in use, and fall back to the previous behavior when unsupported.
 
 ## 1.2.8
 

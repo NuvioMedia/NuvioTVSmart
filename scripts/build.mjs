@@ -587,16 +587,6 @@ async function buildPluginRuntimeAssets() {
       __NUVIO_CRYPTO_JS_SOURCE__: JSON.stringify(cryptoJsSource)
     }
   });
-  await build({
-    entryPoints: [path.join(rootDir, "js", "core", "media", "animatedImageWorker.js")],
-    outfile: path.join(distDir, "assets", "runtime", "animated-image-worker.js"),
-    bundle: true,
-    platform: "browser",
-    format: "iife",
-    target: [`chrome${compatibilityPolicy.chromiumVersion}`],
-    minify: !debugBundle,
-    legalComments: "none"
-  });
   await cp(
     path.join(rootDir, "node_modules", "quickjs-emscripten", "LICENSE"),
     path.join(distDir, "assets", "libs", "quickjs-emscripten.LICENSE")

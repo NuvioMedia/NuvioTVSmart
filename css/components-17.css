@@ -284,27 +284,6 @@
   opacity: 1;
 }
 
-/* Worker-drawn GIF surface (js/core/media/animatedImageCanvas.js), above the static cover. */
-.home-screen-shell .home-collection-card .home-poster-animated-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.home-screen-shell .home-collection-card .home-poster-animated-canvas.is-focus-gif {
-  opacity: 0;
-  transition: opacity 200ms ease;
-}
-
-.home-screen-shell
-  .home-collection-card.is-focus-gif-active
-  .home-poster-animated-canvas.is-focus-gif {
-  opacity: 1;
-}
-
 .home-screen-shell .home-collection-emoji {
   display: flex;
   align-items: center;
