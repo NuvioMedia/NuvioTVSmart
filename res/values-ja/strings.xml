@@ -773,6 +773,7 @@
     <string name="stream_info_filename">Filename</string>
     <string name="stream_info_size">Size</string>
     <string name="stream_info_codec">Codec</string>
+    <string name="stream_info_hdr">HDRフォーマット</string>
     <string name="stream_info_resolution">Resolution</string>
     <string name="stream_info_frame_rate">Frame Rate</string>
     <string name="stream_info_bitrate">Bitrate</string>
@@ -840,6 +841,14 @@
     <string name="subtitle_style_font_size">フォントサイズ</string>
     <string name="subtitle_style_bold">太字</string>
     <string name="subtitle_style_text_color">文字色</string>
+    <string name="subtitle_style_hdr_brightness">HDRの明るさ</string>
+    <string name="subtitle_style_hdr_brightness_sub">HDR/Dolby Vision画面での字幕およびHUDの明るさ調整。</string>
+    <string name="subtitle_style_hdr_preset_dark">暗室 (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">リファレンス (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">明るい部屋 (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">オフ (パネル最大)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDRコンテンツ</string>
+    <string name="player_hdr_badge_hint">黄ボタンまたはクリックで変更</string>
     <string name="subtitle_style_outline">アウトライン</string>
     <string name="subtitle_style_bottom_offset">下部オフセット</string>
     <string name="subtitle_style_defaults">デフォルト</string>

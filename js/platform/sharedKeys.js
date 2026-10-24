@@ -49,7 +49,9 @@ function getKeyCodeFromName(keyName) {
     mediafastforward: 417,
     mediarewind: 412,
     mediatracknext: 176,
-    mediatrackprevious: 177
+    mediatrackprevious: 177,
+    colorf2yellow: 405,
+    yellow: 405
   };
   return keyMap[normalized] || 0;
 }

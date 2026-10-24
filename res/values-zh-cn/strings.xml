@@ -1262,6 +1262,7 @@
     <string name="stream_info_filename">文件名</string>
     <string name="stream_info_size">大小</string>
     <string name="stream_info_codec">编码</string>
+    <string name="stream_info_hdr">HDR格式</string>
     <string name="stream_info_resolution">分辨率</string>
     <string name="stream_info_frame_rate">帧率</string>
     <string name="stream_info_bitrate">比特率</string>
@@ -1343,6 +1344,14 @@
     <string name="subtitle_style_bold">粗体</string>
     <string name="subtitle_style_text_color">文字颜色</string>
     <string name="subtitle_style_text_opacity">文字不透明度</string>
+    <string name="subtitle_style_hdr_brightness">HDR亮度</string>
+    <string name="subtitle_style_hdr_brightness_sub">HDR/Dolby Vision屏幕字幕与界面亮度校准。</string>
+    <string name="subtitle_style_hdr_preset_dark">暗室 (~100–120尼特)</string>
+    <string name="subtitle_style_hdr_preset_reference">标准参考 (~180–200尼特)</string>
+    <string name="subtitle_style_hdr_preset_bright">明亮环境 (~250–280尼特)</string>
+    <string name="subtitle_style_hdr_preset_off">关闭 (面板最大亮度)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR内容</string>
+    <string name="player_hdr_badge_hint">按遥控器黄色键或点击以切换</string>
     <string name="subtitle_style_outline">描边</string>
     <string name="subtitle_style_bottom_offset">底部偏移</string>
     <string name="subtitle_style_defaults">默认</string>

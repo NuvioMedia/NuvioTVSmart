@@ -867,6 +867,7 @@
     <string name="stream_info_filename">Имя файла</string>
     <string name="stream_info_size">Размер</string>
     <string name="stream_info_codec">Кодек</string>
+    <string name="stream_info_hdr">Формат HDR</string>
     <string name="stream_info_resolution">Разрешение</string>
     <string name="stream_info_frame_rate">Частота кадров</string>
     <string name="stream_info_bitrate">Битрейт</string>
@@ -938,6 +939,14 @@
     <string name="subtitle_style_font_size">Размер шрифта</string>
     <string name="subtitle_style_bold">Жирный</string>
     <string name="subtitle_style_text_color">Цвет текста</string>
+    <string name="subtitle_style_hdr_brightness">Яркость HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Калибровка яркости субтитров и интерфейса на экранах HDR/Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Темная комната (~100–120 нит)</string>
+    <string name="subtitle_style_hdr_preset_reference">Эталон (~180–200 нит)</string>
+    <string name="subtitle_style_hdr_preset_bright">Светлая комната (~250–280 нит)</string>
+    <string name="subtitle_style_hdr_preset_off">Выкл. (Макс. панели)</string>
+    <string name="subtitle_style_hdr_sdr_content">Контент SDR</string>
+    <string name="player_hdr_badge_hint">Нажмите Желтую или кликните для смены</string>
     <string name="subtitle_style_outline">Обводка</string>
     <string name="subtitle_style_bottom_offset">Смещение снизу</string>
     <string name="subtitle_style_defaults">По умолчанию</string>

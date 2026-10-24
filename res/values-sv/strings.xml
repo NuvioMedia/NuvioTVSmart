@@ -1897,4 +1897,14 @@
     <string name="party_invite_scan">Skanna med en telefon för att gå med</string>
     <string name="party_invite_share">Eller dela koden. Vänner kan ange den under Watch party i valfri Nuvio-app.</string>
     <string name="party_invite_qr">QR-kod för inbjudan till watch party</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">HDR-ljusstyrka</string>
+    <string name="subtitle_style_hdr_brightness_sub">Ljusstyrkekalibrering för undertexter och HUD på HDR- / Dolby Vision-skärmar.</string>
+    <string name="subtitle_style_hdr_preset_dark">Mörkt rum (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referens (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Ljust rum (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Av (Max panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR-innehåll</string>
+    <string name="player_hdr_badge_hint">Tryck på Gul eller klicka för att ändra</string>
 </resources>

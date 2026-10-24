@@ -1470,6 +1470,7 @@
     <string name="stream_info_filename">Filename</string>
     <string name="stream_info_size">Size</string>
     <string name="stream_info_codec">Codec</string>
+    <string name="stream_info_hdr">HDR</string>
     <string name="stream_info_resolution">Resolution</string>
     <string name="stream_info_frame_rate">Frame Rate</string>
     <string name="stream_info_bitrate">Bitrate</string>
@@ -1567,6 +1568,7 @@
     <string name="subtitle_style_hdr_preset_bright">Bright Room (~250–280 nits)</string>
     <string name="subtitle_style_hdr_preset_off">Off (Max Panel)</string>
     <string name="subtitle_style_hdr_sdr_content">SDR Content</string>
+    <string name="player_hdr_badge_hint">Press Yellow or click to change</string>
     <string name="subtitle_style_outline">Outline</string>
     <string name="subtitle_style_bottom_offset">Bottom Offset</string>
     <string name="subtitle_style_defaults">Defaults</string>

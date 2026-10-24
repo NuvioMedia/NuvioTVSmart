@@ -1248,4 +1248,14 @@
     <string name="party_invite_scan">Scanează cu telefonul pentru a te alătura</string>
     <string name="party_invite_share">Sau partajează codul. Prietenii îl pot introduce în Watch party în orice aplicație Nuvio.</string>
     <string name="party_invite_qr">Cod QR de invitație la watch party</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">Luminozitate HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Calibrarea luminozității pentru subtitrări și HUD pe ecrane HDR / Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Cameră întunecată (~100–120 niți)</string>
+    <string name="subtitle_style_hdr_preset_reference">De referință (~180–200 niți)</string>
+    <string name="subtitle_style_hdr_preset_bright">Cameră luminoasă (~250–280 niți)</string>
+    <string name="subtitle_style_hdr_preset_off">Oprit (Maxim panou)</string>
+    <string name="subtitle_style_hdr_sdr_content">Conținut SDR</string>
+    <string name="player_hdr_badge_hint">Apăsați Galben sau faceți clic pentru a schimba</string>
 </resources>

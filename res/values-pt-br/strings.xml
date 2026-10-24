@@ -1371,6 +1371,7 @@
     <string name="stream_info_filename">Nome do arquivo</string>
     <string name="stream_info_size">Tamanho</string>
     <string name="stream_info_codec">Codec</string>
+    <string name="stream_info_hdr">Formato HDR</string>
     <string name="stream_info_resolution">Resolução</string>
     <string name="stream_info_frame_rate">Taxa de quadros</string>
     <string name="stream_info_bitrate">Taxa de bits</string>
@@ -1460,6 +1461,7 @@
     <string name="subtitle_style_hdr_preset_bright">Ambiente claro (~250–280 nits)</string>
     <string name="subtitle_style_hdr_preset_off">Desativado (Máx. painel)</string>
     <string name="subtitle_style_hdr_sdr_content">Conteúdo SDR</string>
+    <string name="player_hdr_badge_hint">Pressione Amarelo ou clique para alterar</string>
     <string name="subtitle_style_outline">Contorno</string>
     <string name="subtitle_style_bottom_offset">Altura da legenda</string>
     <string name="subtitle_style_defaults">Padrões</string>

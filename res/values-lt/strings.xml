@@ -1407,4 +1407,14 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="party_invite_scan">Nuskaitykite telefonu, kad prisijungtumėte</string>
     <string name="party_invite_share">Arba pasidalykite kodu. Draugai gali jį įvesti skiltyje „Bendra peržiūra“ bet kurioje Nuvio programėlėje.</string>
     <string name="party_invite_qr">Bendros peržiūros kvietimo QR kodas</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">HDR ryškumas</string>
+    <string name="subtitle_style_hdr_brightness_sub">Subtitrų ir ekrano sąsajos (HUD) ryškumo kalibravimas HDR / „Dolby Vision“ ekranams.</string>
+    <string name="subtitle_style_hdr_preset_dark">Tamsus kambarys (~100–120 nitų)</string>
+    <string name="subtitle_style_hdr_preset_reference">Etaloninis (~180–200 nitų)</string>
+    <string name="subtitle_style_hdr_preset_bright">Šviesus kambarys (~250–280 nitų)</string>
+    <string name="subtitle_style_hdr_preset_off">Išjungta (Maks. skydelio)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR turinys</string>
+    <string name="player_hdr_badge_hint">Paspauskite geltoną arba spustelėkite norėdami pakeisti</string>
 </resources>

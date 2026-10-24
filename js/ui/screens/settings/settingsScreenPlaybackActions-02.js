@@ -15,6 +15,7 @@ export function registerPlaybackActionsPart02(model) {
     SUBTITLE_TEXT_COLOR_OPTIONS,
     SUBTITLE_TEXT_OPACITY_OPTIONS,
     SUBTITLE_HDR_BRIGHTNESS_OPTIONS,
+    saveHdrBrightnessPreset,
     SUBTITLE_OUTLINE_COLOR_OPTIONS,
     normalizeSubtitleStyleHex,
     clampSubtitleSize,
@@ -185,6 +186,7 @@ export function registerPlaybackActionsPart02(model) {
       returnFocusKey: "playback:hdrBrightnessPreset",
       onSelect: (option) => {
         updateSubtitleStyle({ hdrBrightnessPreset: option.id });
+        saveHdrBrightnessPreset?.(option.id, PlayerSettingsStore);
       }
     });
   });

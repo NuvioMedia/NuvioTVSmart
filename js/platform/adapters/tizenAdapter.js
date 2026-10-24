@@ -61,7 +61,8 @@ export const tizenAdapter = {
       "MediaFastForward",
       "MediaRewind",
       "MediaTrackPrevious",
-      "MediaTrackNext"
+      "MediaTrackNext",
+      "ColorF2Yellow"
     ];
 
     if (typeof tvInputDevice.registerKeyBatch === "function") {

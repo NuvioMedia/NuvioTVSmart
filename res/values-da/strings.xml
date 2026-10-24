@@ -218,4 +218,14 @@
     <string name="party_invite_scan">Scan med en telefon for at deltage</string>
     <string name="party_invite_share">Eller del koden. Venner kan indtaste den under Watch party i enhver Nuvio-app.</string>
     <string name="party_invite_qr">QR-kode til invitation til watch party</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">HDR-lysstyrke</string>
+    <string name="subtitle_style_hdr_brightness_sub">Lysstyrkekalibrering til undertekster og HUD på HDR- / Dolby Vision-skærme.</string>
+    <string name="subtitle_style_hdr_preset_dark">Mørkt rum (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Reference (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Lyst rum (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Fra (Maks. panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR-indhold</string>
+    <string name="player_hdr_badge_hint">Tryk på Gul eller klik for at ændre</string>
 </resources>

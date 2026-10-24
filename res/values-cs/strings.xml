@@ -1100,6 +1100,7 @@
     <string name="stream_info_filename">Název souboru</string>
     <string name="stream_info_size">Velikost</string>
     <string name="stream_info_codec">Kodek</string>
+    <string name="stream_info_hdr">Formát HDR</string>
     <string name="stream_info_resolution">Rozlišení</string>
     <string name="stream_info_frame_rate">Snímková frekvence</string>
     <string name="stream_info_bitrate">Datový tok</string>
@@ -1175,6 +1176,14 @@
     <string name="subtitle_style_bold">Tučné</string>
     <string name="subtitle_style_text_color">Barva textu</string>
     <string name="subtitle_style_text_opacity">Neprůhlednost textu</string>
+    <string name="subtitle_style_hdr_brightness">Jas HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Kalibrace jasu titulků a rozhraní na obrazovkách HDR/Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Tmavá místnost (~100–120 nitů)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referenční (~180–200 nitů)</string>
+    <string name="subtitle_style_hdr_preset_bright">Světlý pokoj (~250–280 nitů)</string>
+    <string name="subtitle_style_hdr_preset_off">Vypnuto (Max. panelu)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR obsah</string>
+    <string name="player_hdr_badge_hint">Stiskněte žluté tlačítko nebo klikněte pro změnu</string>
     <string name="subtitle_style_outline">Obrys</string>
     <string name="subtitle_style_bottom_offset">Spodní posun</string>
     <string name="subtitle_style_defaults">Výchozí</string>

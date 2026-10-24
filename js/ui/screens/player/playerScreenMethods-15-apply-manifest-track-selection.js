@@ -172,9 +172,12 @@ export function createPlayerScreenMethods15() {
               <div class="player-controls-gradient player-controls-gradient-top"></div>
               <div class="player-controls-gradient player-controls-gradient-bottom"></div>
 
-              <div class="player-controls-top${osdClockEnabled ? "" : " hidden"}">
-                <div id="playerClock" class="player-clock">--:--</div>
-                <div id="playerEndsAt" class="player-ends-at">${escapeHtml(t("player_ends_at", ["--:--"], "Ends at %1$s"))}</div>
+              <div class="player-controls-top">
+                <div id="playerClockContainer" class="player-clock-container${osdClockEnabled ? "" : " hidden"}">
+                  <div id="playerClock" class="player-clock">--:--</div>
+                  <div id="playerEndsAt" class="player-ends-at">${escapeHtml(t("player_ends_at", ["--:--"], "Ends at %1$s"))}</div>
+                </div>
+                <div id="playerHdrBadge" class="player-hdr-badge hidden" tabindex="0" role="button" aria-label="HDR Format" data-player-pointer-action="hdr-badge">HDR</div>
               </div>
 
               <div class="player-controls-bottom">
@@ -207,6 +210,7 @@ export function createPlayerScreenMethods15() {
       this.cachePlayerUiRefs(root);
       this.syncPlayerStreamSource();
       this.syncPlayerOverlayLayoutState();
+      this.syncPlayerHdrBadge?.();
       this.bindLoadingLogoFallback();
       if (!this.isExternalFrameMode()) {
         this.renderControlButtons();
@@ -267,8 +271,10 @@ export function createPlayerScreenMethods15() {
             controlsBottom: uiRoot.querySelector(".player-controls-bottom"),
             streamSource: uiRoot.querySelector("#playerStreamSource"),
             progressShell: uiRoot.querySelector("#playerProgressShell"),
+            clockContainer: uiRoot.querySelector("#playerClockContainer"),
             clock: uiRoot.querySelector("#playerClock"),
             endsAt: uiRoot.querySelector("#playerEndsAt"),
+            hdrBadge: uiRoot.querySelector("#playerHdrBadge"),
             progressBuffered: uiRoot.querySelector("#playerProgressBuffered"),
             progressFill: uiRoot.querySelector("#playerProgressFill"),
             controlButtons: uiRoot.querySelector("#playerControlButtons"),

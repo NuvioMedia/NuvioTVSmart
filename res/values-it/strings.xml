@@ -976,6 +976,7 @@
     <string name="stream_info_size">Dimensione</string>
     <string name="streams_size">DIMENSIONE %1$s</string>
     <string name="stream_info_codec">Codec</string>
+    <string name="stream_info_hdr">Formato HDR</string>
     <string name="stream_info_resolution">Risoluzione</string>
     <string name="stream_info_frame_rate">Frequenza fotogrammi</string>
     <string name="stream_info_bitrate">Bitrate</string>
@@ -1057,6 +1058,7 @@
     <string name="subtitle_style_hdr_preset_bright">Stanza illuminata (~250–280 nit)</string>
     <string name="subtitle_style_hdr_preset_off">Disattivato (Max pannello)</string>
     <string name="subtitle_style_hdr_sdr_content">Contenuto SDR</string>
+    <string name="player_hdr_badge_hint">Premi Giallo o fai clic per cambiare</string>
     <string name="subtitle_style_outline">Bordo</string>
     <string name="subtitle_style_bottom_offset">Offset Inferiore</string>
     <string name="subtitle_style_defaults">Default</string>

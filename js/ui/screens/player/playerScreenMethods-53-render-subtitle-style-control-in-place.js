@@ -24,7 +24,8 @@ export function createPlayerScreenMethods53() {
     clamp,
     normalizeSubtitleFontSize,
     HDR_PRESET_ORDER,
-    normalizeHdrBrightnessPreset
+    normalizeHdrBrightnessPreset,
+    saveHdrBrightnessPreset
   } = internals;
 
   return {
@@ -71,6 +72,7 @@ export function createPlayerScreenMethods53() {
         const currentIndex = Math.max(0, presets.indexOf(currentPreset));
         style.hdrBrightnessPreset = presets[clamp(currentIndex + delta, 0, presets.length - 1)];
         this.bitmapSubtitleLastFrameKey = "";
+        saveHdrBrightnessPreset?.(style.hdrBrightnessPreset, PlayerSettingsStore);
       } else if (controlId === "outlineEnabled" && delta !== 0) {
         style.outlineEnabled = !style.outlineEnabled;
       } else if (controlId === "outlineColor" && delta !== 0) {
@@ -96,6 +98,7 @@ export function createPlayerScreenMethods53() {
           verticalOffset: defaults.verticalOffset,
           verticalOffsetContract: defaults.verticalOffsetContract
         };
+        saveHdrBrightnessPreset?.(defaults.hdrBrightnessPreset || "REFERENCE", PlayerSettingsStore);
       }
       if ((controlId === "delay" || controlId === "resetDelay" || controlId === "reset") && this.isAssAddonSubtitleActive()) {
         // ass.js delay is seconds, positive = later; update in place instead

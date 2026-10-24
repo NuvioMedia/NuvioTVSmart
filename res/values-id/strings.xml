@@ -2560,4 +2560,14 @@
     <string name="party_invite_scan">Pindai dengan ponsel untuk bergabung</string>
     <string name="party_invite_share">Atau bagikan kodenya. Teman dapat memasukkannya di Nonton bareng pada aplikasi Nuvio mana pun.</string>
     <string name="party_invite_qr">Kode QR undangan nonton bareng</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">Kecerahan HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Kalibrasi kecerahan untuk subtitle dan HUD pada layar HDR / Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Ruangan Gelap (~100–120 nit)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referensi (~180–200 nit)</string>
+    <string name="subtitle_style_hdr_preset_bright">Ruangan Terang (~250–280 nit)</string>
+    <string name="subtitle_style_hdr_preset_off">Mati (Maks. Panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">Konten SDR</string>
+    <string name="player_hdr_badge_hint">Tekan Kuning atau klik untuk mengubah</string>
 </resources>

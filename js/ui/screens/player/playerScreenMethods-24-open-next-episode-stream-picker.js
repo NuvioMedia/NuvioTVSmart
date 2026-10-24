@@ -13,9 +13,19 @@ export function createPlayerScreenMethods24() {
     normalizeSubtitleTextOpacity,
     subtitleTextColorWithOpacity,
     isHdrStream,
+    isDecoderHdr,
+    detectHdrFormatTitle,
     getHdrBrightnessFactor,
     getHdrHudBrightnessFactor,
+    getHdrHudOpacity,
+    getHdrModalOpacity,
     calibrateHdrColorHex,
+    getNextHdrPreset,
+    saveHdrBrightnessPreset,
+    normalizeHdrBrightnessPreset,
+    getHdrPresetLabelKey,
+    getHdrPresetDefaultFallback,
+    HDR_BRIGHTNESS_PRESETS,
     ENGINEFS_NAVIGATION_CLEANUP_GRACE_MS,
     t,
     normalizeItemType,
@@ -268,7 +278,7 @@ export function createPlayerScreenMethods24() {
     },
     isCurrentStreamHdr() {
       const video = PlayerController.video;
-      if (video?.hdrInfo && (video.hdrInfo.gamma === "pq" || video.hdrInfo.gamma === "hlg")) {
+      if (isDecoderHdr(video?.hdrInfo)) {
         return true;
       }
       const candidate = this.getCurrentStreamCandidate?.() || this.getStreamCandidateByUrl?.(this.activePlaybackUrl);
@@ -314,6 +324,15 @@ export function createPlayerScreenMethods24() {
       uiRoot.style.setProperty("--player-hud-track-bg", hudTrackBg);
 
       if (this.container && this.container.style) {
+        if (isHdr && (hudFactor < 1.0 || factor < 1.0)) {
+          this.container.classList.add("hdr-active");
+        } else {
+          this.container.classList.remove("hdr-active");
+        }
+        this.container.style.setProperty("--player-hud-dim-brightness", String(hudFactor));
+        this.container.style.setProperty("--player-subtitles-dim-brightness", String(factor));
+        this.container.style.setProperty("--player-hud-dim-opacity", String(getHdrHudOpacity(style.hdrBrightnessPreset)));
+        this.container.style.setProperty("--player-modal-dim-opacity", String(getHdrModalOpacity(style.hdrBrightnessPreset)));
         this.container.style.setProperty("--player-hud-white", hudWhite);
         this.container.style.setProperty("--player-atv-text-primary", hudWhite);
         this.container.style.setProperty("--player-atv-text-secondary", hudSecondary);
@@ -357,6 +376,16 @@ export function createPlayerScreenMethods24() {
       if (Environment.isTizen() && PlayerController.isUsingAvPlay?.()) {
         PlayerController.setAvPlayExternalSubtitleDelay?.(this.subtitleDelayMs);
       }
+      const rawBgColor = String(style.backgroundColor || "#00000000").trim();
+      const isBlackBg =
+        /^#0{3,8}$/i.test(rawBgColor) ||
+        rawBgColor.toLowerCase() === "black" ||
+        rawBgColor.toLowerCase() === "transparent" ||
+        /^rgba?\(\s*0\s*,\s*0\s*,\s*0(?:\s*,\s*[0-9.]+)?\s*\)$/i.test(rawBgColor);
+      const subtitleBgColor = isHdr && factor < 1.0 && !isBlackBg
+        ? calibrateHdrColorHex(rawBgColor, factor)
+        : rawBgColor;
+
       uiRoot.style.setProperty("--player-subtitle-color", subtitleColor);
       // HTML subtitles need the alpha composited over the complete text run.
       // Applying it in rgba() makes overlapping Arabic glyphs accumulate alpha
@@ -364,7 +393,7 @@ export function createPlayerScreenMethods24() {
       // rgba color below.
       uiRoot.style.setProperty("--player-subtitle-text-color", subtitleTextColor);
       uiRoot.style.setProperty("--player-subtitle-text-opacity", String(subtitleTextOpacity / 100));
-      uiRoot.style.setProperty("--player-subtitle-background", String(style.backgroundColor || "#00000000"));
+      uiRoot.style.setProperty("--player-subtitle-background", subtitleBgColor);
       uiRoot.style.setProperty("--player-subtitle-outline-color", outlineColor);
       uiRoot.style.setProperty("--player-subtitle-font-size", `${subtitleFontSize}%`);
       uiRoot.style.setProperty("--player-html-subtitle-font-size", htmlSubtitleFontSize);
@@ -377,7 +406,7 @@ export function createPlayerScreenMethods24() {
       uiRoot.style.setProperty("--player-subtitle-shadow", htmlSubtitleShadow);
       uiRoot.style.setProperty("--player-subtitle-offset", `${verticalOffsetVh.toFixed(2)}vh`);
       video.style.setProperty("--player-subtitle-color", subtitleColor);
-      video.style.setProperty("--player-subtitle-background", String(style.backgroundColor || "#00000000"));
+      video.style.setProperty("--player-subtitle-background", subtitleBgColor);
       video.style.setProperty("--player-subtitle-outline-color", outlineColor);
       video.style.setProperty("--player-subtitle-font-size", `${subtitleFontSize}%`);
       video.style.setProperty("--player-subtitle-font-weight", subtitleFontWeight);
@@ -389,6 +418,50 @@ export function createPlayerScreenMethods24() {
       if (refreshTrackRendering) {
         this.refreshSubtitleTrackRendering();
       }
+      this.syncPlayerHdrBadge();
+    },
+    syncPlayerHdrBadge() {
+      const badge = this.uiRefs?.hdrBadge;
+      if (!badge) return;
+      const isHdr = Boolean(this.isCurrentStreamHdr?.());
+      if (!isHdr) {
+        badge.classList.add("hidden");
+        badge.textContent = "";
+        return;
+      }
+      const candidate = this.getCurrentStreamCandidate?.() || this.getStreamCandidateByUrl?.(this.activePlaybackUrl);
+      const stream = candidate?.raw || candidate || this.params?.streamCandidate || this.params?.stream;
+      const filename = this.params?.filename || this.initialFilenameStreamCandidate?.filename;
+      const format = detectHdrFormatTitle(stream, PlayerController.video?.hdrInfo, filename);
+      const style = this.subtitleStyleSettings || {};
+      const preset = normalizeHdrBrightnessPreset(style.hdrBrightnessPreset);
+      const presetEntry = HDR_BRIGHTNESS_PRESETS[preset] || HDR_BRIGHTNESS_PRESETS.REFERENCE;
+      const presetLabel = t(presetEntry.labelKey, {}, presetEntry.fallback);
+      const hint = t("player_hdr_badge_hint", {}, "Press Yellow or click to change");
+
+      badge.textContent = format;
+      badge.setAttribute("title", `${format} • ${presetLabel} (${hint})`);
+      badge.setAttribute("aria-label", `${format} • ${presetLabel}`);
+      badge.className = `player-hdr-badge player-hdr-badge-${format.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+      badge.classList.remove("hidden");
+    },
+    toggleHdrBrightnessPresetQuickly() {
+      if (!this.subtitleStyleSettings) {
+        this.subtitleStyleSettings = {};
+      }
+      const current = normalizeHdrBrightnessPreset(this.subtitleStyleSettings.hdrBrightnessPreset);
+      const next = getNextHdrPreset(current);
+      this.subtitleStyleSettings.hdrBrightnessPreset = next;
+      this.bitmapSubtitleLastFrameKey = "";
+
+      saveHdrBrightnessPreset(next, PlayerSettingsStore);
+      this.schedulePersistPlayerPresentationSettings?.();
+      this.applySubtitlePresentationSettings({ refreshTrackRendering: true });
+      this.syncPlayerHdrBadge();
+
+      const presetEntry = HDR_BRIGHTNESS_PRESETS[next] || HDR_BRIGHTNESS_PRESETS.REFERENCE;
+      const presetLabel = t(presetEntry.labelKey, {}, presetEntry.fallback);
+      this.showAspectToast(`HDR: ${presetLabel}`);
     }
   };
 }

@@ -1395,6 +1395,7 @@
     <string name="stream_info_filename">Nome do ficheiro</string>
     <string name="stream_info_size">Tamanho</string>
     <string name="stream_info_codec">Codec</string>
+    <string name="stream_info_hdr">Formato HDR</string>
     <string name="stream_info_resolution">Resolução</string>
     <string name="stream_info_frame_rate">Taxa de fotogramas</string>
     <string name="stream_info_bitrate">Taxa de bits</string>
@@ -1476,6 +1477,14 @@
     <string name="subtitle_style_bold">Negrito</string>
     <string name="subtitle_style_text_color">Cor do Texto</string>
     <string name="subtitle_style_text_opacity">Opacidade do Texto</string>
+    <string name="subtitle_style_hdr_brightness">Brilho HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Calibração de brilho para legendas e HUD em ecrãs HDR/Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Quarto escuro (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referência (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Quarto iluminado (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Desativado (Máx. painel)</string>
+    <string name="subtitle_style_hdr_sdr_content">Conteúdo SDR</string>
+    <string name="player_hdr_badge_hint">Pressione Amarelo ou clique para alterar</string>
     <string name="subtitle_style_outline">Contorno</string>
     <string name="subtitle_style_bottom_offset">Deslocamento inferior</string>
     <string name="subtitle_style_defaults">Predefinições</string>

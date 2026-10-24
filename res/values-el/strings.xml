@@ -2870,4 +2870,14 @@
     <string name="party_invite_scan">Σαρώστε με ένα τηλέφωνο για να συμμετάσχετε</string>
     <string name="party_invite_share">Ή μοιραστείτε τον κωδικό. Οι φίλοι μπορούν να τον εισαγάγουν στο Watch party σε οποιαδήποτε εφαρμογή Nuvio.</string>
     <string name="party_invite_qr">Κωδικός QR πρόσκλησης σε watch party</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">Φωτεινότητα HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Βαθμονόμηση φωτεινότητας για υπότιτλους και HUD σε οθόνες HDR / Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Σκοτεινό δωμάτιο (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Αναφοράς (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Φωτεινό δωμάτιο (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Ανενεργό (Μέγιστο πάνελ)</string>
+    <string name="subtitle_style_hdr_sdr_content">Περιεχόμενο SDR</string>
+    <string name="player_hdr_badge_hint">Πατήστε το Κίτρινο ή κάντε κλικ για αλλαγή</string>
 </resources>

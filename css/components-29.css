@@ -245,6 +245,9 @@
   z-index: 12;
   overflow: hidden;
   pointer-events: none;
+  filter: brightness(var(--player-subtitles-dim-brightness, 1));
+  transition: filter 200ms ease;
+  will-change: filter;
 }
 
 .player-ass-subtitles.hidden {

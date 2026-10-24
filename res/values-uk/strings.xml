@@ -103,6 +103,15 @@
     <string name="stream_info_filename">Ім'я файлу</string>
     <string name="stream_info_size">Розмір</string>
     <string name="stream_info_codec">Кодек</string>
+    <string name="stream_info_hdr">Формат HDR</string>
+    <string name="subtitle_style_hdr_brightness">Яскравість HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Калібрування яскравості субтитрів та інтерфейсу на екранах HDR/Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Темна кімната (~100–120 ніт)</string>
+    <string name="subtitle_style_hdr_preset_reference">Еталонна (~180–200 ніт)</string>
+    <string name="subtitle_style_hdr_preset_bright">Світла кімната (~250–280 ніт)</string>
+    <string name="subtitle_style_hdr_preset_off">Вимкнено (Макс. панелі)</string>
+    <string name="subtitle_style_hdr_sdr_content">Контент SDR</string>
+    <string name="player_hdr_badge_hint">Натисніть Жовту або клікніть для зміни</string>
     <string name="stream_info_resolution">Роздільна здатність</string>
     <string name="stream_info_frame_rate">Частота кадрів</string>
     <string name="stream_info_bitrate">Бітрейт</string>

@@ -3229,4 +3229,14 @@
     <string name="party_invite_scan">Olvasd be telefonnal a csatlakozáshoz</string>
     <string name="party_invite_share">Vagy oszd meg a kódot. A barátaid bármelyik Nuvio-alkalmazás Watch party menüjében megadhatják.</string>
     <string name="party_invite_qr">Watch party meghívó QR-kódja</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">HDR fényerő</string>
+    <string name="subtitle_style_hdr_brightness_sub">Feliratok és kezelőfelület (HUD) fényerő-kalibrációja HDR / Dolby Vision képernyőkön.</string>
+    <string name="subtitle_style_hdr_preset_dark">Sötét szoba (~100–120 nit)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referencia (~180–200 nit)</string>
+    <string name="subtitle_style_hdr_preset_bright">Világos szoba (~250–280 nit)</string>
+    <string name="subtitle_style_hdr_preset_off">Kikapcsolva (Max. panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR tartalom</string>
+    <string name="player_hdr_badge_hint">Nyomd meg a sárga gombot vagy kattints a módosításhoz</string>
 </resources>

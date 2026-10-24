@@ -1,6 +1,7 @@
 import { PlayerController } from "../../../core/player/playerController.js";
 import { I18n } from "../../../i18n/index.js";
 import { resolveStreamFilename } from "./streamFilename.js";
+import { detectHdrFormatTitle, isHdrActive } from "../../../core/player/hdrColorCalibration.js";
 const t = (key) => I18n.t(key);
 const text = (value) =>
   String(value ?? "")
@@ -30,6 +31,8 @@ export function buildStreamInfo(screen, controller = PlayerController) {
   const dimensions = controller.isUsingAvPlay?.() ? controller.getAvPlayVideoDimensions?.() : null;
   const video = controller.video;
   const size = positive(hint.videoSize || stream.videoSize || raw.videoSize);
+  const isHdr = isHdrActive(stream, video?.hdrInfo, screen.params?.filename);
+  const hdrFormat = isHdr ? detectHdrFormatTitle(stream, video?.hdrInfo, screen.params?.filename) : null;
   return {
     addonName: stream.addonName || raw.addonName,
     streamName: stream.name || stream.title,
@@ -44,6 +47,7 @@ export function buildStreamInfo(screen, controller = PlayerController) {
     videoHeight: positive(dimensions?.height || video?.videoHeight),
     videoCodec: stream.videoCodec || raw.videoCodec,
     videoFrameRate: positive(stream.frameRate || raw.frameRate),
+    hdrFormat,
     fileBitrate: size && video?.duration > 0 ? (size * 8) / video.duration : null,
     audioName: audio?.label,
     audioCodec:
@@ -95,6 +99,7 @@ export function renderStreamInfo(data) {
     section(
       "stream_info_section_video",
       row("stream_info_codec", data.videoCodec) +
+        row("stream_info_hdr", data.hdrFormat) +
         row(
           "stream_info_resolution",
           data.videoWidth && data.videoHeight ? `${data.videoWidth} × ${data.videoHeight}` : null

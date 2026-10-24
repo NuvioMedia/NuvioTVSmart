@@ -6,6 +6,18 @@
   color: var(--player-hud-white, rgba(245, 249, 255, 0.9));
   text-shadow: none;
   transition: opacity 160ms ease;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.player-clock-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
 }
 
 .player-clock {
