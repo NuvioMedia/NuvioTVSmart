@@ -194,6 +194,7 @@ import { buildPosterSubtitle } from "./homeScreenHelpers-12-build-hero-indicator
 import { buildLazyImageAttributes } from "./homeScreenHelpers-14-get-home-grid-column-count.js";
 import { normalizeCatalogItem } from "./homeScreenHelpers-08-partition-continue-watching-rows.js";
 import { normalizeTmdbBackdropUrl, normalizeTmdbPosterUrl } from "../../../core/tmdb/tmdbImageUrl.js";
+import { shouldUseAnimatedImageCanvas } from "../../../core/media/animatedImageCanvas.js";
 
 export function createPosterCardMarkup(
   item,
@@ -233,18 +234,29 @@ export function createPosterCardMarkup(
       tileShape === "POSTER" ? "" : tileShape === "SQUARE" ? " is-collection-square" : " is-landscape is-collection-landscape";
     const focusGifOverlay =
       collectionItem.focusGifEnabled && collectionItem.focusGifUrl
-        ? `<img class="home-poster-focus-gif" data-src="${escapeAttribute(collectionItem.focusGifUrl)}" alt="" aria-hidden="true" />`
+        ? shouldUseAnimatedImageCanvas(collectionItem.focusGifUrl)
+          ? `<img class="home-poster-focus-gif" data-animated-src="${escapeAttribute(collectionItem.focusGifUrl)}" data-animated-focus-only="true" alt="" aria-hidden="true" />`
+          : `<img class="home-poster-focus-gif" data-src="${escapeAttribute(collectionItem.focusGifUrl)}" alt="" aria-hidden="true" />`
         : "";
     const collectionDisplayTitle = collectionItem.name || collectionItem.heroTitle || collectionItem.collectionTitle || "Collection";
     const gridCollectionTitle =
       layoutMode === "grid" && !collectionItem.hideTitle
         ? `<div class="home-collection-title-overlay" dir="auto">${escapeHtml(collectionDisplayTitle)}</div>`
         : "";
-    const contentMarkup = visualSrc
-      ? `<img class="content-poster" ${buildLazyImageAttributes(visualSrc, { defer: deferImages })} alt="${escapeAttribute(collectionItem.name || collectionItem.heroTitle || collectionItem.collectionTitle || "collection")}" />`
-      : collectionItem.coverEmoji
-        ? `<div class="home-collection-emoji" aria-hidden="true">${escapeHtml(collectionItem.coverEmoji)}</div>`
-        : '<div class="content-poster placeholder"></div>';
+    const posterAlt = escapeAttribute(collectionItem.name || collectionItem.heroTitle || collectionItem.collectionTitle || "collection");
+    // An always-on GIF is played by the canvas player above its static cover (webOS only).
+    const animatedSrc =
+      (visualSrc === collectionItem.focusGifUrl || /\.gif(?:$|[?#])/i.test(visualSrc)) && shouldUseAnimatedImageCanvas(visualSrc)
+        ? visualSrc
+        : "";
+    const staticCoverSrc = animatedSrc && collectionItem.coverImageUrl !== animatedSrc ? collectionItem.coverImageUrl : "";
+    const contentMarkup = animatedSrc
+      ? `<img class="content-poster" ${staticCoverSrc ? buildLazyImageAttributes(staticCoverSrc, { defer: deferImages }) : ""} data-animated-src="${escapeAttribute(animatedSrc)}" alt="${staticCoverSrc ? posterAlt : ""}" />`
+      : visualSrc
+        ? `<img class="content-poster" ${buildLazyImageAttributes(visualSrc, { defer: deferImages })} alt="${posterAlt}" />`
+        : collectionItem.coverEmoji
+          ? `<div class="home-collection-emoji" aria-hidden="true">${escapeHtml(collectionItem.coverEmoji)}</div>`
+          : '<div class="content-poster placeholder"></div>';
     return `
       <article class="home-content-card home-poster-card home-collection-card focusable${shapeClass}"
                tabindex="0"

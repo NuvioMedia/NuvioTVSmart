@@ -1,4 +1,5 @@
 import { MdbListSettingsStore } from "../../../data/local/mdbListSettingsStore.js";
+import { attachAnimatedImageCanvases, setAnimatedImageCanvasActive } from "../../../core/media/animatedImageCanvas.js";
 import * as internals from "./homeScreenContext.js";
 
 export function createHomeScreenMethods11() {
@@ -268,6 +269,10 @@ export function createHomeScreenMethods11() {
       if (!(gifNode instanceof HTMLImageElement)) {
         return;
       }
+      if (setAnimatedImageCanvasActive(gifNode, active)) {
+        node.classList.toggle("is-focus-gif-active", Boolean(active));
+        return;
+      }
       if (active) {
         const src = String(gifNode.dataset.src || gifNode.getAttribute("src") || "").trim();
         if (src && !gifNode.getAttribute("src")) {
@@ -283,6 +288,7 @@ export function createHomeScreenMethods11() {
       gifNode.removeAttribute("src");
     },
     syncFocusedCollectionCardState() {
+      attachAnimatedImageCanvases(this.container);
       const focused = this.getCurrentFocusedNode();
       const focusedCollection = focused?.classList?.contains("home-collection-card") ? focused : null;
       if (
