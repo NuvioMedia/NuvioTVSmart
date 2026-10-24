@@ -13,6 +13,8 @@ export function createPlayerScreenMethods45() {
     normalizeWebOsHtmlSubtitleText,
     getEmbeddedSubtitleSupportState,
     isBitmapSubtitleSupportError,
+    getHdrBitmapLut,
+    getHdrBrightnessFactor,
     clamp,
     normalizeSubtitleFontSize
   } = internals;
@@ -113,6 +115,9 @@ export function createPlayerScreenMethods45() {
       const viewportWidth = Math.max(1, Number(viewport?.width || window.innerWidth || document.documentElement?.clientWidth || 1920));
       const viewportHeight = Math.max(1, Number(viewport?.height || window.innerHeight || document.documentElement?.clientHeight || 1080));
       const style = this.subtitleStyleSettings || {};
+      const isHdr = Boolean(this.isCurrentStreamHdr?.());
+      const factor = isHdr ? getHdrBrightnessFactor(style.hdrBrightnessPreset) : 1.0;
+      const lut = isHdr && factor < 1.0 ? getHdrBitmapLut(style.hdrBrightnessPreset) : null;
       const sizeScale = normalizeSubtitleFontSize(style.fontSize) / 100;
       const verticalOffsetVh = getSubtitleVerticalOffsetVh(style.verticalOffset);
       const verticalOffsetPx = (verticalOffsetVh / 100) * viewportHeight;
@@ -131,7 +136,8 @@ export function createPlayerScreenMethods45() {
         modeScaleX,
         modeScaleY,
         sizeScale,
-        verticalOffsetPx
+        verticalOffsetPx,
+        Math.round(factor * 100)
       ].join(":");
       const hasRenderableCompositions = compositions.some(
         (composition) =>
@@ -169,7 +175,21 @@ export function createPlayerScreenMethods45() {
         scratch.width = composition.width;
         scratch.height = composition.height;
         const imageData = scratchContext.createImageData(composition.width, composition.height);
-        imageData.data.set(composition.rgba);
+        if (lut) {
+          const src = composition.rgba;
+          const dst = imageData.data;
+          const len = src.length;
+          for (let i = 0; i < len; i += 4) {
+            const a = src[i + 3];
+            if (a === 0) continue;
+            dst[i] = lut[src[i]];
+            dst[i + 1] = lut[src[i + 1]];
+            dst[i + 2] = lut[src[i + 2]];
+            dst[i + 3] = a;
+          }
+        } else {
+          imageData.data.set(composition.rgba);
+        }
         scratchContext.putImageData(imageData, 0, 0);
         const targetWidth = composition.width * contentScaleX * sizeScale * modeScaleX;
         const targetHeight = composition.height * contentScaleY * sizeScale * modeScaleY;

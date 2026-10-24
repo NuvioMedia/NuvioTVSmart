@@ -267,4 +267,14 @@
     <string name="party_invite_scan">Skenirajte telefonom da biste se pridružili</string>
     <string name="party_invite_share">Ili podelite kod. Prijatelji mogu da ga unesu u Watch party u bilo kojoj Nuvio aplikaciji.</string>
     <string name="party_invite_qr">QR kod pozivnice za watch party</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">HDR osvetljenje</string>
+    <string name="subtitle_style_hdr_brightness_sub">Kalibracija osvetljenja titlova i interfejsa (HUD) na HDR / Dolby Vision ekranima.</string>
+    <string name="subtitle_style_hdr_preset_dark">Tamna soba (~100–120 nita)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referentno (~180–200 nita)</string>
+    <string name="subtitle_style_hdr_preset_bright">Svetla soba (~250–280 nita)</string>
+    <string name="subtitle_style_hdr_preset_off">Isključeno (Maks. panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR sadržaj</string>
+    <string name="player_hdr_badge_hint">Pritisnite žuto dugme ili kliknite za promenu</string>
 </resources>

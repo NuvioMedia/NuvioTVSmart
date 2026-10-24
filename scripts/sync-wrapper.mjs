@@ -298,7 +298,8 @@ function buildTizenMainJs({ engineFsServiceId = "", pluginServiceId = "" } = {})
       "MediaFastForward",
       "MediaRewind",
       "MediaTrackPrevious",
-      "MediaTrackNext"
+      "MediaTrackNext",
+      "ColorF2Yellow"
     ].forEach(function registerKey(keyName) {
       try {
         tvInput.registerKey(keyName);

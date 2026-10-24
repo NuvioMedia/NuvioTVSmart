@@ -183,6 +183,7 @@ export function createPlayerScreenMethods73() {
 
         this.clearMediaSessionHandlers();
 
+        this.flushPersistPlayerPresentationSettings?.();
         this.releaseStartupAudioGate({ resume: false });
       } catch (error) {
         try {
@@ -199,8 +200,21 @@ export function createPlayerScreenMethods73() {
         try {
           if (this.container) {
             this.container.style.display = "none";
+            this.container.classList.remove("hdr-active");
+            this.container.style.removeProperty?.("--player-hud-dim-brightness");
+            this.container.style.removeProperty?.("--player-subtitles-dim-brightness");
+            this.container.style.removeProperty?.("--player-hud-dim-opacity");
+            this.container.style.removeProperty?.("--player-modal-dim-opacity");
+            this.container.style.removeProperty?.("--player-hud-white");
+            this.container.style.removeProperty?.("--player-atv-text-primary");
+            this.container.style.removeProperty?.("--player-atv-text-secondary");
+            this.container.style.removeProperty?.("--player-atv-text-tertiary");
+            this.container.style.removeProperty?.("--player-hud-track-bg");
             this.container.querySelector("#playerUiRoot")?.remove();
             this.container.querySelector("#episodeSidePanel")?.remove();
+          }
+          if (PlayerController?.video) {
+            PlayerController.video.hdrInfo = null;
           }
         } catch (_) {}
         this.uiRefs = null;

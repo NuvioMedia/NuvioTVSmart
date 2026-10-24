@@ -51,6 +51,12 @@ export function createPlayerScreenMethods70() {
         return true;
       }
 
+      if (target.closest?.("[data-player-pointer-action='hdr-badge']") || target.closest?.("#playerHdrBadge")) {
+        this.toggleHdrBrightnessPresetQuickly?.();
+        this.resetControlsAutoHide();
+        return true;
+      }
+
       if (target.closest?.(".player-progress-shell")) {
         return this.seekProgressFromPointer(event, target);
       }

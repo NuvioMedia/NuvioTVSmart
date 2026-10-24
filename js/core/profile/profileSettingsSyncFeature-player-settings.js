@@ -45,6 +45,7 @@ import {
 import { isSyncBackoffActive } from "../sync/syncBackoffPolicy.js";
 
 import { normalizeSubtitleVerticalOffset } from "../player/subtitleVerticalOffset.js";
+import { normalizeHdrBrightnessPreset } from "../player/hdrColorCalibration.js";
 
 import { androidColorIntToSubtitleTextOpacity, normalizeSubtitleTextOpacity } from "../player/subtitleTextOpacity.js";
 
@@ -108,6 +109,7 @@ export const player_settings = {
       subtitle_background_color: cssColorToAndroidColorInt(settings.subtitleStyle?.backgroundColor),
       subtitle_outline_enabled: settings.subtitleStyle?.outlineEnabled !== false,
       subtitle_outline_color: hexToAndroidColorInt(settings.subtitleStyle?.outlineColor, "#000000"),
+      subtitle_hdr_brightness_preset: String(settings.subtitleStyle?.hdrBrightnessPreset || "REFERENCE"),
       loading_overlay_enabled: settings.loadingOverlayEnabled !== false,
       show_player_loading_status: settings.showPlayerLoadingStatus !== false,
       pause_overlay_enabled: settings.pauseOverlayEnabled !== false,
@@ -293,6 +295,9 @@ export const player_settings = {
     }
     if (numberOrNull(raw.subtitle_outline_color) != null) {
       subtitleStyle.outlineColor = androidColorIntToHex(raw.subtitle_outline_color, "#000000");
+    }
+    if (raw.subtitle_hdr_brightness_preset != null) {
+      subtitleStyle.hdrBrightnessPreset = normalizeHdrBrightnessPreset(raw.subtitle_hdr_brightness_preset);
     }
     if (booleanOrNull(raw.skip_intro_enabled) != null) {
       partial.skipIntroEnabled = Boolean(raw.skip_intro_enabled);

@@ -1,4 +1,6 @@
 import { Router } from "../../navigation/routerState.js";
+import { HDR_BRIGHTNESS_PRESETS, HDR_PRESET_ORDER, saveHdrBrightnessPreset } from "../../../core/player/hdrColorCalibration.js";
+export { saveHdrBrightnessPreset };
 
 import { ScreenUtils } from "../../navigation/screen.js";
 
@@ -353,6 +355,11 @@ export const SUBTITLE_TEXT_OPACITY_OPTIONS = Array.from(
     return { id: value, label: `${value}%` };
   }
 );
+
+export const SUBTITLE_HDR_BRIGHTNESS_OPTIONS = HDR_PRESET_ORDER.map((id) => {
+  const entry = HDR_BRIGHTNESS_PRESETS[id];
+  return { id, labelKey: entry.labelKey, label: entry.fallback };
+});
 
 export const SUBTITLE_OUTLINE_COLOR_OPTIONS = [
   { id: "#000000", label: "Black" },

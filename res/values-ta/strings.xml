@@ -2548,4 +2548,14 @@
     <string name="party_invite_scan">சேர தொலைபேசியில் ஸ்கேன் செய்யவும்</string>
     <string name="party_invite_share">அல்லது குறியீட்டைப் பகிரவும். நண்பர்கள் எந்த Nuvio பயன்பாட்டிலும் வாட்ச் பார்ட்டியில் அதை உள்ளிடலாம்.</string>
     <string name="party_invite_qr">வாட்ச் பார்ட்டி அழைப்பு QR குறியீடு</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">HDR பிரகாசம்</string>
+    <string name="subtitle_style_hdr_brightness_sub">HDR / Dolby Vision திரைகளில் வசனங்கள் மற்றும் HUD-க்கான பிரகாச அளவுத்திருத்தம்.</string>
+    <string name="subtitle_style_hdr_preset_dark">இருண்ட அறை (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">குறிப்பு (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">பிரகாசமான அறை (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">முடக்கு (அதிகபட்ச பேனல்)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR உள்ளடக்கம்</string>
+    <string name="player_hdr_badge_hint">மாற்ற மஞ்சள் பொத்தானை அழுத்தவும் அல்லது கிளிக் செய்யவும்</string>
 </resources>

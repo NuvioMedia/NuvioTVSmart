@@ -198,6 +198,7 @@ export function createPlayerScreenMethods01() {
       if (initialStreamUrl && !this.isExternalFrameMode()) {
         const sourceCandidate = this.getStreamCandidateByUrl(initialStreamUrl) || this.getCurrentStreamCandidate();
         this.activePlaybackUrl = initialStreamUrl;
+        this.applySubtitlePresentationSettings?.();
         this.currentEngineFsStream = this.getEngineFsStateForStream(sourceCandidate);
         const prioritizeWebOsRemoteMkvPlayback =
           Environment.isWebOS() && !this.currentEngineFsStream && this.isCurrentSourceLikelyMkv(initialStreamUrl, sourceCandidate);

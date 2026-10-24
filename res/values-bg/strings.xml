@@ -218,4 +218,14 @@
     <string name="party_invite_scan">Сканирайте с телефон, за да се присъедините</string>
     <string name="party_invite_share">Или споделете кода. Приятелите могат да го въведат в „Съвместно гледане“ във всяко приложение на Nuvio.</string>
     <string name="party_invite_qr">QR код за покана за съвместно гледане</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">HDR Яркост</string>
+    <string name="subtitle_style_hdr_brightness_sub">Калибриране на яркостта на субтитрите и интерфейса (HUD) за екрани с HDR / Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Тъмна стая (~100–120 нита)</string>
+    <string name="subtitle_style_hdr_preset_reference">Еталонен (~180–200 нита)</string>
+    <string name="subtitle_style_hdr_preset_bright">Светла стая (~250–280 нита)</string>
+    <string name="subtitle_style_hdr_preset_off">Изключено (Макс. на панела)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR съдържание</string>
+    <string name="player_hdr_badge_hint">Натиснете жълтия бутон или щракнете за промяна</string>
 </resources>

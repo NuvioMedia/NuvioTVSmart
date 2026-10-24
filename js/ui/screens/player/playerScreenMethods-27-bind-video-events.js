@@ -7,7 +7,14 @@ import { createPlayerVideoEventHandlers } from "./playerVideoEventHandlers.js";
 export function createPlayerScreenMethods27() {
   return {
     bindVideoEvents() {
-      const { PlayerController, Environment } = internals;
+      const {
+        PlayerController,
+        Environment,
+        HDR_PRESET_STORAGE_KEY,
+        normalizeHdrBrightnessPreset,
+        getSavedHdrBrightnessPreset,
+        PlayerSettingsStore
+      } = internals;
       const video = PlayerController.video;
       if (!video) {
         return;
@@ -94,6 +101,45 @@ export function createPlayerScreenMethods27() {
           target: window,
           eventName: "resize",
           handler: onViewportResize
+        });
+
+        const onHdrPresetChanged = (event) => {
+          const next = event && event.detail ? normalizeHdrBrightnessPreset(event.detail) : getSavedHdrBrightnessPreset(PlayerSettingsStore);
+          if (!this.subtitleStyleSettings) {
+            this.subtitleStyleSettings = {};
+          }
+          if (this.subtitleStyleSettings.hdrBrightnessPreset !== next) {
+            this.subtitleStyleSettings.hdrBrightnessPreset = next;
+            this.bitmapSubtitleLastFrameKey = "";
+            this.applySubtitlePresentationSettings?.({ refreshTrackRendering: true });
+            this.syncPlayerHdrBadge?.();
+          }
+        };
+        const onStorage = (event) => {
+          if (event?.key === HDR_PRESET_STORAGE_KEY) {
+            const next = getSavedHdrBrightnessPreset(PlayerSettingsStore);
+            if (!this.subtitleStyleSettings) {
+              this.subtitleStyleSettings = {};
+            }
+            if (this.subtitleStyleSettings.hdrBrightnessPreset !== next) {
+              this.subtitleStyleSettings.hdrBrightnessPreset = next;
+              this.bitmapSubtitleLastFrameKey = "";
+              this.applySubtitlePresentationSettings?.({ refreshTrackRendering: true });
+              this.syncPlayerHdrBadge?.();
+            }
+          }
+        };
+        window.addEventListener("hdr-preset-changed", onHdrPresetChanged);
+        window.addEventListener("storage", onStorage);
+        this.videoListeners.push({
+          target: window,
+          eventName: "hdr-preset-changed",
+          handler: onHdrPresetChanged
+        });
+        this.videoListeners.push({
+          target: window,
+          eventName: "storage",
+          handler: onStorage
         });
       }
 

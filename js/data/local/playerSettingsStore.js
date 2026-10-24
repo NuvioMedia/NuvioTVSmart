@@ -9,6 +9,7 @@ import {
   SUBTITLE_TEXT_OPACITY_DEFAULT,
   normalizeSubtitleTextOpacity
 } from "../../core/player/subtitleTextOpacity.js";
+import { normalizeHdrBrightnessPreset } from "../../core/player/hdrColorCalibration.js";
 
 const KEY = "playerSettings";
 
@@ -46,6 +47,7 @@ const DEFAULTS = {
     fontSize: 100,
     textColor: "#FFFFFF",
     textOpacity: SUBTITLE_TEXT_OPACITY_DEFAULT,
+    hdrBrightnessPreset: "REFERENCE",
     bold: false,
     outlineEnabled: true,
     outlineColor: "#000000",
@@ -246,6 +248,7 @@ export function normalizePlayerSettings(settings = {}) {
   );
   subtitleStyle.verticalOffsetContract = SUBTITLE_VERTICAL_OFFSET_CONTRACT;
   subtitleStyle.textOpacity = normalizeSubtitleTextOpacity(subtitleStyle.textOpacity);
+  subtitleStyle.hdrBrightnessPreset = normalizeHdrBrightnessPreset(subtitleStyle.hdrBrightnessPreset);
   let preferredLanguage = normalizeSelectableSubtitleLanguageCode(
     subtitleStyle.preferredLanguage ?? persistentSettings.subtitleLanguage,
     DEFAULTS.subtitleStyle.preferredLanguage

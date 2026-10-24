@@ -106,6 +106,15 @@
     <string name="stream_info_bitrate_file">位元率 (檔案)</string>
     <string name="stream_info_channels">聲道</string>
     <string name="stream_info_codec">編解碼器</string>
+    <string name="stream_info_hdr">HDR格式</string>
+    <string name="subtitle_style_hdr_brightness">HDR亮度</string>
+    <string name="subtitle_style_hdr_brightness_sub">HDR/Dolby Vision螢幕字幕與介面亮度校準。</string>
+    <string name="subtitle_style_hdr_preset_dark">暗室 (~100–120尼特)</string>
+    <string name="subtitle_style_hdr_preset_reference">標準參考 (~180–200尼特)</string>
+    <string name="subtitle_style_hdr_preset_bright">明亮環境 (~250–280尼特)</string>
+    <string name="subtitle_style_hdr_preset_off">關閉 (面板最大亮度)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR內容</string>
+    <string name="player_hdr_badge_hint">按遙控器黃色鍵或點擊以切換</string>
     <string name="stream_info_filename">檔案名稱</string>
     <string name="stream_info_frame_rate">幀率</string>
     <string name="stream_info_hud">HUD</string>

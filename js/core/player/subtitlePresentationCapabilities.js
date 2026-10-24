@@ -4,6 +4,7 @@ const SUBTITLE_STYLE_CONTROL_IDS = [
   "bold",
   "textColor",
   "textOpacity",
+  "hdrBrightnessPreset",
   "outlineEnabled",
   "outlineColor",
   "verticalOffset",
@@ -52,6 +53,8 @@ export function resolveSubtitleStyleControlAvailability({
     SUBTITLE_STYLE_CONTROL_IDS.forEach((controlId) => {
       availability[controlId] = false;
     });
+    availability.hdrBrightnessPreset = true;
+    availability.reset = true;
     return availability;
   }
   if (rendererMode === "external-native") {
@@ -59,7 +62,8 @@ export function resolveSubtitleStyleControlAvailability({
       availability[controlId] = false;
     });
     availability.delay = Boolean(supportsExternalDelay);
-    availability.reset = preserveAssStyles ? false : availability.delay;
+    availability.hdrBrightnessPreset = true;
+    availability.reset = preserveAssStyles ? false : (availability.delay || availability.hdrBrightnessPreset);
   }
   return availability;
 }

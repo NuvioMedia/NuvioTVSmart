@@ -2399,4 +2399,14 @@
     <string name="party_invite_scan">امسح الرمز بهاتف للانضمام</string>
     <string name="party_invite_share">أو شارك الرمز. يمكن لأصدقائك إدخاله في المشاهدة الجماعية في أي تطبيق Nuvio.</string>
     <string name="party_invite_qr">رمز QR لدعوة المشاهدة الجماعية</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">سطوع HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">معايرة السطوع للترجمات وشاشات العرض (HUD) على شاشات HDR / Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">غرفة مظلمة (~100–120 شمعة)</string>
+    <string name="subtitle_style_hdr_preset_reference">مرجعي (~180–200 شمعة)</string>
+    <string name="subtitle_style_hdr_preset_bright">غرفة مضيئة (~250–280 شمعة)</string>
+    <string name="subtitle_style_hdr_preset_off">متوقف (أقصى سطوع للشاشة)</string>
+    <string name="subtitle_style_hdr_sdr_content">محتوى SDR</string>
+    <string name="player_hdr_badge_hint">اضغط على الزر الأصفر أو انقر للتغيير</string>
 </resources>

@@ -163,6 +163,8 @@
   --player-text-primary: var(--text-color);
   --player-text-secondary: var(--text-secondary);
   --player-text-tertiary: var(--text-tertiary);
+  --player-hud-white: #ffffff;
+  --player-hud-track-bg: rgba(255, 255, 255, 0.3);
   --player-subtitle-color: #ffffff;
   --player-subtitle-text-color: #ffffff;
   --player-subtitle-text-opacity: 1;
@@ -243,6 +245,9 @@
   z-index: 12;
   overflow: hidden;
   pointer-events: none;
+  filter: brightness(var(--player-subtitles-dim-brightness, 1));
+  transition: filter 200ms ease;
+  will-change: filter;
 }
 
 .player-ass-subtitles.hidden {

@@ -32,6 +32,18 @@ export function createPlayerScreenMethods71() {
         this.showStreamInfo();
         return;
       }
+      const keyName = String(event?.key || event?.keyName || "");
+      const isYellowButton =
+        keyCode === 405 ||
+        keyName === "ColorF2Yellow" ||
+        keyName === "Yellow" ||
+        (event?.shiftKey && (keyName === "B" || keyName === "b" || keyCode === 66));
+      if (isYellowButton && !event?.repeat) {
+        event?.preventDefault?.();
+        event?.stopImmediatePropagation?.();
+        this.toggleHdrBrightnessPresetQuickly?.();
+        return;
+      }
       if (isBackKey) {
         event?.preventDefault?.();
         event?.stopPropagation?.();

@@ -3085,4 +3085,14 @@
     <string name="party_invite_scan">Skano me telefon për t\'u bashkuar</string>
     <string name="party_invite_share">Ose ndaj kodin. Miqtë mund ta fusin te Watch party në çdo aplikacion Nuvio.</string>
     <string name="party_invite_qr">Kodi QR i ftesës për watch party</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">Ndriçimi HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Kalibrimi i ndriçimit për titrat dhe ndërfaqen (HUD) në ekranet HDR / Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Dhomë e errët (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referencë (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Dhomë e ndriçuar (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Joaktive (Maks. i panelit)</string>
+    <string name="subtitle_style_hdr_sdr_content">Përmbajtje SDR</string>
+    <string name="player_hdr_badge_hint">Shtypni të verdhën ose klikoni për të ndryshuar</string>
 </resources>

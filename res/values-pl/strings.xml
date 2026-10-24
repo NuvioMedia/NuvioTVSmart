@@ -673,6 +673,7 @@
     <string name="stream_info_filename">Nazwa pliku</string>
     <string name="stream_info_size">Rozmiar</string>
     <string name="stream_info_codec">Kodek</string>
+    <string name="stream_info_hdr">HDR</string>
     <string name="stream_info_resolution">Rozdzielczość</string>
     <string name="stream_info_frame_rate">Klatki/s</string>
     <string name="stream_info_bitrate">Bitrate</string>
@@ -732,6 +733,14 @@
     <string name="subtitle_style_bold">Pogrubienie</string>
     <string name="subtitle_style_text_color">Kolor tekstu</string>
     <string name="subtitle_style_text_opacity">Krycie tekstu</string>
+    <string name="subtitle_style_hdr_brightness">Jasność HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Kalibracja jasności napisów i interfejsu (HUD) dla ekranów HDR i Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Ciemny pokój (~100–120 nitów)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referencyjny (~180–200 nitów)</string>
+    <string name="subtitle_style_hdr_preset_bright">Jasny pokój (~250–280 nitów)</string>
+    <string name="subtitle_style_hdr_preset_off">Wyłączona (Maks. panelu)</string>
+    <string name="subtitle_style_hdr_sdr_content">Treść SDR</string>
+    <string name="player_hdr_badge_hint">Naciśnij żółty lub kliknij, aby zmienić</string>
     <string name="subtitle_style_outline">Obramowanie</string>
     <string name="subtitle_style_bottom_offset">Przesunięcie od dołu</string>
     <string name="subtitle_style_defaults">Domyślne</string>

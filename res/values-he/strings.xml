@@ -1966,4 +1966,14 @@
     <string name="party_invite_scan">סרקו בטלפון כדי להצטרף</string>
     <string name="party_invite_share">או שתפו את הקוד. חברים יכולים להזין אותו בצפייה משותפת בכל אפליקציית Nuvio.</string>
     <string name="party_invite_qr">קוד QR להזמנה לצפייה משותפת</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">בהירות HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">כיול בהירות עבור כתוביות וממשק (HUD) במסכי HDR / Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">חדר חשוך (~100–120 ניטים)</string>
+    <string name="subtitle_style_hdr_preset_reference">ייחוס (~180–200 ניטים)</string>
+    <string name="subtitle_style_hdr_preset_bright">חדר מואר (~250–280 ניטים)</string>
+    <string name="subtitle_style_hdr_preset_off">כבוי (מקסימום פאנל)</string>
+    <string name="subtitle_style_hdr_sdr_content">תוכן SDR</string>
+    <string name="player_hdr_badge_hint">לחץ על הצהוב או לחץ כדי לשנות</string>
 </resources>

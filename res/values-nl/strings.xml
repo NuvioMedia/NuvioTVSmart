@@ -589,6 +589,14 @@
     <string name="subtitle_style_font_size">Lettergrootte</string>
     <string name="subtitle_style_bold">Vet</string>
     <string name="subtitle_style_text_color">Tekstkleur</string>
+    <string name="subtitle_style_hdr_brightness">HDR-helderheid</string>
+    <string name="subtitle_style_hdr_brightness_sub">Helderheidskalibratie voor ondertitels en HUD op HDR-/Dolby Vision-schermen.</string>
+    <string name="subtitle_style_hdr_preset_dark">Donkere kamer (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referentie (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Lichte kamer (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Uit (Max. paneel)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR-inhoud</string>
+    <string name="player_hdr_badge_hint">Druk op Geel of klik om te wijzigen</string>
     <string name="subtitle_style_outline">Rand</string>
     <string name="subtitle_style_bottom_offset">Offset onderaan</string>
     <string name="subtitle_style_defaults">Standaardwaarden</string>
@@ -1333,6 +1341,7 @@
     <string name="stream_info_filename">Bestandsnaam</string>
     <string name="stream_info_size">Grootte</string>
     <string name="stream_info_codec">Codec</string>
+    <string name="stream_info_hdr">HDR-indeling</string>
     <string name="stream_info_resolution">Resolutie</string>
     <string name="stream_info_frame_rate">Framerate</string>
     <string name="stream_info_bitrate">Bitrate</string>

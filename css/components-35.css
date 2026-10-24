@@ -272,7 +272,7 @@
   font-size: min(1.354vw, 26px); /* ATV 13sp -> 26px */
   line-height: 1.2;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--player-hud-white, rgba(255, 255, 255, 0.96));
 }
 
 .player-ends-at {
@@ -280,7 +280,7 @@
   font-size: min(1.042vw, 20px); /* ATV 10sp -> 20px */
   line-height: 1.2;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--player-atv-text-secondary, rgba(255, 255, 255, 0.78));
 }
 
 .player-loading-overlay {
@@ -369,7 +369,7 @@
 .player-episode-panel-hint {
   font-size: var(--player-overlay-body-font);
   line-height: 1.35;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--player-hud-white, rgba(255, 255, 255, 0.9));
 }
 
 .player-meta-tertiary,

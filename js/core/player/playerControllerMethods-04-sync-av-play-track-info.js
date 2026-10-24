@@ -55,8 +55,51 @@ export function createPlayerControllerMethods04() {
 
       const currentAudio = currentTracks.find((track) => this.normalizeAvPlayTrackType(track?.type) === "AUDIO");
       const currentText = currentTracks.find((track) => this.normalizeAvPlayTrackType(track?.type) === "TEXT");
+      const currentVideo =
+        currentTracks.find((track) => this.normalizeAvPlayTrackType(track?.type) === "VIDEO") ||
+        totalTracks.find((track) => this.normalizeAvPlayTrackType(track?.type) === "VIDEO");
       const selectedAudioIndex = Number(currentAudio?.index);
       const selectedTextIndex = Number(currentText?.index);
+
+      if (currentVideo && this.video) {
+        const videoExtra = this.parseAvPlayExtraInfo(currentVideo.extra_info || currentVideo.extraInfo || null) || {};
+        const colorSpace = String(videoExtra.ColorSpace || videoExtra.color_space || videoExtra.colorSpace || videoExtra.color_primaries || "").toLowerCase();
+        const eotf = String(videoExtra.EOTF || videoExtra.eotf || videoExtra.transfer_characteristics || "").toLowerCase();
+        const matrix = String(videoExtra.MatrixCoefficients || videoExtra.matrix || "").toLowerCase();
+        const fourcc = String(videoExtra.four_cc || videoExtra.fourCC || videoExtra.codec || "").toLowerCase();
+        const hdrType = String(videoExtra.hdr_type || videoExtra.hdrType || videoExtra.transfer || "").toLowerCase();
+
+        const isHdr =
+          eotf.includes("smpte") ||
+          eotf.includes("2084") ||
+          eotf.includes("arib") ||
+          eotf.includes("b67") ||
+          eotf.includes("hlg") ||
+          colorSpace.includes("2020") ||
+          colorSpace.includes("dovi") ||
+          colorSpace.includes("ictcp") ||
+          matrix.includes("2020") ||
+          fourcc.includes("dvhe") ||
+          fourcc.includes("dvh1") ||
+          fourcc.includes("dva1") ||
+          hdrType.includes("hdr") ||
+          hdrType.includes("dovi") ||
+          hdrType.includes("hlg");
+
+        if (isHdr) {
+          const gamma = (eotf.includes("hlg") || eotf.includes("b67")) ? "hlg" : "pq";
+          const dovi = colorSpace.includes("dovi") || colorSpace.includes("ictcp") || fourcc.includes("dv") || hdrType.includes("dovi");
+          this.video.hdrInfo = {
+            gamma,
+            eotf: gamma,
+            colorSpace: dovi ? "dovi" : (colorSpace.includes("2020") ? "bt2020" : colorSpace),
+            dovi,
+            isHdr: true,
+            hdrType: dovi ? "Dolby Vision" : (hdrType.includes("plus") ? "HDR10+" : (gamma === "hlg" ? "HLG" : "HDR10")),
+            extra: videoExtra
+          };
+        }
+      }
 
       this.avplayAudioTracks = totalTracks
         .filter((track) => this.normalizeAvPlayTrackType(track?.type) === "AUDIO")

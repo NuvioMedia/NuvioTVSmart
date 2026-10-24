@@ -50,6 +50,9 @@ export function createPlayerScreenMethods34() {
       if (!streamUrl) {
         return;
       }
+      if (PlayerController?.video) {
+        PlayerController.video.hdrInfo = null;
+      }
 
       const normalizedStreamUrl = String(streamUrl || "").trim();
       const previousSourceCandidate = this.getCurrentStreamCandidate();
@@ -225,6 +228,8 @@ export function createPlayerScreenMethods34() {
       this.trackDiscoveryStartedAt = 0;
       this.trackDiscoveryDeadline = 0;
       this.activePlaybackUrl = streamUrl;
+      this.applySubtitlePresentationSettings?.();
+      this.syncPlayerHdrBadge?.();
       this.currentEngineFsStream = nextEngineFsState || null;
       if (this.currentEngineFsStream) {
         this.engineFsPlaybackToken = claimEngineFsPlayback(this.currentEngineFsStream);

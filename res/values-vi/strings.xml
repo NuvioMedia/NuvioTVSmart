@@ -1667,4 +1667,14 @@
     <string name="party_invite_scan">Quét bằng điện thoại để tham gia</string>
     <string name="party_invite_share">Hoặc chia sẻ mã. Bạn bè có thể nhập mã trong Xem cùng nhau trên bất kỳ ứng dụng Nuvio nào.</string>
     <string name="party_invite_qr">Mã QR mời xem cùng nhau</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">Độ sáng HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Hiệu chỉnh độ sáng cho phụ đề và giao diện (HUD) trên màn hình HDR / Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Phòng tối (~100–120 nit)</string>
+    <string name="subtitle_style_hdr_preset_reference">Tham chiếu (~180–200 nit)</string>
+    <string name="subtitle_style_hdr_preset_bright">Phòng sáng (~250–280 nit)</string>
+    <string name="subtitle_style_hdr_preset_off">Tắt (Tối đa bảng điều khiển)</string>
+    <string name="subtitle_style_hdr_sdr_content">Nội dung SDR</string>
+    <string name="player_hdr_badge_hint">Nhấn nút Vàng hoặc nhấp để thay đổi</string>
 </resources>

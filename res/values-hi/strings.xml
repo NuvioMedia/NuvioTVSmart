@@ -1526,4 +1526,14 @@
     <string name="party_invite_scan">शामिल होने के लिए फ़ोन से स्कैन करें</string>
     <string name="party_invite_share">या कोड साझा करें। दोस्त इसे किसी भी Nuvio ऐप में वॉच पार्टी में डाल सकते हैं।</string>
     <string name="party_invite_qr">वॉच पार्टी आमंत्रण QR कोड</string>
+
+    <string name="stream_info_hdr">HDR</string>
+    <string name="subtitle_style_hdr_brightness">HDR चमक</string>
+    <string name="subtitle_style_hdr_brightness_sub">HDR / Dolby Vision स्क्रीन पर उपशीर्षक और HUD के लिए चमक अंशांकन।</string>
+    <string name="subtitle_style_hdr_preset_dark">अंधेरा कमरा (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">संदर्भ (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">उज्ज्वल कमरा (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">बंद (अधिकतम पैनल)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR सामग्री</string>
+    <string name="player_hdr_badge_hint">बदलने के लिए पीला दबाएं या क्लिक करें</string>
 </resources>

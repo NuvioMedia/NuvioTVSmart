@@ -22,7 +22,10 @@ export function createPlayerScreenMethods53() {
     isTizenEmbeddedTextSubtitleFallbackTrack,
     canUseWebOsBitmapSubtitles,
     clamp,
-    normalizeSubtitleFontSize
+    normalizeSubtitleFontSize,
+    HDR_PRESET_ORDER,
+    normalizeHdrBrightnessPreset,
+    saveHdrBrightnessPreset
   } = internals;
 
   return {
@@ -63,6 +66,13 @@ export function createPlayerScreenMethods53() {
         style.textColor = SUBTITLE_TEXT_COLORS[clamp(currentIndex + delta, 0, SUBTITLE_TEXT_COLORS.length - 1)];
       } else if (controlId === "textOpacity") {
         style.textOpacity = normalizeSubtitleTextOpacity(Number(style.textOpacity ?? 100) + delta * SUBTITLE_TEXT_OPACITY_STEP);
+      } else if (controlId === "hdrBrightnessPreset" && delta !== 0) {
+        const presets = HDR_PRESET_ORDER;
+        const currentPreset = normalizeHdrBrightnessPreset(style.hdrBrightnessPreset);
+        const currentIndex = Math.max(0, presets.indexOf(currentPreset));
+        style.hdrBrightnessPreset = presets[clamp(currentIndex + delta, 0, presets.length - 1)];
+        this.bitmapSubtitleLastFrameKey = "";
+        saveHdrBrightnessPreset?.(style.hdrBrightnessPreset, PlayerSettingsStore);
       } else if (controlId === "outlineEnabled" && delta !== 0) {
         style.outlineEnabled = !style.outlineEnabled;
       } else if (controlId === "outlineColor" && delta !== 0) {
@@ -75,17 +85,20 @@ export function createPlayerScreenMethods53() {
       } else if (controlId === "reset") {
         const defaults = PlayerSettingsStore.getDefaults().subtitleStyle;
         this.subtitleDelayMs = 0;
+        this.bitmapSubtitleLastFrameKey = "";
         this.subtitleStyleSettings = {
           ...style,
           fontSize: defaults.fontSize,
           textColor: defaults.textColor,
           textOpacity: defaults.textOpacity,
+          hdrBrightnessPreset: defaults.hdrBrightnessPreset || "REFERENCE",
           bold: defaults.bold,
           outlineEnabled: defaults.outlineEnabled,
           outlineColor: defaults.outlineColor,
           verticalOffset: defaults.verticalOffset,
           verticalOffsetContract: defaults.verticalOffsetContract
         };
+        saveHdrBrightnessPreset?.(defaults.hdrBrightnessPreset || "REFERENCE", PlayerSettingsStore);
       }
       if ((controlId === "delay" || controlId === "resetDelay" || controlId === "reset") && this.isAssAddonSubtitleActive()) {
         // ass.js delay is seconds, positive = later; update in place instead

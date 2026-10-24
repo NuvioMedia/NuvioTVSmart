@@ -1273,6 +1273,7 @@
     <string name="stream_info_filename">Dosya Adı</string>
     <string name="stream_info_size">Boyut</string>
     <string name="stream_info_codec">Kodek</string>
+    <string name="stream_info_hdr">HDR Formatı</string>
     <string name="stream_info_resolution">Çözünürlük</string>
     <string name="stream_info_frame_rate">Kare Hızı</string>
     <string name="stream_info_bitrate">Bit Hızı</string>
@@ -1354,6 +1355,14 @@
     <string name="subtitle_style_bold">Kalın</string>
     <string name="subtitle_style_text_color">Metin Rengi</string>
     <string name="subtitle_style_text_opacity">Metin Opaklığı</string>
+    <string name="subtitle_style_hdr_brightness">HDR Parlaklığı</string>
+    <string name="subtitle_style_hdr_brightness_sub">HDR/Dolby Vision ekranlarda altyazı ve arayüz için parlaklık kalibrasyonu.</string>
+    <string name="subtitle_style_hdr_preset_dark">Karanlık Oda (~100–120 nit)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referans (~180–200 nit)</string>
+    <string name="subtitle_style_hdr_preset_bright">Aydınlık Oda (~250–280 nit)</string>
+    <string name="subtitle_style_hdr_preset_off">Kapalı (Maks. Panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR İçerik</string>
+    <string name="player_hdr_badge_hint">Değiştirmek için Sarı tuşa basın veya tıklayın</string>
     <string name="subtitle_style_outline">Dış Çizgi</string>
     <string name="subtitle_style_bottom_offset">Alt Konum</string>
     <string name="subtitle_style_defaults">Varsayılanlar</string>

@@ -33,6 +33,7 @@ export function createPlayerControllerMethods18() {
       this.cancelProxyRedirectObservation?.();
       this.cancelProxyRedirectObservation = null;
       if (!this.video) return;
+      this.video.hdrInfo = null;
       this.stopWebOsDtsAudioTranscode({ resetFailures: true });
 
       const requestedUrl = String(url || "").trim();
