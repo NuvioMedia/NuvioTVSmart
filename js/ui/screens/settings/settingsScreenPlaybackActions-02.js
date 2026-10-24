@@ -14,6 +14,7 @@ export function registerPlaybackActionsPart02(model) {
     SUBTITLE_OFFSET_OPTIONS,
     SUBTITLE_TEXT_COLOR_OPTIONS,
     SUBTITLE_TEXT_OPACITY_OPTIONS,
+    SUBTITLE_HDR_BRIGHTNESS_OPTIONS,
     SUBTITLE_OUTLINE_COLOR_OPTIONS,
     normalizeSubtitleStyleHex,
     clampSubtitleSize,
@@ -173,6 +174,17 @@ export function registerPlaybackActionsPart02(model) {
       returnFocusKey: "playback:subtitleTextOpacity",
       onSelect: (option) => {
         updateSubtitleStyle({ textOpacity: clampSubtitleTextOpacity(option.id) });
+      }
+    });
+  });
+  this.actionMap.set("playback:hdrBrightnessPreset", () => {
+    this.openOptionDialog({
+      title: t("subtitle_style_hdr_brightness", {}, "HDR Brightness"),
+      options: SUBTITLE_HDR_BRIGHTNESS_OPTIONS,
+      selectedId: PlayerSettingsStore.get().subtitleStyle?.hdrBrightnessPreset || "REFERENCE",
+      returnFocusKey: "playback:hdrBrightnessPreset",
+      onSelect: (option) => {
+        updateSubtitleStyle({ hdrBrightnessPreset: option.id });
       }
     });
   });

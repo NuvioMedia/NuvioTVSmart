@@ -43,6 +43,7 @@ export function createPlayerScreenMethods15() {
       };
 
       this.activePlaybackUrl = targetUrl;
+      this.applySubtitlePresentationSettings?.();
       const currentStreamCandidate = this.getCurrentStreamCandidate();
       this.paused = false;
       this.playbackRecoveryActive = false;

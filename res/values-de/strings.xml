@@ -1255,6 +1255,13 @@
     <string name="subtitle_style_bold">Fett</string>
     <string name="subtitle_style_text_color">Textfarbe</string>
     <string name="subtitle_style_text_opacity">Text-Deckkraft</string>
+    <string name="subtitle_style_hdr_brightness">HDR-Helligkeit</string>
+    <string name="subtitle_style_hdr_brightness_sub">Helligkeitskalibrierung für Untertitel und HUD auf HDR/Dolby Vision-Bildschirmen.</string>
+    <string name="subtitle_style_hdr_preset_dark">Dunkler Raum (~100–120 Nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referenz (~180–200 Nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Heller Raum (~250–280 Nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Aus (Max. Panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR-Inhalt</string>
     <string name="subtitle_style_outline">Umriss</string>
     <string name="subtitle_style_bottom_offset">Unterer Versatz</string>
     <string name="subtitle_style_defaults">Standardeinstellungen</string>

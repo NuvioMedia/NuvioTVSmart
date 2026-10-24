@@ -1560,6 +1560,13 @@
     <string name="subtitle_style_bold">Bold</string>
     <string name="subtitle_style_text_color">Text Color</string>
     <string name="subtitle_style_text_opacity">Text Opacity</string>
+    <string name="subtitle_style_hdr_brightness">HDR Brightness</string>
+    <string name="subtitle_style_hdr_brightness_sub">Brightness calibration for subtitles and HUD on HDR/Dolby Vision screens.</string>
+    <string name="subtitle_style_hdr_preset_dark">Dark Room (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Reference (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Bright Room (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Off (Max Panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">SDR Content</string>
     <string name="subtitle_style_outline">Outline</string>
     <string name="subtitle_style_bottom_offset">Bottom Offset</string>
     <string name="subtitle_style_defaults">Defaults</string>

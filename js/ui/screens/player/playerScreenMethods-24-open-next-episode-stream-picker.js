@@ -12,6 +12,10 @@ export function createPlayerScreenMethods24() {
     getSubtitleVerticalResidualOffsetVh,
     normalizeSubtitleTextOpacity,
     subtitleTextColorWithOpacity,
+    isHdrStream,
+    getHdrBrightnessFactor,
+    getHdrHudBrightnessFactor,
+    calibrateHdrColorHex,
     ENGINEFS_NAVIGATION_CLEANUP_GRACE_MS,
     t,
     normalizeItemType,
@@ -262,6 +266,30 @@ export function createPlayerScreenMethods24() {
         this.audioAmplificationAvailable = false;
       }
     },
+    isCurrentStreamHdr() {
+      const video = PlayerController.video;
+      if (video?.hdrInfo && (video.hdrInfo.gamma === "pq" || video.hdrInfo.gamma === "hlg")) {
+        return true;
+      }
+      const candidate = this.getCurrentStreamCandidate?.() || this.getStreamCandidateByUrl?.(this.activePlaybackUrl);
+      const rawStream = candidate?.raw || candidate;
+      return Boolean(
+        isHdrStream(rawStream) ||
+        isHdrStream(this.streamCandidates?.[this.currentStreamIndex]) ||
+        isHdrStream(this.streamCandidates?.[this.currentStreamIndex]?.raw) ||
+        isHdrStream(this.activePlaybackUrl) ||
+        isHdrStream(this.params?.streamUrl) ||
+        isHdrStream(this.params?.filename) ||
+        isHdrStream(this.params?.title) ||
+        isHdrStream(this.params?.playerTitle) ||
+        isHdrStream(this.params?.playerSubtitle) ||
+        isHdrStream(this.params?.stream) ||
+        isHdrStream(this.params?.streamCandidate) ||
+        isHdrStream(this.params?.streamCandidate?.raw) ||
+        isHdrStream(this.initialFilenameStreamCandidate) ||
+        isHdrStream(this.currentEngineFsStream?.name || this.currentEngineFsStream?.filename)
+      );
+    },
     applySubtitlePresentationSettings({ refreshTrackRendering = false } = {}) {
       const uiRoot = this.uiRefs?.root;
       const video = PlayerController.video;
@@ -269,12 +297,44 @@ export function createPlayerScreenMethods24() {
         return;
       }
       const style = this.subtitleStyleSettings || {};
+      const isHdr = this.isCurrentStreamHdr();
+      const factor = isHdr ? getHdrBrightnessFactor(style.hdrBrightnessPreset) : 1.0;
+      const hudFactor = isHdr ? getHdrHudBrightnessFactor(style.hdrBrightnessPreset) : 1.0;
+      const hudWhite = isHdr && hudFactor < 1.0 ? calibrateHdrColorHex("#FFFFFF", hudFactor) : "#FFFFFF";
+      const hudSecondary = isHdr && hudFactor < 1.0 ? calibrateHdrColorHex("#B3B3B3", hudFactor) : "#B3B3B3";
+      const hudTertiary = isHdr && hudFactor < 1.0 ? calibrateHdrColorHex("#808080", hudFactor) : "#808080";
+      const hudTrackBg = isHdr && hudFactor < 1.0
+        ? `rgba(${Math.round(255 * hudFactor)}, ${Math.round(255 * hudFactor)}, ${Math.round(255 * hudFactor)}, 0.3)`
+        : "rgba(255, 255, 255, 0.3)";
+
+      uiRoot.style.setProperty("--player-hud-white", hudWhite);
+      uiRoot.style.setProperty("--player-atv-text-primary", hudWhite);
+      uiRoot.style.setProperty("--player-atv-text-secondary", hudSecondary);
+      uiRoot.style.setProperty("--player-atv-text-tertiary", hudTertiary);
+      uiRoot.style.setProperty("--player-hud-track-bg", hudTrackBg);
+
+      if (this.container && this.container.style) {
+        this.container.style.setProperty("--player-hud-white", hudWhite);
+        this.container.style.setProperty("--player-atv-text-primary", hudWhite);
+        this.container.style.setProperty("--player-atv-text-secondary", hudSecondary);
+        this.container.style.setProperty("--player-atv-text-tertiary", hudTertiary);
+        this.container.style.setProperty("--player-hud-track-bg", hudTrackBg);
+      }
+
       const verticalOffsetVh = getSubtitleVerticalOffsetVh(style.verticalOffset);
       const residualOffsetVh = getSubtitleVerticalResidualOffsetVh(style.verticalOffset);
       const subtitleTextOpacity = normalizeSubtitleTextOpacity(style.textOpacity);
-      const subtitleTextColor = String(style.textColor || "#FFFFFF");
+      const rawTextColor = String(style.textColor || "#FFFFFF");
+      const subtitleTextColor = isHdr && factor < 1.0 ? calibrateHdrColorHex(rawTextColor, factor) : rawTextColor;
       const subtitleColor = subtitleTextColorWithOpacity(subtitleTextColor, subtitleTextOpacity);
-      const outlineColor = String(style.outlineColor || "#000000");
+      const rawOutlineColor = String(style.outlineColor || "#000000").trim();
+      const isBlack =
+        /^#0{3,6}$/i.test(rawOutlineColor) ||
+        rawOutlineColor.toLowerCase() === "black" ||
+        /^rgba?\(0,\s*0,\s*0(?:,\s*1)?\)$/i.test(rawOutlineColor);
+      const outlineColor = isHdr && factor < 1.0 && !isBlack
+        ? calibrateHdrColorHex(rawOutlineColor, factor)
+        : rawOutlineColor;
       const subtitleFontWeight = style.bold ? "800" : Environment.isWebOS() ? "400" : "500";
       const boldShadow = style.bold
         ? `0.45px 0 0 ${subtitleColor}, -0.45px 0 0 ${subtitleColor}, 0 0.45px 0 ${subtitleColor}, 0 -0.45px 0 ${subtitleColor}`

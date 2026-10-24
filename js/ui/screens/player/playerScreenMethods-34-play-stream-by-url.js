@@ -225,6 +225,7 @@ export function createPlayerScreenMethods34() {
       this.trackDiscoveryStartedAt = 0;
       this.trackDiscoveryDeadline = 0;
       this.activePlaybackUrl = streamUrl;
+      this.applySubtitlePresentationSettings?.();
       this.currentEngineFsStream = nextEngineFsState || null;
       if (this.currentEngineFsStream) {
         this.engineFsPlaybackToken = claimEngineFsPlayback(this.currentEngineFsStream);

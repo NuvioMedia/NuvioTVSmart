@@ -1397,6 +1397,13 @@
     <string name="subtitle_style_bold">Negrita</string>
     <string name="subtitle_style_text_color">Color del Texto</string>
     <string name="subtitle_style_text_opacity">Opacidad del texto</string>
+    <string name="subtitle_style_hdr_brightness">Brillo HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Calibración de brillo para subtítulos y HUD en pantallas HDR/Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Sala oscura (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Referencia (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Sala iluminada (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Desactivado (Máx. panel)</string>
+    <string name="subtitle_style_hdr_sdr_content">Contenido SDR</string>
     <string name="subtitle_style_outline">Contorno</string>
     <string name="subtitle_style_bottom_offset">Desplazamiento Inferior</string>
     <string name="subtitle_style_defaults">Predeterminados</string>

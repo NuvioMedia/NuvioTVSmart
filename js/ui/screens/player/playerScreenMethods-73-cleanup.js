@@ -183,6 +183,7 @@ export function createPlayerScreenMethods73() {
 
         this.clearMediaSessionHandlers();
 
+        this.flushPersistPlayerPresentationSettings?.();
         this.releaseStartupAudioGate({ resume: false });
       } catch (error) {
         try {
@@ -199,6 +200,11 @@ export function createPlayerScreenMethods73() {
         try {
           if (this.container) {
             this.container.style.display = "none";
+            this.container.style.removeProperty?.("--player-hud-white");
+            this.container.style.removeProperty?.("--player-atv-text-primary");
+            this.container.style.removeProperty?.("--player-atv-text-secondary");
+            this.container.style.removeProperty?.("--player-atv-text-tertiary");
+            this.container.style.removeProperty?.("--player-hud-track-bg");
             this.container.querySelector("#playerUiRoot")?.remove();
             this.container.querySelector("#episodeSidePanel")?.remove();
           }

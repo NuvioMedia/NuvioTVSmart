@@ -192,6 +192,19 @@ import {
 } from "../../../core/player/subtitleTextOpacity.js";
 
 import {
+  isHdrStream,
+  getHdrBrightnessFactor,
+  getHdrHudBrightnessFactor,
+  calibrateHdrColorHex,
+  getHdrBitmapLut,
+  HDR_BRIGHTNESS_PRESETS,
+  HDR_PRESET_ORDER,
+  getHdrPresetLabelKey,
+  getHdrPresetDefaultFallback,
+  normalizeHdrBrightnessPreset
+} from "../../../core/player/hdrColorCalibration.js";
+
+import {
   BitmapSubtitleDecoder,
   normalizeBitmapSubtitleFormat,
   supportsBitmapSubtitleDecoding,
@@ -455,6 +468,16 @@ export {
   SUBTITLE_TEXT_OPACITY_STEP,
   normalizeSubtitleTextOpacity,
   subtitleTextColorWithOpacity,
+  isHdrStream,
+  getHdrBrightnessFactor,
+  getHdrHudBrightnessFactor,
+  calibrateHdrColorHex,
+  getHdrBitmapLut,
+  HDR_BRIGHTNESS_PRESETS,
+  HDR_PRESET_ORDER,
+  getHdrPresetLabelKey,
+  getHdrPresetDefaultFallback,
+  normalizeHdrBrightnessPreset,
   BitmapSubtitleDecoder,
   normalizeBitmapSubtitleFormat,
   supportsBitmapSubtitleDecoding,

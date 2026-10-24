@@ -9,6 +9,7 @@ export function renderPlaybackSubtitleBody(model) {
     SUBTITLE_OFFSET_OPTIONS,
     SUBTITLE_TEXT_COLOR_OPTIONS,
     SUBTITLE_TEXT_OPACITY_OPTIONS,
+    SUBTITLE_HDR_BRIGHTNESS_OPTIONS,
     SUBTITLE_OUTLINE_COLOR_OPTIONS,
     normalizeSubtitleStyleHex,
     clampSubtitleSize,
@@ -87,6 +88,16 @@ export function renderPlaybackSubtitleBody(model) {
                 SUBTITLE_TEXT_OPACITY_OPTIONS,
                 clampSubtitleTextOpacity(model.player.subtitleStyle?.textOpacity),
                 `${clampSubtitleTextOpacity(model.player.subtitleStyle?.textOpacity)}%`
+              )
+            })}
+            ${this.renderActionRow({
+              focusKey: "playback:hdrBrightnessPreset",
+              title: t("subtitle_style_hdr_brightness", {}, "HDR Brightness"),
+              subtitle: t("subtitle_style_hdr_brightness_sub", {}, "Brightness calibration for subtitles and HUD on HDR/Dolby Vision screens."),
+              value: labelForOptionId(
+                SUBTITLE_HDR_BRIGHTNESS_OPTIONS,
+                model.player.subtitleStyle?.hdrBrightnessPreset || "REFERENCE",
+                "Reference (~180–200 nits)"
               )
             })}
             ${this.renderActionRow({ focusKey: "playback:subtitleBackgroundColor", title: t("sub_bg_color", {}, "Subtitle background color"), subtitle: t("sub_bg_color", {}, "Background behind subtitle text"), value: String(model.player.subtitleStyle?.backgroundColor || "#00000000") })}

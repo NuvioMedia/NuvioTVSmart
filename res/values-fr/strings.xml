@@ -1133,6 +1133,13 @@
     <string name="subtitle_style_bold">Gras</string>
     <string name="subtitle_style_text_color">Couleur du texte</string>
     <string name="subtitle_style_text_opacity">Opacité du texte</string>
+    <string name="subtitle_style_hdr_brightness">Luminosité HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Étalonnage de la luminosité des sous-titres et de l\'interface en HDR/Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Pièce sombre (~100–120 nits)</string>
+    <string name="subtitle_style_hdr_preset_reference">Référence (~180–200 nits)</string>
+    <string name="subtitle_style_hdr_preset_bright">Pièce éclairée (~250–280 nits)</string>
+    <string name="subtitle_style_hdr_preset_off">Désactivé (Max dalle)</string>
+    <string name="subtitle_style_hdr_sdr_content">Contenu SDR</string>
     <string name="subtitle_style_outline">Contour</string>
     <string name="subtitle_style_bottom_offset">Décalage inférieur</string>
     <string name="subtitle_style_defaults">Par défaut</string>

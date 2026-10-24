@@ -18,7 +18,9 @@ export function createPlayerScreenMethods52() {
     normalizeSubtitleFontSize,
     normalizeSubtitleLanguageKey,
     subtitleLanguageLabel,
-    styleChipLabel
+    styleChipLabel,
+    getHdrPresetLabelKey,
+    getHdrPresetDefaultFallback
   } = internals;
 
   return {
@@ -482,6 +484,20 @@ export function createPlayerScreenMethods52() {
           id: "textOpacity",
           label: t("subtitle_style_text_opacity", {}, "Text Opacity"),
           value: `${normalizeSubtitleTextOpacity(style.textOpacity)}%`
+        },
+        {
+          id: "hdrBrightnessPreset",
+          label: t("subtitle_style_hdr_brightness", {}, "HDR Brightness"),
+          value: (() => {
+            const presetLabel = t(
+              getHdrPresetLabelKey(style.hdrBrightnessPreset),
+              {},
+              getHdrPresetDefaultFallback(style.hdrBrightnessPreset)
+            );
+            return this.isCurrentStreamHdr?.()
+              ? presetLabel
+              : `${presetLabel} (${t("subtitle_style_hdr_sdr_content", {}, "SDR Content")})`;
+          })()
         },
         {
           id: "outlineEnabled",

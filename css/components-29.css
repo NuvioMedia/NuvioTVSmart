@@ -163,6 +163,8 @@
   --player-text-primary: var(--text-color);
   --player-text-secondary: var(--text-secondary);
   --player-text-tertiary: var(--text-tertiary);
+  --player-hud-white: #ffffff;
+  --player-hud-track-bg: rgba(255, 255, 255, 0.3);
   --player-subtitle-color: #ffffff;
   --player-subtitle-text-color: #ffffff;
   --player-subtitle-text-opacity: 1;

@@ -1050,6 +1050,13 @@
     <string name="subtitle_style_bold">Grassetto</string>
     <string name="subtitle_style_text_color">Colore Testo</string>
     <string name="subtitle_style_text_opacity">Opacità testo</string>
+    <string name="subtitle_style_hdr_brightness">Luminosità HDR</string>
+    <string name="subtitle_style_hdr_brightness_sub">Calibrazione della luminosità di sottotitoli e HUD su schermi HDR/Dolby Vision.</string>
+    <string name="subtitle_style_hdr_preset_dark">Stanza buia (~100–120 nit)</string>
+    <string name="subtitle_style_hdr_preset_reference">Riferimento (~180–200 nit)</string>
+    <string name="subtitle_style_hdr_preset_bright">Stanza illuminata (~250–280 nit)</string>
+    <string name="subtitle_style_hdr_preset_off">Disattivato (Max pannello)</string>
+    <string name="subtitle_style_hdr_sdr_content">Contenuto SDR</string>
     <string name="subtitle_style_outline">Bordo</string>
     <string name="subtitle_style_bottom_offset">Offset Inferiore</string>
     <string name="subtitle_style_defaults">Default</string>
