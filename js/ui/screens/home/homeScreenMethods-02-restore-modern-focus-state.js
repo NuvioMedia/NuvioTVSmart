@@ -151,6 +151,14 @@ export function createHomeScreenMethods02() {
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const key = axis === "y" ? "y" : "x";
+      if (this.shouldUseImmediateFocusScroll()) {
+        // Snap instead of tweening. Every scripted scrollLeft/scrollTop write in a
+        // rAF loop makes the TV compositor repaint the poster rows, so a JS tween
+        // costs frames rather than buying smoothness; arrive in one write instead.
+        this.cancelScrollAnimation(container, axis);
+        container[property] = nextValue;
+        return;
+      }
       const startValue = Number(container[property] || 0);
       if (Math.abs(startValue - nextValue) <= 1) {
         container[property] = nextValue;
@@ -205,6 +213,14 @@ export function createHomeScreenMethods02() {
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const key = axis === "y" ? "y" : "x";
+      if (this.shouldUseImmediateFocusScroll()) {
+        // Same reasoning as animateScroll: the spring camera is the per-frame
+        // scroll writer on Home, so constrained runtimes and webOS land it
+        // directly on the target instead of integrating it over many frames.
+        this.cancelScrollAnimation(container, axis);
+        container[property] = nextValue;
+        return;
+      }
       const prefersReducedMotion = globalThis?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       if (prefersReducedMotion) {
         container[property] = nextValue;

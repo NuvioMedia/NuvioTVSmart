@@ -18,6 +18,15 @@ export function createMetaDetailsScreenMethods10() {
     renderEpisodeRuntimeLabel
   } = internals;
 
+  // Bounded focus-ahead window for thumbnails. The IntersectionObserver below
+  // only fires once a card is near the viewport, i.e. while the rail is mid
+  // scroll, so fetch + decode lands exactly on the frames that must not drop.
+  // Loading a short window around the focused card instead keeps the decodes
+  // at rest. Far smaller than the old whole-season prefetch that stalled
+  // low-end TVs (see warmEpisodeThumbnails).
+  const EPISODE_THUMB_PREFETCH_AHEAD = 8;
+  const EPISODE_THUMB_PREFETCH_BEHIND = 2;
+
   return {
     getEpisodeCardPresentation(episode, sharedPrefs = null) {
       const progress = this.episodeProgressMap.get(`${episode.season}:${episode.episode}`) || null;
@@ -117,6 +126,27 @@ export function createMetaDetailsScreenMethods10() {
           );
         }
         thumbs.forEach((el) => this.episodeThumbObserver.observe(el));
+      } catch (_) {}
+    },
+    prefetchEpisodeThumbsAhead(centerIndex) {
+      try {
+        const center = Number(centerIndex);
+        if (!Number.isFinite(center) || center < 0) {
+          return;
+        }
+        const track = this.getEpisodeTrackElement();
+        if (!(track instanceof HTMLElement)) {
+          return;
+        }
+        track.querySelectorAll(".series-episode-image[data-thumb]").forEach((el) => {
+          const index = Number(el.closest(".series-episode-card")?.dataset?.episodeIndex);
+          if (!Number.isFinite(index)) {
+            return;
+          }
+          if (index >= center - EPISODE_THUMB_PREFETCH_BEHIND && index <= center + EPISODE_THUMB_PREFETCH_AHEAD) {
+            this.applyEpisodeThumb(el);
+          }
+        });
       } catch (_) {}
     },
     renderEpisodeCards(preferredIndex = null) {

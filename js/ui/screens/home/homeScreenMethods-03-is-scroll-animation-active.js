@@ -186,6 +186,7 @@ export function createHomeScreenMethods03() {
     shouldUseImmediateFocusScroll() {
       return (
         this.isPerformanceConstrained() ||
+        getTvRuntimePerformanceProfile().platform === "webos" ||
         globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
         globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
       );

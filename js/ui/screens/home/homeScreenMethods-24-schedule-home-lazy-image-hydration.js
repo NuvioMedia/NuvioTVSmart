@@ -85,9 +85,15 @@ export function createHomeScreenMethods24() {
           clearTimeout(this.homeLazyImageHydrationSettleTimer);
         }
         const target = anchorNode instanceof HTMLElement ? anchorNode : null;
-        const hydrationDelayMs = this.shouldUseImmediateFocusScroll()
-          ? MODERN_HOME_CONSTANTS.smartTvLazyHydrationDebounceMs
-          : MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs;
+        // The long debounce protects weak panels from a fetch storm started while
+        // a scroll animation is still running. A snapped runtime has no
+        // animation to wait out: the camera lands in the frame the key was
+        // handled, so polling for settle is sufficient, and holding the extra
+        // 180ms made posters visibly trail fast row-to-row navigation.
+        const hydrationDelayMs =
+          this.isPerformanceConstrained() || this.isLegacyTvRuntime()
+            ? MODERN_HOME_CONSTANTS.smartTvLazyHydrationDebounceMs
+            : MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs;
         const retryAfterVerticalSettle = () => {
           this.homeLazyImageHydrationSettleTimer = null;
           if (this.isModernVerticalScrollActive()) {
@@ -177,8 +183,14 @@ export function createHomeScreenMethods24() {
       // Android prefetches the visible window plus a small row/card neighborhood.
       // Keep the browser's DOM-mounted rows from turning every vertical focus
       // move into a burst of eager image requests.
-      const verticalMargin = useBoundedTvHydration ? 480 : constrained ? 720 : 1200;
-      const horizontalMargin = useBoundedTvHydration ? 320 : constrained ? 520 : 1000;
+      //
+      // Snapped runtimes get a wider band: an animated camera crosses the gap
+      // between two rows gradually, giving the narrow band time to fill, while a
+      // snapped camera arrives at the next row in one step and the images there
+      // would otherwise start loading only once they were already on screen.
+      const snappedNonConstrained = this.shouldUseImmediateFocusScroll() && !constrained;
+      const verticalMargin = useBoundedTvHydration ? (snappedNonConstrained ? 720 : 480) : constrained ? 720 : 1200;
+      const horizontalMargin = useBoundedTvHydration ? (snappedNonConstrained ? 420 : 320) : constrained ? 520 : 1000;
       const focusedRow = Boolean(anchorRow && anchorRow === anchorNode?.closest?.(HOME_LAZY_IMAGE_ROW_SELECTOR));
       const focusedRowMargin = focusedRow ? Math.max(96, Math.round(Number(anchorNode?.offsetWidth || 0) * 0.65)) : horizontalMargin;
       const pendingLoads = [];

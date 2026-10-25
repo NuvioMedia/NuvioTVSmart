@@ -2,7 +2,13 @@
 import * as internals from "./metaDetailsScreenContext.js";
 
 export function createMetaDetailsScreenMethods22() {
-  const { DETAIL_TAB_FOCUS_TARGET, DETAIL_ROW_FOCUS_TARGET, ScreenUtils, isSeriesDetailMeta } = internals;
+  const {
+    DETAIL_TAB_FOCUS_TARGET,
+    DETAIL_ROW_FOCUS_TARGET,
+    ScreenUtils,
+    getTvRuntimePerformanceProfile,
+    isSeriesDetailMeta
+  } = internals;
 
   // Tizen fast path: paddingLeft via getComputedStyle forces a style recalc.
   // Cache per track element (tracks are replaced on re-render, so the cache
@@ -197,6 +203,7 @@ export function createMetaDetailsScreenMethods22() {
       const absoluteIndex = Number(target.dataset.episodeIndex || -1);
       if (Number.isFinite(absoluteIndex) && absoluteIndex >= 0) {
         this.episodeFocusIndexBySeason[seasonKey] = absoluteIndex;
+        this.prefetchEpisodeThumbsAhead?.(absoluteIndex);
         return;
       }
       const items =
@@ -206,6 +213,7 @@ export function createMetaDetailsScreenMethods22() {
       const index = items.indexOf(target);
       if (index >= 0) {
         this.episodeFocusIndexBySeason[seasonKey] = index;
+        this.prefetchEpisodeThumbsAhead?.(index);
       }
     },
     getRememberedRailIndex(railKey, items = []) {
@@ -277,6 +285,15 @@ export function createMetaDetailsScreenMethods22() {
       try {
         constrainedFocus = ScreenUtils.shouldSkipRouteEnter(this);
       } catch (_) {}
+      // webOS fast path (all generations): the spring scroll tween below
+      // writes scrollLeft/scrollTop from a rAF loop on the main thread and
+      // drops frames even on modern 2022+ panels. Snap like Tizen instead;
+      // compositor-driven movement can return later via CSS smooth scrolling.
+      if (!constrainedFocus) {
+        try {
+          constrainedFocus = getTvRuntimePerformanceProfile().platform === "webos";
+        } catch (_) {}
+      }
       const animated = options?.animated !== false && !constrainedFocus;
       const index = Math.max(0, Math.min(list.length - 1, targetIndex));
       const target = list[index];

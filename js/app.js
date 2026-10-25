@@ -190,6 +190,10 @@ function applyPerformanceMode() {
   // Keep the Tizen class as a platform-layout fallback; performance gating is
   // handled exclusively by the runtime profile above.
   const legacyTizen = Platform.isTizen();
+  // Plain webOS marker for the rail fast path in css/components-60.css
+  // (detail focus moves snap there on every webOS generation, modern ones
+  // included; see the webOS fast path in metaDetailsScreenMethods-22).
+  const webOs = Platform.isWebOS();
   const rootClasses = document.documentElement.classList;
   const modernSidebarBlurCapable = !rootClasses.contains("no-backdrop-filter") && !constrained;
   document.documentElement.classList.toggle("performance-constrained", constrained);
@@ -199,6 +203,8 @@ function applyPerformanceMode() {
     modernSidebarBlurCapable
   );
   document.body.classList.toggle("modern-sidebar-blur-capable", modernSidebarBlurCapable);
+  document.documentElement.classList.toggle("webos", webOs);
+  document.body.classList.toggle("webos", webOs);
   document.documentElement.classList.toggle("legacy-webos", legacyWebOs);
   document.body.classList.toggle("legacy-webos", legacyWebOs);
   document.documentElement.classList.toggle("webos-unpromoted-home-tracks", unpromotedHomeTracks);

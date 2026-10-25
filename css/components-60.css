@@ -340,3 +340,40 @@
   transform: none !important;
   will-change: auto !important;
 }
+
+/* webOS rail fast path (all webOS generations, including modern panels that
+   skip .performance-constrained). Detail focus moves snap instantly on webOS
+   (see the webOS fast path in metaDetailsScreenMethods-22), so the per-focus
+   transform/box-shadow transitions only add re-raster churn on the 4K
+   compositor while the rail settles. Focus becomes a cheap instant outline. */
+.webos .series-episode-card,
+.webos .series-episode-thumb {
+  transition: none !important;
+}
+
+/* webOS home fast path. Modern Home expands the focused poster by animating
+   flex-basis/min-width/max-width/margins, which reflows every card in the row
+   for all 180ms of the transition, and focus moves now snap instantly on webOS
+   (see shouldUseImmediateFocusScroll). Keep the cheap opacity crossfades and
+   drop the layout animation, the same trade the .performance-constrained path
+   already makes for older Tizen panels. */
+.webos .home-screen-shell.home-layout-modern .home-poster-card,
+.webos .home-screen-shell.home-layout-modern .home-poster-frame {
+  transition: none !important;
+}
+
+.webos .home-screen-shell.home-layout-modern .home-poster-card .content-poster,
+.webos .home-screen-shell.home-layout-modern .home-poster-card .home-poster-expanded-backdrop {
+  transition: opacity 180ms cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+/* webOS compositor fast path. `.home-screen-shell .home-track` promotes every
+   Modern Home track into its own compositor layer. While posters are still
+   arriving that is invisible; once a screenful of artwork has decoded, each
+   scroll frame has to re-composite every one of those full-width layers, which
+   is what "everything is loaded but it still feels heavy" looks like. Chromium
+   87 webOS already opts out of the promotion for this reason (see the
+   .webos-unpromoted-home-tracks rule); modern panels get the same opt-out. */
+.webos .home-screen-shell.home-layout-modern .home-track {
+  transform: none;
+}
