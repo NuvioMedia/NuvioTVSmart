@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./discoverScreen.js";
+import { getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
 
 export function createDiscoverScreenMethods04() {
   const {
@@ -12,6 +13,19 @@ export function createDiscoverScreenMethods04() {
   } = internals;
 
   return {
+    shouldUseImmediateFocusScroll() {
+      // Same policy as Home and Search (see shouldUseImmediateFocusScroll in
+      // homeScreenMethods-03): focus-driven scroll snaps rather than tweening on
+      // runtimes where a scripted scroll write costs a compositor repaint.
+      // webOS qualifies on every generation, not only the ones the runtime
+      // profile flags as performance-constrained.
+      const profile = getTvRuntimePerformanceProfile();
+      return (
+        Boolean(profile.isPerformanceConstrained) ||
+        Boolean(globalThis?.document?.body?.classList?.contains("performance-constrained")) ||
+        profile.platform === "webos"
+      );
+    },
     restoreFocusedCard({ scrollMode = "center" } = {}) {
       this.restoreScrollState();
       const target =
@@ -162,6 +176,13 @@ export function createDiscoverScreenMethods04() {
       const scroller = this.getContentScroller();
       const current = this.container?.querySelector(".discover-grid .seeall-card.focused") || null;
       if (!scroller || !direction || !current) {
+        return false;
+      }
+      if (this.shouldUseImmediateFocusScroll()) {
+        // Same rule as Home (see startModernVerticalFastScroll): the held-D-pad
+        // loop writes scrollTop every frame, which snapped runtimes cannot
+        // sustain over a mounted poster grid. Let the throttled focus path step
+        // rows with immediate scroll instead.
         return false;
       }
       if (!this.canDiscoverVerticalFastScroll(scroller, direction)) {

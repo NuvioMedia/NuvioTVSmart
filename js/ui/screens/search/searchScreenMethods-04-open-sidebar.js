@@ -8,6 +8,8 @@ export function createSearchScreenMethods04() {
     getRootSidebarNodes,
     getRootSidebarSelectedNode,
     isRootSidebarNode,
+    isPerformanceConstrainedRuntime,
+    getTvRuntimePerformanceProfile,
     setModernSidebarExpanded,
     setLegacySidebarExpanded,
     escapeSelectorValue
@@ -128,6 +130,16 @@ export function createSearchScreenMethods04() {
         springMap.set(container, springState);
       }
     },
+    shouldUseImmediateFocusScroll() {
+      // Same policy as Home (see shouldUseImmediateFocusScroll in
+      // homeScreenMethods-03): focus-driven scroll moves snap instead of tweening
+      // on runtimes where a per-frame scrollLeft/scrollTop write costs the
+      // compositor a repaint of the whole poster grid. webOS qualifies on every
+      // generation, not just the ones flagged performance-constrained.
+      return (
+        isPerformanceConstrainedRuntime() || getTvRuntimePerformanceProfile().platform === "webos"
+      );
+    },
     animateScroll(container, axis, targetValue, duration = 150, options = {}) {
       if (!container) {
         return;
@@ -142,6 +154,11 @@ export function createSearchScreenMethods04() {
           ? Math.max(0, container.scrollHeight - container.clientHeight)
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
+      if (this.shouldUseImmediateFocusScroll()) {
+        this.cancelScrollAnimation(container, axis);
+        container[property] = nextValue;
+        return;
+      }
       const startValue = Number(container[property] || 0);
       if (Math.abs(startValue - nextValue) <= 1) {
         container[property] = nextValue;
@@ -188,6 +205,13 @@ export function createSearchScreenMethods04() {
           ? Math.max(0, container.scrollHeight - container.clientHeight)
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
+      if (this.shouldUseImmediateFocusScroll()) {
+        // The spring camera is the per-frame scroll writer on this screen, so
+        // snapped runtimes land it on the target instead of integrating it.
+        this.cancelScrollAnimation(container, axis);
+        container[property] = nextValue;
+        return;
+      }
       const prefersReducedMotion = globalThis?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       if (prefersReducedMotion) {
         container[property] = nextValue;
