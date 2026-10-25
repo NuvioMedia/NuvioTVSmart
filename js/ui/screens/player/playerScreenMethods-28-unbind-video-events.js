@@ -30,7 +30,7 @@ export function createPlayerScreenMethods28() {
           action: "playPause",
           label: paused ? ">" : "II",
           icon: paused ? "assets/icons/ic_player_play.svg" : "assets/icons/ic_player_pause.svg",
-          title: "Play/Pause",
+          title: paused ? t("cd_play", {}, "Play") : t("cd_pause", {}, "Pause"),
           primary: true
         }
       ];
@@ -44,13 +44,13 @@ export function createPlayerScreenMethods28() {
         });
       }
 
-      base.push({
+      if (this.hasSubtitleTracksAvailable()) base.push({
         action: "subtitleDialog",
         icon: "assets/icons/ic_player_subtitles.svg",
         title: t("subtitle_dialog_title", {}, "Subtitles")
       });
 
-      base.push({
+      if (this.hasAudioTracksAvailable()) base.push({
         action: "audioTrack",
         icon:
           this.selectedAudioTrackIndex >= 0 || this.selectedManifestAudioTrackId

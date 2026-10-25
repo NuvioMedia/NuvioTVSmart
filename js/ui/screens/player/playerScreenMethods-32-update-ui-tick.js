@@ -13,7 +13,14 @@ export function createPlayerScreenMethods32() {
       if (this.isExternalFrameMode()) {
         return;
       }
-      this.syncPlayerStreamSource();
+      const isLivePlayback = this.isLivePlayback();
+      const watchedMs = this.liveWatchClock.update(
+        isLivePlayback,
+        PlayerController.isPlaying && !this.paused && !this.isBufferingForPauseOverlay()
+      );
+      this.uiRefs?.progressShell?.classList.toggle("hidden", isLivePlayback);
+      if (isLivePlayback && this.seekPreviewSeconds != null) this.cancelSeekPreview();
+      if (isLivePlayback && this.controlFocusZone === "progress") this.focusFirstControl();
       this.ensureNextEpisodeStreamsPrefetch();
       this.shouldShowNextEpisodeCard();
       void this.refreshLoadingOverlayProgress();
@@ -73,8 +80,6 @@ export function createPlayerScreenMethods32() {
 
       const endsAt = uiRefs.endsAt;
       if (endsAt) {
-        const isLivePlayback =
-          typeof PlayerController.isLivePlaybackItemType === "function" && Boolean(PlayerController.isLivePlaybackItemType());
         const playbackSpeed = this.getPlaybackSpeed();
         // Keep this clock based on the full media duration. Outro intervals are
         // handled independently by skip/autoplay, as they are on Android TV.
@@ -104,7 +109,9 @@ export function createPlayerScreenMethods32() {
 
       const timeLabel = uiRefs.timeLabel;
       if (timeLabel) {
-        const nextTimeLabel = `${formatTime(effectiveProgressSeconds)} / ${formatTime(duration)}`;
+        const nextTimeLabel = isLivePlayback
+          ? t("player_live_watched", [formatTime(watchedMs / 1000)], "LIVE  %1$s")
+          : `${formatTime(effectiveProgressSeconds)} / ${formatTime(duration)}`;
         if (uiState.timeLabelText !== nextTimeLabel) {
           timeLabel.textContent = nextTimeLabel;
           uiState.timeLabelText = nextTimeLabel;
@@ -131,7 +138,7 @@ export function createPlayerScreenMethods32() {
       const duration = this.getPlaybackDisplayDurationSeconds();
       const currentPreview = this.seekPreviewSeconds != null ? Number(this.seekPreviewSeconds) : this.getPlaybackDisplayCurrentSeconds();
 
-      const shouldShowOverlay = this.seekOverlayVisible && !this.controlsVisible;
+      const shouldShowOverlay = this.seekOverlayVisible && !this.controlsVisible && !this.isLivePlayback();
       overlay.classList.toggle("hidden", !shouldShowOverlay);
       const uiState = this.lastUiTickState || (this.lastUiTickState = {});
       const nextPreviewText = `${formatTime(currentPreview)} / ${formatTime(duration)}`;
@@ -203,6 +210,10 @@ export function createPlayerScreenMethods32() {
       }, 1000);
     },
     commitSeekPreview() {
+      if (this.isLivePlayback()) {
+        this.cancelSeekPreview();
+        return;
+      }
       if (!PlayerController.video) {
         this.cancelSeekPreview({ commit: false });
         return;

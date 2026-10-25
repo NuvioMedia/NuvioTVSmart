@@ -7,6 +7,7 @@ export function createPlayerScreenMethods31() {
 
   return {
     seekPlaybackSeconds(seconds, { preserveSkipIntroSuppression = false } = {}) {
+      if (this.isLivePlayback()) return false;
       const currentSeconds = Number(this.getPlaybackCurrentSeconds());
       const targetSeconds = Number(seconds);
       if (Number.isFinite(currentSeconds) && Number.isFinite(targetSeconds) && targetSeconds < currentSeconds - 0.5) {
