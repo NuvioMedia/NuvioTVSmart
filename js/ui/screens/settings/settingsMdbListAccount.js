@@ -23,8 +23,10 @@ export function openMdbListAuthorization() {
     if (!current()) return;
     this.openOptionDialog({
       title: "MDBList",
-      message,
-      messageHtml: html,
+      message: html ? "" : message,
+      messageHtml: html
+        ? `<p class="settings-debrid-auth-copy">${escapeHtml(message)}</p>${html}`
+        : "",
       options: [{ id: "cancel", label: t("common.cancel") }],
       returnFocusKey: "integration:mdblist:account",
       onClose: () => stopMdbListAuthorization.call(this),
@@ -48,7 +50,7 @@ export function openMdbListAuthorization() {
       if (!current()) return;
       show(
         t("mdblist_awaiting_instruction"),
-        `<div class="settings-debrid-auth-content"><canvas data-mdblist-qr aria-label="${escapeAttribute(t("mdblist_qr_description"))}"></canvas><p>${escapeHtml(session.url)}</p><strong>${escapeHtml(session.userCode)}</strong></div>`
+        `<div class="settings-debrid-auth-body"><canvas class="settings-debrid-auth-qr" data-mdblist-qr aria-label="${escapeAttribute(t("mdblist_qr_description"))}"></canvas><div class="settings-debrid-auth-code">${escapeHtml(session.userCode)}</div><div class="settings-debrid-auth-url">${escapeHtml(session.url)}</div></div>`
       );
       await this.render({ refreshModel: false });
       const poll = async () => {
