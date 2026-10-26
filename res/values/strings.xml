@@ -3274,4 +3274,7 @@
     <string name="settings_player_badges_pack_description">Choose an imported pack for the player independently of stream cards.</string>
     <string name="settings_player_badges_use_stream_pack">Use stream badge pack</string>
     <string name="cd_seek_bar">Seek bar</string>
+    <string name="mdblist_tracking_description">Sync watched history and playback progress across devices</string>
+    <string name="mdblist_status_syncing">Syncing watched history and playback progress…</string>
+    <string name="mdblist_last_synced">Last synced %1$s</string>
 </resources>

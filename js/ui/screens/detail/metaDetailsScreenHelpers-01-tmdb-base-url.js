@@ -311,9 +311,10 @@ export function isSimklProgressSourceSelected() {
 }
 
 export function getDetailAllProgressPromise() {
-  const progressPromise = isSimklProgressSourceSelected()
-    ? watchProgressRepository.getAllForContinueWatching()
-    : watchProgressRepository.getAll();
+  const progressPromise =
+    isSimklProgressSourceSelected() || watchProgressRepository.getContinueWatchingSource() === WatchProgressSource.MDBLIST
+      ? watchProgressRepository.getAllForContinueWatching()
+      : watchProgressRepository.getAll();
   return progressPromise.catch((error) => {
     console.warn("Detail all-progress lookup failed", error);
     return [];

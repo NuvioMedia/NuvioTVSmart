@@ -53,7 +53,7 @@ export function createHomeScreenMethods26() {
       const dismissedNextUpKeys = new Set(ContinueWatchingPreferences.getDismissedNextUpKeys());
       const activeCandidates = resolvedCandidates.filter((entry) => {
         const contentId = String(entry?.contentId || "").trim();
-        return contentId && !dismissedNextUpKeys.has(contentId);
+        return contentId && !dismissedNextUpKeys.has(contentId) && !watchProgressRepository.isHiddenForContinueWatching?.(contentId);
       });
       if (!activeCandidates.length) {
         return [];
@@ -105,7 +105,7 @@ export function createHomeScreenMethods26() {
             : this.resolveNextUpEpisode(meta, progressEntry, allProgress, watchedEpisodeKeys, {
                 showUnairedNextUp: this.layoutPrefs?.showUnairedNextUp
               });
-          if (!resolvedNextEpisode) {
+          if (!resolvedNextEpisode || watchProgressRepository.isHiddenForContinueWatching?.(contentId, resolvedNextEpisode.season)) {
             return null;
           }
 

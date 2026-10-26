@@ -8,6 +8,9 @@ export function createPlayerScreenMethods73() {
     cleanup() {
       this.closeStreamInfo({ restore: false });
       // Android stopAndRelease(): read the position before playback is torn down.
+      if (this.hasPresentedPlaybackFrame && !this.postPlayNaturalCompletionPrepared && TrackingScrobbleService.isEnabled()) {
+        TrackingScrobbleService.stop(this.buildScrobbleContext());
+      }
       try {
         this.leavePartyPlayback();
       } catch (error) {

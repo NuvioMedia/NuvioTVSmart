@@ -11,6 +11,8 @@ const PROFILE_MAP_KEYS = new Set([
   "searchHistory",
   "mdbListAccounts",
   "mdbListLibraries",
+  "mdbListTracking",
+  "mdbListTrackingPlayback",
   "episodeShuffle",
   "watchProgressSyncState",
   "watchedItemsSyncState",

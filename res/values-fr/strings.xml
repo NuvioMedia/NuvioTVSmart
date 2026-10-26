@@ -2838,4 +2838,7 @@
     <string name="simkl_sync_info_description">Nuvio vérifie automatiquement Simkl au maximum une fois toutes les %1$d minutes. Les modifications effectuées depuis une autre application ou depuis le site de Simkl peuvent mettre autant de temps à apparaître.</string>
     <string name="stream_resume_from_time">Reprendre à %1$s</string>
     <string name="stream_resume_from_percent">Reprendre à %1$d&#160;%%</string>
+    <string name="mdblist_tracking_description">Synchroniser l’historique de visionnage et la progression de lecture entre vos appareils</string>
+    <string name="mdblist_status_syncing">Synchronisation de l’historique de visionnage et de la progression de lecture…</string>
+    <string name="mdblist_last_synced">Dernière synchronisation&#160;: %1$s</string>
 </resources>

@@ -173,13 +173,18 @@ function queue(scope, operation) {
 function inputIds(input) {
   const id = String(input.itemId || input.id || "");
   const ids = {};
-  const imdb = input.imdbId || id.replace(/^imdb:/, "");
+  const imdb = input.imdbId || input.ids?.imdb || id.replace(/^imdb:/, "");
   if (/^tt\d+$/.test(imdb)) ids.imdb = imdb;
   for (const type of ["tmdb", "tvdb", "trakt"]) {
     const raw =
-      input[`${type}Id`] || (id.startsWith(`${type}:`) ? id.slice(type.length + 1) : null);
+      input[`${type}Id`] ||
+      input.ids?.[type] ||
+      (id.startsWith(`${type}:`) ? id.slice(type.length + 1) : null);
     if (Number.isSafeInteger(Number(raw)) && Number(raw) > 0) ids[type] = Number(raw);
   }
+  const mdblist =
+    input.mdblistId ?? input.ids?.mdblist ?? (id.startsWith("mdblist:") ? id.slice(8) : null);
+  if (mdblist != null && String(mdblist).trim()) ids.mdblist = String(mdblist).trim();
   return ids;
 }
 function matches(item, type, ids) {
