@@ -4,6 +4,14 @@ import vm from "node:vm";
 import { build } from "esbuild";
 
 const files = [
+  [
+    "detail/metaDetailsScreenMethods-10-get-episode-card-presentation.js",
+    "createMetaDetailsScreenMethods10"
+  ],
+  [
+    "detail/metaDetailsScreenMethods-11-sync-rendered-episode-track.js",
+    "createMetaDetailsScreenMethods11"
+  ],
   ["stream/streamScreenMethods-06-apply-addon-filter-dom-state.js", "createStreamScreenMethods06"],
   [
     "stream/streamScreenMethods-08-build-web-os-native-player-launch-parameters.js",
@@ -52,7 +60,7 @@ const bundle = await build({
         b.onLoad(
           {
             filter:
-              /(?:(?:metaDetailsScreenMethods-(?:12|14|15|16)|streamScreenMethods-(?:01|06|07|08|09))-[^/]+|layoutPreferences|homeScreenHelpers-01-modern-sidebar-pill-auto-collapse-ms)\.js$/
+              /(?:(?:metaDetailsScreenMethods-(?:10|11|12|14|15|16)|streamScreenMethods-(?:01|06|07|08|09))-[^/]+|layoutPreferences|homeScreenHelpers-01-modern-sidebar-pill-auto-collapse-ms)\.js$/
           },
           async ({ path }) => {
             let contents = await readFile(path, "utf8");
@@ -413,3 +421,96 @@ assert.equal(synopsis.synopsisDialog, null);
 console.log(
   "Detail/stream parity passed: previous seasons, write failures, runtime, retry, empty hint and full synopsis."
 );
+
+// A matched party source is plain text; a separately shared link keeps its attribution.
+for (const shared of [false, true]) {
+  const html = renderCard.call(
+    { isCardActionFocused: () => false, isPartySourceStream: () => true },
+    { ...stream, name: "عنوان طويل ".repeat(12), partyShared: shared, partyHostName: "Host" },
+    0
+  );
+  assert.equal(html.includes("stream-route-party-source"), !shared);
+  assert.equal(html.includes("stream-route-party-label"), shared);
+  assert.equal(html.includes("is-party-marked"), shared);
+  assert(!html.includes("stream-route-party-chip"));
+  if (!shared) assert(html.includes('class="stream-route-party-source" dir="auto"'));
+}
+fixtures.escapeAttribute = fixtures.escapeHtml;
+fixtures.renderWatchedBadgeGlyph = () => "✓";
+const episodeRenderer = api.createMetaDetailsScreenMethods10().renderEpisodeCard;
+for (const isWatched of [false, true])
+  for (const isUnavailable of [false, true]) {
+    const html = episodeRenderer.call(
+      {
+        getEpisodeCardPresentation: () => ({
+          isWatched,
+          isUnavailable,
+          progressRatio: 0,
+          title: "Episode",
+          overview: "Overview",
+          thumbnail: "",
+          metaParts: ""
+        })
+      },
+      { id: "ep", episode: 1 },
+      0
+    );
+    assert.equal(html.includes("series-episode-status complete"), isWatched);
+    assert.equal(html.includes("series-episode-status idle"), !isWatched && !isUnavailable);
+    assert.equal(html.includes('class="series-episode-unavailable"'), isUnavailable);
+  }
+
+// In-place watched updates follow the same unavailable/idle rules as initial rendering.
+class EpisodeNode {
+  constructor() {
+    this.className = "";
+    this.classList = { toggle() {} };
+  }
+  querySelector(selector) {
+    return this.children?.[selector] || null;
+  }
+  appendChild(node) {
+    this.children ||= {};
+    this.children[".series-episode-status"] = node;
+    node.parent = this;
+  }
+  remove() {
+    delete this.parent.children[".series-episode-status"];
+  }
+}
+context.HTMLElement = EpisodeNode;
+context.document = { createElement: () => new EpisodeNode() };
+fixtures.escapeSelectorValue = (value) => value;
+const cardNode = new EpisodeNode(),
+  thumbNode = new EpisodeNode();
+cardNode.children = {
+  ".series-episode-thumb": thumbNode,
+  ".series-episode-image": new EpisodeNode(),
+  ".series-episode-copy": new EpisodeNode()
+};
+const updateState = {
+  container: { querySelector: () => cardNode },
+  episodeProgressMap: new Map(),
+  isEpisodeMarkedWatched: () => false
+};
+const syncBadge = api.createMetaDetailsScreenMethods11().syncEpisodeCardWatchedDom;
+for (const watched of [false, true, false])
+  for (const available of [true, false]) {
+    updateState.isEpisodeMarkedWatched = () => watched;
+    syncBadge.call(updateState, { id: "ep", season: 1, episode: 1, available });
+    const status = thumbNode.querySelector(".series-episode-status");
+    assert.equal(
+      status?.className || "",
+      watched ? "series-episode-status complete" : available ? "series-episode-status idle" : ""
+    );
+  }
+
+const unified = renderState(null, {
+  getHeaderMeta: () => ({ title: "Movie", resumeLabel: "Resume 12:34" })
+});
+const shellStart = unified.indexOf('class="stream-route-panel-shell"');
+const headerStart = unified.indexOf('class="stream-route-panel-header"');
+assert(shellStart >= 0 && headerStart > shellStart);
+assert(unified.indexOf('class="stream-route-resume-label"') > headerStart);
+assert(unified.indexOf('class="stream-route-chip-wrap"') > headerStart);
+assert(unified.indexOf('class="stream-route-panel"') > headerStart);

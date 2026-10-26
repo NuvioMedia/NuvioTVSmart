@@ -219,7 +219,7 @@ export function codeSlotsMarkup(code, { activeIndex = null, size = "md" } = {}) 
         <span class="party-code-line"></span>
       </span>`;
   }
-  return `<div class="party-code-slots party-code-slots-${size}" aria-label="${escapeHtml(formatPartyCode(value))}">${slots}</div>`;
+  return `<div class="party-code-slots party-code-slots-${size}" dir="ltr" aria-label="${escapeHtml(formatPartyCode(value))}">${slots}</div>`;
 }
 
 export function codeSectionMarkup(party, size = "md") {

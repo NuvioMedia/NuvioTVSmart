@@ -167,13 +167,33 @@ export const ProfileSyncService = {
             );
           }
         }
-        if (!AuthManager.isAuthenticated || isSyncBackoffActive()) {
+        if (
+          !AuthManager.isAuthenticated ||
+          isSyncBackoffActive() ||
+          currentAuthUserKey() !== userKey
+        ) {
           lastPullStatus = "deferred";
           return [];
         }
-        const profiles = (rows || []).map((row) => mapProfileRow(row));
+        if (
+          !Array.isArray(rows) ||
+          rows.some((row) => {
+            const raw = row?.profile_index ?? row?.profileIndex ?? row?.id;
+            const id = Number(raw);
+            return (
+              !["number", "string"].includes(typeof raw) ||
+              !Number.isInteger(id) ||
+              id < 1 ||
+              id > MAX_PROFILES
+            );
+          })
+        )
+          throw new Error("Invalid remote profile list");
+        const profiles = rows.map((row) => mapProfileRow(row));
         if (profiles.length) {
-          await ProfileManager.replaceProfiles(profiles);
+          if (!(await ProfileManager.replaceProfiles(profiles))) {
+            throw new Error("Invalid remote profile list");
+          }
         }
         if (currentAuthUserKey() === userKey) {
           lastPulledUserKey = userKey;

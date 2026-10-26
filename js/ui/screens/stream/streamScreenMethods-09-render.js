@@ -127,11 +127,13 @@ export function createStreamScreenMethods09() {
                 </div>
               </section>
               <section class="stream-route-right">
-                ${resumeLabel ? `<div class="stream-route-resume-label">${escapeHtml(resumeLabel)}</div>` : ""}
-                <div class="stream-route-chip-wrap">
-                  <div class="stream-route-chip-track">${chips}</div>
-                </div>
                 <div class="stream-route-panel-shell">
+                  <div class="stream-route-panel-header">
+                    ${resumeLabel ? `<div class="stream-route-resume-label">${escapeHtml(resumeLabel)}</div>` : ""}
+                    <div class="stream-route-chip-wrap">
+                      <div class="stream-route-chip-track">${chips}</div>
+                    </div>
+                  </div>
                   <div class="stream-route-panel">
                     <div class="stream-route-list">${body}</div>
                   </div>

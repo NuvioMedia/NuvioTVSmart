@@ -3296,4 +3296,9 @@
 
     <string name="stream_resume_from_time">Riprendi da %1$s</string>
     <string name="stream_resume_from_percent">Riprendi dal %1$d%</string>
+    <string name="settings_player_badges_title">Badge nel player</string>
+    <string name="settings_player_badges_description">Mostra i badge del video in riproduzione e della traccia audio selezionata.</string>
+    <string name="settings_player_badges_pack_title">Pacchetto badge del player</string>
+    <string name="settings_player_badges_pack_description">Scegli un pacchetto importato per il player, indipendente dalle schede delle sorgenti.</string>
+    <string name="settings_player_badges_use_stream_pack">Usa il pacchetto delle sorgenti</string>
 </resources>

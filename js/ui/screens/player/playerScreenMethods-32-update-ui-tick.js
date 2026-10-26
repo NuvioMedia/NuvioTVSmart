@@ -1,11 +1,22 @@
+import { syncPlayerPlaybackBadges } from "./playerPlaybackBadges.js";
 import { syncHtmlSubtitleClearance } from "./subtitleOverlayClearance.js";
 import { MediaServerScrobbleService } from "../../../data/mediaserver/mediaServerScrobbleService.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
 
 export function createPlayerScreenMethods32() {
-  const { PlayerController, deltaMsForKeyRepeat, calculateRemainingPlaybackMilliseconds, t, formatTime, formatClock, formatEndsAt, clamp } =
-    internals;
+  const {
+    renderPlayerImageBadgeChip,
+    getTrackLanguageLabel,
+    PlayerController,
+    deltaMsForKeyRepeat,
+    calculateRemainingPlaybackMilliseconds,
+    t,
+    formatTime,
+    formatClock,
+    formatEndsAt,
+    clamp
+  } = internals;
 
   return {
     updateUiTick() {
@@ -14,6 +25,7 @@ export function createPlayerScreenMethods32() {
         return;
       }
       this.syncPlayerStreamSource();
+      syncPlayerPlaybackBadges(this, PlayerController, renderPlayerImageBadgeChip, getTrackLanguageLabel);
       this.ensureNextEpisodeStreamsPrefetch();
       this.shouldShowNextEpisodeCard();
       void this.refreshLoadingOverlayProgress();

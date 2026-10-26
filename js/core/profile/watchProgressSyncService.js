@@ -29,8 +29,13 @@ let homeInputChangeRevision = 0;
 
 function pushStateForProfile(profileId) {
   const key = String(profileId || "1");
-  if (!pushStateByProfile.has(key)) {
+  const profileVersion = ProfileManager.getProfileDataVersion(profileId);
+  if (
+    !pushStateByProfile.has(key) ||
+    pushStateByProfile.get(key).profileVersion !== profileVersion
+  ) {
     pushStateByProfile.set(key, {
+      profileVersion,
       lastSuccessfulPushSignature: "",
       lastFailedPushSignature: "",
       lastFailedPushAt: 0

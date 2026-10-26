@@ -26,23 +26,26 @@ export function hasPendingManualWatched(contentId, profileId) {
     (state) =>
       state.contentId === contentId &&
       state.profileId === String(profileId) &&
+      state.profileVersion === ProfileManager.getProfileDataVersion(profileId) &&
       state.pending.size > 0
   );
 }
 
 export function beginManualWatched(items, previous, pid) {
   const token = ++sequence;
+  const profileVersion = ProfileManager.getProfileDataVersion(pid);
   const keys = new Set([...items, ...previous].map((item) => versionKey(pid, item)));
   const states = new Map();
   for (const item of items) {
     const key = versionKey(pid, item);
     let state = pendingStates.get(key);
-    if (!state) {
+    if (!state || state.profileVersion !== profileVersion) {
       state = {
         base: previous.find((entry) => itemKey(entry) === itemKey(item)),
         baseToken: 0,
         contentId: item.contentId,
         profileId: pid,
+        profileVersion,
         pending: new Set()
       };
       pendingStates.set(key, state);
@@ -51,11 +54,21 @@ export function beginManualWatched(items, previous, pid) {
     states.set(key, state);
   }
   keys.forEach((key) => versions.set(key, token));
-  return { token, keys, previous, pid, generation, states, expected: new Map() };
+  return {
+    token,
+    keys,
+    previous,
+    pid,
+    generation,
+    profileVersion,
+    states,
+    expected: new Map()
+  };
 }
 export function manualWatchedCurrent(operation, item) {
   return (
     operation.generation === generation &&
+    operation.profileVersion === ProfileManager.getProfileDataVersion(operation.pid) &&
     versions.get(versionKey(operation.pid, item)) === operation.token &&
     String(ProfileManager.getActiveProfileId() || "1") === operation.pid
   );
@@ -68,7 +81,11 @@ export function captureManualWatched(operation) {
   }
 }
 function restore(operation, items) {
-  if (operation.generation !== generation) return;
+  if (
+    operation.generation !== generation ||
+    operation.profileVersion !== ProfileManager.getProfileDataVersion(operation.pid)
+  )
+    return;
   for (const item of items) {
     if (versions.get(versionKey(operation.pid, item)) !== operation.token) continue;
     const key = versionKey(operation.pid, item);
@@ -91,7 +108,11 @@ function restore(operation, items) {
   }
 }
 export function finishManualWatched(operation, items, succeeded, played) {
-  if (operation.generation !== generation) return;
+  if (
+    operation.generation !== generation ||
+    operation.profileVersion !== ProfileManager.getProfileDataVersion(operation.pid)
+  )
+    return;
   const success = new Set(succeeded);
   // A newer failed action rolls back to the last confirmed state, even if it
   // began while an earlier optimistic action was still pending.

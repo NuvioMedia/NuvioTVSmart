@@ -551,6 +551,8 @@ async function resolveGuestPromise(context, runtime, handle, timeoutMs) {
 }
 
 async function execute(message) {
+  // Workers do not inherit the page's core-js polyfills on older TV browsers.
+  if (typeof workerScope.globalThis === "undefined") workerScope.globalThis = workerScope;
   importScripts("../libs/quickjs-emscripten.global.js");
   var QJS = workerScope.QJS;
   if (!QJS || typeof QJS.getQuickJS !== "function")

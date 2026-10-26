@@ -3267,4 +3267,9 @@
 
     <string name="stream_resume_from_time">Resume from %1$s</string>
     <string name="stream_resume_from_percent">Resume from %1$d%</string>
+    <string name="settings_player_badges_title">Badges in player</string>
+    <string name="settings_player_badges_description">Show badges for the playing video and selected audio track.</string>
+    <string name="settings_player_badges_pack_title">Player badge pack</string>
+    <string name="settings_player_badges_pack_description">Choose an imported pack for the player independently of stream cards.</string>
+    <string name="settings_player_badges_use_stream_pack">Use stream badge pack</string>
 </resources>

@@ -96,15 +96,43 @@ export function encodeFromText(parsedCodec, search = "") {
   return "UNKNOWN";
 }
 
+const LANGUAGE_ALIASES = {
+  EN: ["eng", "english"],
+  HI: ["hin", "hindi"],
+  IT: ["ita", "italian", "italiano"],
+  ES: ["spa", "esp", "spanish", "espanol", "castellano"],
+  FR: ["fre", "french", "truefrench"],
+  DE: ["ger", "deu", "german", "deutsch"],
+  PT: ["portuguese", "portugues"],
+  PL: ["pol", "polish"],
+  CS: ["cze", "czech"],
+  LA: ["latino"],
+  JA: ["jpn", "japanese"],
+  KO: ["kor", "korean"],
+  ZH: ["chinese"],
+  HE: ["heb", "hebrew"]
+};
+const LANGUAGE_PATTERNS = Object.entries(LANGUAGE_LABELS).map(([key, [code]]) => [
+  key,
+  new RegExp(`(^|[^a-z0-9])(${[code, ...(LANGUAGE_ALIASES[key] || [])].join("|")})([^a-z0-9]|$)`, "i")
+]);
+
 export function languageFor(value = "") {
-  const normalized = normalizeOpenSubtitlesSpanishCode(value) || String(value || "").toLowerCase();
+  const normalized =
+    normalizeOpenSubtitlesSpanishCode(value) ||
+    String(value || "")
+      .trim()
+      .toLowerCase();
   const compact = normalized.replace(/[^a-z0-9]/g, "");
   return (
-    Object.entries(LANGUAGE_LABELS).find(([, [code, label]]) => {
+    Object.entries(LANGUAGE_LABELS).find(([key, [code, label]]) => {
       const normalizedCode = String(code || "").toLowerCase();
       const normalizedLabel = String(label || "").toLowerCase();
       return (
-        normalized === normalizedCode || normalized === normalizedLabel || (compact && compact === normalizedCode.replace(/[^a-z0-9]/g, ""))
+        normalized === normalizedCode ||
+        normalized === normalizedLabel ||
+        LANGUAGE_ALIASES[key]?.includes(normalized) ||
+        (compact && compact === normalizedCode.replace(/[^a-z0-9]/g, ""))
       );
     })?.[0] || null
   );
@@ -115,9 +143,7 @@ export function languagesFromText(parsedLanguages = [], search = "") {
   if (fromParsed.length) {
     return fromParsed;
   }
-  const matches = Object.entries(LANGUAGE_LABELS)
-    .filter(([, [code]]) => hasToken(search, code))
-    .map(([key]) => key);
+  const matches = LANGUAGE_PATTERNS.filter(([, pattern]) => pattern.test(search)).map(([key]) => key);
   return matches.includes("PT_BR") ? matches.filter((key) => key !== "PT") : matches;
 }
 

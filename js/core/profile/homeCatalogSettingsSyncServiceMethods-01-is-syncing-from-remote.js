@@ -131,6 +131,7 @@ export function createHomeCatalogSettingsSyncServiceMethods01() {
         return;
       }
       const generation = this.syncGeneration;
+      const profileVersion = internals.ProfileManager.getProfileDataVersion(resolvedProfileId);
       const existingTimer = this.pushTimers.get(resolvedProfileId);
       if (existingTimer) {
         clearTimeout(existingTimer);
@@ -138,12 +139,17 @@ export function createHomeCatalogSettingsSyncServiceMethods01() {
       const cooldownMs = getSyncBackoffRemainingMs();
       const effectiveDelayMs = Math.max(PUSH_DEBOUNCE_MS, Number(delayMs) || 0, cooldownMs > 0 ? cooldownMs + 50 : 0);
       const timerId = setTimeout(async () => {
-        if (generation !== this.syncGeneration) {
+        if (generation !== this.syncGeneration || profileVersion !== internals.ProfileManager.getProfileDataVersion(resolvedProfileId)) {
           return;
         }
         this.pushTimers.delete(resolvedProfileId);
         const didPush = await this.push(resolvedProfileId);
-        if (generation === this.syncGeneration && !didPush && isSyncBackoffActive()) {
+        if (
+          generation === this.syncGeneration &&
+          profileVersion === internals.ProfileManager.getProfileDataVersion(resolvedProfileId) &&
+          !didPush &&
+          isSyncBackoffActive()
+        ) {
           this.triggerPush(resolvedProfileId);
         }
       }, effectiveDelayMs);

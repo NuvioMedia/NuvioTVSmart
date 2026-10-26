@@ -114,17 +114,29 @@ async function reload(controller, state, url) {
   });
 }
 function select(controller, state) {
+  const converted = Boolean(state.id && !state.fallingBack);
+  const convertedIndex = converted
+    ? controller
+        .nativeAudioTrackListToArray()
+        .findIndex((track) => String(track.id) === String(state.targetIndex))
+    : -1;
+  // Persist the same native position used by HTML so Luna reapply cannot undo it.
+  const targetIndex = convertedIndex >= 0 ? convertedIndex : state.targetIndex;
   return controller.requestConfirmedWebOsAudioTrackSelection({
-    targetTrackIndex: state.targetIndex,
+    targetTrackIndex: targetIndex,
     selectedTrackIndex: state.selectedIndex,
     selectionKind: state.kind,
     applySelection: () => {
       const tracks = controller.nativeAudioTrackListToArray();
-      // LG omits unsupported tracks from audioTracks but retains their media ids.
+      // Source indices and native IDs are distinct; retain the existing HTML resolution.
       const identifiedIndex = tracks.findIndex(
         (track) => String(track.id) === String(state.targetIndex)
       );
-      const selectedIndex = identifiedIndex >= 0 ? identifiedIndex : state.targetIndex;
+      const selectedIndex = converted
+        ? targetIndex
+        : identifiedIndex >= 0
+          ? identifiedIndex
+          : state.targetIndex;
       tracks.forEach((track, index) => {
         try {
           if ("enabled" in track) track.enabled = index === selectedIndex;

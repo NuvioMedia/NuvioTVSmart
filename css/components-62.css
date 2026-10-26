@@ -181,6 +181,7 @@
 
 /* ---- code slots ---- */
 .party-code-slots {
+  direction: ltr;
   display: flex;
   width: 100%;
 }
@@ -553,6 +554,7 @@
   flex-direction: column;
 }
 .party-keypad-row {
+  direction: ltr;
   display: flex;
 }
 .party-keypad-row + .party-keypad-row {
@@ -832,16 +834,12 @@
 .stream-route-card.is-party-marked {
   box-shadow: inset 0 0 0 2px rgba(158, 158, 158, 0.65);
 }
-.stream-route-party-chip {
-  display: inline-block;
-  margin-left: 16px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  vertical-align: middle;
-  background: rgba(158, 158, 158, 0.2);
-  color: #9e9e9e;
+.stream-route-party-source {
+  margin-top: 8px;
+  color: var(--text-secondary);
   font-size: 22px;
   font-weight: 500;
+  overflow-wrap: break-word;
 }
 
 /* ---- invite dialog ---- */
@@ -948,4 +946,21 @@
 .performance-constrained .player-party-panel,
 .performance-constrained .party-joined-title {
   animation: none;
+}
+
+.player-playback-badges {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  max-width: 100%;
+  margin-top: 8px;
+}
+.player-playback-badges[hidden] {
+  display: none;
+}
+.player-playback-badges .stream-route-stream-badge {
+  flex: 0 0 auto;
+}
+.player-playback-badges .stream-route-stream-badge + .stream-route-stream-badge {
+  margin-left: 8px;
 }

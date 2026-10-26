@@ -208,7 +208,7 @@ export function createMetaDetailsScreenMethods11() {
         }
         statusNode.className = "series-episode-status complete";
         statusNode.innerHTML = renderWatchedBadgeGlyph();
-      } else if (progressRatio < 0.02) {
+      } else if (progressRatio < 0.02 && episode.available !== false) {
         if (!(statusNode instanceof HTMLElement)) {
           statusNode = document.createElement("div");
           thumb.appendChild(statusNode);

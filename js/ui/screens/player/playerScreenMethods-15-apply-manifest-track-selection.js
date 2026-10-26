@@ -179,6 +179,7 @@ export function createPlayerScreenMethods15() {
               <div class="player-controls-bottom">
                 <div class="player-meta">
                   <div class="player-title">${escapeHtml(header.title)}</div>
+                  <div id="playerPlaybackBadges" class="player-playback-badges" hidden></div>
                   ${header.subtitle ? `<div class="player-subtitle">${escapeHtml(header.subtitle)}</div>` : ""}
                   ${header.meta ? `<div class="player-meta-secondary">${escapeHtml(header.meta)}</div>` : ""}
                   <div id="playerStreamSource" class="player-meta-secondary player-stream-source hidden" aria-hidden="true"></div>
@@ -265,6 +266,7 @@ export function createPlayerScreenMethods15() {
             controlsOverlay: uiRoot.querySelector("#playerControlsOverlay"),
             controlsBottom: uiRoot.querySelector(".player-controls-bottom"),
             streamSource: uiRoot.querySelector("#playerStreamSource"),
+            playbackBadges: uiRoot.querySelector("#playerPlaybackBadges"),
             progressShell: uiRoot.querySelector("#playerProgressShell"),
             clock: uiRoot.querySelector("#playerClock"),
             endsAt: uiRoot.querySelector("#playerEndsAt"),

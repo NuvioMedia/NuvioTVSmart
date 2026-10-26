@@ -121,6 +121,13 @@ export function createPlayerScreenMethods31() {
     },
     updateLoadingVisibility() {
       if (this.isBufferingForPauseOverlay()) this.dismissPauseOverlay();
+      if (!this.loadingVisible && !this.isStartupErrorVisible() && !this.isExternalFrameMode()) {
+        if (this.isStartupGateReleaseReady()) this.releaseStartupAudioGate();
+        // Post-first-frame buffering can hide loading before the completion timer runs.
+        if (PlayerController.startupPresentationAudioMuted && this.isStartupLogoDismissReady()) {
+          PlayerController.setStartupPresentationAudioMuted(false);
+        }
+      }
       const overlay = this.uiRefs?.loadingOverlay;
       const bufferingSpinner = this.uiRefs?.bufferingSpinner;
       if (!overlay) {
