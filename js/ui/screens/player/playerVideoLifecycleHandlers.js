@@ -33,6 +33,7 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
       }
     }
     this.schedulePlaybackStallGuard();
+    this.updateUiTick();
   };
 
   const onPlaying = () => {
