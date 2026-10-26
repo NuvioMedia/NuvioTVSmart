@@ -759,27 +759,49 @@ async function getProgressItemMetadata(contentType, lookupId) {
   return null;
 }
 
+const progressMetadataAttempts = new Map();
+const progressMetadataFlights = new Map();
+let progressMetadataProfile = null;
+
 async function batchEnrichProgressItems(items) {
   if (!items.length) return [];
-  const now = Date.now();
+  const pid = activeProfileId();
+  if (progressMetadataProfile !== pid) {
+    progressMetadataProfile = pid;
+    progressMetadataAttempts.clear();
+  }
   return mapWithConcurrency(items, PROGRESS_META_CONCURRENCY, async (item) => {
     const lookupId = item.imdbId || item.contentId;
     const cacheKey = `${item.contentType}:${lookupId}`;
+    const key = `${pid}:${cacheKey}`;
+    const now = Date.now();
     const cached = enrichedMetaCache.get(cacheKey);
-    let meta = null;
-    if (cached && now - cached.timestamp < ENRICHED_META_CACHE_TTL_MS) {
-      meta = cached.meta;
-    } else {
-      meta = await withTimeout(
-        getProgressItemMetadata(item.contentType, lookupId),
-        PROGRESS_META_TIMEOUT_MS,
-        null
-      ).catch(() => null);
-      // Only cache real metadata. Caching a null (timeout/miss) would leave the
-      // item unenriched for the full TTL after a single slow response.
-      if (meta) {
-        enrichedMetaCache.set(cacheKey, { meta, timestamp: now });
+    let meta = cached && now - cached.timestamp < ENRICHED_META_CACHE_TTL_MS ? cached.meta : null;
+    if (!meta) {
+      let flight = progressMetadataFlights.get(key);
+      if (!flight) {
+        const attempt = progressMetadataAttempts.get(key);
+        if (attempt && (attempt.count >= 3 || now - attempt.at < 2000 * attempt.count)) return item;
+        progressMetadataAttempts.set(key, { count: (attempt?.count || 0) + 1, at: now });
+        flight = withTimeout(
+          getProgressItemMetadata(item.contentType, lookupId),
+          PROGRESS_META_TIMEOUT_MS,
+          null
+        )
+          .catch(() => null)
+          .then((result) => {
+            if (result) {
+              enrichedMetaCache.set(cacheKey, { meta: result, timestamp: Date.now() });
+              progressMetadataAttempts.delete(key);
+            }
+            return result;
+          })
+          .finally(() => {
+            if (progressMetadataFlights.get(key) === flight) progressMetadataFlights.delete(key);
+          });
+        progressMetadataFlights.set(key, flight);
       }
+      meta = await flight;
     }
     return meta ? { ...item, enrichedMeta: meta } : item;
   });

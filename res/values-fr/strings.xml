@@ -137,8 +137,8 @@
     <string name="cw_new_season">Nouvelle saison</string>
     <string name="cw_resume">Reprendre</string>
     <string name="cw_percent_watched">%1$d%% regardé</string>
-    <string name="cw_hours_min_left">%1$dh %2$dm restantes</string>
-    <string name="cw_min_left">%1$dm restantes</string>
+    <string name="cw_hours_min_left">Il reste %1$d h %2$d min</string>
+    <string name="cw_min_left">Il reste %1$d min</string>
     <string name="cw_almost_done">Presque terminé</string>
     <string name="cw_airs_date">Diffusion le %1$s</string>
     <string name="cw_airs_today">Diffusion aujourd’hui</string>
@@ -783,7 +783,7 @@
     <string name="qr_login_exchange_failed">Impossible de finaliser la connexion QR</string>
     <string name="trakt_code_expires">Le code expire dans %1$s</string>
     <string name="trakt_token_refreshes">Le jeton d’accès Trakt sera actualisé dans %1$s</string>
-    <string name="trakt_login_instruction">Appuie sur Connexion pour démarrer l’authentification Trakt. Un code QR apparaîtra ici.</string>
+    <string name="trakt_login_instruction">Appuyez sur «&#160;Se connecter&#160;» pour démarrer l’authentification de l’appareil auprès de Trakt. Un code QR s’affichera ici.</string>
     <string name="trakt_missing_credentials">TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET manquants dans local.properties.</string>
     <string name="trakt_watch_progress_title">Progression</string>
     <string name="trakt_watch_progress_subtitle">Choisir quelle source de progression alimente la reprise et Continuer à regarder</string>
@@ -825,7 +825,7 @@
     <string name="trakt_disconnect">Déconnecter</string>
     <string name="trakt_disconnect_title">Déconnecter Trakt ?</string>
     <string name="trakt_disconnect_subtitle">Cela déconnectera ton compte Trakt de Nuvio.</string>
-    <string name="trakt_login">Connexion</string>
+    <string name="trakt_login">Se connecter</string>
     <string name="trakt_retry">Réessayer</string>
     <string name="trakt_back">Retour</string>
     <string name="trakt_cw_window_title">Période de Continuer à regarder</string>
@@ -1229,8 +1229,8 @@
     <string name="library_syncing_library">Synchronisation de la bibliothèque\u2026</string>
     <string name="library_type_all">Tout</string>
     <string name="library_type_items">éléments</string>
-    <string name="library_empty_local_title">Aucun %1$s pour le moment</string>
-    <string name="library_empty_trakt_title">Aucun %1$s dans cette liste</string>
+    <string name="library_empty_local_title">%1$s&#160;: aucun élément pour le moment</string>
+    <string name="library_empty_trakt_title">%1$s&#160;: aucun élément dans cette liste</string>
     <string name="library_empty_local_subtitle">Commence à enregistrer tes favoris pour les voir ici</string>
     <string name="library_empty_trakt_subtitle">Utilise + dans les détails pour ajouter des éléments à la liste de suivi ou aux listes</string>
     <string name="library_empty_trakt_not_auth_title">Trakt non connecté</string>
@@ -1441,7 +1441,7 @@
     <string name="plugin_error_refresh">Échec de l’actualisation : %1$s</string>
     <string name="plugin_error_test">Échec du test : %1$s</string>
     <string name="plugin_test_no_results">Aucun résultat trouvé</string>
-    <string name="plugin_test_found_streams">%1$d flux trouvés</string>
+    <string name="plugin_test_found_streams">Flux trouvés&#160;: %1$d</string>
     <string name="plugin_repo_added_with_providers">%1$s ajouté avec %2$d fournisseurs</string>
     <string name="plugin_repo_removed">Dépôt supprimé</string>
     <string name="plugin_repo_refreshed">Dépôt actualisé</string>
@@ -1523,9 +1523,9 @@
     <string name="cd_qr_login">Code QR de connexion</string>
     <string name="cd_nuvio">Nuvio</string>
     <string name="debug_signin_success">Connexion réussie</string>
-    <string name="debug_generate_description">Élément de test %1$s n°%2$d</string>
+    <string name="debug_generate_description">Élément %1$s n°&#160;%2$d généré en mode débogage</string>
     <string name="debug_generate_result_failed">Échec : %1$s</string>
-    <string name="debug_generate_library_result_added">%1$d éléments ajoutés à la bibliothèque</string>
+    <string name="debug_generate_library_result_added">Éléments ajoutés à la bibliothèque&#160;: %1$d</string>
     <string name="collections_header">Collections</string>
     <string name="collections_empty">Aucune collection pour le moment. Crée-en une pour organiser tes catalogues.</string>
     <string name="collections_new">Nouvelle collection</string>
@@ -2806,16 +2806,36 @@
     <string name="party_action_paused">%1$s a mis en pause</string>
     <string name="party_action_resumed">%1$s a repris la lecture</string>
     <string name="party_action_seeked">%1$s est passé à %2$s</string>
-    <string name="party_action_speed">%1$s a changé la vitesse à %2$s</string>
+    <string name="party_action_speed">%1$s a réglé la vitesse sur %2$s</string>
     <string name="party_joined_title">Vous y êtes</string>
     <string name="party_hosted_by">Organisée par %1$s</string>
     <string name="party_open_seat">Inviter un ami</string>
     <string name="party_host_hint">Pour organiser une party, lancez-la depuis le lecteur.</string>
     <string name="party_share_title">Partager mon flux</string>
-    <string name="party_share_description">Vos amis peuvent lire votre lien au lieu de choisir le leur. Il peut contenir votre clé debrid.</string>
+    <string name="party_share_description">Vos amis peuvent utiliser votre lien au lieu d’en choisir un. Il peut inclure votre clé debrid.</string>
     <string name="party_share_unavailable">Ce flux ne peut pas être partagé.</string>
     <string name="party_shared_by">Partagé par %1$s</string>
     <string name="party_invite_scan">Scannez avec un téléphone pour rejoindre</string>
     <string name="party_invite_share">Ou partagez le code. Vos amis peuvent le saisir dans Watch Party sur n\'importe quelle app Nuvio.</string>
     <string name="party_invite_qr">QR code d\'invitation à la Watch Party</string>
+    <string name="tracking_simkl_anime_id_subtitle">Détermine la façon dont les séries d’animés sont identifiées. Choisir MAL ou Kitsu attribue à chaque saison sa propre entrée, au lieu de les regrouper sous un seul ID IMDb.</string>
+    <string name="tracking_simkl_anime_id_imdb">Préférer IMDb</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
+    <string name="simkl_sync_info_description">Nuvio vérifie automatiquement Simkl au maximum une fois toutes les %1$d minutes. Les modifications effectuées depuis une autre application ou depuis le site de Simkl peuvent mettre autant de temps à apparaître.</string>
+    <string name="stream_resume_from_time">Reprendre à %1$s</string>
+    <string name="stream_resume_from_percent">Reprendre à %1$d&#160;%%</string>
 </resources>

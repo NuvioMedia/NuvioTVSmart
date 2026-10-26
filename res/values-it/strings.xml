@@ -3302,4 +3302,5 @@
     <string name="settings_player_badges_pack_title">Pacchetto badge del player</string>
     <string name="settings_player_badges_pack_description">Scegli un pacchetto importato per il player, indipendente dalle schede delle sorgenti.</string>
     <string name="settings_player_badges_use_stream_pack">Usa il pacchetto delle sorgenti</string>
+    <string name="cd_seek_bar">Barra di avanzamento</string>
 </resources>

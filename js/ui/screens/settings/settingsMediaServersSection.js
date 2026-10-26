@@ -63,6 +63,7 @@ export function renderMediaServersSection() {
           title: t(`servers_${field}`),
           value: draft[field],
           secret: field === "password",
+          inputType: field === "address" ? "url" : "text",
           placeholder: field === "address" ? t("servers_address_hint") : "",
           returnFocusKey: `mediaServers:${field}`,
           onSubmit: (value) => {

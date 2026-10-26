@@ -271,7 +271,7 @@ export function createProfileSelectionScreenMethods01() {
     renderProfileCard(profile) {
       const avatarUrl = resolveProfileAvatarUrl(profile, (avatarId) => this.getAvatarImageUrl(avatarId));
       return `
-          <div class="profile-card profile-focusable focusable"
+          <div class="profile-card profile-focusable focusable" role="button" aria-label="${escapeHtml(profile.name)}"
                data-profile-id="${escapeHtml(profile.id)}"
                data-focus-key="profile:${escapeHtml(profile.id)}"
                tabindex="0">
@@ -292,7 +292,7 @@ export function createProfileSelectionScreenMethods01() {
     },
     renderAddProfileCard() {
       return `
-          <div class="profile-card profile-card-add profile-focusable focusable"
+          <div class="profile-card profile-card-add profile-focusable focusable" role="button"
                data-profile-id="add"
                data-focus-key="profile:add"
                tabindex="0">

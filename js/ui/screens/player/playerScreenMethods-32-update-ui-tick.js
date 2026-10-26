@@ -126,6 +126,11 @@ export function createPlayerScreenMethods32() {
           : `${formatTime(effectiveProgressSeconds)} / ${formatTime(duration)}`;
         if (uiState.timeLabelText !== nextTimeLabel) {
           timeLabel.textContent = nextTimeLabel;
+          if (!isLivePlayback && uiRefs.progressShell) {
+            uiRefs.progressShell.setAttribute("aria-valuemax", String(Math.max(0, duration)));
+            uiRefs.progressShell.setAttribute("aria-valuenow", String(clamp(effectiveProgressSeconds, 0, Math.max(0, duration))));
+            uiRefs.progressShell.setAttribute("aria-valuetext", nextTimeLabel);
+          }
           uiState.timeLabelText = nextTimeLabel;
         }
       }

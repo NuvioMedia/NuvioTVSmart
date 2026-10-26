@@ -164,6 +164,40 @@ export function streamSize(stream = {}) {
   );
 }
 
+// Strip the first media-title occurrence in each field, keeping actual repeated language tags.
+export function languageSearchText(stream = {}) {
+  const resolve = stream.clientResolve || stream.raw?.clientResolve || {};
+  const raw = resolve.stream?.raw || {};
+  const titles = [
+    ...new Set(
+      [raw.parsed?.parsedTitle, resolve.title].filter(Boolean).map((title) =>
+        String(title)
+          .toLowerCase()
+          .split(/[^a-z0-9]+/)
+          .filter(Boolean)
+          .join("[^a-z0-9]+")
+      )
+    )
+  ]
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length)
+    .map((title) => new RegExp(`(^|[^a-z0-9])${title}(?=[^a-z0-9]|$)`));
+  return [
+    stream.name,
+    stream.title,
+    stream.description,
+    stream.behaviorHints?.filename,
+    resolve.torrentName,
+    resolve.filename,
+    raw.torrentName,
+    raw.filename,
+    stream.debridCacheStatus?.cachedName
+  ]
+    .filter(Boolean)
+    .map((text) => titles.reduce((remaining, pattern) => remaining.replace(pattern, " "), String(text).toLowerCase()))
+    .join(" ");
+}
+
 export function facts(stream = {}) {
   const resolve = stream.clientResolve || stream.raw?.clientResolve || {};
   const parsed = resolve.stream?.raw?.parsed || {};
@@ -173,7 +207,7 @@ export function facts(stream = {}) {
   const visualTags = visualTagsFromText(parsed.hdr || [], text);
   const audioTags = audioTagsFromText(parsed.audio || [], text);
   const audioChannels = audioChannelsFromText(parsed.channels || [], text);
-  const languages = languagesFromText(parsed.languages || [], text);
+  const languages = languagesFromText(parsed.languages || [], languageSearchText(stream));
   const codec = encodeFromText(parsed.codec, text);
   return {
     resolution,

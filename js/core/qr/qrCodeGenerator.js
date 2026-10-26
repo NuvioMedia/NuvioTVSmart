@@ -12,21 +12,19 @@ export const QrCodeGenerator = {
     canvas.width = size;
     canvas.height = size;
 
-    // === 1️⃣ Sfondo bianco arrotondato ===
     const cornerRadius = size * 0.06;
-
     ctx.clearRect(0, 0, size, size);
-
-    ctx.fillStyle = "#ffffff";
+    ctx.save();
     this.roundRect(ctx, 0, 0, size, size, cornerRadius);
-    ctx.fill();
+    ctx.clip();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, size, size);
 
-    // Match Android's ZXing output by preserving a quiet zone around the code.
+    // One draw per QR module, with the existing four-module quiet zone.
     const moduleCount = qr.getModuleCount();
     const quietZoneModules = 4;
     const totalModules = moduleCount + quietZoneModules * 2;
     const moduleSize = size / totalModules;
-    const moduleRadius = moduleSize * 0.08;
 
     ctx.fillStyle = "#000000";
 
@@ -36,23 +34,11 @@ export const QrCodeGenerator = {
           const x = (col + quietZoneModules) * moduleSize;
           const y = (row + quietZoneModules) * moduleSize;
 
-          this.roundRect(ctx, x, y, moduleSize, moduleSize, moduleRadius);
-
-          ctx.fill();
+          ctx.fillRect(x, y, moduleSize, moduleSize);
         }
       }
     }
 
-    // === 3️⃣ Clip finale arrotondato ===
-    const imageData = ctx.getImageData(0, 0, size, size);
-
-    ctx.clearRect(0, 0, size, size);
-
-    ctx.save();
-    this.roundRect(ctx, 0, 0, size, size, cornerRadius);
-    ctx.clip();
-
-    ctx.putImageData(imageData, 0, 0);
     ctx.restore();
   },
 

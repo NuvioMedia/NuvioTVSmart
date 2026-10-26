@@ -294,7 +294,7 @@ export function createPlayerScreenMethods58() {
               ${languages
                 .map(
                   (item, index) => `
-              <div class="player-dialog-item focusable${item.selected ? " selected" : ""}" data-subtitle-rail="language" data-subtitle-index="${index}" data-subtitle-key="${escapeAttribute(item.key)}">
+              <div class="player-dialog-item focusable${item.selected ? " selected" : ""}" role="radio" aria-checked="${item.selected ? "true" : "false"}" data-subtitle-rail="language" data-subtitle-index="${index}" data-subtitle-key="${escapeAttribute(item.key)}">
                   <div class="player-dialog-item-main">${escapeHtml(item.label)}${item.count > 0 ? `<span class="player-subtitle-language-count">${item.count}</span>` : ""}</div>
                   <div class="player-dialog-item-sub">${item.key === SUBTITLE_LANGUAGE_OFF_KEY && subtitleLoadingVisible ? escapeHtml(t("subtitle_loading_builtin", {}, "Loading subtitle tracks...")) : ""}</div>
                 </div>

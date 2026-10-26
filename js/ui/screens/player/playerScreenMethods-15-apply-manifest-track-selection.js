@@ -186,7 +186,7 @@ export function createPlayerScreenMethods15() {
                 </div>
 
                 <div class="player-controls-bar">
-                  <div id="playerProgressShell" class="player-progress-shell focusable${isLivePlayback ? " hidden" : ""}" tabindex="-1" data-player-pointer-action="progress">
+                  <div id="playerProgressShell" class="player-progress-shell focusable${isLivePlayback ? " hidden" : ""}" role="slider" aria-label="${escapeAttribute(t("cd_seek_bar", {}, "Seek bar"))}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="-1" data-player-pointer-action="progress">
                     <div class="player-progress-track">
                       <div id="playerProgressBuffered" class="player-progress-buffered"></div>
                       <div id="playerProgressFill" class="player-progress-fill"></div>

@@ -105,6 +105,21 @@ async function setup(platform = "browser") {
             contents: "export const { LocalStore } = fixtures;",
             loader: "js"
           }));
+          b.onLoad(
+            {
+              filter:
+                /\/(?:pluginCodeStore|pluginStore|homeCatalogSettingsSyncService|profileScopedStore)\.js$/
+            },
+            () => ({
+              contents: `
+              export const PluginCodeStore = { clearProfile: async () => true };
+              export const PluginStore = { clearProfile() {} };
+              export const HomeCatalogSettingsSyncService = { clearProfile() {} };
+              export const cancelProfileSettingsCloudSync = () => {};
+            `,
+              loader: "js"
+            })
+          );
           b.onLoad({ filter: /\/customPoster\.js$/ }, () => ({
             contents:
               "export const customPosterForItem = item => item; export const posterFallbackAttributes = () => '';",
@@ -116,6 +131,15 @@ async function setup(platform = "browser") {
   });
   const context = vm.createContext({
     fixtures,
+    localStorage: {
+      get length() {
+        return storage.size;
+      },
+      key: (index) => [...storage.keys()][index] ?? null,
+      getItem: (key) => (storage.has(key) ? JSON.stringify(storage.get(key)) : null),
+      setItem: (key, value) => storage.set(key, JSON.parse(value)),
+      removeItem: (key) => storage.delete(key)
+    },
     console,
     AbortController,
     document: { getElementById: () => container },

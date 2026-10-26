@@ -221,3 +221,63 @@ globalThis.fetch = originalFetch;
 console.log(
   "Tizen MKV audio metadata: parser, bounded range reads, repository fallback, mapping and English startup selection passed"
 );
+
+// SeekHead points beyond the first Cluster, without downloading Cluster data.
+const { matroskaTracksOffset } = await import("../js/data/repository/matroskaAudioMetadata.js");
+const tracksElement = element("1654ae6b", Buffer.concat([video, czech, english]));
+const relativeTracks = 2000000;
+const position = Buffer.alloc(4);
+position.writeUInt32BE(relativeTracks);
+const seekHead = element(
+  "114d9b74",
+  element(
+    "4dbb",
+    Buffer.concat([element("53ab", Buffer.from("1654ae6b", "hex")), element("53ac", position)])
+  )
+);
+const prefix = Buffer.concat([header, Buffer.from("1853806701ffffffffffffff", "hex")]);
+const clusterHeader = Buffer.from("1f43b67501ffffffffffffff", "hex");
+const indexedHeader = Buffer.concat([prefix, seekHead, clusterHeader]);
+const absoluteTracks = prefix.length + relativeTracks;
+assert.equal(matroskaTracksOffset(indexedHeader), absoluteTracks);
+assert.deepEqual(parseMatroskaAudioTracks(indexedHeader), []);
+let ranges = [];
+globalThis.fetch = async (_url, options) => {
+  ranges.push(options.headers.Range);
+  return ranges.length === 1
+    ? reply(indexedHeader)
+    : reply(
+        tracksElement,
+        206,
+        `bytes ${absoluteTracks}-${absoluteTracks + tracksElement.length - 1}/5000000`
+      );
+};
+assert.deepEqual(
+  await fetchMatroskaAudioTracks("https://example.test/tracks-after-clusters.mkv"),
+  tracks
+);
+assert.deepEqual(ranges, [
+  "bytes=0-1048575",
+  `bytes=${absoluteTracks}-${absoluteTracks + 1048575}`
+]);
+for (const response of [
+  reply(tracksElement, 200),
+  reply(tracksElement, 206, "bytes 0-100/5000000"),
+  reply(
+    indexedHeader,
+    206,
+    `bytes ${absoluteTracks}-${absoluteTracks + indexedHeader.length - 1}/5000000`
+  )
+]) {
+  let request = 0;
+  globalThis.fetch = async () => (++request === 1 ? reply(indexedHeader) : response);
+  assert.deepEqual(await fetchMatroskaAudioTracks("https://example.test/invalid-index.mkv"), []);
+  assert.equal(request, 2, "never follow another index recursively");
+}
+for (let end = 0; end < seekHead.length; end++) {
+  assert.equal(matroskaTracksOffset(Buffer.concat([prefix, seekHead.subarray(0, end)])), null);
+}
+globalThis.fetch = originalFetch;
+console.log(
+  "Indexed MKV Tracks: bounded offset, Cluster bypass, bad range and invalid target checks passed"
+);

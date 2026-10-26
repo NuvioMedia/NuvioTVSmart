@@ -87,6 +87,7 @@ function node() {
   return {
     textContent: "",
     style: {},
+    setAttribute() {},
     classList: {
       toggle(name, enabled) {
         enabled ? classes.add(name) : classes.delete(name);
