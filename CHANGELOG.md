@@ -1,3 +1,10 @@
+## Unreleased
+
+### Improvements & Fixes
+
+- Use regular collection covers when Focus GIF is disabled, matching Android TV and avoiding unintended always-on GIF decoding on Home.
+- Reset active Search queries and results when entering profile selection, preserving per-profile recent history and same-profile detail navigation.
+
 ## 1.2.8
 
 ### Improvements & Fixes

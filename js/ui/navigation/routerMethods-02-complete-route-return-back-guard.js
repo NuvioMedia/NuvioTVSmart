@@ -6,6 +6,7 @@ export function createRouterMethods02() {
     Platform,
     TizenCapabilities,
     LocalStore,
+    RouteStateStore,
     ROUTER_PERF_DEBUG,
     routerPerfNow,
     logRouterPerf,
@@ -139,6 +140,11 @@ export function createRouterMethods02() {
       } else if (this.current === routeName) {
         this.captureCurrentRouteState();
         this.routes[this.current].cleanup?.();
+      }
+
+      // Android recreates Search when entering profile selection; keep only same-session snapshots.
+      if (routeName === "profileSelection" && String(targetParams.mode || "selection").toLowerCase() !== "management") {
+        RouteStateStore.clear("route:search");
       }
 
       this.current = routeName;

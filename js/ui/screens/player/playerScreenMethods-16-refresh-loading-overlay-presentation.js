@@ -222,17 +222,15 @@ export function createPlayerScreenMethods16() {
         return "";
       }
       const providerHint =
-        status === 400 || status === 403
-          ? t("player_error_stream_blocked", {}, "\n\nThe stream source is blocked or restricted. Try a different source.")
+        status === 401 || status === 410
+          ? t("player_error_stream_expired", {}, "\n\nThe stream link has expired. Try a different source.")
           : status === 404
             ? t("player_error_stream_removed", {}, "\n\nThe stream link has expired or been removed. Try a different source.")
-            : status === 401 || status === 410
-              ? t("player_error_stream_expired", {}, "\n\nThe stream link has expired. Try a different source.")
-              : status === 429
-                ? t("player_error_stream_rate_limited", {}, "\n\nToo many requests to the stream source. Wait a moment and try again.")
-                : [500, 502, 503, 504].includes(status)
-                  ? t("player_error_stream_unavailable", {}, "\n\nThe stream server is currently unavailable. Try a different source.")
-                  : "";
+            : status === 429
+              ? t("player_error_stream_rate_limited", {}, "\n\nToo many requests to the stream source. Wait a moment and try again.")
+              : status >= 500
+                ? t("player_error_stream_unavailable", {}, "\n\nThe stream server is currently unavailable. Try a different source.")
+                : t("player_error_stream_blocked", {}, "\n\nThe stream source is blocked or restricted. Try a different source.");
       return `HTTP ${status}${normalizePlaybackDisplayLineBreaks(providerHint)}`;
     },
     showExpiredStreamError(
