@@ -370,7 +370,7 @@ function setupWebOsAppLifecycle() {
   // webOS keeps the app resident when it is backgrounded. Re-opening can fire
   // a launch event on the existing JS context instead of reloading the page.
   let recovering = false;
-  const recover = async () => {
+  const recover = async ({ titleLaunch = false } = {}) => {
     if (recovering || !appShellRendered) {
       return;
     }
@@ -390,7 +390,7 @@ function setupWebOsAppLifecycle() {
       const shouldReturnHome = !Router.isWebOsResumeRouteRestorable(current);
       if (await openPendingLaunchDeepLink(Router, NON_BACKSTACK_ROUTES)) {
         // Relaunched with a title deep link: its detail screen, not the resumed route.
-      } else if (shouldReturnHome) {
+      } else if (shouldReturnHome && !titleLaunch && !NON_BACKSTACK_ROUTES.has(current)) {
         await Router.navigate(
           "home",
           {},
@@ -412,13 +412,13 @@ function setupWebOsAppLifecycle() {
     }
   };
 
-  takeWebOsLaunchDeepLink({ startup: true });
+  takeWebOsLaunchDeepLink();
 
   document.addEventListener(
     "webOSRelaunch",
-    () => {
-      takeWebOsLaunchDeepLink();
-      void recover();
+    (event) => {
+      const link = takeWebOsLaunchDeepLink({ params: event.detail });
+      void recover({ titleLaunch: Boolean(link) });
     },
     true
   );
@@ -426,9 +426,9 @@ function setupWebOsAppLifecycle() {
   // webOS 4.x may fire webOSLaunch instead of webOSRelaunch when resuming.
   document.addEventListener(
     "webOSLaunch",
-    () => {
-      takeWebOsLaunchDeepLink();
-      void recover();
+    (event) => {
+      const link = takeWebOsLaunchDeepLink({ params: event.detail });
+      void recover({ titleLaunch: Boolean(link) });
     },
     true
   );

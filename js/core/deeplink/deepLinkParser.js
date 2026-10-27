@@ -14,7 +14,10 @@
  * @returns {{ type: "movie" | "series", id: string } | null}
  */
 export function parseTitleDeepLink(url) {
-  const match = /^nuvio:\/\/([^/?#]*)([^?#]*)(?:\?([^#]*))?/i.exec(String(url || "").trim());
+  if (typeof url !== "string" || /[\s<>"{}|\\^`]|%(?![0-9a-f]{2})/i.test(url.trim())) {
+    return null;
+  }
+  const match = /^nuvio:\/\/([^/?#]*)([^?#]*)(?:\?([^#]*))?/i.exec(url.trim());
   if (!match) {
     return null;
   }
@@ -112,7 +115,7 @@ function normalizeId(value) {
 }
 
 function queryParameters(query) {
-  const parameters = {};
+  const parameters = Object.create(null);
   query.split("&").forEach((pair) => {
     const index = pair.indexOf("=");
     if (index < 0) {
@@ -138,7 +141,7 @@ function firstParameter(parameters, ...keys) {
 
 function decode(value) {
   try {
-    return decodeURIComponent(value);
+    return decodeURIComponent(value.replace(/\+/g, " "));
   } catch (error) {
     return value;
   }

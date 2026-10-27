@@ -155,7 +155,12 @@ export function createRouterMethods02() {
         previousRoute
       });
 
-      await Screen.mount(this.currentParams, navigationContext);
+      this.pendingMountParams = targetParams;
+      try {
+        await Screen.mount(this.currentParams, navigationContext);
+      } finally {
+        if (this.pendingMountParams === targetParams) this.pendingMountParams = null;
+      }
       this.completeRouteReturnBackGuard(routeReturnBackGuardNavigationId);
       logRouterPerf("navigate", {
         ms: Number((routerPerfNow() - navigationStart).toFixed(2)),
