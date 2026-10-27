@@ -93,7 +93,7 @@ async function setup(platform = "browser") {
             contents: (await readFile(path, "utf8")).replace(
               /import\s+(\{[^}]+\})\s+from\s+["']([^"']+)["'];/g,
               (statement, bindings, source) =>
-                /\/(?:searchScreen(?:Methods-[^/]+)?|searchCatalogTargets|router(?:Methods-[^/]+|State)?|routeStateStore|profileManager|searchHistoryStore|localStore)\.js$/.test(
+                /\/(?:searchScreen(?:Methods-[^/]+)?|searchCatalogTargets|launchDeepLink|router(?:Methods-[^/]+|State)?|routeStateStore|profileManager|searchHistoryStore|localStore)\.js$/.test(
                   source
                 )
                   ? statement
