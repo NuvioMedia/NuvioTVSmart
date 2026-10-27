@@ -1,10 +1,14 @@
 import * as internals from "./homeScreenContext.js";
+import { resetHomeArtworkRescaler } from "../../images/tvPosterRescaler.js";
 
 export function createHomeScreenMethods30() {
   const { ScreenUtils, Platform } = internals;
 
   return {
     cleanup() {
+      // Drop the rescale workers and every blob url they produced. Leaving
+      // them alive would keep the artwork of a screen nobody is looking at.
+      resetHomeArtworkRescaler();
       this.heroMdbListRequest = null;
       if (this.unsubscribeStartupSyncPullCompleted) {
         this.unsubscribeStartupSyncPullCompleted();

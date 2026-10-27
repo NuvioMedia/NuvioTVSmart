@@ -1,4 +1,10 @@
 import * as internals from "./homeScreenContext.js";
+import {
+  rescaleHomeArtwork,
+  releaseHomeArtwork,
+  shouldRescaleHomeArtwork,
+  getHomeArtworkPixelRatio
+} from "../../images/tvPosterRescaler.js";
 
 export function createHomeScreenMethods24() {
   const {
@@ -252,68 +258,112 @@ export function createHomeScreenMethods24() {
       if (this.isLegacyTvRuntime()) {
         this.commitHomeLazyImageSources(pendingLoads, anchorNode, anchorRow);
       } else {
-        pendingLoads.forEach(({ image, src }) => {
-          image.loading = "eager";
-          image.removeAttribute("data-src");
-          // Keep the url so the bitmap can be handed back later and reloaded
-          // when the row returns to the viewport.
-          image.dataset.evictedSrc = src;
-          image.src = src;
+        pendingLoads.forEach(({ image, src, priority }) => {
+          this.assignHomeLazyImageSource(image, src, priority);
         });
       }
-      // Only sweep after a vertical move. Travelling inside one row cannot push
-      // anything past the eviction margin, and the sweep measures every mounted
-      // image, which is the one thing worth avoiding on the D-pad hot path.
-      if (!sameAnchorRow || forceFullScan) {
-        this.evictDistantHomeLazyImages(anchorNode);
+      // Sweep on every pass. Rows drift out of reach as later catalogs mount,
+      // not only when focus moves, so a row-change gate left artwork behind.
+      // The sweep measures rows rather than images, which keeps it cheap enough
+      // for the D-pad hot path.
+      this.evictDistantHomeLazyImages(anchorNode);
+    },
+    assignHomeLazyImageSource(image, src, priority = 2) {
+      // The app already decided this image is close enough to load, so stop
+      // deferring to the browser's own lazy heuristic.
+      image.loading = "eager";
+      image.removeAttribute("data-src");
+      // Only posters are worth rescaling. Logos carry transparency a JPEG
+      // would flatten, and they are small enough not to matter.
+      if (!shouldRescaleHomeArtwork() || !image.classList.contains("content-poster")) {
+        image.src = src;
+        return;
       }
+      const rect = image.getBoundingClientRect();
+      // webOS reports devicePixelRatio 2 on a 1080p panel whose CSS viewport is
+      // already 1920 wide, so trusting it decodes four times the pixels the
+      // panel can show. Derive the ratio from the screen instead, which stays
+      // correct on a real 4K device where the app still lays out at 1920.
+      const ratio = getHomeArtworkPixelRatio();
+      const width = Math.round(rect.width * ratio);
+      const height = Math.round(rect.height * ratio);
+      if (!(width > 0) || !(height > 0)) {
+        image.src = src;
+        return;
+      }
+      image.dataset.originalSrc = src;
+      // Anything already on screen goes to the front of the queue. Hydration
+      // ranks by focused row, which leaves a visible but unfocused row queued
+      // behind rows the viewer has not reached, and those cards stay empty.
+      const onScreen =
+        rect.bottom > 0 &&
+        rect.top < (Number(globalThis.innerHeight) || 0) &&
+        rect.right > 0 &&
+        rect.left < (Number(globalThis.innerWidth) || 0);
+      const isStale = () => !image.isConnected || image.dataset.originalSrc !== src || Boolean(image.dataset.src);
+      rescaleHomeArtwork(src, width, height, onScreen ? 0 : priority, isStale).then((objectUrl) => {
+        // The worker runs for a few hundred milliseconds, which is long enough
+        // for the card to be released or queued again. Either way this result
+        // is stale and holding on to it would leak the url.
+        if (!image.isConnected || image.dataset.originalSrc !== src || image.dataset.src) {
+          releaseHomeArtwork(objectUrl);
+          return;
+        }
+        image.src = objectUrl || src;
+      });
     },
     evictDistantHomeLazyImages(anchorNode = null) {
       if (!this.container || !Array.isArray(this.homeLazyImageHydrationIndex)) {
         return 0;
       }
-      const viewport =
-        this.container.querySelector(".home-modern-rows-viewport") || this.container.querySelector(".home-main") || this.container;
-      const viewportRect = viewport.getBoundingClientRect();
+      // Measure against the screen, not a scroll container. The classic home
+      // mounts its rows inside an element that is as tall as all of them
+      // together (25759px on an LG k8lp), so a container rect reports every row
+      // as visible and nothing is ever far enough away to release.
+      const doc = globalThis.document?.documentElement;
+      const viewportRect = {
+        top: 0,
+        left: 0,
+        bottom: Number(globalThis.innerHeight || doc?.clientHeight || 0) || 1080,
+        right: Number(globalThis.innerWidth || doc?.clientWidth || 0) || 1920
+      };
       const margin = HOME_LAZY_IMAGE_EVICT_MARGIN_PX;
+      const anchorRow = anchorNode?.closest?.(HOME_LAZY_IMAGE_ROW_SELECTOR) || null;
       let released = 0;
+      // Measure rows, never individual images. A full per-image sweep measured
+      // 67ms for 1009 images on an LG k8lp, which would land on every vertical
+      // move; the row count stays small and a row's images share its band.
       this.homeLazyImageHydrationIndex.forEach((entry) => {
         const row = entry?.row;
-        if (row instanceof HTMLElement && !row.isConnected) {
+        if (!(row instanceof HTMLElement) || !row.isConnected || row === anchorRow) {
           return;
         }
-        (entry?.images || []).forEach((image) => {
+        const rowRect = row.getBoundingClientRect();
+        const gap =
+          rowRect.bottom < viewportRect.top
+            ? viewportRect.top - rowRect.bottom
+            : rowRect.top > viewportRect.bottom
+              ? rowRect.top - viewportRect.bottom
+              : 0;
+        if (gap <= margin) {
+          return;
+        }
+        (entry.images || []).forEach((image) => {
           if (!(image instanceof HTMLImageElement) || !image.isConnected) {
             return;
           }
-          const restoreSrc = String(image.dataset.evictedSrc || "").trim();
-          if (!restoreSrc || !image.getAttribute("src")) {
+          // Read the url off the element, so artwork hydrated by any path -
+          // including the initial render - can still be handed back. A
+          // rescaled poster paints from a blob url, so the original has to be
+          // what goes back into data-src or the source is lost for good.
+          const painted = String(image.getAttribute("src") || "").trim();
+          const original = String(image.dataset.originalSrc || "").trim() || painted;
+          if (!original) {
             return;
           }
-          // Never drop what the user is looking at or focused on.
-          if (anchorNode && (anchorNode === image || anchorNode.contains?.(image) || image.closest(".focusable") === anchorNode)) {
-            return;
-          }
-          const rect = image.getBoundingClientRect();
-          const verticalGap =
-            rect.bottom < viewportRect.top
-              ? viewportRect.top - rect.bottom
-              : rect.top > viewportRect.bottom
-                ? rect.top - viewportRect.bottom
-                : 0;
-          const horizontalGap =
-            rect.right < viewportRect.left
-              ? viewportRect.left - rect.right
-              : rect.left > viewportRect.right
-                ? rect.left - viewportRect.right
-                : 0;
-          if (Math.max(verticalGap, horizontalGap) <= margin) {
-            return;
-          }
-          // Putting the url back in data-src returns the image to the pool the
-          // hydration pass already walks, so it reloads normally on return.
-          image.dataset.src = restoreSrc;
-          delete image.dataset.evictedSrc;
+          releaseHomeArtwork(painted);
+          delete image.dataset.originalSrc;
+          image.dataset.src = original;
           image.removeAttribute("src");
           released += 1;
         });
@@ -358,7 +408,7 @@ export function createHomeScreenMethods24() {
         this.homeLazyImageCommitRaf = 0;
         let assigned = 0;
         while (pending.length && assigned < HOME_LEGACY_LAZY_HYDRATION_MAX_PER_FRAME) {
-          const { image, src } = pending.shift();
+          const { image, src, priority } = pending.shift();
           if (!(image instanceof HTMLImageElement) || !image.isConnected) {
             continue;
           }
@@ -366,10 +416,7 @@ export function createHomeScreenMethods24() {
           if (!currentSrc) {
             continue;
           }
-          image.loading = "eager";
-          image.removeAttribute("data-src");
-          image.dataset.evictedSrc = currentSrc || src;
-          image.src = currentSrc || src;
+          this.assignHomeLazyImageSource(image, currentSrc || src, priority);
           assigned += 1;
         }
         if (pending.length) {
