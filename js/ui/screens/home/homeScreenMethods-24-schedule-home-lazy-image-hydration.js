@@ -6,6 +6,7 @@ export function createHomeScreenMethods24() {
     CW_DAYS_CAP,
     HOME_LAZY_IMAGE_SELECTOR,
     HOME_LAZY_IMAGE_ROW_SELECTOR,
+    HOME_LAZY_IMAGE_EVICT_MARGIN_PX,
     HOME_LEGACY_LAZY_HYDRATION_DEBOUNCE_MS,
     HOME_LEGACY_LAZY_HYDRATION_MAX_PER_FRAME,
     getTvRuntimePerformanceProfile,
@@ -254,9 +255,70 @@ export function createHomeScreenMethods24() {
         pendingLoads.forEach(({ image, src }) => {
           image.loading = "eager";
           image.removeAttribute("data-src");
+          // Keep the url so the bitmap can be handed back later and reloaded
+          // when the row returns to the viewport.
+          image.dataset.evictedSrc = src;
           image.src = src;
         });
       }
+      // Only sweep after a vertical move. Travelling inside one row cannot push
+      // anything past the eviction margin, and the sweep measures every mounted
+      // image, which is the one thing worth avoiding on the D-pad hot path.
+      if (!sameAnchorRow || forceFullScan) {
+        this.evictDistantHomeLazyImages(anchorNode);
+      }
+    },
+    evictDistantHomeLazyImages(anchorNode = null) {
+      if (!this.container || !Array.isArray(this.homeLazyImageHydrationIndex)) {
+        return 0;
+      }
+      const viewport =
+        this.container.querySelector(".home-modern-rows-viewport") || this.container.querySelector(".home-main") || this.container;
+      const viewportRect = viewport.getBoundingClientRect();
+      const margin = HOME_LAZY_IMAGE_EVICT_MARGIN_PX;
+      let released = 0;
+      this.homeLazyImageHydrationIndex.forEach((entry) => {
+        const row = entry?.row;
+        if (row instanceof HTMLElement && !row.isConnected) {
+          return;
+        }
+        (entry?.images || []).forEach((image) => {
+          if (!(image instanceof HTMLImageElement) || !image.isConnected) {
+            return;
+          }
+          const restoreSrc = String(image.dataset.evictedSrc || "").trim();
+          if (!restoreSrc || !image.getAttribute("src")) {
+            return;
+          }
+          // Never drop what the user is looking at or focused on.
+          if (anchorNode && (anchorNode === image || anchorNode.contains?.(image) || image.closest(".focusable") === anchorNode)) {
+            return;
+          }
+          const rect = image.getBoundingClientRect();
+          const verticalGap =
+            rect.bottom < viewportRect.top
+              ? viewportRect.top - rect.bottom
+              : rect.top > viewportRect.bottom
+                ? rect.top - viewportRect.bottom
+                : 0;
+          const horizontalGap =
+            rect.right < viewportRect.left
+              ? viewportRect.left - rect.right
+              : rect.left > viewportRect.right
+                ? rect.left - viewportRect.right
+                : 0;
+          if (Math.max(verticalGap, horizontalGap) <= margin) {
+            return;
+          }
+          // Putting the url back in data-src returns the image to the pool the
+          // hydration pass already walks, so it reloads normally on return.
+          image.dataset.src = restoreSrc;
+          delete image.dataset.evictedSrc;
+          image.removeAttribute("src");
+          released += 1;
+        });
+      });
+      return released;
     },
     commitHomeLazyImageSources(queued = [], anchorNode = null, anchorRow = null) {
       const pending = this.homeLazyImageCommitQueue || (this.homeLazyImageCommitQueue = []);
@@ -306,6 +368,7 @@ export function createHomeScreenMethods24() {
           }
           image.loading = "eager";
           image.removeAttribute("data-src");
+          image.dataset.evictedSrc = currentSrc || src;
           image.src = currentSrc || src;
           assigned += 1;
         }
