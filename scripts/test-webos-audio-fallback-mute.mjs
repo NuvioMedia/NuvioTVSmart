@@ -116,37 +116,81 @@ for (const { gated, muted, releaseDuringReload } of [
 const { createPlayerScreenMethods31 } =
   await import("../js/ui/screens/player/playerScreenMethods-31-seek-playback-seconds.js");
 
-for (const blockedBy of [null, "gate", "frame", "advance", "restore", "error", "external"]) {
-  test(`hidden loading overlay releases presentation mute only after startup is ready (${blockedBy})`, () => {
-    const video = { muted: true, defaultMuted: true, volume: 1 };
-    Object.assign(PlayerController, {
-      video,
-      startupAudioGateActive: blockedBy === "gate",
-      startupPresentationAudioMuted: true,
-      webOsDtsAudioState: { originalMuted: true }
+for (const withOverlay of [true, false]) {
+  for (const blockedBy of [null, "gate", "frame", "advance", "restore", "error", "external"]) {
+    test(`hidden loading overlay releases presentation mute only after startup is ready (${blockedBy}, overlay: ${withOverlay})`, () => {
+      const video = { muted: true, defaultMuted: true, volume: 1 };
+      Object.assign(PlayerController, {
+        video,
+        startupAudioGateActive: blockedBy === "gate",
+        startupPresentationAudioMuted: true,
+        webOsDtsAudioState: { originalMuted: true }
+      });
+      const screen = {
+        ...createPlayerScreenMethods30(),
+        ...createPlayerScreenMethods31(),
+        loadingVisible: false,
+        hasPresentedPlaybackFrame: blockedBy !== "frame",
+        startupPlaybackHasAdvanced: blockedBy !== "advance",
+        startupAudioGateActive: blockedBy === "gate",
+        pendingPlaybackRestore: blockedBy === "restore" ? {} : null,
+        uiRefs: withOverlay
+          ? { loadingOverlay: { classList: { add() {}, remove() {}, toggle() {} } } }
+          : {},
+        isStartupLoadingVisible: () => false,
+        isBufferingSpinnerVisible: () => false,
+        isStartupErrorVisible: () => blockedBy === "error",
+        isExternalFrameMode: () => blockedBy === "external",
+        isBufferingForPauseOverlay: () => false,
+        isStartupGateReleaseReady: () => false,
+        clearBufferingSpinnerTimer() {},
+        renderSkipIntroButton() {},
+        renderNextEpisodeCard() {}
+      };
+      screen.updateLoadingVisibility();
+      assert.equal(PlayerController.startupPresentationAudioMuted, blockedBy !== null);
+      assert.equal(video.muted, blockedBy !== null);
+      assert.equal(PlayerController.webOsDtsAudioState.originalMuted, blockedBy !== null);
     });
+  }
+}
+
+const { createPlayerScreenMethods61 } =
+  await import("../js/ui/screens/player/playerScreenMethods-61-apply-audio-track.js");
+
+const originalEmbeddedSetter = PlayerController.setWebOsEmbeddedAudioTrack;
+
+for (const platform of ["browser", "webos", "tizen-html5", "tizen-avplay"]) {
+  test(`embedded startup audio retains pending confirmation only on webOS (${platform})`, () => {
+    Platform.isWebOS = () => platform === "webos";
+    Platform.isTizen = () => platform.startsWith("tizen");
+    PlayerController.isUsingAvPlay = () => platform === "tizen-avplay";
+    PlayerController.isUsingNativePlayback = () => true;
+    PlayerController.setAvPlayAudioTrack = () => true;
+    PlayerController.getPlaybackReadyState = () => 4;
+    PlayerController.webOsDtsAudioState = null;
     const screen = {
       ...createPlayerScreenMethods30(),
-      ...createPlayerScreenMethods31(),
-      loadingVisible: false,
-      hasPresentedPlaybackFrame: blockedBy !== "frame",
-      startupPlaybackHasAdvanced: blockedBy !== "advance",
-      startupAudioGateActive: blockedBy === "gate",
-      pendingPlaybackRestore: blockedBy === "restore" ? {} : null,
-      uiRefs: { loadingOverlay: { classList: { add() {}, remove() {}, toggle() {} } } },
-      isStartupLoadingVisible: () => false,
-      isBufferingSpinnerVisible: () => false,
-      isStartupErrorVisible: () => blockedBy === "error",
-      isExternalFrameMode: () => blockedBy === "external",
-      isBufferingForPauseOverlay: () => false,
-      isStartupGateReleaseReady: () => false,
-      clearBufferingSpinnerTimer() {},
-      renderSkipIntroButton() {},
-      renderNextEpisodeCard() {}
+      ...createPlayerScreenMethods61(),
+      startupAudioGateActive: true,
+      startupAudioPreferenceApplied: true,
+      pendingWebOsAudioSelection: null,
+      getAudioEntries: () => [{ id: "audio-embedded-0", embeddedAudioTrackIndex: 0 }],
+      isAudioEntryPending: () => false,
+      getEmbeddedAudioTrackByEmbeddedIndex: () => ({ nativeTrackIndex: 0 }),
+      getAudioTrackPreference: () => ({}),
+      invalidateTrackDialogCaches() {},
+      renderControlButtons() {},
+      renderAudioDialog() {}
     };
-    screen.updateLoadingVisibility();
-    assert.equal(PlayerController.startupPresentationAudioMuted, blockedBy !== null);
-    assert.equal(video.muted, blockedBy !== null);
-    assert.equal(PlayerController.webOsDtsAudioState.originalMuted, blockedBy !== null);
+    // Use the real non-webOS setter: it rejects the webOS operation without emitting confirmation.
+    if (platform === "webos") {
+      PlayerController.setWebOsEmbeddedAudioTrack = () => true;
+    } else {
+      PlayerController.setWebOsEmbeddedAudioTrack = originalEmbeddedSetter;
+    }
+    screen.applyAudioTrack(0, { automaticFallback: true });
+    assert.equal(Boolean(screen.pendingWebOsAudioSelection), platform === "webos");
+    assert.equal(screen.isStartupGateReleaseReady(), platform !== "webos");
   });
 }
