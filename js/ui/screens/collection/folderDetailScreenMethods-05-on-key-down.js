@@ -73,11 +73,21 @@ export function createFolderDetailScreenMethods05() {
           return;
         }
         const nextRowNodes = this.navModel.rows[row + (code === 40 ? 1 : -1)] || null;
-        if (!nextRowNodes?.length) {
+        if (nextRowNodes?.length) {
+          this.focusNode(nextRowNodes[Math.max(0, Math.min(nextRowNodes.length - 1, col))] || nextRowNodes[0]);
+        } else if (code !== 40 || this.viewMode !== "TABBED_GRID") {
           return;
         }
-        this.focusNode(nextRowNodes[Math.max(0, Math.min(nextRowNodes.length - 1, col))] || nextRowNodes[0]);
-        if (this.viewMode === "TABBED_GRID" && code === 40 && this.getSelectedTab()?.hasMore && current.closest(".seeall-grid")) {
+        // Prefetch only within two rows of the loaded grid's end. A Down press
+        // near the top must not fetch every source and rebuild the entire grid.
+        // Keep the last row eligible so a failed page can be retried with Down.
+        if (
+          this.viewMode === "TABBED_GRID" &&
+          code === 40 &&
+          row + 1 >= this.navModel.rows.length - 2 &&
+          this.getSelectedTab()?.hasMore &&
+          current.closest(".seeall-grid")
+        ) {
           const selectedTabIndex = this.selectedTabIndex;
           if (this.tabs[selectedTabIndex]?.isAllTab) {
             await Promise.all(
