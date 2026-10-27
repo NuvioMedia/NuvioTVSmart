@@ -255,6 +255,9 @@
 }
 
 .home-screen-shell.home-layout-classic .home-track {
+  /* Leave room for Android's 1.02 focus scale without moving the row content. */
+  margin-top: -12px;
+  padding-top: 12px;
   padding-bottom: 8px;
 }
 

@@ -326,11 +326,13 @@ export const PluginStore = {
   clearProfile(profileId) {
     const normalizedProfileId = String(profileId || "").trim();
     if (!normalizedProfileId || normalizedProfileId === "1") return false;
-    // A secondary profile that inherits the primary plugin set has no private
-    // plugin state to remove. Never clear profile 1 through that alias.
-    if (getEffectivePluginProfileId(normalizedProfileId) !== normalizedProfileId) return false;
-    cancelPluginCloudSync(normalizedProfileId);
-    pluginStateRevisions.delete(normalizedProfileId);
+    // Private leftovers may predate inheritance; never resolve this id to 1.
+    clearTimeout(pluginSyncTimers.get(normalizedProfileId));
+    pluginSyncTimers.delete(normalizedProfileId);
+    pluginStateRevisions.set(
+      normalizedProfileId,
+      (pluginStateRevisions.get(normalizedProfileId) || 0) + 1
+    );
     pluginRemoteSyncDepth.delete(normalizedProfileId);
     scopedStore.clearProfile(normalizedProfileId, { silentSync: true });
     return true;

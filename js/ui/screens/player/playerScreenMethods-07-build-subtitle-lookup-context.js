@@ -268,6 +268,7 @@ export function createPlayerScreenMethods07() {
         episodeTitle: String(this.params?.playerEpisodeTitle || this.params?.episodeTitle || this.params?.playerSubtitle || ""),
         positionMs: Math.round(currentSec * 1000),
         durationMs: Math.round(durationSec * 1000),
+        isLive: this.isLivePlayback(),
         progressPercent: progress
       };
     },

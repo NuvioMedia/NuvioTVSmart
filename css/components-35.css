@@ -347,13 +347,6 @@
   color: rgba(255, 255, 255, 0.68);
 }
 
-.player-stream-source {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
 .player-title,
 .player-dialog-title,
 .player-sources-title,

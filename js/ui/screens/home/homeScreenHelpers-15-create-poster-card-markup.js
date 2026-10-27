@@ -246,7 +246,7 @@ export function createPosterCardMarkup(
         ? `<div class="home-collection-emoji" aria-hidden="true">${escapeHtml(collectionItem.coverEmoji)}</div>`
         : '<div class="content-poster placeholder"></div>';
     return `
-      <article class="home-content-card home-poster-card home-collection-card focusable${shapeClass}"
+      <article class="home-content-card home-poster-card home-collection-card focusable${shapeClass}" role="button" aria-label="${escapeAttribute(collectionDisplayTitle)}"
                tabindex="0"
                data-nav-zone="main"
                data-nav-row="${rowIndex}"
@@ -323,7 +323,7 @@ export function createPosterCardMarkup(
   const titleWidth = titleWidths[safeIndex % titleWidths.length];
   const subtitleWidth = subtitleWidths[safeIndex % subtitleWidths.length];
   return `
-    <article class="home-content-card home-poster-card${focusableClass}${expandedClass}${landscapeClass}${loadingClass}"
+    <article class="home-content-card home-poster-card${focusableClass}${expandedClass}${landscapeClass}${loadingClass}" role="button" aria-label="${escapeAttribute(normalized.name || "Untitled")}"
              ${isLoading ? "" : 'tabindex="0"'}
              ${
                isLoading

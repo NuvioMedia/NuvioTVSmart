@@ -96,6 +96,9 @@ export function mdbListItemIds(row) {
   const imdb = nested.imdb ?? row.imdb_id;
   return {
     ...(imdb && /^tt\d+$/.test(imdb) ? { imdb } : {}),
+    ...(nested.mdblist != null && String(nested.mdblist).trim()
+      ? { mdblist: String(nested.mdblist).trim() }
+      : {}),
     ...Object.fromEntries(
       ["tmdb", "tvdb", "trakt"].flatMap((key) => {
         const value = positive(nested[key] ?? (key === "tmdb" ? row.id : row[`${key}_id`]));
@@ -123,7 +126,13 @@ export function decodeMdbListItems(payload) {
     if (!Object.keys(ids).length) invalid();
     const id =
       ids.imdb ||
-      (ids.tmdb ? `tmdb:${ids.tmdb}` : ids.tvdb ? `tvdb:${ids.tvdb}` : `trakt:${ids.trakt}`);
+      (ids.tmdb
+        ? `tmdb:${ids.tmdb}`
+        : ids.tvdb
+          ? `tvdb:${ids.tvdb}`
+          : ids.trakt
+            ? `trakt:${ids.trakt}`
+            : `mdblist:${ids.mdblist}`);
     return [
       {
         id,
@@ -186,7 +195,13 @@ export function projectMdbListEntries(snapshot) {
       const ids = group.ids;
       const id =
         ids.imdb ||
-        (ids.tmdb ? `tmdb:${ids.tmdb}` : ids.tvdb ? `tvdb:${ids.tvdb}` : `trakt:${ids.trakt}`);
+        (ids.tmdb
+          ? `tmdb:${ids.tmdb}`
+          : ids.tvdb
+            ? `tvdb:${ids.tvdb}`
+            : ids.trakt
+              ? `trakt:${ids.trakt}`
+              : `mdblist:${ids.mdblist}`);
       const key = `${item.type}:${id}`;
       const previous = entries.get(key);
       entries.set(key, {

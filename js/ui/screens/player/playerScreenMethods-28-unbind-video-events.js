@@ -30,7 +30,7 @@ export function createPlayerScreenMethods28() {
           action: "playPause",
           label: paused ? ">" : "II",
           icon: paused ? "assets/icons/ic_player_play.svg" : "assets/icons/ic_player_pause.svg",
-          title: "Play/Pause",
+          title: paused ? t("cd_play", {}, "Play") : t("cd_pause", {}, "Pause"),
           primary: true
         }
       ];
@@ -44,21 +44,23 @@ export function createPlayerScreenMethods28() {
         });
       }
 
-      base.push({
-        action: "subtitleDialog",
-        icon: "assets/icons/ic_player_subtitles.svg",
-        title: t("subtitle_dialog_title", {}, "Subtitles")
-      });
+      if (this.hasSubtitleTracksAvailable())
+        base.push({
+          action: "subtitleDialog",
+          icon: "assets/icons/ic_player_subtitles.svg",
+          title: t("subtitle_dialog_title", {}, "Subtitles")
+        });
 
-      base.push({
-        action: "audioTrack",
-        icon:
-          this.selectedAudioTrackIndex >= 0 || this.selectedManifestAudioTrackId
-            ? "assets/icons/ic_player_audio_filled.svg"
-            : "assets/icons/ic_player_audio_outline.svg",
-        useMask: true,
-        title: t("audio_dialog_title", {}, "Audio")
-      });
+      if (this.hasAudioTracksAvailable())
+        base.push({
+          action: "audioTrack",
+          icon:
+            this.selectedAudioTrackIndex >= 0 || this.selectedManifestAudioTrackId
+              ? "assets/icons/ic_player_audio_filled.svg"
+              : "assets/icons/ic_player_audio_outline.svg",
+          useMask: true,
+          title: t("audio_dialog_title", {}, "Audio")
+        });
 
       base.push({
         action: "source",

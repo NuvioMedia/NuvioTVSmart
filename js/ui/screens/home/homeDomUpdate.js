@@ -41,8 +41,11 @@ function signature(node) {
 }
 
 function snapshot(source) {
-  // Shallow nodes cannot retain entire detached markup trees through parentNode.
-  return { node: source.cloneNode(false), markup: signature(source) };
+  // Keep detached lazy images out of the live document's native observer.
+  return {
+    node: getInertDocument(source.ownerDocument).importNode(source, false),
+    markup: signature(source)
+  };
 }
 
 function remember(node, source) {
@@ -183,15 +186,15 @@ let inertDocument = null;
 
 // The comparison tree is parsed in a document without a browsing context, so its
 // <img> nodes never start fetching or decoding; inserted clones load once adopted.
-function createSourceRoot(ownerDocument) {
+function getInertDocument(ownerDocument) {
   if (!inertDocument) {
     inertDocument = ownerDocument.implementation?.createHTMLDocument?.("") || ownerDocument;
   }
-  return inertDocument.createElement("div");
+  return inertDocument;
 }
 
 export function updateHomeDom(container, markup, { incremental = false, focusedNode = null } = {}) {
-  const source = createSourceRoot(container.ownerDocument);
+  const source = getInertDocument(container.ownerDocument).createElement("div");
   source.innerHTML = markup;
   const canUpdate = incremental && hasMountedHomeDom(container);
   if (canUpdate) {

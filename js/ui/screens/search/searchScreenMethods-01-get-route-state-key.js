@@ -99,6 +99,7 @@ export function createSearchScreenMethods01() {
       this.rowFocusedIndexByKey =
         snapshot?.rowFocusedIndexByKey && typeof snapshot.rowFocusedIndexByKey === "object" ? { ...snapshot.rowFocusedIndexByKey } : {};
       this.pendingAutoFocusResults = false;
+      this.resultsQuery = null;
       this.restoredFocusedDescriptor = snapshot
         ? {
             action: String(snapshot.focusedAction || ""),
@@ -282,13 +283,15 @@ export function createSearchScreenMethods01() {
     },
     async reloadRows() {
       const token = this.loadToken;
+      const query = this.query;
       let rows;
       if (this.mode === "search" && this.query.length >= 2) {
-        rows = await this.searchRows(this.query, {
+        rows = await this.searchRows(query, {
           token,
           onFirstResults: (rows) => {
             if (token !== this.loadToken) return;
             this.rows = rows;
+            this.resultsQuery = query;
             if (this.shouldPatchResultsWithoutReplacingInput()) {
               this.renderResultsOnly();
               return;
@@ -303,6 +306,7 @@ export function createSearchScreenMethods01() {
       }
       if (token !== this.loadToken) return;
       this.rows = rows;
+      this.resultsQuery = query;
       void this.refreshWatchedTitleIds().then(() => {
         if (token === this.loadToken && Router.getCurrent() === "search") {
           if (this.shouldPatchResultsWithoutReplacingInput()) {

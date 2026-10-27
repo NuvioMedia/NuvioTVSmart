@@ -157,24 +157,28 @@ export function queueProfileSettingsCloudSync(
 ) {
   const normalizedProfileId = normalizeProfileId(profileId);
   const generation = settingsSyncGeneration;
+  const profileVersion = ProfileManager.getProfileDataVersion(normalizedProfileId);
+  const isCurrent = () =>
+    generation === settingsSyncGeneration &&
+    profileVersion === ProfileManager.getProfileDataVersion(normalizedProfileId);
   markProfileSettingsCloudSyncPending(normalizedProfileId);
   if (scheduledSettingsSyncTimers.has(normalizedProfileId)) {
     clearTimeout(scheduledSettingsSyncTimers.get(normalizedProfileId));
   }
   const timerId = setTimeout(() => {
-    if (generation !== settingsSyncGeneration) {
+    if (!isCurrent()) {
       return;
     }
     scheduledSettingsSyncTimers.delete(normalizedProfileId);
     const runPush = async () => {
-      if (generation !== settingsSyncGeneration) {
+      if (!isCurrent()) {
         return;
       }
       const activePush = settingsSyncInFlightByProfile.get(normalizedProfileId);
       if (activePush) {
         await activePush.catch(() => false);
       }
-      if (generation !== settingsSyncGeneration) {
+      if (!isCurrent()) {
         return;
       }
       const pushPromise = import("../../core/profile/profileSettingsSyncService.js")
@@ -192,11 +196,7 @@ export function queueProfileSettingsCloudSync(
         });
       settingsSyncInFlightByProfile.set(normalizedProfileId, pushPromise);
       const didPush = await pushPromise;
-      if (
-        generation === settingsSyncGeneration &&
-        !didPush &&
-        hasProfileSettingsCloudSyncPending(normalizedProfileId)
-      ) {
+      if (isCurrent() && !didPush && hasProfileSettingsCloudSyncPending(normalizedProfileId)) {
         const retryDelayMs = getSyncBackoffRemainingMs();
         if (retryDelayMs > 0) {
           queueProfileSettingsCloudSync(normalizedProfileId, Math.max(5000, retryDelayMs));
@@ -206,6 +206,13 @@ export function queueProfileSettingsCloudSync(
     void runPush();
   }, delayMs);
   scheduledSettingsSyncTimers.set(normalizedProfileId, timerId);
+}
+
+export function cancelProfileSettingsCloudSync(profileId) {
+  const id = normalizeProfileId(profileId);
+  clearTimeout(scheduledSettingsSyncTimers.get(id));
+  scheduledSettingsSyncTimers.delete(id);
+  clearProfileSettingsCloudSyncPending(id);
 }
 
 export function stopProfileSettingsCloudSync({ waitForInFlight = true } = {}) {

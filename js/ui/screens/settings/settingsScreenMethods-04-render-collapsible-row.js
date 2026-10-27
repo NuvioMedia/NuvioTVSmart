@@ -11,6 +11,7 @@ export function createSettingsScreenMethods04() {
             <button class="settings-action-row settings-collapsible-trigger settings-content-focusable focusable${expanded ? " is-open" : ""}"
                     data-zone="content"
                     ${this.registerAction(focusKey, this.actionMap.get(focusKey))}
+                    aria-expanded="${expanded ? "true" : "false"}"
                     data-role="section-toggle">
               <span class="settings-row-copy">
                 <span class="settings-row-title">${escapeHtml(title)}</span>

@@ -194,7 +194,7 @@ export function createAuthQrSignInScreenMethods01() {
           <div id="qr-manual-text" class="qr-manual-text"></div>
           <div id="qr-code-text" class="qr-code-text"></div>
           <div id="qr-expiry" class="qr-expiry"></div>
-          <div id="qr-status" class="qr-status">${escapeHtml(I18n.t("auth.qr.waitingApproval"))}</div>
+          <div id="qr-status" class="qr-status" role="status" aria-live="polite">${escapeHtml(I18n.t("auth.qr.waitingApproval"))}</div>
         `;
     },
     renderConnectedAccountIdentity() {

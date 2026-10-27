@@ -1,3 +1,4 @@
+import { watchProgressRepository } from "../../../data/repository/watchProgressRepository.js";
 import * as internals from "./homeScreenContext.js";
 
 export function createHomeScreenMethods25() {
@@ -162,6 +163,7 @@ export function createHomeScreenMethods25() {
 
       for (let index = anchorIndex + 1; index < episodes.length; index += 1) {
         const candidate = episodes[index];
+        if (watchProgressRepository.isHiddenForContinueWatching?.(completedProgress.contentId, candidate.season)) continue;
         const key = episodeKey(candidate.season, candidate.episode);
         const candidateProgress = progressByEpisode.get(key);
         if (resolvedWatchedEpisodeKeys?.has?.(key)) {

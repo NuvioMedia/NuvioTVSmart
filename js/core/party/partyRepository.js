@@ -272,7 +272,8 @@ export function createPartyRepository({
       displayName: name ? name.slice(0, 40) : DEFAULT_NAME,
       avatarUrl:
         avatarUrl && avatarUrl.startsWith("https://") && avatarUrl.length <= 512 ? avatarUrl : null,
-      avatarColor: COLOR_PATTERN.test(color) ? color : null
+      avatarColor: COLOR_PATTERN.test(color) ? color : null,
+      profileIndex: profile ? Number(profile.id ?? profile.profileIndex) : null
     };
   }
 

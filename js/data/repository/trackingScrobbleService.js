@@ -2,7 +2,16 @@ import { MediaServerScrobbleService } from "../mediaserver/mediaServerScrobbleSe
 import { TraktScrobbleService } from "./traktScrobbleService.js";
 import { SimklScrobbleService } from "./simklScrobbleService.js";
 
-const providers = [MediaServerScrobbleService, TraktScrobbleService, SimklScrobbleService];
+import { MdbListScrobbleService } from "./mdbListScrobbleService.js";
+
+const providers = [
+  MediaServerScrobbleService,
+  TraktScrobbleService,
+  SimklScrobbleService,
+  MdbListScrobbleService
+];
+
+let stopped = false;
 
 function enabledProviders() {
   return providers.filter((provider) => provider.isEnabled());
@@ -14,6 +23,7 @@ export const TrackingScrobbleService = {
   },
 
   start(context) {
+    stopped = false;
     enabledProviders().forEach((provider) => provider.start(context));
   },
 
@@ -22,10 +32,13 @@ export const TrackingScrobbleService = {
   },
 
   stop(context) {
+    if (stopped) return;
+    stopped = true;
     enabledProviders().forEach((provider) => provider.stop(context));
   },
 
   cancel() {
+    stopped = true;
     providers.forEach((provider) => provider.cancel());
   }
 };

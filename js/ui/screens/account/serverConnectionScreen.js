@@ -201,7 +201,7 @@ export const ServerConnectionScreen = {
               )
             )}</div>
             <input class="settings-text-dialog-field settings-text-dialog-input focusable"
-                   data-action="serverInput" type="text" autocomplete="off" autocapitalize="none"
+                   data-action="serverInput" type="url" dir="ltr" autocomplete="off" autocapitalize="none"
                    spellcheck="false" placeholder="${escapeHtml(
                      text("custom_server_url_placeholder", "https://backend.example.com")
                    )}"

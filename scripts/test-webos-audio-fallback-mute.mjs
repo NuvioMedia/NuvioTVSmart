@@ -112,3 +112,41 @@ for (const { gated, muted, releaseDuringReload } of [
     controller.stopWebOsDtsAudioTranscode();
   });
 }
+
+const { createPlayerScreenMethods31 } =
+  await import("../js/ui/screens/player/playerScreenMethods-31-seek-playback-seconds.js");
+
+for (const blockedBy of [null, "gate", "frame", "advance", "restore", "error", "external"]) {
+  test(`hidden loading overlay releases presentation mute only after startup is ready (${blockedBy})`, () => {
+    const video = { muted: true, defaultMuted: true, volume: 1 };
+    Object.assign(PlayerController, {
+      video,
+      startupAudioGateActive: blockedBy === "gate",
+      startupPresentationAudioMuted: true,
+      webOsDtsAudioState: { originalMuted: true }
+    });
+    const screen = {
+      ...createPlayerScreenMethods30(),
+      ...createPlayerScreenMethods31(),
+      loadingVisible: false,
+      hasPresentedPlaybackFrame: blockedBy !== "frame",
+      startupPlaybackHasAdvanced: blockedBy !== "advance",
+      startupAudioGateActive: blockedBy === "gate",
+      pendingPlaybackRestore: blockedBy === "restore" ? {} : null,
+      uiRefs: { loadingOverlay: { classList: { add() {}, remove() {}, toggle() {} } } },
+      isStartupLoadingVisible: () => false,
+      isBufferingSpinnerVisible: () => false,
+      isStartupErrorVisible: () => blockedBy === "error",
+      isExternalFrameMode: () => blockedBy === "external",
+      isBufferingForPauseOverlay: () => false,
+      isStartupGateReleaseReady: () => false,
+      clearBufferingSpinnerTimer() {},
+      renderSkipIntroButton() {},
+      renderNextEpisodeCard() {}
+    };
+    screen.updateLoadingVisibility();
+    assert.equal(PlayerController.startupPresentationAudioMuted, blockedBy !== null);
+    assert.equal(video.muted, blockedBy !== null);
+    assert.equal(PlayerController.webOsDtsAudioState.originalMuted, blockedBy !== null);
+  });
+}

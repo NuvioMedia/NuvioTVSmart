@@ -20,6 +20,7 @@ let started = false;
 const pushTimers = new Map();
 
 async function scopeFor(profileId) {
+  const profileVersion = ProfileManager.getProfileDataVersion(profileId);
   if (
     !AuthManager.isAuthenticated ||
     String(ProfileManager.getActiveProfileId()) !== String(profileId)
@@ -28,15 +29,20 @@ async function scopeFor(profileId) {
   const ownerId = String((await AuthManager.getEffectiveUserId()) || "");
   if (
     !AuthManager.isAuthenticated ||
-    String(ProfileManager.getActiveProfileId()) !== String(profileId)
+    String(ProfileManager.getActiveProfileId()) !== String(profileId) ||
+    profileVersion !== ProfileManager.getProfileDataVersion(profileId)
   )
     return null;
-  return ownerId ? { ownerId, profileId: String(profileId) } : null;
+  return ownerId ? { ownerId, profileId: String(profileId), profileVersion } : null;
 }
 async function stillCurrent(scope, version) {
   if (version !== generation) return false;
   const current = await scopeFor(scope.profileId);
-  return version === generation && current?.ownerId === scope.ownerId;
+  return (
+    version === generation &&
+    current?.ownerId === scope.ownerId &&
+    current?.profileVersion === scope.profileVersion
+  );
 }
 function notifyRemoteChange() {
   globalThis.document?.dispatchEvent?.(
