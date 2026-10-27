@@ -1,6 +1,6 @@
+import { MdbListTracking } from "../../../data/repository/mdbListTracking.js";
 import { MdbListAccount } from "../../../data/repository/mdbListAccount.js";
 import { MdbListLibrary } from "../../../data/repository/mdbListLibrary.js";
-import { TraktSettingsStore } from "../../../data/local/traktSettingsStore.js";
 import { ProfileManager } from "../../../core/profile/profileManager.js";
 import { QrCodeGenerator, t, escapeHtml, escapeAttribute } from "./settingsScreenContext.js";
 
@@ -59,6 +59,10 @@ export function openMdbListAuthorization() {
           const authorized = await MdbListAccount.poll(session, current);
           if (!current()) return;
           if (authorized) {
+            void MdbListTracking.refresh({ force: true }).then(() => {
+              if (this.isMounted && String(ProfileManager.getActiveProfileId()) === profileId)
+                void this.render();
+            });
             this.closeOptionDialog();
             await this.render();
             return;
@@ -131,19 +135,46 @@ export function registerMdbListAccountActions() {
     }
     const scope = MdbListAccount.scope();
     this.openOptionDialog({
-      title: t("mdblist_disconnect_title"),
+      title: "MDBList",
+      message:
+        t("mdblist_tracking_description") +
+        (MdbListTracking.getSnapshot().checkedAt
+          ? ` · ${t("mdblist_last_synced", [new Date(MdbListTracking.getSnapshot().checkedAt).toLocaleString()])}`
+          : ""),
       options: [
+        { id: "sync", label: t("simkl_sync_now") },
         { id: "disconnect", label: t("debrid_disconnect") },
         { id: "cancel", label: t("common.cancel") }
       ],
       returnFocusKey: "integration:mdblist:account",
       onSelect: async (option) => {
+        if (option.id === "sync") {
+          MdbListAccount.check(scope);
+          this.mdbListAccountMessage = t("mdblist_status_syncing");
+          try {
+            await MdbListTracking.refresh({ force: true, strict: true });
+            MdbListAccount.check(scope);
+            this.mdbListAccountMessage = t("mdblist_last_synced", [
+              new Date(MdbListTracking.getSnapshot().checkedAt).toLocaleString()
+            ]);
+          } catch (error) {
+            try {
+              MdbListAccount.check(scope);
+            } catch (_) {
+              return true;
+            }
+            this.mdbListAccountMessage = t(
+              error.code || "mdblist_unavailable",
+              {},
+              t("mdblist_unavailable")
+            );
+          }
+          return true;
+        }
         if (option.id !== "disconnect") return true;
         MdbListAccount.check(scope);
         const revoked = await MdbListAccount.disconnect();
         if (String(ProfileManager.getActiveProfileId()) !== scope.profileId) return true;
-        if (TraktSettingsStore.get().librarySourceMode === "mdblist")
-          TraktSettingsStore.setLibrarySourceMode("local");
         if (!revoked) this.mdbListAccountMessage = t("mdblist_revoke_failed");
         return true;
       }

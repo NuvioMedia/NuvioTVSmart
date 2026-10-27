@@ -1,10 +1,46 @@
+import { SessionStore } from "../storage/sessionStore.js";
 import { LocalStore } from "../storage/localStore.js";
+import { clearProfileLocalData } from "./profileLocalDataReset.js";
 
 const PROFILES_KEY = "profiles";
 const ACTIVE_PROFILE_ID_KEY = "activeProfileId";
 const REMEMBER_LAST_PROFILE_KEY = "rememberLastProfile";
 const HAS_EVER_SELECTED_PROFILE_KEY = "hasEverSelectedProfile";
 export const MAX_PROFILES = 6;
+const profileDataVersions = new Map();
+let profileMutations = Promise.resolve();
+
+function mutateProfiles(operation) {
+  const result = profileMutations.then(operation);
+  profileMutations = result.catch(() => {});
+  return result;
+}
+
+async function removeLocalProfileData(id) {
+  if (id === "1") return;
+  const sessionToken = SessionStore.accessToken;
+  profileDataVersions.set(id, (profileDataVersions.get(id) || 0) + 1);
+  if (ProfileManager.getActiveProfileId() === id) {
+    LocalStore.set(ACTIVE_PROFILE_ID_KEY, "1");
+  }
+  const { cancelProfileSettingsCloudSync } = await import("../../data/local/profileScopedStore.js");
+  const { PluginStore } = await import("../../data/local/pluginStore.js");
+  const { PluginCodeStore } = await import("../../data/local/pluginCodeStore.js");
+  const { HomeCatalogSettingsSyncService } = await import("./homeCatalogSettingsSyncService.js");
+  cancelProfileSettingsCloudSync(id);
+  HomeCatalogSettingsSyncService.clearProfile(id);
+  if (!(await PluginCodeStore.clearProfile(id))) {
+    throw new Error("Profile plugin code removal failed");
+  }
+  if (SessionStore.accessToken !== sessionToken) throw new Error("Profile cleanup account changed");
+  PluginStore.clearProfile(id);
+  clearProfileLocalData(id);
+  // Also invalidate requests started while IndexedDB cleanup was awaiting.
+  profileDataVersions.set(id, (profileDataVersions.get(id) || 0) + 1);
+  if (ProfileManager.getActiveProfileId() === id) {
+    LocalStore.set(ACTIVE_PROFILE_ID_KEY, "1");
+  }
+}
 
 const DEFAULT_PROFILES = [
   {
@@ -86,10 +122,41 @@ export const ProfileManager = {
   },
 
   async replaceProfiles(profiles) {
-    const normalized = (Array.isArray(profiles) ? profiles : []).map((profile, index) =>
-      normalizeProfile(profile, index)
-    );
-    LocalStore.set(PROFILES_KEY, normalized);
+    return mutateProfiles(async () => {
+      if (
+        !Array.isArray(profiles) ||
+        !profiles.length ||
+        profiles.some((profile) => {
+          const raw = profile?.profileIndex ?? profile?.profile_index ?? profile?.id;
+          const id = Number(raw);
+          return (
+            !["number", "string"].includes(typeof raw) ||
+            !Number.isInteger(id) ||
+            id < 1 ||
+            id > MAX_PROFILES
+          );
+        })
+      )
+        return false;
+      const normalized = profiles.map((profile, index) => normalizeProfile(profile, index));
+      const ids = new Set(normalized.map((profile) => profile.id));
+      if (!ids.has("1") || ids.size !== normalized.length) return false;
+      const previous = await this.getProfiles();
+      const previousIds = new Set(previous.map((profile) => profile.id));
+      for (const profile of previous) {
+        if (!ids.has(profile.id)) await removeLocalProfileData(profile.id);
+      }
+      // A newly discovered slot may still have data from an earlier deletion.
+      for (const id of ids) {
+        if (!previousIds.has(id)) await removeLocalProfileData(id);
+      }
+      LocalStore.set(PROFILES_KEY, normalized);
+      return true;
+    });
+  },
+
+  getProfileDataVersion(profileId) {
+    return profileDataVersions.get(String(profileId)) || 0;
   },
 
   getNextProfileIndex(profiles = []) {
@@ -130,93 +197,82 @@ export const ProfileManager = {
     usesPrimaryAddons = false,
     usesPrimaryPlugins = false
   } = {}) {
-    const trimmedName = String(name || "").trim();
-    if (!trimmedName) {
-      return false;
-    }
+    return mutateProfiles(async () => {
+      const trimmedName = String(name || "").trim();
+      if (!trimmedName) {
+        return false;
+      }
 
-    const profiles = await this.getProfiles();
-    if (profiles.length >= MAX_PROFILES) {
-      return false;
-    }
+      const profiles = await this.getProfiles();
+      if (profiles.length >= MAX_PROFILES) {
+        return false;
+      }
 
-    const nextIndex = getFirstAvailableProfileIndex(profiles);
-    if (nextIndex == null) {
-      return false;
-    }
-    const nextProfiles = [
-      ...profiles,
-      normalizeProfile(
-        {
-          id: nextIndex,
-          profileIndex: nextIndex,
-          name: trimmedName,
-          avatarColorHex,
-          avatarId,
-          avatarUrl,
-          profileBackgroundId,
-          profileBackgroundUrl,
-          isPrimary: false,
-          usesPrimaryAddons,
-          usesPrimaryPlugins
-        },
-        profiles.length
-      )
-    ];
-    LocalStore.set(PROFILES_KEY, nextProfiles);
-    return true;
+      const nextIndex = getFirstAvailableProfileIndex(profiles);
+      if (nextIndex == null) {
+        return false;
+      }
+      await removeLocalProfileData(String(nextIndex));
+      const nextProfiles = [
+        ...profiles,
+        normalizeProfile(
+          {
+            id: nextIndex,
+            profileIndex: nextIndex,
+            name: trimmedName,
+            avatarColorHex,
+            avatarId,
+            avatarUrl,
+            profileBackgroundId,
+            profileBackgroundUrl,
+            isPrimary: false,
+            usesPrimaryAddons,
+            usesPrimaryPlugins
+          },
+          profiles.length
+        )
+      ];
+      LocalStore.set(PROFILES_KEY, nextProfiles);
+      return true;
+    });
   },
 
   async updateProfile(profile) {
-    const profiles = await this.getProfiles();
-    const nextProfiles = profiles.map((entry, index) => {
-      if (String(entry.id) !== String(profile?.id)) {
-        return entry;
-      }
-      return normalizeProfile(
-        {
-          ...entry,
-          ...profile
-        },
-        index
-      );
+    return mutateProfiles(async () => {
+      const profiles = await this.getProfiles();
+      const nextProfiles = profiles.map((entry, index) => {
+        if (String(entry.id) !== String(profile?.id)) {
+          return entry;
+        }
+        return normalizeProfile(
+          {
+            ...entry,
+            ...profile
+          },
+          index
+        );
+      });
+      LocalStore.set(PROFILES_KEY, nextProfiles);
+      return true;
     });
-    LocalStore.set(PROFILES_KEY, nextProfiles);
-    return true;
   },
 
   async deleteProfile(id) {
-    const normalizedId = String(id || "");
-    if (!normalizedId || normalizedId === "1") {
-      return false;
-    }
+    return mutateProfiles(async () => {
+      const normalizedId = String(id || "");
+      if (!normalizedId || normalizedId === "1") {
+        return false;
+      }
 
-    const profiles = await this.getProfiles();
-    const nextProfiles = profiles.filter((profile) => String(profile.id) !== normalizedId);
-    if (nextProfiles.length === profiles.length) {
-      return false;
-    }
-    LocalStore.set(PROFILES_KEY, nextProfiles);
-    // Profile slots can be reused. Never pass a deleted profile's playback URLs
-    // or source credentials to the next owner of that slot.
-    const linkCache = LocalStore.get("streamLinkCache", {});
-    if (
-      linkCache &&
-      typeof linkCache === "object" &&
-      Object.prototype.hasOwnProperty.call(linkCache, normalizedId)
-    ) {
-      delete linkCache[normalizedId];
-      LocalStore.set("streamLinkCache", linkCache);
-    }
-    for (const key of ["mdbListAccounts", "mdbListLibraries", "episodeShuffle"]) {
-      const values = LocalStore.get(key, {});
-      delete values[normalizedId];
-      LocalStore.set(key, values);
-    }
-    if (this.getActiveProfileId() === normalizedId) {
-      LocalStore.set(ACTIVE_PROFILE_ID_KEY, "1");
-    }
-    return true;
+      const profiles = await this.getProfiles();
+      const nextProfiles = profiles.filter((profile) => String(profile.id) !== normalizedId);
+      if (nextProfiles.length === profiles.length) {
+        return false;
+      }
+      await removeLocalProfileData(normalizedId);
+      LocalStore.set(PROFILES_KEY, nextProfiles);
+      return true;
+    });
   },
 
   getActiveProfileId() {

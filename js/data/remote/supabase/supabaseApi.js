@@ -2,9 +2,19 @@ import { httpRequest } from "../../../core/network/httpClient.js";
 import { recordSyncFailure } from "../../../core/sync/syncBackoffPolicy.js";
 import { trackSessionRequest } from "../../../core/auth/sessionLifecycle.js";
 import { ServerConfigurationStore } from "../../local/serverConfigurationStore.js";
+import { ProfileManager } from "../../../core/profile/profileManager.js";
 
-function trackSyncRequest(request) {
-  return trackSessionRequest(request).catch((error) => {
+function trackSyncRequest(request, profileId = null) {
+  const version = ProfileManager.getProfileDataVersion(profileId);
+  return trackSessionRequest(
+    Promise.resolve(request).then((response) => {
+      // A response for a deleted slot must not recreate its data after cleanup.
+      if (profileId != null && version !== ProfileManager.getProfileDataVersion(profileId)) {
+        throw Object.assign(new Error("Profile data removed during sync"), { name: "AbortError" });
+      }
+      return response;
+    })
+  ).catch((error) => {
     recordSyncFailure(error);
     throw error;
   });
@@ -34,7 +44,8 @@ export const SupabaseApi = {
         headers: buildHeaders({ "Content-Type": "application/json" }, useSession),
         includeSessionAuth: useSession,
         body: JSON.stringify(body)
-      })
+      }),
+      body.p_profile_id
     );
   },
 
@@ -45,7 +56,8 @@ export const SupabaseApi = {
         method: "GET",
         headers: buildHeaders({}, useSession),
         includeSessionAuth: useSession
-      })
+      }),
+      /(?:^|&)profile_id=eq\.(\d+)(?:&|$)/.exec(query)?.[1]
     );
   },
 

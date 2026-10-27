@@ -45,6 +45,10 @@ async function setup() {
       export { TmdbService, fetchTmdbJson } from './js/core/tmdb/tmdbService.js';
       export { TmdbMetadataService, resolveTmdbCredits } from './js/core/tmdb/tmdbMetadataService.js';
       export { createMetaDetailsScreenMethods06 } from './js/ui/screens/detail/metaDetailsScreenMethods-06-enrich-meta.js';
+      export { createMetaDetailsScreenMethods07 } from './js/ui/screens/detail/metaDetailsScreenMethods-07-merge-stream-items.js';
+      export { createMetaDetailsScreenMethods01 } from './js/ui/screens/detail/metaDetailsScreenMethods-01-get-route-state-key.js';
+      export { createMetaDetailsScreenMethods02 } from './js/ui/screens/detail/metaDetailsScreenMethods-02-mount.js';
+      export { createMetaDetailsScreenMethods05 } from './js/ui/screens/detail/metaDetailsScreenMethods-05-resolve-initial-selected-season.js';
       export { createMetaDetailsScreenMethods03 } from './js/ui/screens/detail/metaDetailsScreenMethods-03-load-detail.js';
     `
     },
@@ -56,6 +60,11 @@ async function setup() {
       {
         name: "fixtures",
         setup(b) {
+          b.onLoad({ filter: /detailEpisodeShuffle\.js$/ }, () => ({
+            contents:
+              "export const detailShuffleSettings = () => ({}); export const selectDetailShuffle = () => null; export const detailShuffleResume = () => null;",
+            loader: "js"
+          }));
           b.onLoad(
             {
               filter: /(?:config|tmdbSettingsStore|pluginServiceClient)\.js$|platform\/index\.js$/
@@ -72,7 +81,7 @@ async function setup() {
             }
           );
           b.onLoad(
-            { filter: /metaDetailsScreenMethods-(?:03|06)-[^/]+\.js$/ },
+            { filter: /metaDetailsScreenMethods-(?:01|02|03|05|06|07)-[^/]+\.js$/ },
             async ({ path }) => ({
               contents: (await readFile(path, "utf8")).replace(
                 /^import \* as internals from [^;]+;/m,
@@ -87,6 +96,7 @@ async function setup() {
   });
   const context = vm.createContext({
     fixtures,
+    document: { getElementById: () => ({ querySelector: () => null }) },
     URL,
     AbortController,
     console: { warn: (...args) => warnings.push(args) },
@@ -371,14 +381,27 @@ test("special episodes and per-field opt-outs preserve addon data", async () => 
   assert.equal(disabled.videos, meta.videos);
 });
 
-async function loadScreen(api, enrichment, extractCast = () => ["cast"]) {
-  const meta = { id: "7", type: "series", name: "Original", videos: [] };
+async function loadScreen(
+  api,
+  enrichment,
+  extractCast = () => ["cast"],
+  progressPromise = null,
+  onScreen = () => {}
+) {
+  const meta = {
+    id: "7",
+    type: api.fixtures.contentType || "series",
+    name: "Original",
+    videos: api.fixtures.videos || []
+  };
   Object.assign(api.fixtures, {
     metaRepository: { getMetaFromAllAddons: async () => ({ status: "success", data: meta }) },
     savedLibraryRepository: { isSaved: async () => false },
     watchProgressRepository: { getResumeByContentId: async () => null },
     watchedItemsRepository: { isWatched: async () => false, getAll: async () => [] },
-    getDetailAllProgressPromise: async () => api.fixtures.progressItems || [],
+    getDetailAllProgressPromise: async () => progressPromise || api.fixtures.progressItems || [],
+    mdbListRepository: api.fixtures.mdbListRepository || { getRatingsForMeta: async () => null },
+    metaWithRouteExternalIds: (meta) => meta,
     isDetailTitleWatched: async () => false,
     buildResumeContentIds: () => [],
     buildDetailContentReference: () => ({}),
@@ -392,8 +415,9 @@ async function loadScreen(api, enrichment, extractCast = () => ["cast"]) {
     mergeSeasonRatings: () => ({})
   });
   const screen = {
+    ...api.createMetaDetailsScreenMethods03(),
     detailLoadToken: 1,
-    params: { itemId: "7", itemType: "series" },
+    params: { itemId: "7", itemType: meta.type },
     updates: [],
     resolveCanonicalDetailItemId: async (id) => id,
     enrichMeta: () => enrichment.promise,
@@ -415,8 +439,10 @@ async function loadScreen(api, enrichment, extractCast = () => ["cast"]) {
     loadTraktComments() {},
     fetchMoreLikeThis: async () => [],
     loadMdbListRatings() {},
-    fetchSeriesRatingsBySeason: async () => ({})
+    fetchMovieCollection: async () => ({ items: [], name: "" }),
+    fetchSeriesRatingsBySeason: api.fixtures.fetchSeriesRatingsBySeason || (async () => ({}))
   };
+  onScreen(screen);
   await api.createMetaDetailsScreenMethods03().loadDetail.call(screen);
   await flush();
   return screen;
@@ -467,4 +493,163 @@ test("late metadata rebuilds episode state from current progress and watched ite
   await flush();
   assert.equal(screen.episodeState[1], watched);
   assert.deepEqual(screen.episodeState[0], progress);
+});
+
+test("ratings start and finish while remote progress remains pending; stale metadata cannot start them", async () => {
+  for (const stale of [false, true]) {
+    const api = await setup(),
+      progress = deferred(),
+      enrichment = deferred();
+    let ratingsLoaded = false,
+      episodeRatingsLoaded = false,
+      screen;
+    api.fixtures.videos = [{ season: 1, episode: 1 }];
+    api.fixtures.fetchSeriesRatingsBySeason = async (_meta, episodes) => {
+      assert.equal(episodes.length, 1);
+      episodeRatingsLoaded = true;
+      return {};
+    };
+    api.fixtures.mdbListRepository = {
+      getRatingsForMeta: async (meta) => {
+        assert.equal(meta.id, "7");
+        ratingsLoaded = true;
+        return { ratings: { imdb: 8 } };
+      }
+    };
+    const loading = loadScreen(
+      api,
+      enrichment,
+      () => ["cast"],
+      progress.promise,
+      (value) => {
+        screen = value;
+        if (stale) queueMicrotask(() => screen.detailLoadToken++);
+      }
+    );
+    await flush();
+    assert.equal(ratingsLoaded, !stale);
+    assert.equal(episodeRatingsLoaded, !stale);
+    assert.equal(screen.initial, undefined, "remote progress is still pending");
+    progress.resolve([]);
+    await loading;
+  }
+});
+
+test("prefetched ratings are reused, stale completions are ignored, and enriched IDs remain a fallback", async () => {
+  const api = await setup();
+  let requests = 0;
+  api.fixtures.metaWithRouteExternalIds = (meta) => meta;
+  api.fixtures.mdbListRepository = {
+    getRatingsForMeta: async () => {
+      requests++;
+      return { ratings: { imdb: 9 }, hasImdbRating: true };
+    }
+  };
+  const screen = {
+    detailLoadToken: 1,
+    params: { itemId: "7", itemType: "series" },
+    meta: { name: "Fresh" },
+    updateRenderedDetailSections() {}
+  };
+  const load = api.createMetaDetailsScreenMethods07().loadMdbListRatings;
+  await load.call(screen, {}, 1, Promise.resolve({ ratings: { imdb: 8 }, hasImdbRating: true }));
+  assert.equal(requests, 0);
+  assert.equal(screen.meta.mdbListRatings.imdb, 8);
+  assert.equal(screen.meta.name, "Fresh");
+  await load.call(screen, {}, 1, Promise.resolve(null));
+  assert.equal(requests, 1);
+  const pending = deferred();
+  const stale = load.call(screen, {}, 1, pending.promise);
+  screen.detailLoadToken++;
+  pending.resolve({ ratings: { imdb: 1 } });
+  await stale;
+  assert.equal(screen.meta.mdbListRatings.imdb, 9);
+  assert.equal(requests, 1);
+});
+
+test("Continue Watching Back resumes interrupted enrichment and preserves the detail snapshot", async () => {
+  for (const [contentType, leaveAgain] of [
+    ["series", false],
+    ["series", true],
+    ["movie", false],
+    ["movie", true]
+  ]) {
+    const api = await setup(),
+      enrichment = deferred();
+    Object.assign(api.fixtures, {
+      contentType,
+      videos: contentType === "series" ? [{ id: "7:1:1", season: 1, episode: 1 }] : [],
+      Router: { getCurrent: () => "detail" },
+      ScreenUtils: { show() {} },
+      hasMdbListRatings: () => true,
+      captureHorizontalScrollMap: () => ({ cast: 240 })
+    });
+    let snapshot,
+      enrichmentCalls = 0;
+    const screen = await loadScreen(
+      api,
+      enrichment,
+      (meta) => [{ name: "Actor", photo: meta.credits ? "https://example.com/actor.jpg" : "" }],
+      null,
+      (screen) => {
+        Object.assign(
+          screen,
+          api.createMetaDetailsScreenMethods01(),
+          api.createMetaDetailsScreenMethods02(),
+          {
+            maybeAutoOpenContinueWatchingStream:
+              api.createMetaDetailsScreenMethods05().maybeAutoOpenContinueWatchingStream,
+            findContinueWatchingEpisodeTarget:
+              api.createMetaDetailsScreenMethods05().findContinueWatchingEpisodeTarget,
+            container: { querySelector: () => ({ scrollTop: 120 }) },
+            captureDetailFocus: () => ({ rail: "cast", index: 2 }),
+            stopTrailerPlayback() {},
+            cancelTraktCommentsRequest() {},
+            bindTrailerProxyMessaging() {},
+            refreshEpisodePlaybackState: async () => {},
+            navigateToStreamScreenForMovie() {
+              snapshot = this.captureRouteState();
+              this.detailLoadToken++;
+            },
+            navigateToStreamScreenForEpisode() {
+              this.navigateToStreamScreenForMovie();
+            },
+            enrichMeta() {
+              enrichmentCalls++;
+              return enrichment.promise;
+            }
+          }
+        );
+        screen.params.autoOpenContinueWatching = true;
+      }
+    );
+    assert.equal(snapshot.detailEnrichmentComplete, false);
+    assert.equal(snapshot.castItems[0].photo, "");
+    snapshot.selectedSeason = 3;
+    await screen.mount(screen.params, { isBackNavigation: true, restoredState: snapshot });
+    assert.equal(enrichmentCalls, 1);
+    assert.equal(screen.initial.name, "Original");
+    assert.deepEqual(plain(screen.pendingFocusRestore), { rail: "cast", index: 2 });
+    assert.equal(screen.restoredContentScrollTop, 120);
+    assert.equal(screen.restoredTrackScrollLeftByKey.cast, 240);
+    if (leaveAgain) screen.detailLoadToken++;
+    enrichment.resolve({
+      id: "7",
+      type: contentType,
+      name: "Enriched",
+      videos: [],
+      credits: { cast: [] }
+    });
+    await flush();
+    assert.equal(screen.castItems[0].photo, leaveAgain ? "" : "https://example.com/actor.jpg");
+    assert.equal(screen.detailEnrichmentComplete, !leaveAgain);
+    assert.equal(screen.selectedSeason, 3, "enrichment preserves the restored season");
+    if (!leaveAgain) {
+      const completed = screen.captureRouteState();
+      await screen.mount(screen.params, { isBackNavigation: true, restoredState: completed });
+      await flush();
+      assert.equal(enrichmentCalls, 1, "completed enrichment is not restarted on Back");
+      assert.equal(screen.castItems[0].photo, "https://example.com/actor.jpg");
+    }
+  }
 });

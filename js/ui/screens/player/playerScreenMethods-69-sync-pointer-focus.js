@@ -157,6 +157,7 @@ export function createPlayerScreenMethods69() {
       }
     },
     seekProgressFromPointer(event, target) {
+      if (!this.isSeekBarAvailable()) return false;
       const shell = target?.closest?.(".player-progress-shell") || this.uiRefs?.progressShell;
       const rect = shell?.getBoundingClientRect?.();
       const duration = this.getPlaybackDurationSeconds();

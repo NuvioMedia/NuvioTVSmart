@@ -128,7 +128,7 @@ export function customPosterForItem(
 ) {
   const pattern = settings.customPosterUrlPattern;
   if (!item || !pattern || !settings.customPosterEnabledScreens?.includes(screen)) return item;
-  const supportsShape = pattern.includes("{shape}");
+  const supportsShape = prepare(pattern).decoded.includes("{shape}");
   if (!supportsShape && shape !== "poster") return item;
   const ids = extractPosterIds(item.id || item.contentId, item.imdbId || item.imdb_id);
   const type = item.apiType || item.type || item.contentType || "movie";

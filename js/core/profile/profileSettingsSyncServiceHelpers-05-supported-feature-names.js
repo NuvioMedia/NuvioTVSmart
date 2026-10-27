@@ -155,6 +155,7 @@ export function applyRemoteBlob(profileId, blob) {
 }
 
 export async function pullProfileSettingsUnlocked(resolvedProfileId) {
+  const version = ProfileManager.getProfileDataVersion(resolvedProfileId);
   try {
     if (!AuthManager.isAuthenticated || isSyncBackoffActive()) {
       return false;
@@ -165,7 +166,13 @@ export async function pullProfileSettingsUnlocked(resolvedProfileId) {
       return false;
     }
     const blob = await pullRemoteBlob(resolvedProfileId);
-    if (!blob || !AuthManager.isAuthenticated || isSyncBackoffActive() || hasProfileSettingsCloudSyncPending(resolvedProfileId)) {
+    if (
+      !blob ||
+      version !== ProfileManager.getProfileDataVersion(resolvedProfileId) ||
+      !AuthManager.isAuthenticated ||
+      isSyncBackoffActive() ||
+      hasProfileSettingsCloudSyncPending(resolvedProfileId)
+    ) {
       return false;
     }
 
@@ -188,12 +195,14 @@ export async function pullProfileSettingsUnlocked(resolvedProfileId) {
 }
 
 export async function pushProfileSettingsUnlocked(resolvedProfileId) {
+  const version = ProfileManager.getProfileDataVersion(resolvedProfileId);
   try {
     if (!AuthManager.isAuthenticated || isSyncBackoffActive()) {
       return false;
     }
     const pendingVersion = getProfileSettingsCloudSyncPendingVersion(resolvedProfileId);
     const remoteBlob = await pullRemoteBlob(resolvedProfileId);
+    if (version !== ProfileManager.getProfileDataVersion(resolvedProfileId)) return false;
     const blob = buildOutgoingBlob(String(resolvedProfileId), remoteBlob);
     await SupabaseApi.rpc(
       PUSH_RPC,
@@ -204,6 +213,7 @@ export async function pushProfileSettingsUnlocked(resolvedProfileId) {
       },
       true
     );
+    if (version !== ProfileManager.getProfileDataVersion(resolvedProfileId)) return false;
     setCachedBlob(resolvedProfileId, blob);
     if (pendingVersion != null) {
       clearProfileSettingsCloudSyncPending(resolvedProfileId, pendingVersion);

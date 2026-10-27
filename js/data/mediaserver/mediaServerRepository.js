@@ -19,9 +19,11 @@ const LIST_FIELDS =
   "ProviderIds,Overview,MediaSources,MediaStreams,Genres,DateCreated,UserData,Path";
 const refs = new Map();
 const genreScopes = new Map();
+const titleNames = new Map();
 globalThis.document?.addEventListener?.("nuvio:media-servers-changed", () => {
   refs.clear();
   genreScopes.clear();
+  titleNames.clear();
 });
 const key = (id) => encodeURIComponent(String(id));
 const profile = () => String(ProfileManager.getActiveProfileId() || "1");
@@ -295,6 +297,7 @@ export const MediaServerRepository = {
   changed() {
     refs.clear();
     genreScopes.clear();
+    titleNames.clear();
     globalThis.document?.dispatchEvent?.(new CustomEvent("nuvio:media-servers-changed"));
   },
   addons() {
@@ -541,36 +544,70 @@ export const MediaServerRepository = {
         const scopes = connection.libraries.filter(
           (library) => library.selected && (library.kind === type || library.kind === "mixed")
         );
-        const matches = await Promise.all(
-          scopes.map((library) =>
-            get(
-              connection,
-              "items",
-              null,
-              {
-                parentId: library.id,
-                recursive: true,
-                includeItemTypes: type === "movie" ? "Movie" : "Series",
-                anyProviderIdEquals: `${external.name}.${external.id}`,
-                fields: LIST_FIELDS,
-                limit: 100
-              },
-              signal
+        if (!scopes.length) return { status: "success", data: [] };
+        const lookup = async (query) => {
+          const matches = await Promise.all(
+            scopes.map((library) =>
+              get(
+                connection,
+                "items",
+                null,
+                {
+                  parentId: library.id,
+                  recursive: true,
+                  includeItemTypes: type === "movie" ? "Movie" : "Series",
+                  fields: LIST_FIELDS,
+                  limit: 100,
+                  ...query
+                },
+                signal
+              )
             )
-          )
-        );
-        const unique = new Map(
-          matches.flatMap((result) => result?.Items || []).map((item) => [item.Id, item])
-        );
-        const found = { Items: [...unique.values()] };
-        const exact = (found?.Items || []).filter(
-          (item) =>
-            String(
-              item.ProviderIds?.[external.name] ||
-                item.ProviderIds?.[external.name.toLowerCase()] ||
-                ""
-            ) === external.id
-        );
+          );
+          const unique = new Map(
+            matches.flatMap((result) => result?.Items || []).map((item) => [item.Id, item])
+          );
+          // A title narrows the search; only provider identity can authorize playback.
+          return [...unique.values()].filter(
+            (item) =>
+              String(
+                item.ProviderIds?.[external.name] ||
+                  item.ProviderIds?.[external.name.toLowerCase()] ||
+                  ""
+              ) === external.id
+          );
+        };
+        let exact = await lookup({ anyProviderIdEquals: `${external.name}.${external.id}` });
+        if (!exact.length && !signal?.aborted && profile() === pid) {
+          const titleKey = `${pid}:${type}:${match[1]}`;
+          let title = titleNames.get(titleKey);
+          if (!title) {
+            const { metaRepository } = await import("../repository/metaRepository.js");
+            let timer;
+            try {
+              const cached = metaRepository.getCachedMeta(type, match[1]);
+              const meta =
+                cached ||
+                (
+                  await Promise.race([
+                    metaRepository.getMetaFromAllAddons(type, match[1]).catch(() => null),
+                    new Promise((resolve) => {
+                      timer = setTimeout(() => resolve(null), 3000);
+                    })
+                  ])
+                )?.data;
+              title = String(meta?.name || "").trim();
+              if (title) {
+                if (titleNames.size >= 200) titleNames.delete(titleNames.keys().next().value);
+                titleNames.set(titleKey, title);
+              }
+            } finally {
+              clearTimeout(timer);
+            }
+          }
+          if (title && !signal?.aborted && profile() === pid)
+            exact = await lookup({ searchTerm: title });
+        }
         if (exact.length !== 1) return { status: "success", data: [] };
         let itemId = exact[0].Id;
         if (type !== "movie" && match[2] && match[3]) {

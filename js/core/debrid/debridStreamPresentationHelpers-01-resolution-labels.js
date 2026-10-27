@@ -77,6 +77,7 @@ export const LANGUAGE_LABELS = {
   JA: ["ja", "Japanese"],
   KO: ["ko", "Korean"],
   ZH: ["zh", "Chinese"],
+  HE: ["he", "Hebrew"],
   MULTI: ["multi", "Multi"]
 };
 

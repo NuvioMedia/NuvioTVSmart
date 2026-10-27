@@ -28,6 +28,7 @@ export function createMetaDetailsScreenMethods01() {
         isMarkedWatched: Boolean(this.isMarkedWatched),
         episodes: Array.isArray(this.episodes) ? [...this.episodes] : [],
         castItems: Array.isArray(this.castItems) ? [...this.castItems] : [],
+        detailEnrichmentComplete: this.detailEnrichmentComplete === true,
         moreLikeThisItems: Array.isArray(this.moreLikeThisItems) ? [...this.moreLikeThisItems] : [],
         moreLikeThisSource: this.moreLikeThisSource || null,
         collectionItems: Array.isArray(this.collectionItems) ? [...this.collectionItems] : [],
@@ -65,6 +66,7 @@ export function createMetaDetailsScreenMethods01() {
       this.isMarkedWatched = Boolean(snapshot.isMarkedWatched);
       this.episodes = Array.isArray(snapshot.episodes) ? [...snapshot.episodes] : [];
       this.castItems = Array.isArray(snapshot.castItems) ? [...snapshot.castItems] : [];
+      this.detailEnrichmentComplete = snapshot.detailEnrichmentComplete === true;
       this.moreLikeThisItems = Array.isArray(snapshot.moreLikeThisItems) ? [...snapshot.moreLikeThisItems] : [];
       this.moreLikeThisSource = snapshot.moreLikeThisSource || null;
       this.collectionItems = Array.isArray(snapshot.collectionItems) ? [...snapshot.collectionItems] : [];

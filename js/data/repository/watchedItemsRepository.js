@@ -11,6 +11,8 @@ import { WatchedItemsStore } from "../local/watchedItemsStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
 import { TraktSettingsStore, WatchProgressSource } from "../local/traktSettingsStore.js";
 import { SimklAuthStore } from "../local/simklAuthStore.js";
+import { MdbListAccount } from "./mdbListAccount.js";
+import { MdbListTracking, mdbMutationTarget } from "./mdbListTracking.js";
 import { SimklSyncService } from "./simklSyncService.js";
 import { TraktAuthService, requestJson as traktRequestJson } from "./traktAuthService.js";
 import { watchedItemIdentityValues, watchedItemsShareIdentity } from "./watchedIdentity.js";
@@ -539,11 +541,8 @@ async function deleteWatchedItemsFromCloud(items = [], profileId = activeProfile
   }
 }
 
-async function writeWatchedItemToProviders(item) {
-  return writeWatchedItemsToProviders([item]);
-}
-
-async function writeWatchedItemsToProviders(items = []) {
+async function writeWatchedItemsToProviders(items = [], mdbScope = null) {
+  let succeeded = true;
   const profileId = activeProfileId();
   const validItems = (Array.isArray(items) ? items : []).filter((item) => item?.contentId);
   if (!validItems.length) {
@@ -557,6 +556,15 @@ async function writeWatchedItemsToProviders(items = []) {
     }
   }
   if (activeProfileId() !== profileId) return;
+  if (mdbScope) {
+    try {
+      await MdbListTracking.writeHistory(validItems, false, mdbScope);
+    } catch (error) {
+      succeeded = false;
+      console.warn("MDBList watched history write failed", error.code || error.message);
+    }
+  }
+  if (activeProfileId() !== profileId) return;
   if (isTraktConnected()) {
     try {
       await writeTraktHistoryBatch(validItems, false);
@@ -564,11 +572,23 @@ async function writeWatchedItemsToProviders(items = []) {
       console.warn("Trakt watched history write failed", error);
     }
   }
+  return succeeded;
 }
 
 class WatchedItemsRepository {
   async getAll(limit = 2000, profileId = activeProfileId()) {
     const local = WatchedItemsStore.listForProfile(profileId);
+    if (
+      TraktSettingsStore.get().watchProgressSource === WatchProgressSource.MDBLIST &&
+      MdbListAccount.connected()
+    ) {
+      const remote = await MdbListTracking.getWatchedItems();
+      if (activeProfileId() !== String(profileId)) return [];
+      return limitWatchedItems(
+        [...remote, ...local.filter((item) => !mdbMutationTarget(item))],
+        limit
+      );
+    }
     if (shouldUseTrakt()) {
       const [remoteMovies, remoteShows] = await Promise.all([
         getTraktWatchedMovies(),
@@ -601,11 +621,21 @@ class WatchedItemsRepository {
 
   async isWatched(contentId, options = {}) {
     const allowEpisodeEntries = Boolean(options?.allowEpisodeEntries);
-    const all = await this.getAll();
+    const all = await this.getAll(
+      TraktSettingsStore.get().watchProgressSource === WatchProgressSource.MDBLIST &&
+        MdbListAccount.connected()
+        ? Infinity
+        : 2000
+    );
     return all.some((item) => {
       if (!watchedItemsShareIdentity(item, { ...options, contentId })) {
         return false;
       }
+      if (options.season != null && options.episode != null)
+        return (
+          Number(item.season) === Number(options.season) &&
+          Number(item.episode) === Number(options.episode)
+        );
       return allowEpisodeEntries || (item.season == null && item.episode == null);
     });
   }
@@ -619,6 +649,7 @@ class WatchedItemsRepository {
   async markBatch(items = [], options = {}) {
     const validItems = (Array.isArray(items) ? items : []).filter((item) => item?.contentId);
     const profileId = activeProfileId();
+    const mdbScope = MdbListAccount.connected() ? MdbListAccount.scope() : null;
     const normalizedItems = validItems.map((item) => ({
       ...item,
       season: item.season == null || item.season === "" ? null : Number(item.season),
@@ -643,19 +674,25 @@ class WatchedItemsRepository {
         : await applyManualServerWatched(normalizedItems, true, operation);
     if (options.skipTrackingWrite === true || options.skipServerWrite === true)
       finishManualWatched(operation, normalizedItems, normalizedItems, true);
+    let providerSucceeded = true;
     if (options.skipTrackingWrite !== true && activeProfileId() === profileId) {
-      await writeWatchedItemsToProviders(
-        succeeded.filter((item) => manualWatchedCurrent(operation, item))
+      providerSucceeded = await writeWatchedItemsToProviders(
+        succeeded.filter((item) => manualWatchedCurrent(operation, item)),
+        mdbScope
       );
     }
     invalidateTraktWatchedForItems(normalizedItems);
     queueWatchedItemsCloudSync(profileId);
     const current = succeeded.filter((item) => manualWatchedCurrent(operation, item));
-    return { ok: current.length === normalizedItems.length, succeeded: current };
+    return {
+      ok: providerSucceeded && current.length === normalizedItems.length,
+      succeeded: providerSucceeded ? current : []
+    };
   }
 
   async unmark(contentId, options = null) {
     const pid = activeProfileId();
+    const mdbScope = MdbListAccount.connected() ? MdbListAccount.scope() : null;
     const removedItems = WatchedItemsStore.listForProfile(pid).filter((item) =>
       matchesWatchedTarget(item, contentId, options)
     );
@@ -701,6 +738,23 @@ class WatchedItemsRepository {
       activeProfileId() === pid && targets.every((item) => manualWatchedCurrent(operation, item));
     if (!isCurrent()) return false;
 
+    if (mdbScope && options?.skipTrackingWrite !== true) {
+      try {
+        await MdbListTracking.writeHistory(
+          options?.season == null &&
+            options?.episode == null &&
+            ["series", "show", "tv", "anime"].includes(options?.contentType)
+            ? [{ ...options, contentId, season: null, episode: null }]
+            : targets,
+          true,
+          mdbScope
+        );
+      } catch (error) {
+        console.warn("MDBList watched history removal failed", error.code || error.message);
+        return false;
+      }
+    }
+    if (!isCurrent()) return false;
     if (isSimklConnected() && options?.skipTrackingWrite !== true) {
       const remoteMatches = removedItems.length
         ? []

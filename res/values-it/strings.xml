@@ -954,6 +954,7 @@
     <string name="parental_severity_severe">Severa</string>
     <string name="parental_severity_moderate">Moderata</string>
     <string name="parental_severity_mild">Lieve</string>
+    <string name="player_live_watched">LIVE  %1$s</string>
     <string name="player_ends_at">Finisce alle: %1$s</string>
     <string name="player_via">tramite %1$s</string>
     <string name="season_episode_format">S%1$d E%2$d</string>
@@ -3296,4 +3297,13 @@
 
     <string name="stream_resume_from_time">Riprendi da %1$s</string>
     <string name="stream_resume_from_percent">Riprendi dal %1$d%</string>
+    <string name="settings_player_badges_title">Badge nel player</string>
+    <string name="settings_player_badges_description">Mostra i badge del video in riproduzione e della traccia audio selezionata.</string>
+    <string name="settings_player_badges_pack_title">Pacchetto badge del player</string>
+    <string name="settings_player_badges_pack_description">Scegli un pacchetto importato per il player, indipendente dalle schede delle sorgenti.</string>
+    <string name="settings_player_badges_use_stream_pack">Usa il pacchetto delle sorgenti</string>
+    <string name="cd_seek_bar">Barra di avanzamento</string>
+    <string name="mdblist_tracking_description">Sincronizza la cronologia di visione e i progressi di riproduzione tra i dispositivi.</string>
+    <string name="mdblist_status_syncing">Sincronizzazione della cronologia di visione e dei progressi di riproduzione…</string>
+    <string name="mdblist_last_synced">Ultima sincronizzazione: %1$s</string>
 </resources>

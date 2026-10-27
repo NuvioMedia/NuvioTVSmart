@@ -146,10 +146,7 @@
 }
 
 .legacy-webos .stream-route-chip-wrap {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
+  position: relative;
   height: 64px;
   margin-bottom: 0;
 }
@@ -176,7 +173,7 @@
 .legacy-webos .stream-route-panel-shell {
   position: absolute;
   left: 0;
-  top: 84px;
+  top: 0;
   right: 0;
   bottom: 0;
   border-radius: 16px;
@@ -185,12 +182,12 @@
   padding: 14px 14px 16px;
 }
 
+.legacy-webos .stream-route-panel-header {
+  padding: 0;
+}
+
 .legacy-webos .stream-route-panel {
-  position: absolute;
-  left: 14px;
-  top: 14px;
-  right: 14px;
-  bottom: 16px;
+  position: relative;
   height: auto;
   overflow: hidden;
 }
@@ -347,7 +344,7 @@
   transform: none !important;
   animation: none !important;
   border-radius: 18px;
-  height: 870px;
+  height: auto;
   min-height: 0;
   overflow: hidden;
   -webkit-box-flex: 1;

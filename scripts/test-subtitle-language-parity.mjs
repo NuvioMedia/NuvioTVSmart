@@ -78,6 +78,43 @@ assert.equal(
   "A"
 );
 assert.deepEqual(languagesFromText(["spn", "esp"]), ["ES", "ES"]);
+// Android release-name aliases use whole tokens; parsed languages take precedence.
+for (const [language, aliases] of Object.entries({
+  EN: ["eng", "english"],
+  HI: ["hin", "hindi"],
+  IT: ["ita", "italian", "italiano"],
+  ES: ["spa", "esp", "spanish", "espanol", "castellano"],
+  FR: ["fre", "french", "truefrench"],
+  DE: ["ger", "deu", "german", "deutsch"],
+  PT: ["portuguese", "portugues"],
+  PL: ["pol", "polish"],
+  CS: ["cze", "czech"],
+  LA: ["latino"],
+  JA: ["jpn", "japanese"],
+  KO: ["kor", "korean"],
+  ZH: ["chinese"],
+  HE: ["heb", "hebrew"]
+})) {
+  for (const alias of aliases) {
+    assert.equal(languageFor(` ${alias.toUpperCase()} `), language, alias);
+    assert.deepEqual(languagesFromText([], `Film.${alias.toUpperCase()}.1080p`), [language], alias);
+    assert.deepEqual(languagesFromText([], `Film.x${alias}x.1080p`), [], alias);
+  }
+}
+assert.deepEqual(languagesFromText(["ita"], "Film.TRUEFRENCH.HEBREW"), ["IT"]);
+assert.deepEqual(languagesFromText(["unrecognized"], "Film.HEBREW"), ["HE"]);
+assert.deepEqual(languagesFromText([], "Film.ITALIAN.TRUEFRENCH.HEBREW"), ["IT", "FR", "HE"]);
+assert.deepEqual(languagesFromText([], "Film.por.chi.fra"), []);
+assert.deepEqual(languagesFromText([], "Film.pt-br"), ["PT_BR"]);
+assert.equal(languageEmoji("he"), "🇮🇱");
+const { DEBRID_STREAM_LANGUAGES, normalizeDebridStreamPreferences } =
+  await import("../js/data/local/debridSettingsStore.js");
+assert(DEBRID_STREAM_LANGUAGES.some((language) => language.id === "HE"));
+assert.deepEqual(
+  normalizeDebridStreamPreferences({ requiredLanguages: ["HE"] }).requiredLanguages,
+  ["HE"]
+);
+
 const subtitleMethods = createPlayerScreenMethods49();
 const collect = subtitleMethods.collectSubtitleOptionItems;
 const tracks = ["spn", "es", "esp", "spl", "hbs-srp", "sr", "hbs-hrv", "hbs-bos", "hbs"];

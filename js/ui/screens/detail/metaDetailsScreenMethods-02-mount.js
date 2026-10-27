@@ -112,6 +112,8 @@ export function createMetaDetailsScreenMethods02() {
         this.isLoadingDetail = false;
         this.render(this.meta, this.pendingFocusRestore);
         const refreshToken = this.detailLoadToken;
+        // Unlike Android's retained ViewModel, leaving Detail cancels its jobs.
+        if (!this.detailEnrichmentComplete) this.loadDetailEnrichments(this.meta, refreshToken);
         void this.refreshLibraryMembership(refreshToken);
         void this.refreshEpisodePlaybackState()
           .then(() => {

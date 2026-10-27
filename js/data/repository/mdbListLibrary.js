@@ -51,10 +51,13 @@ async function fetchItems(scope, key, sort = null, order = "asc") {
     if (seen.has(fingerprint)) invalid();
     seen.add(fingerprint);
     const response = await MdbListAccount.api(scope, mdbListItemsPath(key), { query });
-    for (const item of decodeMdbListItems(response.payload)) {
+    const page = decodeMdbListItems(response.payload);
+    const before = items.size;
+    for (const item of page) {
       const key = `${item.type}:${item.id}`;
       if (!items.has(key)) items.set(key, item);
     }
+    if (readOnlyMdbListKey(key) && page.length && items.size === before) return [...items.values()];
     const next = mdbListNextPage(response.payload, response.headers);
     if (!next) return [...items.values()];
     query = { ...initial, ...next };
@@ -90,6 +93,12 @@ async function synchronize(scope, force) {
     ...decodeMdbListTabs(payload, account.id, "list"),
     ...decodeMdbListTabs(payload, account.id, "dynamic")
   ];
+  const known = new Set(previous.tabs.map((tab) => tab.key));
+  const hidden = new Set(previous.hidden);
+  const newDynamic = owned.filter(
+    (tab) => tab.key.startsWith("mdblist:dynamic:") && !known.has(tab.key)
+  );
+  if (newDynamic.length > 10) newDynamic.forEach((tab) => hidden.add(tab.key));
   const snapshot = {
     ...previous,
     tabs: [WATCHLIST, ...owned],
@@ -98,7 +107,7 @@ async function synchronize(scope, force) {
   };
   const loadTabs = async (tabs, target) => {
     for (const tab of tabs) {
-      if (previous.hidden.includes(tab.key)) continue;
+      if (hidden.has(tab.key)) continue;
       const cached = previous.tabs.find((t) => t.key === tab.key);
       target[tab.key] =
         !force &&
@@ -121,6 +130,11 @@ async function synchronize(scope, force) {
               account.id,
               "external"
             );
+      if (category === "liked") {
+        const newLiked = tabs.filter((tab) => !known.has(tab.key));
+        if (newDynamic.length + newLiked.length > 10)
+          newLiked.forEach((tab) => hidden.add(tab.key));
+      }
       const items = {};
       await loadTabs(tabs, items);
       snapshot.tabs.push(...tabs);
@@ -129,8 +143,7 @@ async function synchronize(scope, force) {
       if (error?.status === 429 || error?.code === "mdblist_scope_changed") throw error;
       const cached = previous.tabs.filter(
         (t) =>
-          t.key.startsWith(`mdblist:${category}:`) &&
-          (previous.items[t.key] || previous.hidden.includes(t.key))
+          t.key.startsWith(`mdblist:${category}:`) && (previous.items[t.key] || hidden.has(t.key))
       );
       snapshot.tabs.push(...cached);
       cached.forEach((t) => {
@@ -138,7 +151,7 @@ async function synchronize(scope, force) {
       });
     }
   }
-  snapshot.hidden = previous.hidden.filter((key) => snapshot.tabs.some((tab) => tab.key === key));
+  snapshot.hidden = [...hidden].filter((key) => snapshot.tabs.some((tab) => tab.key === key));
   snapshot.checkedAt = Date.now();
   snapshot.invalidated = false;
   save(scope, snapshot);
@@ -160,13 +173,18 @@ function queue(scope, operation) {
 function inputIds(input) {
   const id = String(input.itemId || input.id || "");
   const ids = {};
-  const imdb = input.imdbId || id.replace(/^imdb:/, "");
+  const imdb = input.imdbId || input.ids?.imdb || id.replace(/^imdb:/, "");
   if (/^tt\d+$/.test(imdb)) ids.imdb = imdb;
   for (const type of ["tmdb", "tvdb", "trakt"]) {
     const raw =
-      input[`${type}Id`] || (id.startsWith(`${type}:`) ? id.slice(type.length + 1) : null);
+      input[`${type}Id`] ||
+      input.ids?.[type] ||
+      (id.startsWith(`${type}:`) ? id.slice(type.length + 1) : null);
     if (Number.isSafeInteger(Number(raw)) && Number(raw) > 0) ids[type] = Number(raw);
   }
+  const mdblist =
+    input.mdblistId ?? input.ids?.mdblist ?? (id.startsWith("mdblist:") ? id.slice(8) : null);
+  if (mdblist != null && String(mdblist).trim()) ids.mdblist = String(mdblist).trim();
   return ids;
 }
 function matches(item, type, ids) {

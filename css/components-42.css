@@ -353,6 +353,11 @@
   background: rgba(0, 0, 0, 0.42);
   font-size: clamp(11px, 0.75vw, 14px);
   line-height: 1.35;
+  max-width: calc(100% - 2 * var(--episode-unavailable-inset));
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   letter-spacing: 0.09em;
   font-weight: 600;
   text-transform: uppercase;
@@ -442,7 +447,9 @@
 .series-episode-status {
   position: absolute;
   top: 24px;
-  left: 24px;
+  --episode-status-inset: 24px;
+  right: var(--episode-status-inset);
+  left: auto;
   width: 40px;
   height: 40px;
   border-radius: 999px;
@@ -471,17 +478,42 @@
 .series-episode-unavailable {
   position: absolute;
   top: 24px;
-  right: 24px;
+  --episode-unavailable-inset: 24px;
+  --episode-status-size: 40px;
+  right: var(--episode-unavailable-inset);
   padding: 5px 10px;
   border-radius: 9px;
   background: rgba(93, 64, 55, 0.8);
   color: rgba(255, 255, 255, 0.9);
   font-size: clamp(11px, 0.75vw, 14px);
   line-height: 1.35;
+  max-width: calc(100% - 2 * var(--episode-unavailable-inset));
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   letter-spacing: 0.09em;
   font-weight: 600;
 }
 
 .series-insight-section {
   margin-top: 0;
+}
+
+.series-episode-card.watched .series-episode-unavailable {
+  left: var(--episode-unavailable-inset);
+  right: auto;
+  max-width: calc(100% - 2 * var(--episode-unavailable-inset) - var(--episode-status-size) - 12px);
+}
+html[dir="rtl"] .series-episode-status {
+  left: var(--episode-status-inset);
+  right: auto;
+}
+html[dir="rtl"] .series-episode-unavailable {
+  left: var(--episode-unavailable-inset);
+  right: auto;
+}
+html[dir="rtl"] .series-episode-card.watched .series-episode-unavailable {
+  right: var(--episode-unavailable-inset);
+  left: auto;
 }
