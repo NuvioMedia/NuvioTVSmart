@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./discoverScreen.js";
+import { getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
 
 export function createDiscoverScreenMethods04() {
   const {
@@ -12,6 +13,12 @@ export function createDiscoverScreenMethods04() {
   } = internals;
 
   return {
+    shouldUseImmediateFocusScroll() {
+      const profile = getTvRuntimePerformanceProfile();
+      return (
+        Boolean(profile.isPerformanceConstrained) || Boolean(globalThis?.document?.body?.classList?.contains("performance-constrained"))
+      );
+    },
     restoreFocusedCard({ scrollMode = "center" } = {}) {
       this.restoreScrollState();
       const target =
@@ -162,6 +169,9 @@ export function createDiscoverScreenMethods04() {
       const scroller = this.getContentScroller();
       const current = this.container?.querySelector(".discover-grid .seeall-card.focused") || null;
       if (!scroller || !direction || !current) {
+        return false;
+      }
+      if (this.shouldUseImmediateFocusScroll()) {
         return false;
       }
       if (!this.canDiscoverVerticalFastScroll(scroller, direction)) {
