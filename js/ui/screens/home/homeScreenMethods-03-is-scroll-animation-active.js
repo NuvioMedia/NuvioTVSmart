@@ -187,7 +187,11 @@ export function createHomeScreenMethods03() {
       return (
         this.isPerformanceConstrained() ||
         globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
-        globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
+        globalThis?.document?.documentElement?.classList?.contains("legacy-tizen") ||
+        // Key-repeating remotes outrun the camera tween on webOS: the panel
+        // composites every intermediate write, so a held pass settles ~0.7s
+        // behind focus on a modern panel. Measured in #1153.
+        getTvRuntimePerformanceProfile().platform === "webos"
       );
     },
     hasCollectionHomeRows() {
