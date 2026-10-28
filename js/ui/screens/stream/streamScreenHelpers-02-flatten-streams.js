@@ -247,9 +247,8 @@ export function getStreamHeadline(stream = {}) {
   if (!primary) {
     return stream.addonName || "Unknown source";
   }
-  const firstLine = String(primary).split(/\r?\n/)[0].trim();
-  const displayLine = Environment.isWebOS() ? normalizeMathematicalAlphanumericSymbols(firstLine) : firstLine;
-  return displayLine || stream.addonName || "Unknown source";
+  const name = String(primary).trim();
+  return Environment.isWebOS() ? normalizeMathematicalAlphanumericSymbols(name) : name;
 }
 
 export function getStreamQuality(stream = {}) {
