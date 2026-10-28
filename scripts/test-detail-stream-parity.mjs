@@ -5,6 +5,10 @@ import { build } from "esbuild";
 
 const files = [
   [
+    "stream/streamScreenHelpers-02-flatten-streams.js",
+    "getStreamHeadline, getStreamDescriptionLines"
+  ],
+  [
     "detail/metaDetailsScreenMethods-10-get-episode-card-presentation.js",
     "createMetaDetailsScreenMethods10"
   ],
@@ -60,7 +64,7 @@ const bundle = await build({
         b.onLoad(
           {
             filter:
-              /(?:(?:metaDetailsScreenMethods-(?:10|11|12|14|15|16)|streamScreenMethods-(?:01|06|07|08|09))-[^/]+|layoutPreferences|homeScreenHelpers-01-modern-sidebar-pill-auto-collapse-ms)\.js$/
+              /(?:(?:metaDetailsScreenMethods-(?:10|11|12|14|15|16)|streamScreenMethods-(?:01|06|07|08|09)|streamScreenHelpers-02)-[^/]+|layoutPreferences|homeScreenHelpers-01-modern-sidebar-pill-auto-collapse-ms)\.js$/
           },
           async ({ path }) => {
             let contents = await readFile(path, "utf8");
@@ -71,7 +75,7 @@ const bundle = await build({
             contents = contents.replace(
               /^import \{([\s\S]*?)\} from "([^"]+)";/gm,
               (all, names, source) =>
-                /(?:episodeCardMetadata|watchProgress)\.js$/.test(source)
+                /(?:episodeCardMetadata|watchProgress|streamDisplayText)\.js$/.test(source)
                   ? all
                   : `const {${names}} = fixtures;`
             );
@@ -85,8 +89,7 @@ const bundle = await build({
 let normalizeLayout;
 const fixtures = {
   LayoutPreferences: { get: () => ({ posterCardCornerRadiusDp: 12 }) },
-  getStreamHeadline: (stream) => stream.name,
-  getStreamDescriptionLines: (stream) => [stream.description],
+  Environment: { isWebOS: () => false },
   renderStreamBadges: (_stream, _enabled, settings) =>
     settings?.testBadges ? "<div>TEST-BADGES</div>" : "",
   resolveStreamBadgePlacement: (settings) => settings?.badgePlacement || "BOTTOM",
@@ -115,6 +118,25 @@ const fixtures = {
 const context = vm.createContext({ fixtures, console });
 vm.runInContext(bundle.outputFiles[0].text, context);
 const api = context.subject;
+fixtures.getStreamHeadline = api.getStreamHeadline;
+fixtures.getStreamDescriptionLines = api.getStreamDescriptionLines;
+for (const webos of [false, true]) {
+  fixtures.Environment.isWebOS = () => webos;
+  for (const newline of ["\n", "\r\n"]) {
+    const name = ["4K ⚡", "⟨Web-dl⟩", "★★★★★"].join(newline);
+    assert.equal(api.getStreamHeadline({ name }), name);
+    assert.equal(api.getStreamHeadline({ title: name }), name);
+    assert.equal(api.getStreamHeadline({ description: name }), name);
+  }
+  assert.equal(api.getStreamHeadline({ name: " \n4K\n★★★★★\n " }), "4K\n★★★★★");
+  assert.equal(api.getStreamHeadline({ name: " ", title: "Title" }), "Title");
+  assert.equal(api.getStreamHeadline({ addonName: "Addon" }), "Addon");
+  assert.equal(api.getStreamHeadline({}), "Unknown source");
+  assert.equal(api.getStreamHeadline({ name: "𝟒K\n★★★★★" }), webos ? "4K\n★★★★★" : "𝟒K\n★★★★★");
+}
+fixtures.Environment.isWebOS = () => false;
+const streamCss = await readFile("css/components-50.css", "utf8");
+assert.match(streamCss, /\.stream-route-card-heading\s*\{[^}]*white-space:\s*pre-line;/);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: 0 }).posterCardCornerRadiusDp, 0);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: "bad" }).posterCardCornerRadiusDp, 12);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: null }).posterCardCornerRadiusDp, 12);
@@ -352,6 +374,17 @@ const filenameMarkup = renderCard.call(
 assert.ok(filenameMarkup.includes("The.<wbr>Substance_<wbr>2024-<wbr>2160p.<wbr>mkv"));
 assert.ok(filenameMarkup.includes("&lt;unsafe>"), "wrap opportunities must preserve escaping");
 assert.ok(filenameMarkup.replaceAll("<wbr>", "").includes("📁 The.Substance_2024-2160p.mkv"));
+const multilineMarkup = renderCard.call(
+  { isCardActionFocused: () => true },
+  { ...stream, name: "4K ⚡\n<Web-dl>\n★★★★★" },
+  0,
+  false,
+  {},
+  { virtualized: true, virtualRowGap: 40 }
+);
+assert.ok(multilineMarkup.includes('dir="ltr">4K ⚡\n&lt;Web-dl>\n★★★★★</div>'));
+assert.ok(multilineMarkup.includes('style="margin-bottom:40px"'));
+assert.ok(multilineMarkup.includes('data-action="playStream"'));
 
 let isFocusable = false,
   role;

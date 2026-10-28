@@ -397,6 +397,7 @@
   font-weight: 500;
   letter-spacing: 0.3px;
   color: var(--text-color);
+  white-space: pre-line;
   overflow-wrap: anywhere;
 }
 
