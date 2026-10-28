@@ -53,8 +53,10 @@ function buildHome({ rescale = null, tv = true, route = "home" } = {}) {
   context.HTMLElement = HTMLElement;
   context.HTMLImageElement = HTMLImageElement;
   vm.runInContext(
-    source.replace(/^import [\s\S]*?";$/m, "").replace(/^import [^;]+;$/gm, "").replace(/^export /gm, "") +
-      "\nglobalThis.api = createHomeScreenMethods24();",
+    source
+      .replace(/^import [\s\S]*?";$/m, "")
+      .replace(/^import [^;]+;$/gm, "")
+      .replace(/^export /gm, "") + "\nglobalThis.api = createHomeScreenMethods24();",
     context
   );
   return context;
@@ -64,7 +66,14 @@ function makeRow(context, { top }) {
   const row = new context.HTMLElement();
   row.isConnected = true;
   row.top = top;
-  row.getBoundingClientRect = () => ({ top: row.top, bottom: row.top + 338, left: 0, right: 1920, width: 1920, height: 338 });
+  row.getBoundingClientRect = () => ({
+    top: row.top,
+    bottom: row.top + 338,
+    left: 0,
+    right: 1920,
+    width: 1920,
+    height: 338
+  });
   row.closest = (selector) => (selector === ROW_SELECTOR ? row : null);
   return row;
 }
@@ -101,12 +110,23 @@ function makeImage(context, { row, src, left = 0 }) {
 
 function makeScreen(context, { rows, images }) {
   const container = {
-    getBoundingClientRect: () => ({ top: 0, bottom: 1080, left: 0, right: 1920, width: 1920, height: 1080 }),
+    getBoundingClientRect: () => ({
+      top: 0,
+      bottom: 1080,
+      left: 0,
+      right: 1920,
+      width: 1920,
+      height: 1080
+    }),
     querySelector: () => null,
     querySelectorAll: (selector) => {
       // Narrowing the query to [data-src] is the defect this file guards, so
       // make the fake refuse it rather than quietly answer.
-      assert.equal(selector, LIFECYCLE_SELECTOR, "home artwork must be indexed in every lifecycle state");
+      assert.equal(
+        selector,
+        LIFECYCLE_SELECTOR,
+        "home artwork must be indexed in every lifecycle state"
+      );
       return images.slice();
     }
   };
@@ -139,14 +159,21 @@ test("eviction still finds artwork after a later hydration pass", () => {
   const released = screen.evictDistantHomeLazyImages(null);
   assert.equal(released, 1, "a loaded poster far from the viewport must be released");
   assert.equal(images[0].getAttribute("src"), null);
-  assert.equal(images[0].dataset.src, "https://art/a.jpg", "the original url goes back into data-src");
+  assert.equal(
+    images[0].dataset.src,
+    "https://art/a.jpg",
+    "the original url goes back into data-src"
+  );
 });
 
 test("classic home hydrates only near the screen when its main container spans every row", () => {
   const context = buildHome();
   const near = makeRow(context, { top: 100 });
   const distant = makeRow(context, { top: 9000 });
-  const images = [makeImage(context, { row: near, src: "https://art/near.jpg" }), makeImage(context, { row: distant, src: "https://art/far.jpg" })];
+  const images = [
+    makeImage(context, { row: near, src: "https://art/near.jpg" }),
+    makeImage(context, { row: distant, src: "https://art/far.jpg" })
+  ];
   const screen = makeScreen(context, { rows: [near, distant], images });
   screen.container.getBoundingClientRect = () => ({ top: 0, bottom: 25000, left: 0, right: 1920 });
   screen.hydrateHomeLazyImages(null, { forceFullScan: true, refreshIndex: true });
@@ -171,11 +198,13 @@ test("browser and folder detail do not evict images through the Home lifecycle",
 test("a released and rehydrated poster rejects the earlier request even when the URL is unchanged", async () => {
   const resolvers = [];
   const released = [];
-  const context = buildHome({ rescale: {
-    enabled: () => true,
-    rescale: () => new Promise((resolve) => resolvers.push(resolve)),
-    release: (url) => released.push(url)
-  } });
+  const context = buildHome({
+    rescale: {
+      enabled: () => true,
+      rescale: () => new Promise((resolve) => resolvers.push(resolve)),
+      release: (url) => released.push(url)
+    }
+  });
   const row = makeRow(context, { top: 100 });
   const image = makeImage(context, { row, src: "https://art/a.jpg" });
   const screen = makeScreen(context, { rows: [row], images: [image] });
@@ -237,7 +266,11 @@ test("teardown hands every rescaled poster back to its original url", () => {
     // to work off the document.
     screen.homeLazyImageHydrationIndex = null;
     assert.equal(screen.releaseAllHomeLazyImages(), 1);
-    assert.deepEqual(released, ["blob:rescaled-1"], "the blob url is handed back, not revoked underneath the card");
+    assert.deepEqual(
+      released,
+      ["blob:rescaled-1"],
+      "the blob url is handed back, not revoked underneath the card"
+    );
     assert.equal(images[0].dataset.src, "https://art/d.jpg");
     assert.equal(images[0].getAttribute("src"), null);
   });
@@ -282,7 +315,11 @@ test("the stylesheet's own object-fit reaches the rescaler", () => {
 
   screen.hydrateHomeLazyImages(null, { forceFullScan: true, refreshIndex: true });
   assert.equal(asked.length, 1);
-  assert.equal(asked[0].fit, "fill", "a collection poster stretches, so it must not be asked for a crop");
+  assert.equal(
+    asked[0].fit,
+    "fill",
+    "a collection poster stretches, so it must not be asked for a crop"
+  );
   assert.equal(asked[0].width, 220);
   assert.equal(asked[0].height, 338);
 });

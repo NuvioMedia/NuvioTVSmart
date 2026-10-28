@@ -189,9 +189,15 @@ export function createHomeScreenMethods24() {
       const viewportRect = viewport.getBoundingClientRect();
       const screenHeight = Number(globalThis.innerHeight || globalThis.document?.documentElement?.clientHeight || 0);
       const screenWidth = Number(globalThis.innerWidth || globalThis.document?.documentElement?.clientWidth || 0);
-      const visibleRect = useBoundedTvHydration && screenHeight > 0 && screenWidth > 0
-        ? { top: Math.max(0, viewportRect.top), bottom: Math.min(screenHeight, viewportRect.bottom), left: Math.max(0, viewportRect.left), right: Math.min(screenWidth, viewportRect.right) }
-        : viewportRect;
+      const visibleRect =
+        useBoundedTvHydration && screenHeight > 0 && screenWidth > 0
+          ? {
+              top: Math.max(0, viewportRect.top),
+              bottom: Math.min(screenHeight, viewportRect.bottom),
+              left: Math.max(0, viewportRect.left),
+              right: Math.min(screenWidth, viewportRect.right)
+            }
+          : viewportRect;
       const constrained = this.isPerformanceConstrained();
       // Android prefetches the visible window plus a small row/card neighborhood.
       // Keep the browser's DOM-mounted rows from turning every vertical focus
@@ -328,7 +334,8 @@ export function createHomeScreenMethods24() {
         rect.top < (Number(globalThis.innerHeight) || 0) &&
         rect.right > 0 &&
         rect.left < (Number(globalThis.innerWidth) || 0);
-      const isStale = () => !image.isConnected || imageRequests.get(image) !== request || image.dataset.originalSrc !== src || Boolean(image.dataset.src);
+      const isStale = () =>
+        !image.isConnected || imageRequests.get(image) !== request || image.dataset.originalSrc !== src || Boolean(image.dataset.src);
       rescaleHomeArtwork(src, { width, height, fit, priority: onScreen ? 0 : priority, isStale }).then((objectUrl) => {
         // The worker runs for a few hundred milliseconds, which is long enough
         // for the card to be released or queued again. Either way this result

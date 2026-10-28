@@ -11,7 +11,8 @@ const context = vm.createContext({
   buildPosterSubtitle: () => "",
   escapeHtml: String,
   escapeAttribute: String,
-  buildLazyImageAttributes: (src, { defer = false } = {}) => (defer ? `data-src="${src}"` : `src="${src}"`),
+  buildLazyImageAttributes: (src, { defer = false } = {}) =>
+    defer ? `data-src="${src}"` : `src="${src}"`,
   getTvRuntimePerformanceProfile: () => ({ isTvRuntime }),
   Router: { getCurrent: () => route },
   internals: {}
@@ -135,18 +136,27 @@ test("focused GIF loads immediately, unloads on blur and reloads on refocus", ()
 test("smart TV posters are handed to the lazy hydration pass instead of loading on mount", () => {
   const row = { rowKind: "collection", collectionId: collection.id, collection };
   const item = context.normalizeCollectionFolderItem({ ...folder }, { ...collection });
-  const render = () => context.createPosterCardMarkup(item, 0, 0, "collection", row, true, "classic", false, false);
+  const render = () =>
+    context.createPosterCardMarkup(item, 0, 0, "collection", row, true, "classic", false, false);
 
   isTvRuntime = false;
   const browser = render();
-  assert.match(browser, /<img class="content-poster" src="/, "other runtimes keep loading posters on mount");
+  assert.match(
+    browser,
+    /<img class="content-poster" src="/,
+    "other runtimes keep loading posters on mount"
+  );
 
   isTvRuntime = true;
   const tv = render();
   assert.match(tv, /<img class="content-poster" data-src="/, "a TV poster waits for hydration");
   assert.doesNotMatch(tv, /<img class="content-poster" src="/);
   route = "folderDetail";
-  assert.match(render(), /<img class="content-poster" src="/, "folder detail has its own loading lifecycle");
+  assert.match(
+    render(),
+    /<img class="content-poster" src="/,
+    "folder detail has its own loading lifecycle"
+  );
   route = "home";
   isTvRuntime = false;
 });

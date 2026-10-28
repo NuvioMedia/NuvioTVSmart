@@ -129,6 +129,10 @@ test("only JPEG bytes are accepted for re-encoding", () => {
   // GIF and animated WebP would lose every frame but the first.
   assert.equal(isJpegHeader(new Uint8Array([0x47, 0x49, 0x46, 0x38])), false);
   assert.equal(isJpegHeader(new Uint8Array([0x52, 0x49, 0x46, 0x46])), false);
-  assert.equal(isJpegHeader(new Uint8Array([0xff, 0xd8])), false, "a truncated header is not a jpeg");
+  assert.equal(
+    isJpegHeader(new Uint8Array([0xff, 0xd8])),
+    false,
+    "a truncated header is not a jpeg"
+  );
   assert.equal(isJpegHeader(null), false);
 });
