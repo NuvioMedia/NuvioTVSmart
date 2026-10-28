@@ -35,6 +35,7 @@ import { LocalStore } from "../../core/storage/localStore.js";
 import { createRouterMethods01 } from "./routerMethods-01-get-route-state-key.js";
 import { createRouterMethods02 } from "./routerMethods-02-complete-route-return-back-guard.js";
 import { createRouterMethods03 } from "./routerMethods-03-back.js";
+import { openPendingLaunchDeepLink } from "../../core/deeplink/launchDeepLink.js";
 
 export {
   Router,
@@ -74,6 +75,7 @@ export {
   routerPerfNow,
   logRouterPerf,
   NON_BACKSTACK_ROUTES,
+  openPendingLaunchDeepLink,
   WEBOS_RESUME_ROUTE_KEY,
   WEBOS_RESUME_ROUTE_TTL_MS,
   TIZEN_ROUTE_RETURN_BACK_GUARD_MS,

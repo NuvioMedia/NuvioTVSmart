@@ -317,7 +317,7 @@ export function createSettingsScreenMethods01() {
         .map(
           (item, index) => `
           <button class="settings-nav-item focusable${this.activeSection === item.id ? " selected" : ""}"
-                  data-zone="nav"
+                  data-zone="nav" role="tab" aria-selected="${this.activeSection === item.id ? "true" : "false"}"
                   data-nav-index="${index}"
                   data-focus-key="nav:${item.id}"
                   data-section="${item.id}">

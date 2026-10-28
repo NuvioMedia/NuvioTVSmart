@@ -444,9 +444,6 @@
 }
 
 .trakt-route-shell .settings-tracking-panel .settings-trakt-scroll-area > .settings-trakt-card {
-  height: auto;
-  max-height: none;
-  flex: 0 0 auto;
   padding: min(1.46vw, 28px); /* ATV SettingsGroupCard 14dp */
   border-radius: min(1.875vw, 36px); /* ATV 18dp */
   background: var(--card-bg);

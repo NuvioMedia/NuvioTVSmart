@@ -64,6 +64,12 @@ export function renderPlaybackSubtitleBody(model) {
               )
             })}
             ${this.renderToggleRow({
+              focusKey: "playback:subtitleStripSdh",
+              title: t("sub_strip_sdh", {}, "Strip SDH subtitles"),
+              subtitle: t("sub_strip_sdh_desc", {}, "Hide sound descriptions and speaker labels from text subtitles"),
+              checked: Boolean(model.player.subtitleStyle?.stripSdh)
+            })}
+            ${this.renderToggleRow({
               focusKey: "playback:subtitleBold",
               title: t("settings.playback.subtitleBold.title", {}, "Bold subtitles"),
               subtitle: t("settings.playback.subtitleBold.subtitle", {}, "Show subtitle text in bold."),

@@ -4,6 +4,7 @@ import * as internals from "./playerScreenContext.js";
 export function createPlayerScreenMethods30() {
   const {
     PlayerController,
+    TrackingScrobbleService,
     canReleasePlayingNativeStartupAudioGate,
     Environment,
     STARTUP_PLAYBACK_ADVANCE_EPSILON_SECONDS,
@@ -108,6 +109,8 @@ export function createPlayerScreenMethods30() {
         return false;
       }
       this.hasPresentedPlaybackFrame = true;
+      // engineFs defers the playing handler until its first verified frame.
+      if (this.currentEngineFsStream && TrackingScrobbleService.isEnabled()) TrackingScrobbleService.start(this.buildScrobbleContext());
       this.beginPlaybackEngineValidation();
       this.warmBitmapSubtitleSharedResources();
       if (!this.startupTrackPreferenceReady) {

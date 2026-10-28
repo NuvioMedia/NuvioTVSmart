@@ -354,7 +354,11 @@ export function createPlayerScreenMethods71() {
         return;
       }
       if (keyCode === 38) {
-        this.focusProgressBar();
+        if (this.isLivePlayback()) {
+          if (!this.focusSkipIntroButton()) this.setControlsVisible(false);
+        } else {
+          this.focusProgressBar();
+        }
         return;
       }
       if (keyCode === 40) {

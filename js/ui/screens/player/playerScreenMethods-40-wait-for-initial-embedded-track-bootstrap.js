@@ -236,7 +236,12 @@ export function createPlayerScreenMethods40() {
       }
 
       const avplayCodecOrdinal = avplayTracks.slice(0, avplayOrdinal).filter((entry) => getCanonicalCodec(entry) === avplayCodec).length;
-      return embeddedCodecTracks[avplayCodecOrdinal] || null;
+      const matched = embeddedCodecTracks[avplayCodecOrdinal];
+      // Browser MKV metadata must agree on both codec occurrence and full-container stream index.
+      if (matched?.raw?.containerStreamIndex !== undefined && matched.raw.containerStreamIndex !== avplayTrackIndex) {
+        return null;
+      }
+      return matched || null;
     },
     getEmbeddedAudioTrackByNativeIndex(index) {
       const targetIndex = Number(index);

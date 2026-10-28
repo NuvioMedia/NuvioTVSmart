@@ -528,6 +528,15 @@ async function mergedSharedPayload(profileId, localPayload) {
 }
 
 export const HomeCatalogSettingsSyncService = {
+  clearProfile(profileId) {
+    const id = resolveProfileId(profileId);
+    clearTimeout(this.pushTimers.get(id));
+    this.pushTimers.delete(id);
+    for (const token of this.completedInitialPullTokens) {
+      if (token.endsWith(`:${id}`)) this.completedInitialPullTokens.delete(token);
+    }
+    if (cachedSharedSettings?.scope?.endsWith(`:${id}`)) cachedSharedSettings = null;
+  },
   syncingFromRemoteProfiles: new Set(),
   pushTimers: new Map(),
   completedInitialPullTokens: new Set(),

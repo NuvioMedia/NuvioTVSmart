@@ -200,13 +200,19 @@ async function currentScope(profileId) {
   if (!AuthManager.isAuthenticated) return null;
   const resolvedProfileId = resolveProfileId(profileId);
   if (String(ProfileManager.getActiveProfileId()) !== String(resolvedProfileId)) return null;
+  const profileVersion = ProfileManager.getProfileDataVersion(resolvedProfileId);
   const ownerId = String(await AuthManager.getEffectiveUserId());
-  return { ownerId, profileId: resolvedProfileId };
+  if (profileVersion !== ProfileManager.getProfileDataVersion(resolvedProfileId)) return null;
+  return { ownerId, profileId: resolvedProfileId, profileVersion };
 }
 
 async function requireCurrentScope(expected) {
   const current = await currentScope(expected.profileId);
-  if (!current || current.ownerId !== expected.ownerId) {
+  if (
+    !current ||
+    current.ownerId !== expected.ownerId ||
+    current.profileVersion !== expected.profileVersion
+  ) {
     throw new Error("Provider credential sync target changed");
   }
 }

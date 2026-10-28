@@ -1,3 +1,4 @@
+import { MdbListTracking } from "../../data/repository/mdbListTracking.js";
 import * as internals from "./startupSyncService.js";
 
 function surfaceChangedHomeInputs(result) {
@@ -298,6 +299,7 @@ export function createStartupSyncServiceMethods02() {
       await Promise.all([
         runSurface("provider credentials", () => ProviderCredentialSyncService.syncFromRemote(activeProfileId)),
         runSurface("media servers", () => MediaServerSyncService.syncFromRemote(activeProfileId)),
+        runSurface("MDBList refresh", () => MdbListTracking.refresh()),
         runSurface("Simkl refresh", () =>
           SimklSyncService.refresh().catch((error) => {
             console.warn("Simkl automatic refresh failed", error);

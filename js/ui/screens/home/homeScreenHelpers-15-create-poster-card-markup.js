@@ -209,6 +209,12 @@ export function createPosterCardMarkup(
   watchedTitleIds = null,
   posterSettings
 ) {
+  // Smart-TV runtimes hand every poster to the lazy hydration pass rather than
+  // letting the markup load it straight away. An eager src decodes the artwork
+  // at its natural size the moment the row mounts, so a home screen with fifty
+  // catalogs decodes every poster it has ever mounted and never gives one back.
+  // Android never does this: LazyRow only composes what is near the viewport.
+  const deferPosterImages = deferImages || (Router.getCurrent() === "home" && getTvRuntimePerformanceProfile().isTvRuntime);
   const suppressPosterText = Boolean(rowData?.suppressPosterText);
   const rowKey = String(rowData?.homeCatalogKey || buildModernRowKey(rowData || {})).trim();
   const collectionSeed =
@@ -241,12 +247,12 @@ export function createPosterCardMarkup(
         ? `<div class="home-collection-title-overlay" dir="auto">${escapeHtml(collectionDisplayTitle)}</div>`
         : "";
     const contentMarkup = visualSrc
-      ? `<img class="content-poster" ${buildLazyImageAttributes(visualSrc, { defer: deferImages })} alt="${escapeAttribute(collectionItem.name || collectionItem.heroTitle || collectionItem.collectionTitle || "collection")}" />`
+      ? `<img class="content-poster" ${buildLazyImageAttributes(visualSrc, { defer: deferPosterImages })} alt="${escapeAttribute(collectionItem.name || collectionItem.heroTitle || collectionItem.collectionTitle || "collection")}" />`
       : collectionItem.coverEmoji
         ? `<div class="home-collection-emoji" aria-hidden="true">${escapeHtml(collectionItem.coverEmoji)}</div>`
         : '<div class="content-poster placeholder"></div>';
     return `
-      <article class="home-content-card home-poster-card home-collection-card focusable${shapeClass}"
+      <article class="home-content-card home-poster-card home-collection-card focusable${shapeClass}" role="button" aria-label="${escapeAttribute(collectionDisplayTitle)}"
                tabindex="0"
                data-nav-zone="main"
                data-nav-row="${rowIndex}"
@@ -323,7 +329,7 @@ export function createPosterCardMarkup(
   const titleWidth = titleWidths[safeIndex % titleWidths.length];
   const subtitleWidth = subtitleWidths[safeIndex % subtitleWidths.length];
   return `
-    <article class="home-content-card home-poster-card${focusableClass}${expandedClass}${landscapeClass}${loadingClass}"
+    <article class="home-content-card home-poster-card${focusableClass}${expandedClass}${landscapeClass}${loadingClass}" role="button" aria-label="${escapeAttribute(normalized.name || "Untitled")}"
              ${isLoading ? "" : 'tabindex="0"'}
              ${
                isLoading
@@ -353,7 +359,7 @@ export function createPosterCardMarkup(
       <div class="home-poster-frame">
         ${
           !isLoading && posterSrc
-            ? `<img class="content-poster" ${buildLazyImageAttributes(posterSrc, { defer: deferImages })} alt="${escapeAttribute(normalized.name || "content")}" data-original-poster="${escapeAttribute((useLandscapePoster ? normalized.rawLandscapePosterUrl : normalized.rawPosterUrl) || "")}" />`
+            ? `<img class="content-poster" ${buildLazyImageAttributes(posterSrc, { defer: deferPosterImages })} alt="${escapeAttribute(normalized.name || "content")}" data-original-poster="${escapeAttribute((useLandscapePoster ? normalized.rawLandscapePosterUrl : normalized.rawPosterUrl) || "")}" />`
             : '<div class="content-poster placeholder"></div>'
         }
         ${
@@ -377,7 +383,7 @@ export function createPosterCardMarkup(
           <div class="home-poster-landscape-copy" aria-hidden="true">
             ${
               normalized.logo
-                ? `<img class="home-poster-landscape-logo" ${buildLazyImageAttributes(normalized.logo, { defer: deferImages })} alt="" />`
+                ? `<img class="home-poster-landscape-logo" ${buildLazyImageAttributes(normalized.logo, { defer: deferPosterImages })} alt="" />`
                 : `<div class="home-poster-landscape-title">${escapeHtml(normalized.name || "Untitled")}</div>`
             }
             ${subtitle ? `<div class="home-poster-landscape-subtitle">${escapeHtml(subtitle)}</div>` : ""}

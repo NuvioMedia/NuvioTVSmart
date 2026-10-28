@@ -173,6 +173,7 @@ export function createPlayerScreenMethods46() {
             body: raw.body,
             selectionToken
           });
+          if (assResult.stale) return false;
           if (assResult.applied && isCurrentSelection()) {
             this.selectedAddonSubtitleId = subtitleId;
             this.selectedSubtitleTrackIndex = -1;

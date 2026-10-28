@@ -1,3 +1,4 @@
+import { LivePlaybackWatchClock } from "./livePlaybackUi.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
 
@@ -17,6 +18,8 @@ export function initializePlayerMountState(params, initialStreamUrl) {
     createSubtitleOptionVirtualState,
     normalizeParentalWarnings
   } = internals;
+  this.livePlaybackLatched = false;
+  this.liveWatchClock = new LivePlaybackWatchClock();
   this.subtitles = [];
   this.embeddedSubtitleTracks = [];
   this.nextEpisodeTransitionMeta = null;

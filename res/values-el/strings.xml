@@ -2870,4 +2870,9 @@
     <string name="party_invite_scan">Σαρώστε με ένα τηλέφωνο για να συμμετάσχετε</string>
     <string name="party_invite_share">Ή μοιραστείτε τον κωδικό. Οι φίλοι μπορούν να τον εισαγάγουν στο Watch party σε οποιαδήποτε εφαρμογή Nuvio.</string>
     <string name="party_invite_qr">Κωδικός QR πρόσκλησης σε watch party</string>
+    <string name="mdblist_tracking_description">Συγχρονισμός ιστορικού παρακολούθησης και προόδου αναπαραγωγής σε όλες τις συσκευές</string>
+    <string name="mdblist_status_syncing">Συγχρονισμός ιστορικού παρακολούθησης και προόδου αναπαραγωγής…</string>
+    <string name="mdblist_last_synced">Τελευταίος συγχρονισμός: %1$s</string>
+    <string name="sub_strip_sdh">Αφαίρεση υποτίτλων SDH</string>
+    <string name="sub_strip_sdh_desc">Απόκρυψη περιγραφών ήχου και ετικετών ομιλητών από τους υποτίτλους κειμένου</string>
 </resources>

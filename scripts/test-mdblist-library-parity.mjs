@@ -194,6 +194,94 @@ await assert.rejects(library.createList("Invalid", null, "friends"));
 const beforeReadOnly = calls.length;
 await assert.rejects(library.updateList("mdblist:dynamic:2", "Bad", null, "private"));
 assert.equal(calls.length, beforeReadOnly);
+// Exercise batch limits against fresh and existing snapshots through the real sync path.
+const originalFetch = globalThis.fetch;
+const originalCache = localStorage.getItem("mdbListLibraries");
+let dynamicCount = 0,
+  likedCount = 0,
+  repeatKind = "",
+  pageCalls = [];
+const rows = (count, type, start) =>
+  Array.from({ length: count }, (_, i) => ({
+    id: start + i,
+    type,
+    name: `List ${start + i}`,
+    user_id: type === "dynamic" ? 7 : 8
+  }));
+globalThis.fetch = async (raw) => {
+  const url = new URL(raw),
+    path = url.pathname;
+  let data;
+  if (path === "/lists/user") data = rows(dynamicCount, "dynamic", 100);
+  else if (path === "/lists/liked") data = { lists: rows(likedCount, "static", 200) };
+  else if (path === "/external/lists/user") data = [{ id: 300, name: "External" }];
+  else if (path.endsWith("/items")) {
+    pageCalls.push(path);
+    const offset = Number(url.searchParams.get("offset") || 0);
+    if (repeatKind && path === "/external/lists/300/items") {
+      if (offset > 2000) throw new Error("Pagination did not stop");
+      data = {
+        items:
+          repeatKind === "empty" && offset === 1000
+            ? []
+            : repeatKind === "large"
+              ? Array.from({ length: 1000 }, (_, i) => ({
+                  ...movie,
+                  ids: { imdb: `tt${offset + i + 10000}` }
+                }))
+              : [movie],
+        pagination: { offset, limit: 1000, has_more: offset < 2000 }
+      };
+    } else data = { items: [movie] };
+  } else throw new Error(path);
+  return new Response(JSON.stringify(data), { status: 200 });
+};
+for (const [dynamic, liked, hiddenDynamic, hiddenLiked] of [
+  [10, 0, 0, 0],
+  [11, 0, 11, 0],
+  [0, 10, 0, 0],
+  [0, 11, 0, 11],
+  [6, 5, 0, 5],
+  [11, 1, 11, 1]
+]) {
+  localStorage.removeItem("mdbListLibraries");
+  dynamicCount = dynamic;
+  likedCount = liked;
+  pageCalls = [];
+  const result = await library.snapshot({ force: true });
+  assert.equal(result.hidden.filter((k) => k.startsWith("mdblist:dynamic:")).length, hiddenDynamic);
+  assert.equal(result.hidden.filter((k) => k.startsWith("mdblist:liked:")).length, hiddenLiked);
+  assert(pageCalls.includes("/external/lists/300/items"));
+  for (const key of result.hidden) assert(!pageCalls.includes(codec.mdbListItemsPath(key)));
+  const repeated = await library.snapshot({ force: true });
+  assert.deepEqual(repeated.hidden, result.hidden, "existing visibility survives refresh");
+}
+// Existing visible lists do not count towards the new batch; deleted hidden keys are pruned.
+localStorage.removeItem("mdbListLibraries");
+dynamicCount = 1;
+likedCount = 0;
+await library.snapshot({ force: true });
+dynamicCount = 12;
+let batch = await library.snapshot({ force: true });
+assert(!batch.hidden.includes("mdblist:dynamic:100"));
+assert.equal(batch.hidden.length, 11);
+await library.setVisible("mdblist:dynamic:101", true);
+assert(!(await library.snapshot()).hidden.includes("mdblist:dynamic:101"));
+dynamicCount = 1;
+assert.deepEqual((await library.snapshot({ force: true })).hidden, []);
+for (const kind of ["repeat", "empty", "large"]) {
+  repeatKind = kind;
+  pageCalls = [];
+  batch = await library.snapshot({ force: true });
+  assert.equal(batch.items["mdblist:external:300"].length, kind === "large" ? 3000 : 1);
+  assert.equal(
+    pageCalls.filter((p) => p === "/external/lists/300/items").length,
+    kind === "repeat" ? 2 : 3
+  );
+}
+globalThis.fetch = originalFetch;
+localStorage.setItem("mdbListLibraries", originalCache);
+
 // A delayed response belonging to profile 1 cannot commit into profile 2.
 let release;
 globalThis.fetch = () =>

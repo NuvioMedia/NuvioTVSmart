@@ -1,4 +1,5 @@
 import { getHomeFocusIdentity } from "./homeFocusPolicy.js";
+import { releaseHomeArtwork } from "../../images/tvPosterRescaler.js";
 
 // Compare generated markup, rather than the live DOM: focus, image hydration,
 // expansion and trailer playback all add state that a data refresh must retain.
@@ -41,8 +42,11 @@ function signature(node) {
 }
 
 function snapshot(source) {
-  // Shallow nodes cannot retain entire detached markup trees through parentNode.
-  return { node: source.cloneNode(false), markup: signature(source) };
+  // Keep detached lazy images out of the live document's native observer.
+  return {
+    node: getInertDocument(source.ownerDocument).importNode(source, false),
+    markup: signature(source)
+  };
 }
 
 function remember(node, source) {
@@ -56,6 +60,12 @@ export function registerHomeDomNodes(nodes) {
 }
 
 function updateAttributes(node, previous, next) {
+  if (
+    node.tagName === "IMG" &&
+    previous.getAttribute("data-src") !== next.getAttribute("data-src")
+  ) {
+    releasePoster(node);
+  }
   const names = new Set(
     [...Array.from(previous.attributes), ...Array.from(next.attributes)].map((attr) => attr.name)
   );
@@ -111,6 +121,18 @@ function updateAttributes(node, previous, next) {
   }
 }
 
+function releasePoster(image) {
+  if (!image.dataset?.originalSrc) return;
+  releaseHomeArtwork(image.getAttribute("src"));
+  delete image.dataset.originalSrc;
+}
+
+function releasePosters(node) {
+  if (node.nodeType !== 1) return;
+  if (node.matches("img.content-poster")) releasePoster(node);
+  node.querySelectorAll("img.content-poster").forEach(releasePoster);
+}
+
 function updateNode(node, source, protectedNode) {
   const previous = sourceByNode.get(node);
   const markup = signature(source);
@@ -147,7 +169,12 @@ function updateChildren(parent, source, protectedNode) {
     remember(inserted, child);
     return inserted;
   });
-  available.forEach((nodes) => nodes.forEach((node) => node.remove()));
+  available.forEach((nodes) =>
+    nodes.forEach((node) => {
+      releasePosters(node);
+      node.remove();
+    })
+  );
 
   const desiredSet = new Set(desired);
   const nextManagedSibling = (node) => {
@@ -183,20 +210,21 @@ let inertDocument = null;
 
 // The comparison tree is parsed in a document without a browsing context, so its
 // <img> nodes never start fetching or decoding; inserted clones load once adopted.
-function createSourceRoot(ownerDocument) {
+function getInertDocument(ownerDocument) {
   if (!inertDocument) {
     inertDocument = ownerDocument.implementation?.createHTMLDocument?.("") || ownerDocument;
   }
-  return inertDocument.createElement("div");
+  return inertDocument;
 }
 
 export function updateHomeDom(container, markup, { incremental = false, focusedNode = null } = {}) {
-  const source = createSourceRoot(container.ownerDocument);
+  const source = getInertDocument(container.ownerDocument).createElement("div");
   source.innerHTML = markup;
   const canUpdate = incremental && hasMountedHomeDom(container);
   if (canUpdate) {
     updateChildren(container, source, focusedNode);
   } else {
+    releasePosters(container);
     container.innerHTML = markup;
     remember(container, source);
   }

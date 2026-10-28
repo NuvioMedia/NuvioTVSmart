@@ -1446,6 +1446,7 @@
     <string name="parental_severity_severe">Severe</string>
     <string name="parental_severity_moderate">Moderate</string>
     <string name="parental_severity_mild">Mild</string>
+    <string name="player_live_watched">LIVE  %1$s</string>
     <string name="player_ends_at">Ends at %1$s</string>
     <string name="player_via">via %1$s</string>
     <string name="season_episode_format">S%1$d E%2$d</string>
@@ -3267,4 +3268,15 @@
 
     <string name="stream_resume_from_time">Resume from %1$s</string>
     <string name="stream_resume_from_percent">Resume from %1$d%</string>
+    <string name="settings_player_badges_title">Badges in player</string>
+    <string name="settings_player_badges_description">Show badges for the playing video and selected audio track.</string>
+    <string name="settings_player_badges_pack_title">Player badge pack</string>
+    <string name="settings_player_badges_pack_description">Choose an imported pack for the player independently of stream cards.</string>
+    <string name="settings_player_badges_use_stream_pack">Use stream badge pack</string>
+    <string name="cd_seek_bar">Seek bar</string>
+    <string name="mdblist_tracking_description">Sync watched history and playback progress across devices</string>
+    <string name="mdblist_status_syncing">Syncing watched history and playback progress…</string>
+    <string name="mdblist_last_synced">Last synced %1$s</string>
+    <string name="sub_strip_sdh">Strip SDH subtitles</string>
+    <string name="sub_strip_sdh_desc">Hide sound descriptions and speaker labels from text subtitles</string>
 </resources>

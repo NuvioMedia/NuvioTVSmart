@@ -63,7 +63,7 @@ export function createMetaDetailsScreenMethods10() {
               <div class="series-episode-image${presentation.shouldBlur ? " is-blurred" : ""}"
                    data-episode-thumb="${escapeAttribute(presentation.thumbnail)}"${presentation.thumbnail ? ` data-thumb="${escapeAttribute(presentation.thumbnail)}"` : ""}></div>
               <div class="series-episode-overlay"></div>
-              ${presentation.isWatched ? `<div class="series-episode-status complete">${renderWatchedBadgeGlyph()}</div>` : presentation.progressRatio < 0.02 ? `<div class="series-episode-status idle"></div>` : ""}
+              ${presentation.isWatched ? `<div class="series-episode-status complete">${renderWatchedBadgeGlyph()}</div>` : presentation.progressRatio < 0.02 && !presentation.isUnavailable ? `<div class="series-episode-status idle"></div>` : ""}
               ${presentation.isUnavailable ? `<div class="series-episode-unavailable">${escapeHtml(t("episodes_unavailable", {}, "Unavailable").toUpperCase())}</div>` : ""}
               <div class="series-episode-copy">
                 <div class="series-episode-badge">${escapeHtml(t("episodes_episode", {}, "Episode").toUpperCase())} ${Number(episode.episode || 0)}</div>

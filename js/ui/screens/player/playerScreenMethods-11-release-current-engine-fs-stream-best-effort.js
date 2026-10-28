@@ -4,6 +4,7 @@ import * as internals from "./playerScreenContext.js";
 export function createPlayerScreenMethods11() {
   const {
     PlayerController,
+    TrackingScrobbleService,
     Environment,
     warmBitmapSubtitleDecoder,
     SUBTITLE_LANGUAGE_UNKNOWN_KEY,
@@ -55,6 +56,8 @@ export function createPlayerScreenMethods11() {
     bindPlayerExitCleanup() {
       this.unbindPlayerExitCleanup();
       this.playerExitCleanupHandler = () => {
+        if (this.hasPresentedPlaybackFrame && !this.postPlayNaturalCompletionPrepared && TrackingScrobbleService.isEnabled())
+          TrackingScrobbleService.stop(this.buildScrobbleContext());
         void PlayerController.flushCurrentProgress({ forceCloudSync: true });
         this.sendEngineFsRemoveOnPageExit();
         this.releaseCurrentEngineFsStreamBestEffort("player-exit", { removeTorrent: true });

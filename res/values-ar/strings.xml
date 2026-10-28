@@ -2399,4 +2399,6 @@
     <string name="party_invite_scan">امسح الرمز بهاتف للانضمام</string>
     <string name="party_invite_share">أو شارك الرمز. يمكن لأصدقائك إدخاله في المشاهدة الجماعية في أي تطبيق Nuvio.</string>
     <string name="party_invite_qr">رمز QR لدعوة المشاهدة الجماعية</string>
+    <string name="sub_strip_sdh">إزالة ترجمات SDH</string>
+    <string name="sub_strip_sdh_desc">إخفاء أوصاف الأصوات وأسماء المتحدثين من الترجمات النصية</string>
 </resources>

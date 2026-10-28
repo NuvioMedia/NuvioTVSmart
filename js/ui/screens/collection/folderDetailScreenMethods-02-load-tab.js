@@ -17,7 +17,11 @@ export function createFolderDetailScreenMethods02() {
       if (!background) {
         this.tabs[tabIndex] = { ...tab, loading: true, error: "" };
         this.rebuildAllTab();
-        this.render();
+        if (append) {
+          this.scheduleRender();
+        } else {
+          this.render();
+        }
       }
       try {
         const nextPage = append ? Math.max(1, Number(tab.page || 1) + 1) : 1;
@@ -69,7 +73,7 @@ export function createFolderDetailScreenMethods02() {
       }
       this.rebuildAllTab();
       const refreshWatchedPromise = background ? null : this.refreshWatchedTitleIds();
-      if (background) {
+      if (background || append) {
         this.scheduleRender();
       } else {
         this.render();
@@ -78,7 +82,7 @@ export function createFolderDetailScreenMethods02() {
         if (token !== this.folderLoadToken || Router.getCurrent() !== "folderDetail") {
           return;
         }
-        if (background) {
+        if (background || append) {
           this.scheduleRender();
         } else {
           this.render();

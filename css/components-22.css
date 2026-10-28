@@ -255,6 +255,12 @@
   display: none;
 }
 
+.settings-tracking-panel > .settings-trakt-scroll-area > .settings-trakt-card {
+  height: auto;
+  max-height: none;
+  flex: 0 0 auto;
+}
+
 .settings-trakt-scroll-frame {
   position: relative;
   min-height: 0;

@@ -1007,6 +1007,92 @@ function setupRepository({ api = fakeApi(), auth = fakeAuth(), capable = true } 
   assert.equal(t.repo.getPlayback().paused, false);
 }
 
+// Real RPC payloads and Android's narrowly scoped legacy fallback.
+const { PartyApi } = await import("../js/core/party/partyApi.js");
+const { ProfileManager } = await import("../js/core/profile/profileManager.js");
+const requests = [];
+let rpcError = null;
+globalThis.fetch = async (url, options) => {
+  requests.push({ functionName: String(url).split("/").at(-1), body: JSON.parse(options.body) });
+  const error = rpcError;
+  rpcError = null;
+  return new Response(JSON.stringify(error ? { code: error } : {}), { status: error ? 400 : 200 });
+};
+const who = {
+  deviceId: "fixture-device",
+  displayName: "Profile",
+  avatarUrl: null,
+  avatarColor: null,
+  profileIndex: 4
+};
+for (const invoke of [
+  () => PartyApi.create(who, media(), null),
+  () => PartyApi.join("ABC234", who)
+]) {
+  requests.length = 0;
+  await invoke();
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].body.p_profile_index, 4);
+  requests.length = 0;
+  rpcError = "PGRST202";
+  await invoke();
+  assert.equal(requests.length, 2);
+  const { p_profile_index, ...legacy } = requests[0].body;
+  assert.equal(p_profile_index, 4);
+  assert.deepEqual(requests[1].body, legacy);
+  for (const code of ["42501", "PGRST203"]) {
+    requests.length = 0;
+    rpcError = code;
+    await assert.rejects(invoke(), (error) => error.code === code);
+    assert.equal(requests.length, 1, "other errors must not retry create/join");
+  }
+}
+requests.length = 0;
+await PartyApi.join("ABC234", { ...who, profileIndex: null });
+assert(!Object.hasOwn(requests[0].body, "p_profile_index"));
+assert.equal(requests.length, 1);
+// Use the production identity builder, including a change of active profile.
+const savedProfiles = ProfileManager.getProfiles;
+const savedActiveId = ProfileManager.getActiveProfileId;
+let activeId = "4";
+ProfileManager.getActiveProfileId = () => activeId;
+ProfileManager.getProfiles = async () => [
+  { id: "4", name: "Four" },
+  { id: "2", name: "Two" }
+];
+const identities = [];
+const identityRepo = createPartyRepository({
+  api: {
+    create: async (identity) => {
+      identities.push(identity);
+      return { error: "party_full" };
+    },
+    join: async (_code, identity) => {
+      identities.push(identity);
+      return { error: "party_full" };
+    }
+  },
+  auth: { getAuthState: () => AuthState.AUTHENTICATED, subscribe() {} },
+  serverCapable: () => true,
+  deviceId: () => "fixture-device"
+});
+await identityRepo.create(media());
+activeId = "2";
+await identityRepo.join("ABC234");
+assert.deepEqual(
+  identities.map((identity) => identity.profileIndex),
+  [4, 2]
+);
+ProfileManager.getProfiles = savedProfiles;
+ProfileManager.getActiveProfileId = savedActiveId;
+
 console.log(
   "Watch party parity passed: sync rules, clock, codes/keys/wire, shared streams, realtime protocol, repository sessions (host, member, removal, rejoin, end, sign-out, coordinator)"
 );
+
+const { codeSlotsMarkup } = await import("../js/ui/screens/party/partyUi.js");
+for (const code of ["", "ABC234"]) {
+  const slots = codeSlotsMarkup(code, { activeIndex: 0 });
+  assert(slots.includes('dir="ltr"'));
+  if (code) assert(slots.indexOf(">A</span>") < slots.indexOf(">4</span>"));
+}

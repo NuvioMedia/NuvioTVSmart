@@ -197,9 +197,9 @@ export function createMetaDetailsScreenMethods06() {
       const fallbackCast = extractCast({ credits: enrichment?.credits || null });
       return Array.isArray(fallbackCast) ? fallbackCast : [];
     },
-    async fetchSeriesRatingsBySeason(meta) {
+    async fetchSeriesRatingsBySeason(meta, episodes = this.episodes) {
       try {
-        if (!meta?.id || !this.episodes?.length) {
+        if (!meta?.id || !episodes?.length) {
           return {};
         }
         const imdbId = resolveMetaImdbId(meta, this.params);

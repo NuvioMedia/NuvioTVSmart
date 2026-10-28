@@ -3056,4 +3056,9 @@
     <string name="party_invite_scan">Katılmak için telefonla tara</string>
     <string name="party_invite_share">Ya da kodu paylaş. Arkadaşların herhangi bir Nuvio uygulamasında Watch party bölümüne girebilir.</string>
     <string name="party_invite_qr">Watch party davet QR kodu</string>
+    <string name="mdblist_tracking_description">İzleme geçmişini ve oynatma ilerlemesini cihazlar arasında eşitler</string>
+    <string name="mdblist_status_syncing">İzleme geçmişi ve oynatma ilerlemesi eşitleniyor…</string>
+    <string name="mdblist_last_synced">Son eşitleme: %1$s</string>
+    <string name="sub_strip_sdh">SDH altyazılarını sadeleştir</string>
+    <string name="sub_strip_sdh_desc">Metin altyazılarındaki ses betimlemelerini ve konuşmacı etiketlerini gizler</string>
 </resources>

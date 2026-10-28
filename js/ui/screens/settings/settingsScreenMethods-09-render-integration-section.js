@@ -161,6 +161,23 @@ export function createSettingsScreenMethods09() {
         });
       });
 
+      this.actionMap.set("streams:toggle:playerBadges", () => {
+        StreamBadgeSettingsStore.setShowInPlayer(!badgeSettings.showInPlayer);
+      });
+      const playerBadgeOptions = [
+        { id: "", label: t("settings_player_badges_use_stream_pack", {}, "Use stream badge pack") },
+        ...imports.map((entry) => ({ id: entry.sourceUrl, label: entry.sourceUrl }))
+      ];
+      this.actionMap.set("streams:playerBadgeSource", () => {
+        this.openOptionDialog({
+          title: t("settings_player_badges_pack_title", {}, "Player badge pack"),
+          options: playerBadgeOptions,
+          selectedId: badgeSettings.playerBadgeSource || "",
+          returnFocusKey: "streams:playerBadgeSource",
+          onSelect: (option) => StreamBadgeSettingsStore.setPlayerBadgeSource(option.id)
+        });
+      });
+
       const previewHtml = previewImport ? this.renderStreamBadgePreviewCard(previewImport) : "";
       const emptyHtml = imports.length
         ? ""
@@ -170,6 +187,23 @@ export function createSettingsScreenMethods09() {
           ${this.renderSectionHeader(SECTION_META.find((item) => item.id === "streams"))}
           <div class="settings-group-card settings-group-card-fill">
             <div class="settings-stack">
+              ${this.renderToggleRow({
+                focusKey: "streams:toggle:playerBadges",
+                title: t("settings_player_badges_title", {}, "Badges in player"),
+                subtitle: t("settings_player_badges_description", {}, "Show badges for the playing video and selected audio track."),
+                checked: badgeSettings.showInPlayer === true
+              })}
+              ${this.renderActionRow({
+                focusKey: "streams:playerBadgeSource",
+                title: t("settings_player_badges_pack_title", {}, "Player badge pack"),
+                subtitle: t(
+                  "settings_player_badges_pack_description",
+                  {},
+                  "Choose an imported pack for the player independently of stream cards."
+                ),
+                value:
+                  playerBadgeOptions.find((option) => option.id === badgeSettings.playerBadgeSource)?.label || playerBadgeOptions[0].label
+              })}
               ${this.renderToggleRow({
                 focusKey: "streams:toggle:sizeBadges",
                 title: t("settings_stream_size_badges_title", {}, "Size badges"),

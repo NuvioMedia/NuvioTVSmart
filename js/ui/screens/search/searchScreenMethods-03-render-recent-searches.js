@@ -128,13 +128,18 @@ export function createSearchScreenMethods03() {
       const input = this.container.querySelector("#searchInput");
       input?.blur?.();
       this.restoreScrollState();
-      const shouldFocusResults = Boolean(this.pendingAutoFocusResults && this.navModel?.rows?.[0]?.[0]);
+      const shouldFocusResults = Boolean(this.pendingAutoFocusResults && this.mode === "search" && this.navModel?.rows?.[0]?.[0]);
       if (this.focusZone === "sidebar") {
         this.focusSidebarNode();
       } else {
         this.restoreContentFocus(shouldFocusResults);
       }
-      this.pendingAutoFocusResults = false;
+      if (this.pendingAutoFocusResults && !shouldFocusResults) {
+        // Keep Done dismissed even when a later refresh still has no results.
+        input?.blur?.();
+      } else {
+        this.pendingAutoFocusResults = false;
+      }
     },
     isPosterHoldTarget(node) {
       return (

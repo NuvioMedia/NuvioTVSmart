@@ -19,6 +19,7 @@ const session = {
   interval: 5
 };
 const fixtures = {
+  MdbListTracking: { refresh: async () => false },
   MdbListAccount: { start: () => start(), poll: (...args) => poll(...args) },
   ProfileManager: { getActiveProfileId: () => 1 },
   QrCodeGenerator: {
@@ -51,7 +52,7 @@ for (const file of ["settingsScreenMethods-02-render-action-row.js", "settingsMd
   vm.runInContext(source.replace(/^import .*;\n/gm, "").replace(/export /g, ""), context);
 }
 vm.runInContext(
-  "var internals = fixtures; var { MdbListAccount, ProfileManager, QrCodeGenerator, t, escapeHtml, escapeAttribute } = fixtures;",
+  "var internals = fixtures; var { MdbListTracking, MdbListAccount, ProfileManager, QrCodeGenerator, t, escapeHtml, escapeAttribute } = fixtures;",
   context
 );
 const methods = vm.runInContext("createSettingsScreenMethods02()", context);

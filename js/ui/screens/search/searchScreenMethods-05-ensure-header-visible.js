@@ -134,6 +134,10 @@ export function createSearchScreenMethods05() {
       const nextQuery = trimLeadingWhitespace(input?.value || "").trim();
       this.query = nextQuery;
       const nextMode = nextQuery.length >= 2 ? "search" : "idle";
+      if (autoFocusResults) {
+        input?.blur?.();
+        this.pendingAutoFocusResults = true;
+      }
       if (nextMode === "idle" && this.mode === "idle" && !(this.rows || []).length) {
         const queryChanged = this.lastSubmittedQuery !== nextQuery;
         this.lastSubmittedQuery = nextQuery;
@@ -151,10 +155,13 @@ export function createSearchScreenMethods05() {
         if (rememberToHistory) {
           this.rememberCurrentSearchIfValid();
         }
+        if (autoFocusResults && this.resultsQuery === nextQuery) {
+          this.requestRender();
+        }
         return;
       }
       this.mode = nextMode;
-      this.pendingAutoFocusResults = Boolean(autoFocusResults && nextMode === "search");
+      this.pendingAutoFocusResults = Boolean(autoFocusResults);
       this.lastSubmittedQuery = nextQuery;
       this.loadToken = (this.loadToken || 0) + 1;
       this.cancelActiveSearchRequests();
@@ -200,6 +207,7 @@ export function createSearchScreenMethods05() {
     },
     scheduleSearchFromInput(input) {
       this.cancelScheduledInputSearch();
+      this.pendingAutoFocusResults = false;
       const nextQuery = trimLeadingWhitespace(input?.value || "");
       const selectionSnapshot = getInputSelectionSnapshot(input);
       if (input && input.value !== nextQuery) {

@@ -2,6 +2,8 @@ import { watchedItemsRepository } from "./watchedItemsRepository.js";
 import { watchProgressRepository } from "./watchProgressRepository.js";
 import { TraktAuthService } from "./traktAuthService.js";
 import { watchedItemsShareIdentity } from "./watchedIdentity.js";
+import { LocalStore } from "../../core/storage/localStore.js";
+import { WatchProgressSource } from "../local/traktSettingsStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -9,7 +11,12 @@ const CACHE = new Map();
 
 function buildCacheKey(contentId, traktId) {
   const profileId = ProfileManager.getActiveProfileId() || "default";
-  return `${profileId}:${contentId}:${traktId}`;
+  return (
+    `${profileId}:${contentId}:${traktId}` +
+    (isMdbListSelected()
+      ? `:${watchProgressRepository.getContinueWatchingSourceKey()}:${LocalStore.revision("mdbListTracking")}:${LocalStore.revision("mdbListTrackingPlayback")}`
+      : "")
+  );
 }
 
 function getCachedEntry(cacheKey) {
@@ -34,7 +41,7 @@ function buildEpisodeKey(season, episode) {
 }
 
 async function fetchLocalWatchedMap(contentReference = {}) {
-  const allWatched = await watchedItemsRepository.getAll();
+  const allWatched = await watchedItemsRepository.getAll(isMdbListSelected() ? Infinity : 2000);
   const watchedMap = new Map();
 
   for (const item of allWatched) {
@@ -58,8 +65,14 @@ async function fetchLocalWatchedMap(contentReference = {}) {
   return watchedMap;
 }
 
+function isMdbListSelected() {
+  return watchProgressRepository.getContinueWatchingSource() === WatchProgressSource.MDBLIST;
+}
+
 async function fetchProgressWatchedMap(contentReference = {}) {
-  const allProgress = await watchProgressRepository.getAll();
+  const allProgress = await (isMdbListSelected()
+    ? watchProgressRepository.getAllForContinueWatching()
+    : watchProgressRepository.getAll());
   const progressMap = new Map();
 
   for (const progress of allProgress) {
@@ -96,7 +109,7 @@ async function fetchProgressWatchedMap(contentReference = {}) {
 }
 
 async function fetchTraktSeriesWatchedMap(showTraktId) {
-  if (!showTraktId) return new Map();
+  if (!showTraktId || isMdbListSelected()) return new Map();
 
   const isAuthenticated = await TraktAuthService.isAuthenticated();
   if (!isAuthenticated) return new Map();
@@ -111,7 +124,7 @@ async function fetchTraktSeriesWatchedMap(showTraktId) {
 }
 
 async function fetchTraktMovieWatchedState(movieTraktId) {
-  if (!movieTraktId) return null;
+  if (!movieTraktId || isMdbListSelected()) return null;
 
   const isAuthenticated = await TraktAuthService.isAuthenticated();
   if (!isAuthenticated) return null;

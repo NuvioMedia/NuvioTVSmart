@@ -4,6 +4,18 @@ import vm from "node:vm";
 import { build } from "esbuild";
 
 const files = [
+  [
+    "stream/streamScreenHelpers-02-flatten-streams.js",
+    "getStreamHeadline, getStreamDescriptionLines"
+  ],
+  [
+    "detail/metaDetailsScreenMethods-10-get-episode-card-presentation.js",
+    "createMetaDetailsScreenMethods10"
+  ],
+  [
+    "detail/metaDetailsScreenMethods-11-sync-rendered-episode-track.js",
+    "createMetaDetailsScreenMethods11"
+  ],
   ["stream/streamScreenMethods-06-apply-addon-filter-dom-state.js", "createStreamScreenMethods06"],
   [
     "stream/streamScreenMethods-08-build-web-os-native-player-launch-parameters.js",
@@ -52,7 +64,7 @@ const bundle = await build({
         b.onLoad(
           {
             filter:
-              /(?:(?:metaDetailsScreenMethods-(?:12|14|15|16)|streamScreenMethods-(?:01|06|07|08|09))-[^/]+|layoutPreferences|homeScreenHelpers-01-modern-sidebar-pill-auto-collapse-ms)\.js$/
+              /(?:(?:metaDetailsScreenMethods-(?:10|11|12|14|15|16)|streamScreenMethods-(?:01|06|07|08|09)|streamScreenHelpers-02)-[^/]+|layoutPreferences|homeScreenHelpers-01-modern-sidebar-pill-auto-collapse-ms)\.js$/
           },
           async ({ path }) => {
             let contents = await readFile(path, "utf8");
@@ -63,7 +75,7 @@ const bundle = await build({
             contents = contents.replace(
               /^import \{([\s\S]*?)\} from "([^"]+)";/gm,
               (all, names, source) =>
-                /(?:episodeCardMetadata|watchProgress)\.js$/.test(source)
+                /(?:episodeCardMetadata|watchProgress|streamDisplayText)\.js$/.test(source)
                   ? all
                   : `const {${names}} = fixtures;`
             );
@@ -77,8 +89,7 @@ const bundle = await build({
 let normalizeLayout;
 const fixtures = {
   LayoutPreferences: { get: () => ({ posterCardCornerRadiusDp: 12 }) },
-  getStreamHeadline: (stream) => stream.name,
-  getStreamDescriptionLines: (stream) => [stream.description],
+  Environment: { isWebOS: () => false },
   renderStreamBadges: (_stream, _enabled, settings) =>
     settings?.testBadges ? "<div>TEST-BADGES</div>" : "",
   resolveStreamBadgePlacement: (settings) => settings?.badgePlacement || "BOTTOM",
@@ -107,6 +118,25 @@ const fixtures = {
 const context = vm.createContext({ fixtures, console });
 vm.runInContext(bundle.outputFiles[0].text, context);
 const api = context.subject;
+fixtures.getStreamHeadline = api.getStreamHeadline;
+fixtures.getStreamDescriptionLines = api.getStreamDescriptionLines;
+for (const webos of [false, true]) {
+  fixtures.Environment.isWebOS = () => webos;
+  for (const newline of ["\n", "\r\n"]) {
+    const name = ["4K ⚡", "⟨Web-dl⟩", "★★★★★"].join(newline);
+    assert.equal(api.getStreamHeadline({ name }), name);
+    assert.equal(api.getStreamHeadline({ title: name }), name);
+    assert.equal(api.getStreamHeadline({ description: name }), name);
+  }
+  assert.equal(api.getStreamHeadline({ name: " \n4K\n★★★★★\n " }), "4K\n★★★★★");
+  assert.equal(api.getStreamHeadline({ name: " ", title: "Title" }), "Title");
+  assert.equal(api.getStreamHeadline({ addonName: "Addon" }), "Addon");
+  assert.equal(api.getStreamHeadline({}), "Unknown source");
+  assert.equal(api.getStreamHeadline({ name: "𝟒K\n★★★★★" }), webos ? "4K\n★★★★★" : "𝟒K\n★★★★★");
+}
+fixtures.Environment.isWebOS = () => false;
+const streamCss = await readFile("css/components-50.css", "utf8");
+assert.match(streamCss, /\.stream-route-card-heading\s*\{[^}]*white-space:\s*pre-line;/);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: 0 }).posterCardCornerRadiusDp, 0);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: "bad" }).posterCardCornerRadiusDp, 12);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: null }).posterCardCornerRadiusDp, 12);
@@ -344,6 +374,17 @@ const filenameMarkup = renderCard.call(
 assert.ok(filenameMarkup.includes("The.<wbr>Substance_<wbr>2024-<wbr>2160p.<wbr>mkv"));
 assert.ok(filenameMarkup.includes("&lt;unsafe>"), "wrap opportunities must preserve escaping");
 assert.ok(filenameMarkup.replaceAll("<wbr>", "").includes("📁 The.Substance_2024-2160p.mkv"));
+const multilineMarkup = renderCard.call(
+  { isCardActionFocused: () => true },
+  { ...stream, name: "4K ⚡\n<Web-dl>\n★★★★★" },
+  0,
+  false,
+  {},
+  { virtualized: true, virtualRowGap: 40 }
+);
+assert.ok(multilineMarkup.includes('dir="ltr">4K ⚡\n&lt;Web-dl>\n★★★★★</div>'));
+assert.ok(multilineMarkup.includes('style="margin-bottom:40px"'));
+assert.ok(multilineMarkup.includes('data-action="playStream"'));
 
 let isFocusable = false,
   role;
@@ -413,3 +454,96 @@ assert.equal(synopsis.synopsisDialog, null);
 console.log(
   "Detail/stream parity passed: previous seasons, write failures, runtime, retry, empty hint and full synopsis."
 );
+
+// A matched party source is plain text; a separately shared link keeps its attribution.
+for (const shared of [false, true]) {
+  const html = renderCard.call(
+    { isCardActionFocused: () => false, isPartySourceStream: () => true },
+    { ...stream, name: "عنوان طويل ".repeat(12), partyShared: shared, partyHostName: "Host" },
+    0
+  );
+  assert.equal(html.includes("stream-route-party-source"), !shared);
+  assert.equal(html.includes("stream-route-party-label"), shared);
+  assert.equal(html.includes("is-party-marked"), shared);
+  assert(!html.includes("stream-route-party-chip"));
+  if (!shared) assert(html.includes('class="stream-route-party-source" dir="auto"'));
+}
+fixtures.escapeAttribute = fixtures.escapeHtml;
+fixtures.renderWatchedBadgeGlyph = () => "✓";
+const episodeRenderer = api.createMetaDetailsScreenMethods10().renderEpisodeCard;
+for (const isWatched of [false, true])
+  for (const isUnavailable of [false, true]) {
+    const html = episodeRenderer.call(
+      {
+        getEpisodeCardPresentation: () => ({
+          isWatched,
+          isUnavailable,
+          progressRatio: 0,
+          title: "Episode",
+          overview: "Overview",
+          thumbnail: "",
+          metaParts: ""
+        })
+      },
+      { id: "ep", episode: 1 },
+      0
+    );
+    assert.equal(html.includes("series-episode-status complete"), isWatched);
+    assert.equal(html.includes("series-episode-status idle"), !isWatched && !isUnavailable);
+    assert.equal(html.includes('class="series-episode-unavailable"'), isUnavailable);
+  }
+
+// In-place watched updates follow the same unavailable/idle rules as initial rendering.
+class EpisodeNode {
+  constructor() {
+    this.className = "";
+    this.classList = { toggle() {} };
+  }
+  querySelector(selector) {
+    return this.children?.[selector] || null;
+  }
+  appendChild(node) {
+    this.children ||= {};
+    this.children[".series-episode-status"] = node;
+    node.parent = this;
+  }
+  remove() {
+    delete this.parent.children[".series-episode-status"];
+  }
+}
+context.HTMLElement = EpisodeNode;
+context.document = { createElement: () => new EpisodeNode() };
+fixtures.escapeSelectorValue = (value) => value;
+const cardNode = new EpisodeNode(),
+  thumbNode = new EpisodeNode();
+cardNode.children = {
+  ".series-episode-thumb": thumbNode,
+  ".series-episode-image": new EpisodeNode(),
+  ".series-episode-copy": new EpisodeNode()
+};
+const updateState = {
+  container: { querySelector: () => cardNode },
+  episodeProgressMap: new Map(),
+  isEpisodeMarkedWatched: () => false
+};
+const syncBadge = api.createMetaDetailsScreenMethods11().syncEpisodeCardWatchedDom;
+for (const watched of [false, true, false])
+  for (const available of [true, false]) {
+    updateState.isEpisodeMarkedWatched = () => watched;
+    syncBadge.call(updateState, { id: "ep", season: 1, episode: 1, available });
+    const status = thumbNode.querySelector(".series-episode-status");
+    assert.equal(
+      status?.className || "",
+      watched ? "series-episode-status complete" : available ? "series-episode-status idle" : ""
+    );
+  }
+
+const unified = renderState(null, {
+  getHeaderMeta: () => ({ title: "Movie", resumeLabel: "Resume 12:34" })
+});
+const shellStart = unified.indexOf('class="stream-route-panel-shell"');
+const headerStart = unified.indexOf('class="stream-route-panel-header"');
+assert(shellStart >= 0 && headerStart > shellStart);
+assert(unified.indexOf('class="stream-route-resume-label"') > headerStart);
+assert(unified.indexOf('class="stream-route-chip-wrap"') > headerStart);
+assert(unified.indexOf('class="stream-route-panel"') > headerStart);

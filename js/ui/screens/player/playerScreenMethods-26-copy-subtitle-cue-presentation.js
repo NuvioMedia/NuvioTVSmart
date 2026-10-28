@@ -1,3 +1,4 @@
+import { stripSubtitleSdh } from "../../../core/player/subtitleSdhFilter.js";
 import { syncHtmlSubtitleClearance } from "./subtitleOverlayClearance.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
@@ -48,19 +49,34 @@ export function createPlayerScreenMethods26() {
       if (!cue || typeof cue !== "object" || typeof cue.text !== "string") {
         return false;
       }
-      if (!this.hasSubtitleAssSyntax(cue.text)) {
-        return false;
+      const snapshot = this.getSubtitleCueSnapshot(cue);
+      const original = snapshot?.text ?? cue.text;
+      const assSyntax = this.hasSubtitleAssSyntax(original);
+      if (assSyntax) this.applySubtitleAssAlignmentToCue(cue, this.getSubtitleAssAlignment(original));
+      const baseline = assSyntax ? this.sanitizeSubtitleText(original, { preserveBasicStyle: false }) : original;
+      let cleaned = baseline;
+      if (this.subtitleStyleSettings?.stripSdh) {
+        if (snapshot && snapshot.sdhSource === baseline) cleaned = snapshot.sdhText;
+        else {
+          cleaned = stripSubtitleSdh(baseline);
+          if (snapshot) {
+            snapshot.sdhSource = baseline;
+            snapshot.sdhText = cleaned;
+          }
+        }
       }
-      this.applySubtitleAssAlignmentToCue(cue, this.getSubtitleAssAlignment(cue.text));
-      const cleaned = this.sanitizeSubtitleText(cue.text, { preserveBasicStyle: false });
       if (cleaned === cue.text) {
+        if (snapshot) snapshot.sdhLastText = cleaned;
         return false;
       }
       try {
         cue.text = cleaned;
+        if (snapshot) snapshot.sdhLastText = cleaned;
         return true;
       } catch (_) {
-        return this.replaceSubtitleCueText(track, cue, cleaned);
+        const replaced = this.replaceSubtitleCueText(track, cue, cleaned);
+        if (replaced && snapshot) snapshot.sdhLastText = cleaned;
+        return replaced;
       }
     },
     getSubtitleCueArray(cues) {
