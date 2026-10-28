@@ -14,16 +14,9 @@ export function createDiscoverScreenMethods04() {
 
   return {
     shouldUseImmediateFocusScroll() {
-      // Same policy as Home and Search (see shouldUseImmediateFocusScroll in
-      // homeScreenMethods-03): focus-driven scroll snaps rather than tweening on
-      // runtimes where a scripted scroll write costs a compositor repaint.
-      // webOS qualifies on every generation, not only the ones the runtime
-      // profile flags as performance-constrained.
       const profile = getTvRuntimePerformanceProfile();
       return (
-        Boolean(profile.isPerformanceConstrained) ||
-        Boolean(globalThis?.document?.body?.classList?.contains("performance-constrained")) ||
-        profile.platform === "webos"
+        Boolean(profile.isPerformanceConstrained) || Boolean(globalThis?.document?.body?.classList?.contains("performance-constrained"))
       );
     },
     restoreFocusedCard({ scrollMode = "center" } = {}) {
@@ -179,10 +172,6 @@ export function createDiscoverScreenMethods04() {
         return false;
       }
       if (this.shouldUseImmediateFocusScroll()) {
-        // Same rule as Home (see startModernVerticalFastScroll): the held-D-pad
-        // loop writes scrollTop every frame, which snapped runtimes cannot
-        // sustain over a mounted poster grid. Let the throttled focus path step
-        // rows with immediate scroll instead.
         return false;
       }
       if (!this.canDiscoverVerticalFastScroll(scroller, direction)) {

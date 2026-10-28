@@ -208,7 +208,7 @@ export function createDiscoverScreenMethods06() {
 
       if (
         currentAction === "openDetail" &&
-        (isLeftKey(event) || isRightKey(event)) &&
+        (isLeftKey(event) || isRightKey(event) || (this.shouldUseImmediateFocusScroll() && requestedFastScrollDirection !== 0)) &&
         !allowDpadRepeat(this, event, { horizontalMs: 80, verticalMs: 112 })
       ) {
         return;

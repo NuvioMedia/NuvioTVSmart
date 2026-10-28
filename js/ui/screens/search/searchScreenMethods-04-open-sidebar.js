@@ -9,7 +9,6 @@ export function createSearchScreenMethods04() {
     getRootSidebarSelectedNode,
     isRootSidebarNode,
     isPerformanceConstrainedRuntime,
-    getTvRuntimePerformanceProfile,
     setModernSidebarExpanded,
     setLegacySidebarExpanded,
     escapeSelectorValue
@@ -131,14 +130,7 @@ export function createSearchScreenMethods04() {
       }
     },
     shouldUseImmediateFocusScroll() {
-      // Same policy as Home (see shouldUseImmediateFocusScroll in
-      // homeScreenMethods-03): focus-driven scroll moves snap instead of tweening
-      // on runtimes where a per-frame scrollLeft/scrollTop write costs the
-      // compositor a repaint of the whole poster grid. webOS qualifies on every
-      // generation, not just the ones flagged performance-constrained.
-      return (
-        isPerformanceConstrainedRuntime() || getTvRuntimePerformanceProfile().platform === "webos"
-      );
+      return isPerformanceConstrainedRuntime();
     },
     animateScroll(container, axis, targetValue, duration = 150, options = {}) {
       if (!container) {
@@ -206,8 +198,6 @@ export function createSearchScreenMethods04() {
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       if (this.shouldUseImmediateFocusScroll()) {
-        // The spring camera is the per-frame scroll writer on this screen, so
-        // snapped runtimes land it on the target instead of integrating it.
         this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
