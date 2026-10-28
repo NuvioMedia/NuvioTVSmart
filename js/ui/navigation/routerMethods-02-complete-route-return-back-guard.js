@@ -85,12 +85,7 @@ export function createRouterMethods02() {
       };
     },
     seedWebOsResumeBackStack() {
-      // A webOS relaunch can restore the screen the user left, which makes that
-      // screen the only entry the app has. Back then reaches the platform and
-      // offers to quit instead of returning into the app, and a folder route
-      // restores again on the next launch, so the user cannot get out.
-      // Android roots its nav graph at Home, so Back always lands there. Seed
-      // the same root before the restored route mounts.
+      // Android keeps Home beneath restored content; seed it without mounting an extra screen.
       if (!Platform.isWebOS() || this.historyInitialized || !window?.history) {
         return false;
       }
@@ -100,10 +95,9 @@ export function createRouterMethods02() {
       }
       window.history.replaceState(homeState, "");
       // The restored route replaces this second entry, leaving Home underneath.
-      // This is the same pair the Home back guard keeps for overlays.
       window.history.pushState(homeState, "");
       this.historyInitialized = true;
-      this.webOsHomeBackGuardInitialized = true;
+      // Let the first Home mount arm its own native Back guard for overlays.
       if (!this.stack.length) {
         this.stack.push({ route: "home", params: {} });
       }

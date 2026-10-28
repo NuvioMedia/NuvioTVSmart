@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 // The routes webOS is allowed to restore, from WEBOS_NON_RESTORABLE_ROUTES.
-const RESTORABLE_ROUTES = ["folderDetail", "library", "search", "settings", "catalogSeeAll", "tmdbEntityBrowse", "account", "trakt"];
+const RESTORABLE_ROUTES = ["folderDetail", "library", "search", "settings", "catalogSeeAll", "tmdbEntityBrowse", "account", "trakt", "discover", "supportersContributors", "licensesAttributions", "castDetail"];
 
 function createHistory() {
   const entries = [];
@@ -53,7 +53,7 @@ function createHistory() {
         return;
       }
       index -= 1;
-      listeners.slice().forEach((listener) => listener({ state: entries[index] }));
+      return Promise.all(listeners.slice().map((listener) => listener({ state: entries[index] })));
     }
   };
 }
@@ -76,7 +76,12 @@ function createRouter({ isWebOS = true } = {}) {
   const history = createHistory();
   const exits = [];
   const mounted = [];
-  const window = { history };
+  const window = {
+    history,
+    addEventListener: (name, listener) => {
+      if (name === "popstate") history.listeners.push(listener);
+    }
+  };
 
   const NON_BACKSTACK_ROUTES = new Set([
     "profileSelection",
@@ -110,6 +115,7 @@ function createRouter({ isWebOS = true } = {}) {
     getStackEntryParams: (entry) => (typeof entry === "string" ? {} : entry?.params || {})
   };
 
+  const methods01 = loadFactory("js/ui/navigation/routerMethods-01-get-route-state-key.js", "createRouterMethods01", internals, { window })();
   const methods02 = loadFactory("js/ui/navigation/routerMethods-02-complete-route-return-back-guard.js", "createRouterMethods02", internals, { window })();
   const methods03 = loadFactory("js/ui/navigation/routerMethods-03-back.js", "createRouterMethods03", internals, { window })();
 
@@ -137,23 +143,13 @@ function createRouter({ isWebOS = true } = {}) {
     resolveNavigationContext: (route, params, options) => ({ ...options }),
     beginRouteReturnBackGuard: () => 0,
     suppressNextPopstate() {},
+    ...methods01,
     ...methods02,
     ...methods03
   };
   router.getCurrentScreen = () => (router.current ? router.routes[router.current] : null);
 
-  // The router's own popstate handler lives in routerMethods-01 behind a real
-  // window listener. Mirror only the branch a Back press reaches here.
-  history.listeners.push(async (event) => {
-    const route = String(event?.state?.route || "");
-    if (route && router.routes[route]) {
-      await router.navigate(route, event.state.params || {}, {
-        fromHistory: true,
-        skipStackPush: true,
-        isBackNavigation: true
-      });
-    }
-  });
+  router.init();
 
   return { router, history, exits, mounted };
 }
@@ -183,6 +179,7 @@ test("Back from a restored route returns to Home instead of leaving the app", as
 
   await restoreResumeRoute(router, "folderDetail", { collectionId: "c1", folderId: "f1" });
   await router.back();
+  await new Promise(setImmediate);
 
   assert.equal(history.leftApp, false, "Back must not reach the platform and offer to quit");
   assert.equal(exits.length, 0, "Back must not exit the app");
@@ -195,6 +192,7 @@ test("every route webOS can restore keeps a way back", async () => {
 
     await restoreResumeRoute(router, route);
     await router.back();
+    await new Promise(setImmediate);
 
     assert.equal(history.leftApp, false, `${route} traps the user when restored`);
     assert.equal(exits.length, 0, `${route} exits the app on Back when restored`);
@@ -212,6 +210,7 @@ test("opening a folder from Home is unchanged", async () => {
   assert.deepEqual(history.routes(), ["home", "home", "folderDetail"]);
 
   await router.back();
+  await new Promise(setImmediate);
 
   assert.equal(history.leftApp, false);
   assert.equal(exits.length, 0);
@@ -234,4 +233,35 @@ test("seeding does nothing off webOS", async () => {
   assert.equal(router.seedWebOsResumeBackStack(), false);
   assert.deepEqual(history.routes(), [], "browsers and Tizen keep their own history untouched");
   assert.equal(router.historyInitialized, false);
+});
+
+test("native Back at Home still reaches overlays after a restored route returns", async () => {
+  const { router, history, exits } = createRouter();
+  await restoreResumeRoute(router, "folderDetail");
+  await history.back();
+  assert.equal(router.current, "home");
+  let consumed = 0;
+  router.routes.home.consumeBackRequest = () => { consumed += 1; return true; };
+  await history.back();
+  assert.equal(history.leftApp, false);
+  assert.equal(consumed, 1);
+  assert.equal(exits.length, 0);
+  assert.equal(router.current, "home");
+});
+
+test("native Back dismisses a restored folder overlay before navigating Home", async () => {
+  const { router, history } = createRouter();
+  await restoreResumeRoute(router, "folderDetail");
+  let overlayOpen = true;
+  router.routes.folderDetail.consumeBackRequest = () => {
+    if (!overlayOpen) return false;
+    overlayOpen = false;
+    return true;
+  };
+  await history.back();
+  assert.equal(overlayOpen, false);
+  assert.equal(router.current, "folderDetail");
+  assert.equal(history.leftApp, false);
+  await history.back();
+  assert.equal(router.current, "home");
 });
