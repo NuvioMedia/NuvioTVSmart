@@ -84,6 +84,26 @@ export function createRouterMethods02() {
         params: snapshot.params && typeof snapshot.params === "object" ? snapshot.params : {}
       };
     },
+    seedWebOsResumeBackStack() {
+      // Android keeps Home beneath restored content; seed it without mounting an extra screen.
+      if (!Platform.isWebOS() || this.historyInitialized || !window?.history) {
+        return false;
+      }
+      const homeState = { route: "home", params: {}, previousRoute: null };
+      if (typeof window.history.replaceState !== "function" || typeof window.history.pushState !== "function") {
+        return false;
+      }
+      window.history.replaceState(homeState, "");
+      // The restored route replaces this second entry, leaving Home underneath.
+      window.history.pushState(homeState, "");
+      this.historyInitialized = true;
+      // Let the first Home mount arm its own native Back guard for overlays.
+      if (!this.stack.length) {
+        this.stack.push({ route: "home", params: {} });
+      }
+      return true;
+    },
+
     async navigate(routeName, params = {}, options = {}) {
       if (routeName === "detail" && params?.itemType === "collection") {
         const ref = String(params.itemId || "").match(/^server:([^:]+):([^:]+)$/);
