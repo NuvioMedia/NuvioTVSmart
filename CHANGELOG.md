@@ -2,7 +2,7 @@
 
 ### Improvements & Fixes
 
-- Home and detail-rail focus moves snap to their target on LG webOS instead of tweening, removing the ~0.7s scroll-settling lag measured on modern panels (#1153) (@malkstar)
+- Snap Home camera and detail-rail scrolling on LG webOS while preserving poster animations and image-loading budgets (#1153) (@malkstar)
 
 ## 1.2.10
 

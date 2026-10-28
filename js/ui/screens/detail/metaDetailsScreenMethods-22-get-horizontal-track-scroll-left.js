@@ -269,11 +269,7 @@ export function createMetaDetailsScreenMethods22() {
         return false;
       }
       let preserveVerticalScroll = Boolean(options?.preserveVerticalScroll);
-      // Tizen and webOS fast path: 260/280ms scroll animations per focus move
-      // cannot composite on TV hardware while episode artwork decodes. Move
-      // instantly on constrained runtimes, all Samsung Tizen TVs (shared
-      // helper covers both) and LG webOS panels (#1153) unless explicitly
-      // requested.
+      // Reuse native rail positioning on TVs where per-frame camera writes stall navigation.
       let constrainedFocus = false;
       try {
         constrainedFocus = ScreenUtils.shouldSkipRouteEnter(this);
