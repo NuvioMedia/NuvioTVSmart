@@ -60,7 +60,10 @@ export function registerHomeDomNodes(nodes) {
 }
 
 function updateAttributes(node, previous, next) {
-  if (node.tagName === "IMG" && previous.getAttribute("data-src") !== next.getAttribute("data-src")) {
+  if (
+    node.tagName === "IMG" &&
+    previous.getAttribute("data-src") !== next.getAttribute("data-src")
+  ) {
     releasePoster(node);
   }
   const names = new Set(
@@ -166,10 +169,12 @@ function updateChildren(parent, source, protectedNode) {
     remember(inserted, child);
     return inserted;
   });
-  available.forEach((nodes) => nodes.forEach((node) => {
-    releasePosters(node);
-    node.remove();
-  }));
+  available.forEach((nodes) =>
+    nodes.forEach((node) => {
+      releasePosters(node);
+      node.remove();
+    })
+  );
 
   const desiredSet = new Set(desired);
   const nextManagedSibling = (node) => {

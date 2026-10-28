@@ -23,7 +23,8 @@ test("poster settings are read once per layout, stay fresh, and preserve card ma
     isTitleItemWatched: () => false,
     escapeHtml: String,
     escapeAttribute: String,
-    buildLazyImageAttributes: (src, { defer = false } = {}) => (defer ? `data-src="${src}"` : `src="${src}"`),
+    buildLazyImageAttributes: (src, { defer = false } = {}) =>
+      defer ? `data-src="${src}"` : `src="${src}"`,
     getTvRuntimePerformanceProfile: () => ({ isTvRuntime: false })
   });
   const poster = await readFile(

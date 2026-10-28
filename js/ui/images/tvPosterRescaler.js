@@ -58,7 +58,13 @@ export function computeSourceRect(nw, nh, bw, bh, fit) {
  * when an addon CDN mislabels or omits the header.
  */
 export function isJpegHeader(bytes) {
-  return Boolean(bytes) && bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  return (
+    Boolean(bytes) &&
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff
+  );
 }
 
 const WORKER_SOURCE = `
@@ -126,10 +132,10 @@ function isSupported() {
   if (supported === null) {
     supported = Boolean(
       globalThis.Worker &&
-        globalThis.OffscreenCanvas &&
-        globalThis.createImageBitmap &&
-        globalThis.URL?.createObjectURL &&
-        typeof Blob !== "undefined"
+      globalThis.OffscreenCanvas &&
+      globalThis.createImageBitmap &&
+      globalThis.URL?.createObjectURL &&
+      typeof Blob !== "undefined"
     );
   }
   return supported;
@@ -275,7 +281,13 @@ function pump(state) {
     job.worker = worker;
     job.timer = setTimeout(() => retireWorker(state, worker, "timeout"), JOB_TIMEOUT_MS);
     state.jobs.set(job.id, job);
-    worker.postMessage({ id: job.id, url: job.url, width: job.width, height: job.height, fit: job.fit });
+    worker.postMessage({
+      id: job.id,
+      url: job.url,
+      width: job.width,
+      height: job.height,
+      fit: job.fit
+    });
   }
 }
 
@@ -350,7 +362,17 @@ export function rescaleHomeArtwork(url, { width, height, fit, priority = 2, isSt
     pendingJob.waiters += 1;
     return pendingJob.promise;
   }
-  const job = { id: state.nextId++, url, width, height, fit, priority, isStale, worker: null, waiters: 1 };
+  const job = {
+    id: state.nextId++,
+    url,
+    width,
+    height,
+    fit,
+    priority,
+    isStale,
+    worker: null,
+    waiters: 1
+  };
   job.promise = new Promise((resolve) => {
     job.settle = (blob) => {
       // A timeout and a late reply can both land, and settling twice would

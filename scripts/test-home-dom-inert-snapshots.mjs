@@ -62,7 +62,10 @@ assert.equal(context.api.updateHomeDom(container, "<div></div>"), false);
 assert.equal(context.api.updateHomeDom(container, "<div></div>", { incremental: true }), true);
 assert.equal(documentsCreated, 1);
 assert.equal(context.api.sourceByNode.get(container).node.ownerDocument, inertDocument);
-const poster = { dataset: { originalSrc: "https://art/poster.jpg" }, getAttribute: () => "blob:poster" };
+const poster = {
+  dataset: { originalSrc: "https://art/poster.jpg" },
+  getAttribute: () => "blob:poster"
+};
 context.api.releasePosters({ nodeType: 1, matches: () => false, querySelectorAll: () => [poster] });
 assert.deepEqual(released, ["blob:poster"]);
 assert.equal(poster.dataset.originalSrc, undefined);
