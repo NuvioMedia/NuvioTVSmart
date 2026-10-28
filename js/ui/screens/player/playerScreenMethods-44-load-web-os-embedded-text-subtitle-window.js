@@ -126,6 +126,7 @@ export function createPlayerScreenMethods44() {
           if (requestToken !== this.webOsEmbeddedTextSubtitleLoadToken || this.webOsEmbeddedTextSubtitleTrack !== track) {
             return false;
           }
+          if (assResult.stale) return false;
           if (assResult.applied) {
             if (typeof PlayerController.setWebOsEmbeddedSubtitleNativeVisibility !== "function") {
               this.destroyAssSubtitleRenderer();

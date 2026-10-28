@@ -1670,4 +1670,6 @@
     <string name="mdblist_tracking_description">Đồng bộ lịch sử đã xem và tiến trình phát lại trên các thiết bị</string>
     <string name="mdblist_status_syncing">Đang đồng bộ lịch sử đã xem và tiến trình phát lại…</string>
     <string name="mdblist_last_synced">Đồng bộ lần cuối %1$s</string>
+    <string name="sub_strip_sdh">Loại bỏ chú thích phụ đề</string>
+    <string name="sub_strip_sdh_desc">Ẩn các mô tả âm thanh và nhãn người nói khỏi văn bản phụ đề.</string>
 </resources>

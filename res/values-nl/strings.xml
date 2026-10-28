@@ -1479,4 +1479,6 @@
     <string name="party_invite_scan">Scan met een telefoon om mee te doen</string>
     <string name="party_invite_share">Of deel de code. Vrienden kunnen hem invoeren bij Watch party in elke Nuvio-app.</string>
     <string name="party_invite_qr">QR-code voor uitnodiging tot de watch party</string>
+    <string name="sub_strip_sdh">SDH-ondertiteling verwijderen</string>
+    <string name="sub_strip_sdh_desc">Verberg geluidsbeschrijvingen en sprekerlabels in tekstondertiteling</string>
 </resources>

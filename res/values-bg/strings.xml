@@ -218,4 +218,6 @@
     <string name="party_invite_scan">Сканирайте с телефон, за да се присъедините</string>
     <string name="party_invite_share">Или споделете кода. Приятелите могат да го въведат в „Съвместно гледане“ във всяко приложение на Nuvio.</string>
     <string name="party_invite_qr">QR код за покана за съвместно гледане</string>
+    <string name="sub_strip_sdh">Стриптизиране на субтитри SDH</string>
+    <string name="sub_strip_sdh_desc">Скриване на звуковите описания и етикетите на високоговорителите от текстовите субтитри</string>
 </resources>

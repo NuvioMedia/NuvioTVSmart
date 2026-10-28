@@ -3277,4 +3277,6 @@
     <string name="mdblist_tracking_description">Sync watched history and playback progress across devices</string>
     <string name="mdblist_status_syncing">Syncing watched history and playback progress…</string>
     <string name="mdblist_last_synced">Last synced %1$s</string>
+    <string name="sub_strip_sdh">Strip SDH subtitles</string>
+    <string name="sub_strip_sdh_desc">Hide sound descriptions and speaker labels from text subtitles</string>
 </resources>

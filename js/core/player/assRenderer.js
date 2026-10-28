@@ -1,3 +1,4 @@
+import { stripAssSubtitleSdh } from "./subtitleSdhFilter.js";
 import { loadAssSubtitleLib } from "./assSubtitleLoader.js";
 
 /**
@@ -48,6 +49,7 @@ function hasRawAssControlText(container) {
 
 export function createAssRenderer({
   body,
+  stripSdh = false,
   video,
   container,
   selectionToken,
@@ -66,6 +68,8 @@ export function createAssRenderer({
   let destroyed = false;
 
   return {
+    sourceBody: body,
+    stripSdh: Boolean(stripSdh),
     get supportsPlacement() {
       return Boolean(
         instance && !destroyed && !stale() && typeof instance.setSubtitlePlacement === "function"
@@ -109,7 +113,7 @@ export function createAssRenderer({
         };
       }
       try {
-        const sourceBody = String(body)
+        const sourceBody = String(stripSdh ? stripAssSubtitleSdh(body) : body)
           .replace(/^\uFEFF/, "")
           .replace(/\0/g, "");
         const hasEvents = /^\s*\[Events\]\s*$/im.test(sourceBody);

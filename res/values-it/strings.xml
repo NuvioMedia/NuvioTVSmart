@@ -3306,4 +3306,6 @@
     <string name="mdblist_tracking_description">Sincronizza la cronologia di visione e i progressi di riproduzione tra i dispositivi.</string>
     <string name="mdblist_status_syncing">Sincronizzazione della cronologia di visione e dei progressi di riproduzione…</string>
     <string name="mdblist_last_synced">Ultima sincronizzazione: %1$s</string>
+    <string name="sub_strip_sdh">Rimuovi sottotitoli SDH</string>
+    <string name="sub_strip_sdh_desc">Nascondi descrizioni sonore ed etichette dei parlanti dai sottotitoli testuali</string>
 </resources>

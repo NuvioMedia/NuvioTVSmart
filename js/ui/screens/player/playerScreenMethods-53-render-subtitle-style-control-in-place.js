@@ -56,6 +56,8 @@ export function createPlayerScreenMethods53() {
         this.subtitleDelayMs = 0;
       } else if (controlId === "fontSize") {
         style.fontSize = normalizeSubtitleFontSize(Number(style.fontSize || 120) + delta * SUBTITLE_FONT_STEP);
+      } else if (controlId === "stripSdh" && delta !== 0) {
+        style.stripSdh = !style.stripSdh;
       } else if (controlId === "bold" && delta !== 0) {
         style.bold = !style.bold;
       } else if (controlId === "textColor" && delta !== 0) {
@@ -81,6 +83,7 @@ export function createPlayerScreenMethods53() {
           textColor: defaults.textColor,
           textOpacity: defaults.textOpacity,
           bold: defaults.bold,
+          stripSdh: defaults.stripSdh,
           outlineEnabled: defaults.outlineEnabled,
           outlineColor: defaults.outlineColor,
           verticalOffset: defaults.verticalOffset,

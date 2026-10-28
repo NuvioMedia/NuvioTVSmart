@@ -3086,4 +3086,6 @@
     <string name="mdblist_tracking_description">Synchronizuj historię oglądania i postęp odtwarzania między urządzeniami</string>
     <string name="mdblist_status_syncing">Synchronizacja historii oglądania i postępu odtwarzania…</string>
     <string name="mdblist_last_synced">Ostatnia synchronizacja %1$s</string>
+    <string name="sub_strip_sdh">Usuń napisy SDH</string>
+    <string name="sub_strip_sdh_desc">Ukryj opisy dźwięków i etykiety mówców z napisów tekstowych</string>
 </resources>

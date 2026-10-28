@@ -3232,4 +3232,6 @@
     <string name="mdblist_tracking_description">Megtekintési előzmények és lejátszási állapot szinkronizálása az eszközök között</string>
     <string name="mdblist_status_syncing">Megtekintési előzmények és lejátszási pozíciók szinkronizálása…</string>
     <string name="mdblist_last_synced">Utolsó szinkronizálás: %1$s</string>
+    <string name="sub_strip_sdh">SDH-jelölések eltávolítása</string>
+    <string name="sub_strip_sdh_desc">A hanghatások leírásának és a beszélők nevének elrejtése a szöveges feliratokban</string>
 </resources>

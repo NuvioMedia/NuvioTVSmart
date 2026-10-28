@@ -1681,4 +1681,6 @@
     <string name="mdblist_tracking_description">Sincroniza el historial de visualización y el progreso de reproducción entre dispositivos</string>
     <string name="mdblist_status_syncing">Sincronizando historial de visualización y progreso de reproducción…</string>
     <string name="mdblist_last_synced">Última sincronización: %1$s</string>
+    <string name="sub_strip_sdh">Eliminar subtítulos SDH</string>
+    <string name="sub_strip_sdh_desc">Oculta descripciones de sonido y etiquetas de hablante de los subtítulos de texto</string>
 </resources>

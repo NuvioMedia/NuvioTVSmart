@@ -2841,4 +2841,6 @@
     <string name="mdblist_tracking_description">Synchroniser l’historique de visionnage et la progression de lecture entre vos appareils</string>
     <string name="mdblist_status_syncing">Synchronisation de l’historique de visionnage et de la progression de lecture…</string>
     <string name="mdblist_last_synced">Dernière synchronisation&#160;: %1$s</string>
+    <string name="sub_strip_sdh">Retirer les annotations SDH</string>
+    <string name="sub_strip_sdh_desc">Masquer les descriptions sonores et les indications de locuteur dans les sous-titres texte</string>
 </resources>

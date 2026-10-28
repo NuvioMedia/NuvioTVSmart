@@ -49,12 +49,17 @@ export function createPlayerScreenMethods43() {
     },
     async applyAssSubtitleBody({ body, selectionToken, isCurrent = null }) {
       const isCurrentSelection = () =>
-        Number(selectionToken) === Number(this.subtitleSelectionToken) && (typeof isCurrent !== "function" || isCurrent());
+        Number(selectionToken) === Number(this.subtitleSelectionToken) &&
+        (typeof isCurrent !== "function" || isCurrent()) &&
+        (!renderer || this.assSubtitleRenderer === renderer);
+      let renderer = null;
+      if (!isCurrentSelection()) return { applied: false, stale: true };
       this.destroyAssSubtitleRenderer();
       const container = this.getAssSubtitleContainer();
       const video = PlayerController.video;
-      const renderer = createAssRenderer({
+      renderer = createAssRenderer({
         body,
+        stripSdh: Boolean(this.subtitleStyleSettings?.stripSdh),
         video,
         container,
         selectionToken,
@@ -73,9 +78,9 @@ export function createPlayerScreenMethods43() {
       this.assSubtitleRenderer = renderer;
       const result = await renderer.init();
       if (!result.ok || !isCurrentSelection()) {
-        const fallbackVtt = convertAssBodyToVtt(body);
+        const current = isCurrentSelection();
         this.destroyAssSubtitleRenderer(renderer);
-        return { applied: false, fallbackVtt };
+        return current ? { applied: false, fallbackVtt: convertAssBodyToVtt(body) } : { applied: false, stale: true };
       }
       renderer.setDelay(this.subtitleDelayMs);
       this.showAssSubtitleContainer();
@@ -137,6 +142,8 @@ export function createPlayerScreenMethods43() {
         this.avPlaySubtitleOverlayTimer = null;
       }
       this.htmlSubtitleCues = [];
+      this.htmlSubtitleLastActiveCues = [];
+      this.htmlSubtitleRenderedEmpty = true;
       this.htmlSubtitleActiveCueKey = "";
       this.htmlSubtitleSelectedId = null;
       this.webOsEmbeddedHtmlSubtitleTrack = null;

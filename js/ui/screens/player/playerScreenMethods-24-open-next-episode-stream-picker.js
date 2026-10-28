@@ -269,6 +269,31 @@ export function createPlayerScreenMethods24() {
         return;
       }
       const style = this.subtitleStyleSettings || {};
+      const assRenderer = this.assSubtitleRenderer;
+      if (assRenderer?.sourceBody && assRenderer.stripSdh !== Boolean(style.stripSdh)) {
+        const selectionToken = this.subtitleSelectionToken;
+        void this.applyAssSubtitleBody({ body: assRenderer.sourceBody, selectionToken })
+          .then((result) => {
+            if (
+              result.applied ||
+              result.stale ||
+              this.assSubtitleRenderer ||
+              selectionToken !== this.subtitleSelectionToken ||
+              !result.fallbackVtt
+            )
+              return;
+            this.clearHtmlSubtitleOverlay();
+            this.htmlSubtitleCues = this.parseSubtitleCues(result.fallbackVtt);
+            this.htmlSubtitleSelectedId = this.selectedAddonSubtitleId || "ass-fallback";
+            this.webOsEmbeddedTextSubtitleUsingAss = false;
+            this.webOsEmbeddedTextSubtitleUsingHtml = Boolean(this.webOsEmbeddedTextSubtitleTrack);
+            this.renderHtmlSubtitleOverlayAtCurrentTime();
+            this.scheduleHtmlSubtitleOverlayRender();
+          })
+          .catch((error) => console.warn("ASS subtitle refresh failed", error));
+      }
+      if (this.htmlSubtitleCues?.length) this.renderHtmlSubtitleOverlayAtCurrentTime();
+      else if (this.htmlSubtitleLastActiveCues?.length) this.renderHtmlSubtitleOverlayCue(this.htmlSubtitleLastActiveCues);
       const verticalOffsetVh = getSubtitleVerticalOffsetVh(style.verticalOffset);
       const residualOffsetVh = getSubtitleVerticalResidualOffsetVh(style.verticalOffset);
       const subtitleTextOpacity = normalizeSubtitleTextOpacity(style.textOpacity);
