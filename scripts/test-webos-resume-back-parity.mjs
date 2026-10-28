@@ -13,7 +13,20 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 // The routes webOS is allowed to restore, from WEBOS_NON_RESTORABLE_ROUTES.
-const RESTORABLE_ROUTES = ["folderDetail", "library", "search", "settings", "catalogSeeAll", "tmdbEntityBrowse", "account", "trakt", "discover", "supportersContributors", "licensesAttributions", "castDetail"];
+const RESTORABLE_ROUTES = [
+  "folderDetail",
+  "library",
+  "search",
+  "settings",
+  "catalogSeeAll",
+  "tmdbEntityBrowse",
+  "account",
+  "trakt",
+  "discover",
+  "supportersContributors",
+  "licensesAttributions",
+  "castDetail"
+];
 
 function createHistory() {
   const entries = [];
@@ -65,7 +78,21 @@ function loadFactory(relPath, factoryName, internals, globals) {
     .readFileSync(path.join(ROOT, relPath), "utf8")
     .replace(/^import \* as internals from .*$/m, "")
     .replace(/^export function/m, "function");
-  const sandbox = { internals, console, Date, Number, String, Boolean, Object, Array, Math, Set, Map, URLSearchParams, ...globals };
+  const sandbox = {
+    internals,
+    console,
+    Date,
+    Number,
+    String,
+    Boolean,
+    Object,
+    Array,
+    Math,
+    Set,
+    Map,
+    URLSearchParams,
+    ...globals
+  };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
   vm.runInContext(`${source}; globalThis.__factory = ${factoryName};`, sandbox);
@@ -110,14 +137,39 @@ function createRouter({ isWebOS = true } = {}) {
     WEBOS_RESUME_ROUTE_KEY: "webos_last_resume_route",
     WEBOS_RESUME_ROUTE_TTL_MS: 20 * 60 * 1000,
     TIZEN_ROUTE_RETURN_BACK_GUARD_MS: 700,
-    WEBOS_NON_RESTORABLE_ROUTES: new Set([...NON_BACKSTACK_ROUTES, "debugConsole", "plugin", "plugins", "catalogOrder", "detail", "player", "stream", "watchParty"]),
+    WEBOS_NON_RESTORABLE_ROUTES: new Set([
+      ...NON_BACKSTACK_ROUTES,
+      "debugConsole",
+      "plugin",
+      "plugins",
+      "catalogOrder",
+      "detail",
+      "player",
+      "stream",
+      "watchParty"
+    ]),
     getStackEntryRoute: (entry) => (typeof entry === "string" ? entry : String(entry?.route || "")),
     getStackEntryParams: (entry) => (typeof entry === "string" ? {} : entry?.params || {})
   };
 
-  const methods01 = loadFactory("js/ui/navigation/routerMethods-01-get-route-state-key.js", "createRouterMethods01", internals, { window })();
-  const methods02 = loadFactory("js/ui/navigation/routerMethods-02-complete-route-return-back-guard.js", "createRouterMethods02", internals, { window })();
-  const methods03 = loadFactory("js/ui/navigation/routerMethods-03-back.js", "createRouterMethods03", internals, { window })();
+  const methods01 = loadFactory(
+    "js/ui/navigation/routerMethods-01-get-route-state-key.js",
+    "createRouterMethods01",
+    internals,
+    { window }
+  )();
+  const methods02 = loadFactory(
+    "js/ui/navigation/routerMethods-02-complete-route-return-back-guard.js",
+    "createRouterMethods02",
+    internals,
+    { window }
+  )();
+  const methods03 = loadFactory(
+    "js/ui/navigation/routerMethods-03-back.js",
+    "createRouterMethods03",
+    internals,
+    { window }
+  )();
 
   const screen = (name) => ({
     mount: async () => mounted.push(name),
@@ -166,7 +218,11 @@ test("a restored webOS route keeps Home underneath it", async () => {
   await restoreResumeRoute(router, "folderDetail", { collectionId: "c1", folderId: "f1" });
 
   assert.equal(router.current, "folderDetail");
-  assert.deepEqual(history.routes(), ["home", "folderDetail"], "Home must remain reachable behind the restored route");
+  assert.deepEqual(
+    history.routes(),
+    ["home", "folderDetail"],
+    "Home must remain reachable behind the restored route"
+  );
   assert.deepEqual(
     router.stack.map((entry) => entry.route),
     ["home"],
@@ -223,7 +279,11 @@ test("seeding is skipped once history is already initialized", async () => {
   await router.navigate("home", {});
   const before = history.routes();
 
-  assert.equal(router.seedWebOsResumeBackStack(), false, "a running app must not get a second Home root");
+  assert.equal(
+    router.seedWebOsResumeBackStack(),
+    false,
+    "a running app must not get a second Home root"
+  );
   assert.deepEqual(history.routes(), before);
 });
 
@@ -241,7 +301,10 @@ test("native Back at Home still reaches overlays after a restored route returns"
   await history.back();
   assert.equal(router.current, "home");
   let consumed = 0;
-  router.routes.home.consumeBackRequest = () => { consumed += 1; return true; };
+  router.routes.home.consumeBackRequest = () => {
+    consumed += 1;
+    return true;
+  };
   await history.back();
   assert.equal(history.leftApp, false);
   assert.equal(consumed, 1);
