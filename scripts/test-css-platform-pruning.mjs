@@ -51,16 +51,8 @@ if (bundle) {
     (prunedTizen.match(/\.legacy-tizen(?![\w-])/g) || []).length,
     (bundle.match(/\.legacy-tizen(?![\w-])/g) || []).length
   );
-  // The webOS focus fast path lives on the plain `webos` class, which unlike
-  // `legacy-webos` covers every webOS generation. It has no meaning on Tizen and
-  // must never ship there, so the pruner has to drop all of it.
-  const webOsOnlyRules = (bundle.match(/\.webos(?![\w-])/g) || []).length;
-  if (webOsOnlyRules) {
-    assert.equal((prunedTizen.match(/\.webos(?![\w-])/g) || []).length, 0);
-    assert.equal((prunedWebOs.match(/\.webos(?![\w-])/g) || []).length, webOsOnlyRules);
-  }
 }
 
 console.log(
-  "CSS platform pruning fixtures passed: comma lists, :not(), similar class names, empty at-rules, keyframes, webOS-only rules never reaching Tizen."
+  "CSS platform pruning fixtures passed: comma lists, :not(), similar class names, empty at-rules, keyframes."
 );

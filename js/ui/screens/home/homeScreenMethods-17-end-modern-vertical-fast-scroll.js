@@ -36,9 +36,6 @@ export function createHomeScreenMethods17() {
         // Constrained TV runtimes cannot sustain a frame-by-frame scrollTop write
         // over the fully mounted Home DOM. Let the existing throttled focus path
         // handle repeated D-pad input with immediate focus scrolling instead.
-        // webOS reports healthy capability numbers, but Chrommium's compositor
-        // still rebuilds the row layer on every scripted scrollTop write, so the
-        // same rule keeps held D-pad input on the immediate focus path there.
         return false;
       }
       this.cancelModernCameraFollow({ stopAnimations: true });

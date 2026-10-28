@@ -152,9 +152,7 @@ export function createHomeScreenMethods02() {
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const key = axis === "y" ? "y" : "x";
       if (this.shouldUseImmediateFocusScroll()) {
-        // Snap instead of tweening. Every scripted scrollLeft/scrollTop write in a
-        // rAF loop makes the TV compositor repaint the poster rows, so a JS tween
-        // costs frames rather than buying smoothness; arrive in one write instead.
+        // Camera-follow callers must honor the same immediate policy as focus moves.
         this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
@@ -214,9 +212,6 @@ export function createHomeScreenMethods02() {
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const key = axis === "y" ? "y" : "x";
       if (this.shouldUseImmediateFocusScroll()) {
-        // Same reasoning as animateScroll: the spring camera is the per-frame
-        // scroll writer on Home, so constrained runtimes and webOS land it
-        // directly on the target instead of integrating it over many frames.
         this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
