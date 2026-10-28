@@ -111,7 +111,7 @@ service.register("capabilities", function (message) {
 });
 
 service.register("diagnostics", function (message) {
-  respond(message, { returnValue: true, protocolVersion: 1, redacted: true });
+  forward("diagnostics", message);
 });
 
 function forward(method, message) {
@@ -128,8 +128,9 @@ function forward(method, message) {
       {
         hostname: "127.0.0.1",
         port: PLUGIN_SERVICE_PORT,
-        path: method === "cancel" ? "/cancel" : "/fetch",
-        method: "POST",
+        path:
+          method === "diagnostics" ? "/diagnostics" : method === "cancel" ? "/cancel" : "/fetch",
+        method: method === "diagnostics" ? "GET" : "POST",
         headers: { "Content-Type": "application/json" }
       },
       function (response) {
@@ -149,7 +150,7 @@ function forward(method, message) {
     request.on("error", function (requestError) {
       respond(message, { returnValue: false, errorText: requestError.message });
     });
-    request.write(JSON.stringify(payload));
+    if (method !== "diagnostics") request.write(JSON.stringify(payload));
     request.end();
   });
 }

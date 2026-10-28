@@ -16,16 +16,24 @@ async function main() {
         method: request.method,
         path: request.url,
         headers: request.headers,
-        payload: JSON.parse(body)
+        payload: body ? JSON.parse(body) : null
       });
       response.end(
         body.includes('"invalidJson":true')
           ? "invalid JSON"
-          : JSON.stringify({
-              returnValue: true,
-              body: "manifest",
-              cancelled: request.url === "/cancel"
-            })
+          : request.url === "/diagnostics"
+            ? JSON.stringify({
+                returnValue: true,
+                protocolVersion: 1,
+                recentEvents: [
+                  { event: "fetch transport error", details: { error: { code: "ETIMEDOUT" } } }
+                ]
+              })
+            : JSON.stringify({
+                returnValue: true,
+                body: "manifest",
+                cancelled: request.url === "/cancel"
+              })
       );
     });
   });
@@ -95,6 +103,12 @@ async function main() {
       }
       assert.deepEqual(calls[0].payload, payload);
       assert.deepEqual(calls[1].payload, { requestId: payload.requestId });
+      const diagnostics = await call("diagnostics", {});
+      assert.equal(diagnostics.recentEvents[0].event, "fetch transport error");
+      assert.equal(diagnostics.recentEvents[0].details.error.code, "ETIMEDOUT");
+      assert.equal(received.at(-1).method, "GET");
+      assert.equal(received.at(-1).path, "/diagnostics");
+      assert.equal(received.at(-1).payload, null);
     }
     console.log("webOS plugin forwarding tests passed (Node 8 contract and current Node)");
   } finally {
