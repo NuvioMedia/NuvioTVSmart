@@ -84,6 +84,32 @@ export function createRouterMethods02() {
         params: snapshot.params && typeof snapshot.params === "object" ? snapshot.params : {}
       };
     },
+    seedWebOsResumeBackStack() {
+      // A webOS relaunch can restore the screen the user left, which makes that
+      // screen the only entry the app has. Back then reaches the platform and
+      // offers to quit instead of returning into the app, and a folder route
+      // restores again on the next launch, so the user cannot get out.
+      // Android roots its nav graph at Home, so Back always lands there. Seed
+      // the same root before the restored route mounts.
+      if (!Platform.isWebOS() || this.historyInitialized || !window?.history) {
+        return false;
+      }
+      const homeState = { route: "home", params: {}, previousRoute: null };
+      if (typeof window.history.replaceState !== "function" || typeof window.history.pushState !== "function") {
+        return false;
+      }
+      window.history.replaceState(homeState, "");
+      // The restored route replaces this second entry, leaving Home underneath.
+      // This is the same pair the Home back guard keeps for overlays.
+      window.history.pushState(homeState, "");
+      this.historyInitialized = true;
+      this.webOsHomeBackGuardInitialized = true;
+      if (!this.stack.length) {
+        this.stack.push({ route: "home", params: {} });
+      }
+      return true;
+    },
+
     async navigate(routeName, params = {}, options = {}) {
       if (routeName === "detail" && params?.itemType === "collection") {
         const ref = String(params.itemId || "").match(/^server:([^:]+):([^:]+)$/);

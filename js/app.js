@@ -295,6 +295,8 @@ async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
   if (experienceRoute !== "home") {
     await Router.navigate(experienceRoute, {}, { replaceHistory: true, skipStackPush: true });
   } else if (resumeRoute?.route && !isHomeResumeRoute) {
+    // Keep Home under the restored screen so Back returns into the app.
+    Router.seedWebOsResumeBackStack?.();
     await Router.navigate(resumeRoute.route, resumeRoute.params || {}, {
       replaceHistory: true,
       skipStackPush: true
