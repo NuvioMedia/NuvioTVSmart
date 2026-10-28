@@ -1,9 +1,22 @@
 ## Unreleased
 
+## 1.2.10
+
 ### Improvements & Fixes
 
-- Use regular collection covers when Focus GIF is disabled, matching Android TV and avoiding unintended always-on GIF decoding on Home.
-- Reset active Search queries and results when entering profile selection, preserving per-profile recent history and same-profile detail navigation.
+- Reduced Home artwork memory growth and released poster observers and buffers when they are no longer needed (@malkstar, @WhiteGiso)
+- Improved Back navigation on webOS by retaining Home under restored routes and preserving focus and scroll state (@malkstar, @WhiteGiso)
+- Refined Home, Search and Discover focus scrolling while keeping immediate scrolling scoped to runtimes that require it (@malkstar, @WhiteGiso)
+- Added webOS title deep links from launch parameters, aligned with Android TV (@WhiteGiso)
+- Added MDBList watched-state tracking and scrobbling, including tracking-source selection and account authorization improvements (@WhiteGiso)
+- Added SDH text-subtitle filtering using Android TV rules (@WhiteGiso)
+- Improved live-player controls, remote focus and accessibility, and fixed direct playback startup and unmuting outside webOS (@WhiteGiso)
+- Preserved multiline addon stream names and reported the actual HTTP status when playback fails (@WhiteGiso)
+- Restored unfinished detail enrichment after returning from streams and refreshed Continue Watching metadata (@WhiteGiso)
+- Improved collection pagination and GIF source selection; regular covers now remain in use when Focus GIF is disabled (@WhiteGiso)
+- Improved profile data isolation and removal, reset Search at profile selection, and aligned supporter avatar fallbacks with Android TV (@WhiteGiso)
+- Improved Tizen embedded-audio metadata handling and webOS audio-track selection recovery (@WhiteGiso)
+- Exposed native webOS network-service errors in Console debug to support diagnosis of TMDB and provider failures (@WhiteGiso)
 
 ## 1.2.8
 
