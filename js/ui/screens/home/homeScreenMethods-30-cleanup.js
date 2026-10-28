@@ -6,6 +6,10 @@ export function createHomeScreenMethods30() {
 
   return {
     cleanup() {
+      // Hand every poster back to its original url before the rescaler is
+      // torn down. TV runtimes keep this DOM in the document, so revoking a
+      // blob url a card still points at would break it on the way back.
+      this.releaseAllHomeLazyImages();
       // Drop the rescale workers and every blob url they produced. Leaving
       // them alive would keep the artwork of a screen nobody is looking at.
       resetHomeArtworkRescaler();

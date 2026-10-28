@@ -3,14 +3,16 @@ import {
   rescaleHomeArtwork,
   releaseHomeArtwork,
   shouldRescaleHomeArtwork,
-  getHomeArtworkPixelRatio
+  getHomeArtworkPixelRatio,
+  getHomeArtworkObjectFit,
+  isRescalableArtworkFit
 } from "../../images/tvPosterRescaler.js";
 
 export function createHomeScreenMethods24() {
   const {
     MODERN_HOME_CONSTANTS,
     CW_DAYS_CAP,
-    HOME_LAZY_IMAGE_SELECTOR,
+    HOME_LAZY_IMAGE_LIFECYCLE_SELECTOR,
     HOME_LAZY_IMAGE_ROW_SELECTOR,
     HOME_LAZY_IMAGE_EVICT_MARGIN_PX,
     HOME_LEGACY_LAZY_HYDRATION_DEBOUNCE_MS,
@@ -142,7 +144,10 @@ export function createHomeScreenMethods24() {
         return [];
       }
       const imagesByRow = new Map();
-      Array.from(this.container.querySelectorAll(HOME_LAZY_IMAGE_SELECTOR)).forEach((image) => {
+      // Index by lifecycle, not by pending state. An image that has already
+      // loaded is exactly the one eviction needs to find, so selecting only
+      // [data-src] here would drop every poster the moment it painted.
+      Array.from(this.container.querySelectorAll(HOME_LAZY_IMAGE_LIFECYCLE_SELECTOR)).forEach((image) => {
         const row = image.closest(HOME_LAZY_IMAGE_ROW_SELECTOR);
         const rowImages = imagesByRow.get(row) || [];
         rowImages.push(image);
@@ -201,8 +206,11 @@ export function createHomeScreenMethods24() {
         if (sameAnchorRow && useBoundedTvHydration && !forceFullScan && !refreshIndex && !includeNeighborRows && !isFocusedRow) {
           return;
         }
-        const images = entry.images.filter((image) => image.isConnected && image.dataset.src);
-        entry.images = images;
+        // Keep every image the row still owns so eviction can hand its artwork
+        // back later. Only detached nodes leave the index; a loaded poster is
+        // the whole point of the sweep.
+        entry.images = entry.images.filter((image) => image.isConnected);
+        const images = entry.images.filter((image) => image.dataset.src);
         if (!images.length) return;
         // Android's LazyRow loads the visible cards plus a small prefetch
         // neighborhood, not every item in the focused row. Keep the same
@@ -280,6 +288,15 @@ export function createHomeScreenMethods24() {
         return;
       }
       const rect = image.getBoundingClientRect();
+      // Home poster rules are not uniform: a catalog card crops its artwork
+      // while a collection card stretches it. Redrawing a stretched poster as
+      // a crop would silently change the picture, so ask the stylesheet what
+      // this element actually resolved to and skip anything else.
+      const fit = getHomeArtworkObjectFit(image);
+      if (!isRescalableArtworkFit(fit)) {
+        image.src = src;
+        return;
+      }
       // webOS reports devicePixelRatio 2 on a 1080p panel whose CSS viewport is
       // already 1920 wide, so trusting it decodes four times the pixels the
       // panel can show. Derive the ratio from the screen instead, which stays
@@ -301,7 +318,7 @@ export function createHomeScreenMethods24() {
         rect.right > 0 &&
         rect.left < (Number(globalThis.innerWidth) || 0);
       const isStale = () => !image.isConnected || image.dataset.originalSrc !== src || Boolean(image.dataset.src);
-      rescaleHomeArtwork(src, width, height, onScreen ? 0 : priority, isStale).then((objectUrl) => {
+      rescaleHomeArtwork(src, { width, height, fit, priority: onScreen ? 0 : priority, isStale }).then((objectUrl) => {
         // The worker runs for a few hundred milliseconds, which is long enough
         // for the card to be released or queued again. Either way this result
         // is stale and holding on to it would leak the url.
@@ -349,24 +366,44 @@ export function createHomeScreenMethods24() {
           return;
         }
         (entry.images || []).forEach((image) => {
-          if (!(image instanceof HTMLImageElement) || !image.isConnected) {
-            return;
-          }
-          // Read the url off the element, so artwork hydrated by any path -
-          // including the initial render - can still be handed back. A
-          // rescaled poster paints from a blob url, so the original has to be
-          // what goes back into data-src or the source is lost for good.
-          const painted = String(image.getAttribute("src") || "").trim();
-          const original = String(image.dataset.originalSrc || "").trim() || painted;
-          if (!original) {
-            return;
-          }
-          releaseHomeArtwork(painted);
-          delete image.dataset.originalSrc;
-          image.dataset.src = original;
-          image.removeAttribute("src");
-          released += 1;
+          released += this.releaseHomeLazyImage(image) ? 1 : 0;
         });
+      });
+      return released;
+    },
+    releaseHomeLazyImage(image) {
+      if (!(image instanceof HTMLImageElement) || !image.isConnected) {
+        return false;
+      }
+      // Read the url off the element, so artwork hydrated by any path -
+      // including the initial render - can still be handed back. A rescaled
+      // poster paints from a blob url, so the original has to be what goes
+      // back into data-src or the source is lost for good.
+      const painted = String(image.getAttribute("src") || "").trim();
+      const original = String(image.dataset.originalSrc || "").trim() || painted;
+      if (!original) {
+        return false;
+      }
+      releaseHomeArtwork(painted);
+      delete image.dataset.originalSrc;
+      image.dataset.src = original;
+      image.removeAttribute("src");
+      return true;
+    },
+    releaseAllHomeLazyImages() {
+      // TV runtimes keep the rendered home in the document while another
+      // screen is shown, so tearing the rescaler down would revoke blob urls
+      // that those cards are still pointing at and leave them broken when the
+      // viewer comes back. Hand every url back first: the artwork is freed
+      // while the other screen runs, and the next hydration pass refetches.
+      // Query the document rather than the index, which cleanup may have
+      // already dropped.
+      if (!this.container) {
+        return 0;
+      }
+      let released = 0;
+      Array.from(this.container.querySelectorAll(HOME_LAZY_IMAGE_LIFECYCLE_SELECTOR)).forEach((image) => {
+        released += this.releaseHomeLazyImage(image) ? 1 : 0;
       });
       return released;
     },

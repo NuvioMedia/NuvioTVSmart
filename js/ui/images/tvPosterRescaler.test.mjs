@@ -1,7 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { computeCoverRect, getHomeArtworkPixelRatio } from "./tvPosterRescaler.js";
+import {
+  computeSourceRect,
+  getHomeArtworkPixelRatio,
+  isJpegHeader,
+  isRescalableArtworkFit
+} from "./tvPosterRescaler.js";
+
+// Every existing crop case is a cover crop; fill has its own cases below.
+const computeCoverRect = (nw, nh, bw, bh) => computeSourceRect(nw, nh, bw, bh, "cover");
 
 function withScreen({ innerWidth, screenWidth, devicePixelRatio }) {
   const previous = {
@@ -86,4 +94,41 @@ test("a browser that understates the ratio is not scaled below one", () => {
 test("missing screen metrics fall back to one rather than throwing", () => {
   const ratio = withScreen({ innerWidth: 0, screenWidth: 0, devicePixelRatio: 0 });
   assert.equal(ratio, 1);
+});
+
+test("a stretched poster keeps the whole source, because fill never crops", () => {
+  // Collection cards use object-fit: fill. Cropping one would change the
+  // picture, so the source rectangle has to stay the whole image and only the
+  // destination box shrinks.
+  const rect = computeSourceRect(800, 450, 220, 338, "fill");
+  assert.deepEqual(rect, { sx: 0, sy: 0, sw: 800, sh: 450 });
+});
+
+test("fill keeps the whole source whatever the box shape", () => {
+  for (const [nw, nh] of [
+    [200, 300],
+    [1280, 720],
+    [500, 500]
+  ]) {
+    assert.deepEqual(computeSourceRect(nw, nh, 220, 338, "fill"), { sx: 0, sy: 0, sw: nw, sh: nh });
+  }
+});
+
+test("only the object-fit values the home cards use are rescalable", () => {
+  assert.equal(isRescalableArtworkFit("cover"), true);
+  assert.equal(isRescalableArtworkFit("fill"), true);
+  for (const fit of ["contain", "none", "scale-down", "", undefined, null]) {
+    assert.equal(isRescalableArtworkFit(fit), false, `${fit} must load untouched`);
+  }
+});
+
+test("only JPEG bytes are accepted for re-encoding", () => {
+  assert.equal(isJpegHeader(new Uint8Array([0xff, 0xd8, 0xff, 0xe0])), true);
+  // PNG can carry transparency a JPEG would paint black.
+  assert.equal(isJpegHeader(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), false);
+  // GIF and animated WebP would lose every frame but the first.
+  assert.equal(isJpegHeader(new Uint8Array([0x47, 0x49, 0x46, 0x38])), false);
+  assert.equal(isJpegHeader(new Uint8Array([0x52, 0x49, 0x46, 0x46])), false);
+  assert.equal(isJpegHeader(new Uint8Array([0xff, 0xd8])), false, "a truncated header is not a jpeg");
+  assert.equal(isJpegHeader(null), false);
 });
