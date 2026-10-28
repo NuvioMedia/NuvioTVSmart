@@ -316,7 +316,9 @@ export function createHomeScreenMethods12() {
       const trailerEnabled = Boolean(prefs.focusedPosterBackdropTrailerEnabled) && !this.shouldSuppressAutomaticTrailerPlayback();
       const shouldPreviewTrailer = trailerEnabled && (useLandscapePosters || expandSettingEnabled);
       const landscapeExpandedCardMode = useLandscapePosters && shouldPreviewTrailer && requestedTrailerTarget === "expanded_card";
-      const shouldExpand = (expandSettingEnabled && !useLandscapePosters) || landscapeExpandedCardMode;
+      const suppressCardExpansionForHeroTrailer = shouldPreviewTrailer && requestedTrailerTarget === "hero_media";
+      const shouldExpand =
+        !suppressCardExpansionForHeroTrailer && ((expandSettingEnabled && !useLandscapePosters) || landscapeExpandedCardMode);
       return {
         shouldExpand,
         shouldPreviewTrailer,
