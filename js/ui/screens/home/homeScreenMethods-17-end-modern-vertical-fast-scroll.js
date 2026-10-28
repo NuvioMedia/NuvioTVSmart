@@ -32,7 +32,7 @@ export function createHomeScreenMethods17() {
     },
     startModernVerticalFastScroll(direction) {
       const main = this.container?.querySelector(".home-modern-rows-viewport");
-      if (this.layoutMode !== "modern" || !main || !direction || this.isPerformanceConstrained()) {
+      if (this.layoutMode !== "modern" || !main || !direction || this.shouldUseImmediateFocusScroll()) {
         // Constrained TV runtimes cannot sustain a frame-by-frame scrollTop write
         // over the fully mounted Home DOM. Let the existing throttled focus path
         // handle repeated D-pad input with immediate focus scrolling instead.
