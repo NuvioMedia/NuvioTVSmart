@@ -1,4 +1,5 @@
 import { getHomeFocusIdentity } from "./homeFocusPolicy.js";
+import { releaseHomeArtwork } from "../../images/tvPosterRescaler.js";
 
 // Compare generated markup, rather than the live DOM: focus, image hydration,
 // expansion and trailer playback all add state that a data refresh must retain.
@@ -59,6 +60,9 @@ export function registerHomeDomNodes(nodes) {
 }
 
 function updateAttributes(node, previous, next) {
+  if (node.tagName === "IMG" && previous.getAttribute("data-src") !== next.getAttribute("data-src")) {
+    releasePoster(node);
+  }
   const names = new Set(
     [...Array.from(previous.attributes), ...Array.from(next.attributes)].map((attr) => attr.name)
   );
@@ -114,6 +118,18 @@ function updateAttributes(node, previous, next) {
   }
 }
 
+function releasePoster(image) {
+  if (!image.dataset?.originalSrc) return;
+  releaseHomeArtwork(image.getAttribute("src"));
+  delete image.dataset.originalSrc;
+}
+
+function releasePosters(node) {
+  if (node.nodeType !== 1) return;
+  if (node.matches("img.content-poster")) releasePoster(node);
+  node.querySelectorAll("img.content-poster").forEach(releasePoster);
+}
+
 function updateNode(node, source, protectedNode) {
   const previous = sourceByNode.get(node);
   const markup = signature(source);
@@ -150,7 +166,10 @@ function updateChildren(parent, source, protectedNode) {
     remember(inserted, child);
     return inserted;
   });
-  available.forEach((nodes) => nodes.forEach((node) => node.remove()));
+  available.forEach((nodes) => nodes.forEach((node) => {
+    releasePosters(node);
+    node.remove();
+  }));
 
   const desiredSet = new Set(desired);
   const nextManagedSibling = (node) => {
@@ -200,6 +219,7 @@ export function updateHomeDom(container, markup, { incremental = false, focusedN
   if (canUpdate) {
     updateChildren(container, source, focusedNode);
   } else {
+    releasePosters(container);
     container.innerHTML = markup;
     remember(container, source);
   }

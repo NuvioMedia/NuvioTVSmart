@@ -214,7 +214,7 @@ export function createPosterCardMarkup(
   // at its natural size the moment the row mounts, so a home screen with fifty
   // catalogs decodes every poster it has ever mounted and never gives one back.
   // Android never does this: LazyRow only composes what is near the viewport.
-  const deferPosterImages = deferImages || getTvRuntimePerformanceProfile().isTvRuntime;
+  const deferPosterImages = deferImages || (Router.getCurrent() === "home" && getTvRuntimePerformanceProfile().isTvRuntime);
   const suppressPosterText = Boolean(rowData?.suppressPosterText);
   const rowKey = String(rowData?.homeCatalogKey || buildModernRowKey(rowData || {})).trim();
   const collectionSeed =

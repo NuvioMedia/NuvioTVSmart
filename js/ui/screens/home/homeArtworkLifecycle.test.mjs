@@ -15,7 +15,7 @@ const ROW_SELECTOR = ".home-row, .home-modern-row, .home-grid-section, .home-row
 const LIFECYCLE_SELECTOR =
   ".home-main .content-poster, .home-main .home-poster-landscape-logo, .home-main .home-continue-bg";
 
-function buildHome({ rescale = null } = {}) {
+function buildHome({ rescale = null, tv = true, route = "home" } = {}) {
   const context = vm.createContext({
     console,
     setTimeout,
@@ -29,7 +29,8 @@ function buildHome({ rescale = null } = {}) {
       HOME_LAZY_IMAGE_EVICT_MARGIN_PX: 1600,
       HOME_LEGACY_LAZY_HYDRATION_DEBOUNCE_MS: 180,
       HOME_LEGACY_LAZY_HYDRATION_MAX_PER_FRAME: 2,
-      getTvRuntimePerformanceProfile: () => ({ isTvRuntime: true }),
+      Router: { getCurrent: () => route },
+      getTvRuntimePerformanceProfile: () => ({ isTvRuntime: tv }),
       isSeriesTypeForContinueWatching: () => false,
       isCompletedForContinueWatching: () => false,
       episodeKey: () => "",
@@ -139,6 +140,55 @@ test("eviction still finds artwork after a later hydration pass", () => {
   assert.equal(released, 1, "a loaded poster far from the viewport must be released");
   assert.equal(images[0].getAttribute("src"), null);
   assert.equal(images[0].dataset.src, "https://art/a.jpg", "the original url goes back into data-src");
+});
+
+test("classic home hydrates only near the screen when its main container spans every row", () => {
+  const context = buildHome();
+  const near = makeRow(context, { top: 100 });
+  const distant = makeRow(context, { top: 9000 });
+  const images = [makeImage(context, { row: near, src: "https://art/near.jpg" }), makeImage(context, { row: distant, src: "https://art/far.jpg" })];
+  const screen = makeScreen(context, { rows: [near, distant], images });
+  screen.container.getBoundingClientRect = () => ({ top: 0, bottom: 25000, left: 0, right: 1920 });
+  screen.hydrateHomeLazyImages(null, { forceFullScan: true, refreshIndex: true });
+  assert.equal(images[0].src, "https://art/near.jpg");
+  assert.equal(images[1].src, "");
+  assert.equal(images[1].dataset.src, "https://art/far.jpg");
+});
+
+test("browser and folder detail do not evict images through the Home lifecycle", () => {
+  for (const options of [{ tv: false }, { route: "folderDetail" }]) {
+    const context = buildHome(options);
+    const row = makeRow(context, { top: 9000 });
+    const image = makeImage(context, { row, src: "https://art/a.jpg" });
+    image.src = image.dataset.src;
+    delete image.dataset.src;
+    const screen = makeScreen(context, { rows: [row], images: [image] });
+    screen.hydrateHomeLazyImages(null, { forceFullScan: true, refreshIndex: true });
+    assert.equal(image.src, "https://art/a.jpg");
+  }
+});
+
+test("a released and rehydrated poster rejects the earlier request even when the URL is unchanged", async () => {
+  const resolvers = [];
+  const released = [];
+  const context = buildHome({ rescale: {
+    enabled: () => true,
+    rescale: () => new Promise((resolve) => resolvers.push(resolve)),
+    release: (url) => released.push(url)
+  } });
+  const row = makeRow(context, { top: 100 });
+  const image = makeImage(context, { row, src: "https://art/a.jpg" });
+  const screen = makeScreen(context, { rows: [row], images: [image] });
+  screen.assignHomeLazyImageSource(image, image.dataset.src);
+  screen.releaseHomeLazyImage(image);
+  screen.assignHomeLazyImageSource(image, image.dataset.src);
+  resolvers[0]("blob:old");
+  await Promise.resolve();
+  assert.equal(image.src, "");
+  assert.deepEqual(released, ["", "blob:old"]);
+  resolvers[1]("blob:new");
+  await Promise.resolve();
+  assert.equal(image.src, "blob:new");
 });
 
 test("rebuilding the index keeps artwork that has already loaded", () => {

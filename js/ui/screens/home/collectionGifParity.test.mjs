@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 let isTvRuntime = false;
+let route = "home";
 
 const context = vm.createContext({
   buildModernRowKey: () => "collection:test",
@@ -12,6 +13,7 @@ const context = vm.createContext({
   escapeAttribute: String,
   buildLazyImageAttributes: (src, { defer = false } = {}) => (defer ? `data-src="${src}"` : `src="${src}"`),
   getTvRuntimePerformanceProfile: () => ({ isTvRuntime }),
+  Router: { getCurrent: () => route },
   internals: {}
 });
 
@@ -143,5 +145,8 @@ test("smart TV posters are handed to the lazy hydration pass instead of loading 
   const tv = render();
   assert.match(tv, /<img class="content-poster" data-src="/, "a TV poster waits for hydration");
   assert.doesNotMatch(tv, /<img class="content-poster" src="/);
+  route = "folderDetail";
+  assert.match(render(), /<img class="content-poster" src="/, "folder detail has its own loading lifecycle");
+  route = "home";
   isTvRuntime = false;
 });

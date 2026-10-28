@@ -9,6 +9,7 @@ import {
 } from "../../images/tvPosterRescaler.js";
 
 export function createHomeScreenMethods24() {
+  const imageRequests = new WeakMap();
   const {
     MODERN_HOME_CONSTANTS,
     CW_DAYS_CAP,
@@ -17,6 +18,7 @@ export function createHomeScreenMethods24() {
     HOME_LAZY_IMAGE_EVICT_MARGIN_PX,
     HOME_LEGACY_LAZY_HYDRATION_DEBOUNCE_MS,
     HOME_LEGACY_LAZY_HYDRATION_MAX_PER_FRAME,
+    Router,
     getTvRuntimePerformanceProfile,
     isSeriesTypeForContinueWatching,
     isCompletedForContinueWatching,
@@ -185,6 +187,11 @@ export function createHomeScreenMethods24() {
       const viewport =
         this.container.querySelector(".home-modern-rows-viewport") || this.container.querySelector(".home-main") || this.container;
       const viewportRect = viewport.getBoundingClientRect();
+      const screenHeight = Number(globalThis.innerHeight || globalThis.document?.documentElement?.clientHeight || 0);
+      const screenWidth = Number(globalThis.innerWidth || globalThis.document?.documentElement?.clientWidth || 0);
+      const visibleRect = useBoundedTvHydration && screenHeight > 0 && screenWidth > 0
+        ? { top: Math.max(0, viewportRect.top), bottom: Math.min(screenHeight, viewportRect.bottom), left: Math.max(0, viewportRect.left), right: Math.min(screenWidth, viewportRect.right) }
+        : viewportRect;
       const constrained = this.isPerformanceConstrained();
       // Android prefetches the visible window plus a small row/card neighborhood.
       // Keep the browser's DOM-mounted rows from turning every vertical focus
@@ -220,7 +227,7 @@ export function createHomeScreenMethods24() {
         if (!shouldHydrateFocusedRowImmediately && row instanceof HTMLElement) {
           const rowRect = row.getBoundingClientRect();
           const isRowNearViewport =
-            rowRect.bottom >= viewportRect.top - verticalMargin && rowRect.top <= viewportRect.bottom + verticalMargin;
+            rowRect.bottom >= visibleRect.top - verticalMargin && rowRect.top <= visibleRect.bottom + verticalMargin;
           if (!isRowNearViewport) {
             return;
           }
@@ -238,10 +245,10 @@ export function createHomeScreenMethods24() {
             const imageHorizontalMargin = isFocusedRow ? focusedRowMargin : horizontalMargin;
             const rect = image.getBoundingClientRect();
             const isNearViewport =
-              rect.bottom >= viewportRect.top - verticalMargin &&
-              rect.top <= viewportRect.bottom + verticalMargin &&
-              rect.right >= viewportRect.left - imageHorizontalMargin &&
-              rect.left <= viewportRect.right + imageHorizontalMargin;
+              rect.bottom >= visibleRect.top - verticalMargin &&
+              rect.top <= visibleRect.bottom + verticalMargin &&
+              rect.right >= visibleRect.left - imageHorizontalMargin &&
+              rect.left <= visibleRect.right + imageHorizontalMargin;
             if (!isNearViewport) {
               return;
             }
@@ -274,7 +281,9 @@ export function createHomeScreenMethods24() {
       // not only when focus moves, so a row-change gate left artwork behind.
       // The sweep measures rows rather than images, which keeps it cheap enough
       // for the D-pad hot path.
-      this.evictDistantHomeLazyImages(anchorNode);
+      if (getTvRuntimePerformanceProfile().isTvRuntime && Router.getCurrent() === "home") {
+        this.evictDistantHomeLazyImages(anchorNode);
+      }
     },
     assignHomeLazyImageSource(image, src, priority = 2) {
       // The app already decided this image is close enough to load, so stop
@@ -309,6 +318,8 @@ export function createHomeScreenMethods24() {
         return;
       }
       image.dataset.originalSrc = src;
+      const request = {};
+      imageRequests.set(image, request);
       // Anything already on screen goes to the front of the queue. Hydration
       // ranks by focused row, which leaves a visible but unfocused row queued
       // behind rows the viewer has not reached, and those cards stay empty.
@@ -317,12 +328,12 @@ export function createHomeScreenMethods24() {
         rect.top < (Number(globalThis.innerHeight) || 0) &&
         rect.right > 0 &&
         rect.left < (Number(globalThis.innerWidth) || 0);
-      const isStale = () => !image.isConnected || image.dataset.originalSrc !== src || Boolean(image.dataset.src);
+      const isStale = () => !image.isConnected || imageRequests.get(image) !== request || image.dataset.originalSrc !== src || Boolean(image.dataset.src);
       rescaleHomeArtwork(src, { width, height, fit, priority: onScreen ? 0 : priority, isStale }).then((objectUrl) => {
         // The worker runs for a few hundred milliseconds, which is long enough
         // for the card to be released or queued again. Either way this result
         // is stale and holding on to it would leak the url.
-        if (!image.isConnected || image.dataset.originalSrc !== src || image.dataset.src) {
+        if (isStale()) {
           releaseHomeArtwork(objectUrl);
           return;
         }
@@ -385,6 +396,7 @@ export function createHomeScreenMethods24() {
         return false;
       }
       releaseHomeArtwork(painted);
+      imageRequests.delete(image);
       delete image.dataset.originalSrc;
       image.dataset.src = original;
       image.removeAttribute("src");
