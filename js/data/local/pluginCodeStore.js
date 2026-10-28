@@ -278,10 +278,18 @@ export const PluginCodeStore = {
 
   clearProfile(profile) {
     const normalized = String(profile || "").trim();
-    if (!normalized || normalized === "1" || profileId(normalized) !== normalized) {
+    if (!/^[2-6]$/.test(normalized)) {
       return Promise.resolve(false);
     }
-    return this.clear(normalized);
+    // Delete the slot's private records, never its inherited primary alias.
+    const prefix = `${normalized}:`;
+    return enqueue(async () => {
+      const records = await readProfileRecords(prefix);
+      let success = !persistentCleanupUnverified();
+      for (const [key] of records) success = (await deleteRecord(key)) && success;
+      if (!success) markPrefixTombstone(prefix);
+      return success;
+    });
   },
 
   clearAll() {

@@ -11,7 +11,9 @@ const result = (query) => ({
 });
 const deferred = () => {
   let resolve;
-  const promise = new Promise((done) => { resolve = done; });
+  const promise = new Promise((done) => {
+    resolve = done;
+  });
   return { promise, resolve };
 };
 
@@ -26,14 +28,18 @@ async function setup(platform = "browser") {
   const emptyScreen = { mount: async () => {} };
   const fixtures = {
     LocalStore: {
-      get: (key, fallback) => storage.has(key) ? plain(storage.get(key)) : fallback,
+      get: (key, fallback) => (storage.has(key) ? plain(storage.get(key)) : fallback),
       set: (key, value) => storage.set(key, plain(value)),
       remove: (key) => storage.delete(key)
     },
     HomeScreen: emptyScreen,
     MetaDetailsScreen: emptyScreen,
     ProfileSelectionScreen: emptyScreen,
-    Platform: { isBrowser: () => platform === "browser", isTizen: () => platform === "tizen", isWebOS: () => platform === "webos" },
+    Platform: {
+      isBrowser: () => platform === "browser",
+      isTizen: () => platform === "tizen",
+      isWebOS: () => platform === "webos"
+    },
     ScreenUtils: { show() {}, hide() {} },
     LayoutPreferences: { get: () => ({ modernSidebar: false }) },
     getSidebarProfileState: async () => null,
@@ -43,12 +49,16 @@ async function setup(platform = "browser") {
     watchedTitleStateRepository: { getTitleWatchedItems: async () => [] },
     buildWatchedTitleIdSet: () => new Set(),
     addonRepository: {
-      getInstalledAddons: async () => [{
-        id: "synthetic-addon",
-        baseUrl: "https://search-fixture.invalid",
-        displayName: "Synthetic catalog",
-        catalogs: [{ id: "movies", name: "Movies", apiType: "movie", extra: [{ name: "search" }] }]
-      }]
+      getInstalledAddons: async () => [
+        {
+          id: "synthetic-addon",
+          baseUrl: "https://search-fixture.invalid",
+          displayName: "Synthetic catalog",
+          catalogs: [
+            { id: "movies", name: "Movies", apiType: "movie", extra: [{ name: "search" }] }
+          ]
+        }
+      ]
     },
     respond: (request) => result(request.extraArgs.search),
     catalogRepository: {
@@ -72,52 +82,90 @@ async function setup(platform = "browser") {
     write: false,
     format: "iife",
     globalName: "subject",
-    plugins: [{
-      name: "synthetic-search-boundaries",
-      setup(b) {
-        // Keep the real composition, helpers, route snapshots, profiles, history,
-        // search requests and cancellation. Replace only unrelated screens and
-        // UI/platform/repository imports in the two composition modules.
-        b.onLoad({ filter: /\/(?:searchScreen|router)\.js$/ }, async ({ path }) => ({
-          contents: (await readFile(path, "utf8")).replace(
-            /import\s+(\{[^}]+\})\s+from\s+["']([^"']+)["'];/g,
-            (statement, bindings, source) =>
-              /\/(?:searchScreen(?:Methods-[^/]+)?|searchCatalogTargets|router(?:Methods-[^/]+|State)?|routeStateStore|profileManager|searchHistoryStore|localStore)\.js$/.test(source)
-                ? statement
-                : `const ${bindings} = fixtures;`
-          ),
-          loader: "js"
-        }));
-        b.onLoad({ filter: /\/localStore\.js$/ }, () => ({
-          contents: "export const { LocalStore } = fixtures;",
-          loader: "js"
-        }));
-        b.onLoad({ filter: /\/customPoster\.js$/ }, () => ({
-          contents: "export const customPosterForItem = item => item; export const posterFallbackAttributes = () => '';",
-          loader: "js"
-        }));
+    plugins: [
+      {
+        name: "synthetic-search-boundaries",
+        setup(b) {
+          // Keep the real composition, helpers, route snapshots, profiles, history,
+          // search requests and cancellation. Replace only unrelated screens and
+          // UI/platform/repository imports in the two composition modules.
+          b.onLoad({ filter: /\/(?:searchScreen|router)\.js$/ }, async ({ path }) => ({
+            contents: (await readFile(path, "utf8")).replace(
+              /import\s+(\{[^}]+\})\s+from\s+["']([^"']+)["'];/g,
+              (statement, bindings, source) =>
+                /\/(?:searchScreen(?:Methods-[^/]+)?|searchCatalogTargets|launchDeepLink|router(?:Methods-[^/]+|State)?|routeStateStore|profileManager|searchHistoryStore|localStore)\.js$/.test(
+                  source
+                )
+                  ? statement
+                  : `const ${bindings} = fixtures;`
+            ),
+            loader: "js"
+          }));
+          b.onLoad({ filter: /\/localStore\.js$/ }, () => ({
+            contents: "export const { LocalStore } = fixtures;",
+            loader: "js"
+          }));
+          b.onLoad(
+            {
+              filter:
+                /\/(?:pluginCodeStore|pluginStore|homeCatalogSettingsSyncService|profileScopedStore)\.js$/
+            },
+            () => ({
+              contents: `
+              export const PluginCodeStore = { clearProfile: async () => true };
+              export const PluginStore = { clearProfile() {} };
+              export const HomeCatalogSettingsSyncService = { clearProfile() {} };
+              export const cancelProfileSettingsCloudSync = () => {};
+            `,
+              loader: "js"
+            })
+          );
+          b.onLoad({ filter: /\/customPoster\.js$/ }, () => ({
+            contents:
+              "export const customPosterForItem = item => item; export const posterFallbackAttributes = () => '';",
+            loader: "js"
+          }));
+        }
       }
-    }]
+    ]
   });
   const context = vm.createContext({
     fixtures,
+    localStorage: {
+      get length() {
+        return storage.size;
+      },
+      key: (index) => [...storage.keys()][index] ?? null,
+      getItem: (key) => (storage.has(key) ? JSON.stringify(storage.get(key)) : null),
+      setItem: (key, value) => storage.set(key, JSON.parse(value)),
+      removeItem: (key) => storage.delete(key)
+    },
     console,
     AbortController,
     document: { getElementById: () => container },
     window: {},
-    setTimeout: (fn) => { const id = ++nextId; timers.set(id, fn); return id; },
+    setTimeout: (fn) => {
+      const id = ++nextId;
+      timers.set(id, fn);
+      return id;
+    },
     clearTimeout: (id) => timers.delete(id),
-    requestAnimationFrame: (fn) => { const id = ++nextId; frames.set(id, fn); return id; },
+    requestAnimationFrame: (fn) => {
+      const id = ++nextId;
+      frames.set(id, fn);
+      return id;
+    },
     cancelAnimationFrame: (id) => frames.delete(id)
   });
   vm.runInContext(bundle.outputFiles[0].text, context);
   const { Router, SearchScreen, ProfileManager, SearchHistoryStore } = context.subject;
-  const visible = () => plain({
-    query: SearchScreen.query,
-    mode: SearchScreen.mode,
-    items: (SearchScreen.rows || []).flatMap((row) => row.items.map((item) => item.id)),
-    history: SearchScreen.recentSearches || []
-  });
+  const visible = () =>
+    plain({
+      query: SearchScreen.query,
+      mode: SearchScreen.mode,
+      items: (SearchScreen.rows || []).flatMap((row) => row.items.map((item) => item.id)),
+      history: SearchScreen.recentSearches || []
+    });
   // DOM painting is the only replaced SearchScreen method.
   SearchScreen.render = () => {
     SearchScreen.cancelScheduledRender();
@@ -136,7 +184,15 @@ async function setup(platform = "browser") {
   ]);
   await ProfileManager.setActiveProfile("1");
   return {
-    Router, SearchScreen, ProfileManager, SearchHistoryStore, fixtures, requests, paints, visible, flush,
+    Router,
+    SearchScreen,
+    ProfileManager,
+    SearchHistoryStore,
+    fixtures,
+    requests,
+    paints,
+    visible,
+    flush,
     async enter(params = {}) {
       await Router.navigate("search", params);
       await flush();
@@ -165,20 +221,33 @@ test("profile switches reset active query/results while retaining each profile h
 
   await h.switchProfile("2");
   assert.deepEqual(h.visible(), {
-    query: "", mode: "idle", items: [], history: ["B earlier search"]
+    query: "",
+    mode: "idle",
+    items: [],
+    history: ["B earlier search"]
   });
   assert.deepEqual(plain(h.SearchHistoryStore.list("1")), ["A movie"]);
   await h.search("B movie");
 
   await h.switchProfile("1");
   assert.deepEqual(h.visible(), {
-    query: "", mode: "idle", items: [], history: ["A movie"]
+    query: "",
+    mode: "idle",
+    items: [],
+    history: ["A movie"]
   });
   await h.switchProfile("2");
   assert.deepEqual(h.visible(), {
-    query: "", mode: "idle", items: [], history: ["B movie", "B earlier search"]
+    query: "",
+    mode: "idle",
+    items: [],
+    history: ["B movie", "B earlier search"]
   });
-  assert.equal(h.requests.length, 2, "entering a profile must not repeat the previous catalog search");
+  assert.equal(
+    h.requests.length,
+    2,
+    "entering a profile must not repeat the previous catalog search"
+  );
 });
 
 test("same-profile detail Back and Search re-entry retain query and result rows", async () => {
@@ -238,7 +307,9 @@ test("a cancelled outgoing profile request cannot overwrite incoming query, rows
   await outgoing;
   await h.flush();
   assert.deepEqual(h.visible(), expected);
-  assert.ok(h.paints.slice(firstPaint).every((paint) => !paint.items.includes("fixture:A delayed movie")));
+  assert.ok(
+    h.paints.slice(firstPaint).every((paint) => !paint.items.includes("fixture:A delayed movie"))
+  );
   assert.deepEqual(plain(h.SearchHistoryStore.list("1")), []);
   assert.deepEqual(plain(h.SearchHistoryStore.list("2")), ["B current movie"]);
 });

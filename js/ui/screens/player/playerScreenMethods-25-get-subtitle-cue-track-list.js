@@ -49,7 +49,13 @@ export function createPlayerScreenMethods25() {
     },
     buildWebOsEmbeddedHtmlSubtitleCues(track) {
       return this.getSubtitleCueArray(track?.cues)
-        .map((cue) => buildHtmlSubtitleCue(cue, this.getSubtitleCueSnapshot(cue), this.parseSubtitleCueText(cue?.text)))
+        .map((cue) =>
+          buildHtmlSubtitleCue(
+            cue,
+            this.getSubtitleCueSnapshot(cue),
+            this.parseSubtitleCueText(this.getSubtitleCueSnapshot(cue)?.text ?? cue?.text)
+          )
+        )
         .filter(Boolean);
     },
     activateWebOsEmbeddedHtmlSubtitleOverlay(track, cues, selectedIndex, overlayId) {
@@ -208,6 +214,7 @@ export function createPlayerScreenMethods25() {
       let snapshot = this.subtitleCueOriginalState.get(cue);
       if (!snapshot) {
         snapshot = {
+          text: cue.text,
           startTime: cue.startTime,
           endTime: cue.endTime,
           line: cue.line,
@@ -218,6 +225,11 @@ export function createPlayerScreenMethods25() {
           snapToLines: cue.snapToLines
         };
         this.subtitleCueOriginalState.set(cue, snapshot);
+      }
+      if (typeof cue.text === "string" && cue.text !== snapshot.text && cue.text !== snapshot.sdhLastText) {
+        snapshot.text = cue.text;
+        snapshot.sdhSource = null;
+        snapshot.sdhText = null;
       }
       return snapshot;
     },

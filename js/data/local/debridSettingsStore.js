@@ -98,6 +98,7 @@ export const DEBRID_STREAM_LANGUAGES = [
   { id: "JA", code: "ja", label: "Japanese" },
   { id: "KO", code: "ko", label: "Korean" },
   { id: "ZH", code: "zh", label: "Chinese" },
+  { id: "HE", code: "he", label: "Hebrew" },
   { id: "MULTI", code: "multi", label: "Multi" },
   { id: "UNKNOWN", code: "unknown", label: "Unknown" }
 ];

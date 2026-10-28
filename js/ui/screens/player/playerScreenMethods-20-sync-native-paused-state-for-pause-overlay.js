@@ -164,9 +164,7 @@ export function createPlayerScreenMethods20() {
       const meta = this.pauseOverlayMeta || this.buildPauseOverlayMeta();
       const castItems = Array.isArray(meta.cast) ? meta.cast.slice(0, MAX_PAUSE_OVERLAY_CAST) : [];
       overlay.innerHTML = `
-          <div class="player-pause-overlay-top">
-            <div class="player-pause-overlay-clock">${escapeHtml(clockText)}</div>
-          </div>
+          ${!this.isLivePlayback() ? `<div class="player-pause-overlay-top"><div class="player-pause-overlay-clock">${escapeHtml(clockText)}</div></div>` : ""}
           <div class="player-pause-overlay-shade"></div>
           <div class="player-pause-overlay-content">
             <div class="player-pause-kicker">${escapeHtml(t("pause_you_are_watching", {}, "You're watching"))}</div>
@@ -296,25 +294,8 @@ export function createPlayerScreenMethods20() {
       return { title, subtitle, meta };
     },
     getCurrentStreamDisplayName() {
-      if (!this.paused) {
-        return "";
-      }
+      if (!this.paused) return "";
       return resolvePlaybackSourceName(this.getCurrentStreamCandidate());
-    },
-    syncPlayerStreamSource() {
-      const source = this.uiRefs?.streamSource;
-      if (!source) {
-        return;
-      }
-
-      const sourceName = this.getCurrentStreamDisplayName();
-      const sourceText = sourceName ? t("player_via", [sourceName], "via %1$s") : "";
-      const hidden = !sourceText;
-      if (source.textContent !== sourceText) {
-        source.textContent = sourceText;
-      }
-      source.classList.toggle("hidden", hidden);
-      source.setAttribute("aria-hidden", hidden ? "true" : "false");
     },
     hasEpisodeAired(released) {
       return hasEpisodeAiredRule(released);

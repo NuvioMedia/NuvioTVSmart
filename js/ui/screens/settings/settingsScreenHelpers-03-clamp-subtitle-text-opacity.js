@@ -266,6 +266,8 @@ export const HOME_LAYOUT_OPTIONS = [
 export const TRAKT_CONTINUE_WATCHING_DAY_OPTIONS = [14, 30, 60, 90, 180, 365, TRAKT_CONTINUE_WATCHING_DAYS_CAP_ALL];
 
 export const TRAKT_WATCH_PROGRESS_OPTIONS = [
+  { id: WatchProgressSource.MDBLIST, label: "MDBList" },
+  { id: WatchProgressSource.SIMKL, label: "Simkl" },
   { id: WatchProgressSource.TRAKT, labelKey: "trakt_watch_progress_source_trakt" },
   { id: WatchProgressSource.NUVIO_SYNC, labelKey: "trakt_watch_progress_source_nuvio" }
 ];

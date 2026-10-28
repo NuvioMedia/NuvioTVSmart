@@ -34,6 +34,8 @@ export function watchedItemIdentityValues(item = {}) {
   addIdentityValue(values, imdbId || item.imdb_id || ids.imdb);
   addPrefixedIdentityValue(values, "tmdb", item.tmdbId ?? item.tmdb_id ?? ids.tmdb);
   addPrefixedIdentityValue(values, "trakt", item.traktId ?? item.trakt_id ?? ids.trakt);
+  addPrefixedIdentityValue(values, "tvdb", item.tvdbId ?? item.tvdb_id ?? ids.tvdb);
+  addPrefixedIdentityValue(values, "mdblist", item.mdblistId ?? ids.mdblist);
   addIdentityValue(values, item.slug || item.ids?.slug || ids.slug);
   return values;
 }

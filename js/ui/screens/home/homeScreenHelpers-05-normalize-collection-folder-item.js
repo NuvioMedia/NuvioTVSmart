@@ -207,9 +207,7 @@ export function normalizeCollectionFolderItem(item, collectionMeta = null) {
   const hideTitle = Boolean(item.hideTitle);
   const tileShape = normalizeCollectionPosterShape(item.tileShape || item.posterShape);
   const coverEmoji = firstNonEmpty(item.coverEmoji);
-  const cardImage = focusGifEnabled
-    ? firstNonEmpty(coverImageUrl, collectionMeta?.backdropImageUrl)
-    : firstNonEmpty(focusGifUrl, coverImageUrl, collectionMeta?.backdropImageUrl);
+  const cardImage = firstNonEmpty(coverImageUrl, collectionMeta?.backdropImageUrl);
   const heroBackdrop = firstNonEmpty(item.heroBackdropUrl, coverImageUrl, collectionMeta?.backdropImageUrl);
   return {
     ...item,

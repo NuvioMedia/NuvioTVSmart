@@ -151,6 +151,9 @@ export function registerPlaybackActionsPart02(model) {
       }
     });
   });
+  this.actionMap.set("playback:subtitleStripSdh", () => {
+    updateSubtitleStyle({ stripSdh: !PlayerSettingsStore.get().subtitleStyle?.stripSdh });
+  });
   this.actionMap.set("playback:subtitleBold", () => {
     updateSubtitleStyle({ bold: !PlayerSettingsStore.get().subtitleStyle?.bold });
   });

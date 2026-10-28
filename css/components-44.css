@@ -209,6 +209,8 @@
 }
 
 .stream-route-panel-shell {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   border-radius: 32px;
@@ -230,8 +232,21 @@
   animation: none;
 }
 
+.stream-route-panel-header {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  padding: 24px 32px 0;
+}
+
+.stream-route-panel-header .stream-route-chip-wrap {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
 .stream-route-panel {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   border-radius: 18px;
   background: transparent;
   overflow: visible;

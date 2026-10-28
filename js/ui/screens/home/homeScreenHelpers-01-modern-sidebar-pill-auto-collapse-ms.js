@@ -195,8 +195,12 @@ export function isDirectionalKeyCode(code) {
   return code >= 37 && code <= 40;
 }
 
-export const HOME_LAZY_IMAGE_SELECTOR =
-  ".home-main .content-poster[data-src], .home-main .home-poster-landscape-logo[data-src], .home-main .home-continue-bg[data-src]";
+// Matches home artwork in every state, loaded or still waiting. The index
+// built from this drives hydration and eviction alike, and eviction needs the
+// images that already hold a decoded bitmap, so narrowing it to [data-src]
+// would hide every poster the moment it painted.
+export const HOME_LAZY_IMAGE_LIFECYCLE_SELECTOR =
+  ".home-main .content-poster, .home-main .home-poster-landscape-logo, .home-main .home-continue-bg";
 
 export const HOME_LAZY_IMAGE_ROW_SELECTOR = ".home-row, .home-modern-row, .home-grid-section, .home-row-continue";
 

@@ -26,7 +26,8 @@ export const WATCH_PROGRESS_SIMKL_COMPLETED_THRESHOLD = 0.8;
 export const WATCH_PROGRESS_UNKNOWN_DURATION_PERCENT = 5;
 
 export function watchProgressCompletedThreshold(progress = {}) {
-  return String(progress?.source || "") === "simkl_playback"
+  return String(progress?.source || "") === "simkl_playback" ||
+    String(progress?.source || "").startsWith("mdblist")
     ? WATCH_PROGRESS_SIMKL_COMPLETED_THRESHOLD
     : WATCH_PROGRESS_COMPLETED_THRESHOLD;
 }

@@ -30,9 +30,19 @@ async function snapshot(functionName, params) {
   return decodePartySnapshot(await rpc(functionName, params));
 }
 
+async function snapshotWithProfile(functionName, identity, params) {
+  if (identity.profileIndex == null) return snapshot(functionName, params);
+  try {
+    return await snapshot(functionName, { ...params, p_profile_index: identity.profileIndex });
+  } catch (error) {
+    if (error.code !== "PGRST202") throw error;
+    return snapshot(functionName, params);
+  }
+}
+
 export const PartyApi = {
   create(identity, media, playback) {
-    return snapshot("watch_party_create", {
+    return snapshotWithProfile("watch_party_create", identity, {
       ...identityParams(identity),
       p_media: compactJson(media),
       p_playback: playback ? compactJson(playback) : null
@@ -40,7 +50,10 @@ export const PartyApi = {
   },
 
   join(code, identity) {
-    return snapshot("watch_party_join", { p_code: code, ...identityParams(identity) });
+    return snapshotWithProfile("watch_party_join", identity, {
+      p_code: code,
+      ...identityParams(identity)
+    });
   },
 
   async preview(code) {

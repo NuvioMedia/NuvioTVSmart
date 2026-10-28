@@ -4,6 +4,7 @@ import { SupabaseApi } from "../../data/remote/supabase/supabaseApi.js";
 import { ProfileManager } from "./profileManager.js";
 import { LocalStore } from "../storage/localStore.js";
 import { TraktAuthStore } from "../../data/local/traktAuthStore.js";
+import { MdbListAccount } from "../../data/repository/mdbListAccount.js";
 import { SimklAuthStore } from "../../data/local/simklAuthStore.js";
 import { TraktSettingsStore, WatchProgressSource } from "../../data/local/traktSettingsStore.js";
 import { getSyncClientId } from "../sync/syncClientIdentity.js";
@@ -29,8 +30,13 @@ let homeInputChangeRevision = 0;
 
 function pushStateForProfile(profileId) {
   const key = String(profileId || "1");
-  if (!pushStateByProfile.has(key)) {
+  const profileVersion = ProfileManager.getProfileDataVersion(profileId);
+  if (
+    !pushStateByProfile.has(key) ||
+    pushStateByProfile.get(key).profileVersion !== profileVersion
+  ) {
     pushStateByProfile.set(key, {
+      profileVersion,
       lastSuccessfulPushSignature: "",
       lastFailedPushSignature: "",
       lastFailedPushAt: 0
@@ -354,7 +360,8 @@ function shouldUseSupabaseWatchProgressSync() {
   const source = TraktSettingsStore.get().watchProgressSource || WatchProgressSource.TRAKT;
   const providerSelected =
     (TraktAuthStore.isAuthenticated() && source === WatchProgressSource.TRAKT) ||
-    (SimklAuthStore.isAuthenticated() && source === WatchProgressSource.SIMKL);
+    (SimklAuthStore.isAuthenticated() && source === WatchProgressSource.SIMKL) ||
+    (MdbListAccount.connected() && source === WatchProgressSource.MDBLIST);
   return !providerSelected;
 }
 

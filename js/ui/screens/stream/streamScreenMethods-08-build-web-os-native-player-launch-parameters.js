@@ -245,14 +245,15 @@ export function createStreamScreenMethods08() {
       return `
           <div class="stream-route-card-row${partyShared ? " is-party-shared" : ""}" data-stream-key="${escapeHtml(String(streamKey))}" data-stream-row="${index}"${virtualRowStyle}>
             ${partyShared ? `<div class="stream-route-party-label">${escapeHtml(t("party_shared_by", [stream.partyHostName || ""], "Shared by %1$s"))}</div>` : ""}
-            <article class="stream-route-card stream-route-card-action focusable${partyShared || partySource ? " is-party-marked" : ""}${this.isCardActionFocused(index, "play") ? " focused" : ""}"
+            <article class="stream-route-card stream-route-card-action focusable${partyShared ? " is-party-marked" : ""}${this.isCardActionFocused(index, "play") ? " focused" : ""}"
                      data-action="playStream"
                      data-card-action="play"
                      data-stream-id="${escapeHtml(stream.id)}"
                      data-stream-row="${index}">
               <div class="stream-route-card-copy">
                 ${topBadges || ""}
-                <div class="stream-route-card-heading" dir="${contentTextDirection(headline)}">${escapeHtml(headline)}${partySource ? `<span class="stream-route-party-chip">${escapeHtml(t("party_source", {}, "Party's source"))}</span>` : ""}</div>
+                <div class="stream-route-card-heading" dir="${contentTextDirection(headline)}">${escapeHtml(headline)}</div>
+                ${partySource ? `<div class="stream-route-party-source" dir="auto">${escapeHtml(t("party_source", {}, "Party's source"))}</div>` : ""}
                 ${pluginSourceName && pluginSourceName !== stream.addonName ? `<div class="stream-route-plugin-source" dir="${contentTextDirection(pluginSourceName)}">${escapeHtml(pluginSourceName)}</div>` : ""}
                 ${descriptionLines.map((line, lineIndex) => `<div class="stream-route-card-line${lineIndex > 0 ? " secondary" : ""}" dir="${contentTextDirection(line)}">${escapeHtml(line).replace(/([._-])(?=\S)/g, "$1<wbr>")}</div>`).join("")}
                 ${bottomBadges || ""}

@@ -216,7 +216,7 @@
 
 .series-episode-status {
   top: 20px;
-  left: 20px;
+  --episode-status-inset: 20px;
   width: 44px;
   height: 44px;
 }
@@ -232,7 +232,8 @@
 
 .series-episode-unavailable {
   top: 20px;
-  right: 20px;
+  --episode-unavailable-inset: 20px;
+  --episode-status-size: 44px;
   padding: 6px 14px;
   border-radius: 10px;
   font-size: 20px;
@@ -296,7 +297,7 @@
 
   .series-episode-status {
     top: 24px;
-    left: 24px;
+    --episode-status-inset: 24px;
     width: 48px;
     height: 48px;
   }
@@ -312,7 +313,8 @@
 
   .series-episode-unavailable {
     top: 24px;
-    right: 24px;
+    --episode-unavailable-inset: 24px;
+    --episode-status-size: 48px;
     padding: 8px 16px;
     border-radius: 12px;
     letter-spacing: 1.8px;
@@ -375,7 +377,7 @@
 
   .series-episode-status {
     top: 28px;
-    left: 28px;
+    --episode-status-inset: 28px;
     width: 56px;
     height: 56px;
   }
@@ -391,7 +393,8 @@
 
   .series-episode-unavailable {
     top: 28px;
-    right: 28px;
+    --episode-unavailable-inset: 28px;
+    --episode-status-size: 56px;
     padding: 8px 18px;
     border-radius: 14px;
   }

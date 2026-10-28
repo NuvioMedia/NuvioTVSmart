@@ -176,6 +176,10 @@ export function languageEmoji(language = "") {
     case "por":
     case "portuguese":
       return "🇵🇹";
+    case "he":
+    case "heb":
+    case "hebrew":
+      return "🇮🇱";
     case "multi":
       return "Multi";
     default:

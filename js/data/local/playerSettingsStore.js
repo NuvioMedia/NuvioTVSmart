@@ -47,6 +47,7 @@ const DEFAULTS = {
     textColor: "#FFFFFF",
     textOpacity: SUBTITLE_TEXT_OPACITY_DEFAULT,
     bold: false,
+    stripSdh: false,
     outlineEnabled: true,
     outlineColor: "#000000",
     backgroundColor: "#00000000",
@@ -373,6 +374,7 @@ export function normalizePlayerSettings(settings = {}) {
     secondarySubtitleLanguage: secondaryPreferredLanguage,
     subtitleStyle: {
       ...subtitleStyle,
+      stripSdh: subtitleStyle.stripSdh === true,
       preferredLanguage,
       secondaryPreferredLanguage,
       useForcedSubtitles,

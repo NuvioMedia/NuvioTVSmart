@@ -194,11 +194,15 @@ export function createMetaDetailsScreenMethods07() {
       this.bindDetailChrome();
       this.scheduleEpisodeVirtualizationSync(this.getRememberedEpisodeIndex());
     },
-    async loadMdbListRatings(meta, token = this.detailLoadToken) {
+    async loadMdbListRatings(meta, token = this.detailLoadToken, prefetchedRatings = null) {
       const lookupMeta = metaWithRouteExternalIds(meta, this.params);
-      const ratingsResult = await mdbListRepository
-        .getRatingsForMeta(lookupMeta, this.params?.itemId || "", this.params?.itemType || "movie")
-        .catch(() => null);
+      const prefetched = await prefetchedRatings;
+      if (token !== this.detailLoadToken) return;
+      const ratingsResult =
+        prefetched ||
+        (await mdbListRepository
+          .getRatingsForMeta(lookupMeta, this.params?.itemId || "", this.params?.itemType || "movie")
+          .catch(() => null));
       if (token !== this.detailLoadToken) {
         return;
       }

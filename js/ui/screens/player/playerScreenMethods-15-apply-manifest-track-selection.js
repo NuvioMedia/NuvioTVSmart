@@ -93,6 +93,7 @@ export function createPlayerScreenMethods15() {
             </div>
           `;
       } else {
+        const isLivePlayback = this.isLivePlayback();
         const header = this.getPlayerHeaderData();
         const loadingMeta = this.getLoadingOverlayMeta();
         const osdClockEnabled = Boolean(PlayerSettingsStore.get().osdClockEnabled);
@@ -173,19 +174,19 @@ export function createPlayerScreenMethods15() {
 
               <div class="player-controls-top${osdClockEnabled ? "" : " hidden"}">
                 <div id="playerClock" class="player-clock">--:--</div>
-                <div id="playerEndsAt" class="player-ends-at">${escapeHtml(t("player_ends_at", ["--:--"], "Ends at %1$s"))}</div>
+                <div id="playerEndsAt" class="player-ends-at${isLivePlayback ? " hidden" : ""}">${escapeHtml(t("player_ends_at", ["--:--"], "Ends at %1$s"))}</div>
               </div>
 
               <div class="player-controls-bottom">
                 <div class="player-meta">
                   <div class="player-title">${escapeHtml(header.title)}</div>
+                  <div id="playerPlaybackBadges" class="player-playback-badges" hidden></div>
                   ${header.subtitle ? `<div class="player-subtitle">${escapeHtml(header.subtitle)}</div>` : ""}
                   ${header.meta ? `<div class="player-meta-secondary">${escapeHtml(header.meta)}</div>` : ""}
-                  <div id="playerStreamSource" class="player-meta-secondary player-stream-source hidden" aria-hidden="true"></div>
                 </div>
 
                 <div class="player-controls-bar">
-                  <div id="playerProgressShell" class="player-progress-shell focusable" tabindex="-1" data-player-pointer-action="progress">
+                  <div id="playerProgressShell" class="player-progress-shell focusable${isLivePlayback ? " hidden" : ""}" role="slider" aria-label="${escapeAttribute(t("cd_seek_bar", {}, "Seek bar"))}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="-1" data-player-pointer-action="progress">
                     <div class="player-progress-track">
                       <div id="playerProgressBuffered" class="player-progress-buffered"></div>
                       <div id="playerProgressFill" class="player-progress-fill"></div>
@@ -194,7 +195,7 @@ export function createPlayerScreenMethods15() {
 
                   <div class="player-controls-row">
                     <div id="playerControlButtons" class="player-control-buttons"></div>
-                    <div id="playerTimeLabel" class="player-time-label">0:00 / 0:00</div>
+                    <div id="playerTimeLabel" class="player-time-label">${isLivePlayback ? escapeHtml(t("player_live_watched", ["0:00"], "LIVE  %1$s")) : "0:00 / 0:00"}</div>
                   </div>
                 </div>
               </div>
@@ -204,7 +205,6 @@ export function createPlayerScreenMethods15() {
 
       this.container.appendChild(root);
       this.cachePlayerUiRefs(root);
-      this.syncPlayerStreamSource();
       this.syncPlayerOverlayLayoutState();
       this.bindLoadingLogoFallback();
       if (!this.isExternalFrameMode()) {
@@ -264,7 +264,7 @@ export function createPlayerScreenMethods15() {
             sourcesPanel: uiRoot.querySelector("#playerSourcesPanel"),
             controlsOverlay: uiRoot.querySelector("#playerControlsOverlay"),
             controlsBottom: uiRoot.querySelector(".player-controls-bottom"),
-            streamSource: uiRoot.querySelector("#playerStreamSource"),
+            playbackBadges: uiRoot.querySelector("#playerPlaybackBadges"),
             progressShell: uiRoot.querySelector("#playerProgressShell"),
             clock: uiRoot.querySelector("#playerClock"),
             endsAt: uiRoot.querySelector("#playerEndsAt"),

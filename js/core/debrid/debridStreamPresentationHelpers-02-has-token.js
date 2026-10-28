@@ -96,15 +96,43 @@ export function encodeFromText(parsedCodec, search = "") {
   return "UNKNOWN";
 }
 
+const LANGUAGE_ALIASES = {
+  EN: ["eng", "english"],
+  HI: ["hin", "hindi"],
+  IT: ["ita", "italian", "italiano"],
+  ES: ["spa", "esp", "spanish", "espanol", "castellano"],
+  FR: ["fre", "french", "truefrench"],
+  DE: ["ger", "deu", "german", "deutsch"],
+  PT: ["portuguese", "portugues"],
+  PL: ["pol", "polish"],
+  CS: ["cze", "czech"],
+  LA: ["latino"],
+  JA: ["jpn", "japanese"],
+  KO: ["kor", "korean"],
+  ZH: ["chinese"],
+  HE: ["heb", "hebrew"]
+};
+const LANGUAGE_PATTERNS = Object.entries(LANGUAGE_LABELS).map(([key, [code]]) => [
+  key,
+  new RegExp(`(^|[^a-z0-9])(${[code, ...(LANGUAGE_ALIASES[key] || [])].join("|")})([^a-z0-9]|$)`, "i")
+]);
+
 export function languageFor(value = "") {
-  const normalized = normalizeOpenSubtitlesSpanishCode(value) || String(value || "").toLowerCase();
+  const normalized =
+    normalizeOpenSubtitlesSpanishCode(value) ||
+    String(value || "")
+      .trim()
+      .toLowerCase();
   const compact = normalized.replace(/[^a-z0-9]/g, "");
   return (
-    Object.entries(LANGUAGE_LABELS).find(([, [code, label]]) => {
+    Object.entries(LANGUAGE_LABELS).find(([key, [code, label]]) => {
       const normalizedCode = String(code || "").toLowerCase();
       const normalizedLabel = String(label || "").toLowerCase();
       return (
-        normalized === normalizedCode || normalized === normalizedLabel || (compact && compact === normalizedCode.replace(/[^a-z0-9]/g, ""))
+        normalized === normalizedCode ||
+        normalized === normalizedLabel ||
+        LANGUAGE_ALIASES[key]?.includes(normalized) ||
+        (compact && compact === normalizedCode.replace(/[^a-z0-9]/g, ""))
       );
     })?.[0] || null
   );
@@ -115,9 +143,7 @@ export function languagesFromText(parsedLanguages = [], search = "") {
   if (fromParsed.length) {
     return fromParsed;
   }
-  const matches = Object.entries(LANGUAGE_LABELS)
-    .filter(([, [code]]) => hasToken(search, code))
-    .map(([key]) => key);
+  const matches = LANGUAGE_PATTERNS.filter(([, pattern]) => pattern.test(search)).map(([key]) => key);
   return matches.includes("PT_BR") ? matches.filter((key) => key !== "PT") : matches;
 }
 
@@ -138,6 +164,40 @@ export function streamSize(stream = {}) {
   );
 }
 
+// Strip the first media-title occurrence in each field, keeping actual repeated language tags.
+export function languageSearchText(stream = {}) {
+  const resolve = stream.clientResolve || stream.raw?.clientResolve || {};
+  const raw = resolve.stream?.raw || {};
+  const titles = [
+    ...new Set(
+      [raw.parsed?.parsedTitle, resolve.title].filter(Boolean).map((title) =>
+        String(title)
+          .toLowerCase()
+          .split(/[^a-z0-9]+/)
+          .filter(Boolean)
+          .join("[^a-z0-9]+")
+      )
+    )
+  ]
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length)
+    .map((title) => new RegExp(`(^|[^a-z0-9])${title}(?=[^a-z0-9]|$)`));
+  return [
+    stream.name,
+    stream.title,
+    stream.description,
+    stream.behaviorHints?.filename,
+    resolve.torrentName,
+    resolve.filename,
+    raw.torrentName,
+    raw.filename,
+    stream.debridCacheStatus?.cachedName
+  ]
+    .filter(Boolean)
+    .map((text) => titles.reduce((remaining, pattern) => remaining.replace(pattern, " "), String(text).toLowerCase()))
+    .join(" ");
+}
+
 export function facts(stream = {}) {
   const resolve = stream.clientResolve || stream.raw?.clientResolve || {};
   const parsed = resolve.stream?.raw?.parsed || {};
@@ -147,7 +207,7 @@ export function facts(stream = {}) {
   const visualTags = visualTagsFromText(parsed.hdr || [], text);
   const audioTags = audioTagsFromText(parsed.audio || [], text);
   const audioChannels = audioChannelsFromText(parsed.channels || [], text);
-  const languages = languagesFromText(parsed.languages || [], text);
+  const languages = languagesFromText(parsed.languages || [], languageSearchText(stream));
   const codec = encodeFromText(parsed.codec, text);
   return {
     resolution,

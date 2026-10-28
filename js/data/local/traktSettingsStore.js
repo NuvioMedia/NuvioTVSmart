@@ -1,6 +1,7 @@
 import { createProfileScopedStore } from "./profileScopedStore.js";
 
 export const WatchProgressSource = {
+  MDBLIST: "mdblist",
   TRAKT: "trakt",
   SIMKL: "simkl",
   NUVIO_SYNC: "nuvio_sync"
@@ -34,6 +35,7 @@ function normalizeWatchProgressSource(value) {
   const normalized = String(value || WatchProgressSource.TRAKT).toLowerCase();
   if (normalized === WatchProgressSource.NUVIO_SYNC) return WatchProgressSource.NUVIO_SYNC;
   if (normalized === WatchProgressSource.SIMKL) return WatchProgressSource.SIMKL;
+  if (normalized === WatchProgressSource.MDBLIST) return WatchProgressSource.MDBLIST;
   return WatchProgressSource.TRAKT;
 }
 

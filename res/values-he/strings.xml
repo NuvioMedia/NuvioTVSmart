@@ -1420,7 +1420,7 @@
     <string name="playback_net_connection_count_sub">מספר חיבורי TCP מקבילים. יותר = הורדה מהירה יותר, אבל גם יותר עומס על המכשיר.</string>
     <string name="playback_net_chunk_size">גודל מקטע</string>
     <string name="playback_net_chunk_size_sub">גודל החלקים שמורדים בכל פעם. אין צורך לשנות בדרך כלל.</string>
-    <string name="playback_estimated_memory_usage">שימוש זיכרון משוער: %1$d / %2$d MB</string>
+    <string name="playback_estimated_memory_usage">שימוש משוער בזיכרון: ‎%1$d / %2$d MB</string>
     <string name="licenses_attributions_simkl_body">Nuvio מתחברת ל-Simkl לצורך אימות חשבון, רשימות צפייה, היסטוריית צפייה, התקדמות צפייה וסקרובלינג. נתוני מעקב סרטים, סדרות ואנימה מסופקים על ידי Simkl. Nuvio אינה קשורה או מאושרת על ידי Simkl.</string>
     <string name="about_licenses_attributions">רישיונות וקרדיטים</string>
     <string name="about_licenses_attributions_subtitle">מקורות מידע, תודות ורישיונות Android</string>

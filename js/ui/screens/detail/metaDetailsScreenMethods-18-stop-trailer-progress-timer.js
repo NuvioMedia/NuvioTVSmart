@@ -243,7 +243,7 @@ export function createMetaDetailsScreenMethods18() {
         }
       };
       const handleError = () => {
-        if (this.isTrailerPlaying && !this.trailerVisualReady) {
+        if (this.isTrailerPlaying) {
           this.stopTrailerPlayback();
         }
       };

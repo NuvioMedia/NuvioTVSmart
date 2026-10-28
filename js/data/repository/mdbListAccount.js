@@ -3,6 +3,14 @@ import { LocalStore } from "../../core/storage/localStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
 import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 
+import { registerSessionTeardownHandler } from "../../core/auth/sessionLifecycle.js";
+
+let sessionGeneration = 0;
+registerSessionTeardownHandler(() => {
+  sessionGeneration++;
+  refreshes.clear();
+});
+
 const KEY = "mdbListAccounts";
 const refreshes = new Map();
 const limits = new Map();
@@ -95,10 +103,19 @@ export const MdbListAccount = {
     const profileId = String(ProfileManager.getActiveProfileId());
     if (!read(profileId)?.generation)
       write(profileId, { generation: `${Date.now()}:${Math.random()}` });
-    return { profileId, generation: read(profileId).generation };
+    return {
+      profileId,
+      generation: read(profileId).generation,
+      sessionGeneration,
+      profileRevision: LocalStore.revision("activeProfileId"),
+      profileVersion: ProfileManager.getProfileDataVersion(profileId)
+    };
   },
   check(scope) {
     if (
+      scope.sessionGeneration !== sessionGeneration ||
+      scope.profileRevision !== LocalStore.revision("activeProfileId") ||
+      scope.profileVersion !== ProfileManager.getProfileDataVersion(scope.profileId) ||
       String(ProfileManager.getActiveProfileId()) !== scope.profileId ||
       (read(scope.profileId)?.generation || null) !== scope.generation
     ) {
@@ -116,7 +133,10 @@ export const MdbListAccount = {
       const limitKey = read(scope.profileId)?.user?.id
         ? `user:${read(scope.profileId).user.id}`
         : `${scope.profileId}:${scope.generation}`;
-      if ((limits.get(limitKey) || 0) > Date.now()) throw failure("mdblist_rate_limited", 429);
+      if ((limits.get(limitKey) || 0) > Date.now())
+        throw Object.assign(failure("mdblist_rate_limited", 429), {
+          retryAfterMs: limits.get(limitKey) - Date.now()
+        });
       if (!/^\/(?!\/)[^?#]*$/.test(path)) throw failure("mdblist_invalid_response");
       const base = new URL(MDBLIST_API_BASE_URL);
       if (
@@ -152,7 +172,9 @@ export const MdbListAccount = {
           ? Number(retry) * 1000
           : Date.parse(retry || "") - Date.now();
         limits.set(limitKey, Date.now() + (Number.isFinite(delay) && delay > 0 ? delay : 60000));
-        throw failure("mdblist_rate_limited", 429);
+        throw Object.assign(failure("mdblist_rate_limited", 429), {
+          retryAfterMs: limits.get(limitKey) - Date.now()
+        });
       }
       let payload;
       try {
@@ -218,6 +240,7 @@ export const MdbListAccount = {
     });
     if (status >= 200 && status < 300) {
       if (!isCurrent()) throw failure("mdblist_scope_changed");
+      this.check(session.scope);
       const savedTokens = tokens(payload);
       const generation = `${Date.now()}:${Math.random()}`;
       write(session.scope.profileId, { generation, tokens: savedTokens, user: null });
@@ -242,7 +265,7 @@ export const MdbListAccount = {
   },
   async authorization(scope, rejected = null) {
     this.check(scope);
-    const key = `${scope.profileId}:${scope.generation}`;
+    const key = `${scope.sessionGeneration}:${scope.profileId}:${scope.generation}:${scope.profileRevision}:${scope.profileVersion}`;
     if (refreshes.has(key)) return refreshes.get(key);
     const task = (async () => {
       const current = read(scope.profileId);
@@ -265,6 +288,7 @@ export const MdbListAccount = {
           write(scope.profileId, { generation: `${Date.now()}:${Math.random()}` });
         throw failure("mdblist_authorization_revoked", status);
       }
+      this.check(scope);
       const updated = tokens(payload, current.tokens.refreshToken);
       write(scope.profileId, { ...current, tokens: updated });
       return updated.accessToken;
@@ -298,6 +322,7 @@ export const MdbListAccount = {
     const { payload } = await this.api(scope, "/user");
     if (!Number.isSafeInteger(payload?.id) || payload.id <= 0)
       throw failure("mdblist_invalid_response");
+    this.check(scope);
     write(scope.profileId, {
       ...read(scope.profileId),
       user: { id: payload.id, name: String(payload.name || payload.username || "") }
@@ -312,6 +337,12 @@ export const MdbListAccount = {
     const cache = LocalStore.get("mdbListLibraries", {});
     delete cache[scope.profileId];
     LocalStore.set("mdbListLibraries", cache);
+    const tracking = LocalStore.get("mdbListTracking", {});
+    delete tracking[scope.profileId];
+    LocalStore.set("mdbListTracking", tracking);
+    const playback = LocalStore.get("mdbListTrackingPlayback", {});
+    delete playback[scope.profileId];
+    LocalStore.set("mdbListTrackingPlayback", playback);
     if (!previous?.tokens?.refreshToken) return true;
     try {
       const response = await this.request(this.scope(), "/oauth/revoke_token/", {

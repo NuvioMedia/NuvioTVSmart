@@ -2976,4 +2976,9 @@
     <string name="party_invite_scan">Naskenujte telefónom a pripojte sa</string>
     <string name="party_invite_share">Alebo zdieľajte kód. Priatelia ho môžu zadať v časti Watch party v ľubovoľnej aplikácii Nuvio.</string>
     <string name="party_invite_qr">QR kód pozvánky do watch party</string>
+    <string name="mdblist_tracking_description">Synchronizovať históriu sledovania a priebeh prehrávania naprieč zariadeniami</string>
+    <string name="mdblist_status_syncing">Synchronizuje sa história sledovania a priebeh prehrávania…</string>
+    <string name="mdblist_last_synced">Naposledy synchronizované %1$s</string>
+    <string name="sub_strip_sdh">Odstrániť SDH titulky</string>
+    <string name="sub_strip_sdh_desc">Skryť opisy zvukov a označenia rečníkov z textových titulkov</string>
 </resources>
