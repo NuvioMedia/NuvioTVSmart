@@ -30,7 +30,8 @@ class FakeWorker {
 }
 globalThis.Worker = FakeWorker;
 
-const { rescaleHomeArtwork, releaseHomeArtwork, resetHomeArtworkRescaler } = await import("./tvPosterRescaler.js");
+const { rescaleHomeArtwork, releaseHomeArtwork, resetHomeArtworkRescaler } =
+  await import("./tvPosterRescaler.js");
 
 function reset() {
   resetHomeArtworkRescaler();
@@ -103,7 +104,11 @@ test("tearing the pool down settles the jobs a worker is still holding", async (
     "the job must actually be with a worker before teardown"
   );
   resetHomeArtworkRescaler();
-  assert.equal(await running, null, "a caller waiting on a dead pool must fall back to the original url");
+  assert.equal(
+    await running,
+    null,
+    "a caller waiting on a dead pool must fall back to the original url"
+  );
 });
 
 test("tearing the pool down settles queued jobs and every shared waiter", async () => {
@@ -133,6 +138,9 @@ test("teardown never produces a url from a dead pool", async () => {
 
 test("an unsupported fit is refused before any worker is started", async () => {
   reset();
-  assert.equal(await rescaleHomeArtwork("https://art/x.jpg", { width: 220, height: 338, fit: "contain" }), null);
+  assert.equal(
+    await rescaleHomeArtwork("https://art/x.jpg", { width: 220, height: 338, fit: "contain" }),
+    null
+  );
   assert.equal(created.length, 0, "nothing should spin up for artwork that cannot be rescaled");
 });
