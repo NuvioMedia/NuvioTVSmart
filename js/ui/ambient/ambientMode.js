@@ -136,6 +136,7 @@ export const AmbientMode = {
       this.signature = signature;
       this.generation++;
       this.controller?.abort();
+      this.loadingSignature = null;
       this.slides = [];
       this.loadedAt = 0;
       clearTimeout(this.preload);
@@ -154,21 +155,31 @@ export const AmbientMode = {
   },
   async refresh() {
     const signature = this.signature;
+    const generation = this.generation;
     if (this.loadingSignature === signature) return;
     this.controller?.abort();
-    const controller = new AbortController();
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
     this.controller = controller;
     this.loadingSignature = signature;
     try {
-      const slides = await loadAmbientSlides(AmbientModeStore.get().catalogKeys, controller.signal);
-      if (this.signature !== signature || controller.signal.aborted) return;
+      const slides = await loadAmbientSlides(
+        AmbientModeStore.get().catalogKeys,
+        controller?.signal
+      );
+      if (
+        this.generation !== generation ||
+        this.signature !== signature ||
+        controller?.signal.aborted
+      )
+        return;
       if (slides.length || this.loadedSignature !== signature) this.slides = shuffled(slides);
       this.loadedSignature = signature;
       this.loadedAt = now();
     } catch (_) {
       /* Keep the last successful selection on transient failure. */
     } finally {
-      if (this.controller === controller) this.loadingSignature = null;
+      if (this.generation === generation && this.controller === controller)
+        this.loadingSignature = null;
     }
   },
   show() {
@@ -206,10 +217,12 @@ export const AmbientMode = {
     )
       void this.refresh();
     else this.slides = shuffled(this.slides);
-    this.slideController = new AbortController();
+    // Image loading only needs DOM cancellation events, available on older TV engines too.
+    this.slideSignal = document.createDocumentFragment();
+    this.slideSignal.aborted = false;
     this.index = 0;
     this.misses = 0;
-    void this.nextSlide(this.slideController.signal);
+    void this.nextSlide(this.slideSignal);
   },
   async nextSlide(signal) {
     if (signal.aborted || !this.showing) return;
@@ -272,7 +285,11 @@ export const AmbientMode = {
     if (!this.showing) return;
     this.showing = false;
     this.lastInteraction = now();
-    this.slideController?.abort();
+    if (this.slideSignal) {
+      this.slideSignal.aborted = true;
+      this.slideSignal.dispatchEvent(new Event("abort"));
+      this.slideSignal = null;
+    }
     clearTimeout(this.slideTimer);
     this.root?.remove();
     this.root = null;
