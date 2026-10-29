@@ -248,6 +248,12 @@ export function streamMergeKey(item = {}) {
   if (debridIdentity) {
     return `debrid::${debridIdentity}`;
   }
+  // A media server stream carries no url. It is resolved at play time from the
+  // connection, so identify it by what it is resolved from.
+  const mediaServer = (item.clientResolve || item.raw?.clientResolve)?.mediaServer;
+  if (mediaServer) {
+    return `server::${mediaServer.connectionId}::${mediaServer.itemId}::${mediaServer.mediaSourceId}`;
+  }
   const locator = item.url || item.externalUrl || item.ytId || "";
   if (!locator) {
     return "";
