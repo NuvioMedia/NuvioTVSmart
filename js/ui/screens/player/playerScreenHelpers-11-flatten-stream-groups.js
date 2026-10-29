@@ -1,3 +1,4 @@
+import { canResolveMediaServerStream } from "../../../data/mediaserver/mediaServerRepository.js";
 import { PlayerController } from "../../../core/player/playerController.js";
 
 import {
@@ -285,6 +286,7 @@ export function flattenStreamGroups(streamResult) {
         raw: stream
       };
       if (
+        canResolveMediaServerStream(entry) ||
         DirectDebridResolver.shouldListStream(entry) ||
         WebOsEngineFsResolver.canResolveStream(entry) ||
         TizenStreamingServerResolver.canResolveStream(entry)

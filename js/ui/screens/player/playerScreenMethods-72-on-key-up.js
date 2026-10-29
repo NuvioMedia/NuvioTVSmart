@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { canResolveMediaServerStream } from "../../../data/mediaserver/mediaServerRepository.js";
 import * as internals from "./playerScreenContext.js";
 
 export function createPlayerScreenMethods72() {
@@ -91,6 +92,7 @@ export function createPlayerScreenMethods72() {
           Boolean(
             stream?.url ||
             stream?.externalUrl ||
+            canResolveMediaServerStream(stream) ||
             DirectDebridResolver.canResolveStream(stream, resolveContext) ||
             WebOsEngineFsResolver.canResolveStream(stream) ||
             TizenStreamingServerResolver.canResolveStream(stream)

@@ -1,3 +1,4 @@
+import { canResolveMediaServerStream } from "../../../data/mediaserver/mediaServerRepository.js";
 import { loadPlayerShuffleWatched } from "./playerEpisodeShuffle.js";
 import { activeStreamLinkProfile } from "../../../data/local/streamLinkCacheStore.js";
 /* global __NUVIO_APP_VERSION__ */
@@ -241,7 +242,8 @@ export function createPlayerScreenMethods01() {
         const sourceCandidate = initialStreamCandidate || this.getCurrentStreamCandidate();
         if (
           sourceCandidate &&
-          (DirectDebridResolver.canResolveStream(sourceCandidate) ||
+          (canResolveMediaServerStream(sourceCandidate) ||
+            DirectDebridResolver.canResolveStream(sourceCandidate) ||
             WebOsEngineFsResolver.canResolveStream(sourceCandidate) ||
             TizenStreamingServerResolver.canResolveStream(sourceCandidate))
         ) {

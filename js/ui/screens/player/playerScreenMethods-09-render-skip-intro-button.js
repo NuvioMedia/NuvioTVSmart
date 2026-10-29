@@ -1,3 +1,4 @@
+import { canResolveMediaServerStream } from "../../../data/mediaserver/mediaServerRepository.js";
 import { syncHtmlSubtitleClearance } from "./subtitleOverlayClearance.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
@@ -250,7 +251,8 @@ export function createPlayerScreenMethods09() {
             subtitles: Array.isArray(stream.subtitles) ? stream.subtitles : [],
             raw: stream
           };
-          return DirectDebridResolver.shouldListStream(entry) ||
+          return canResolveMediaServerStream(entry) ||
+            DirectDebridResolver.shouldListStream(entry) ||
             WebOsEngineFsResolver.canResolveStream(entry) ||
             TizenStreamingServerResolver.canResolveStream(entry)
             ? entry
