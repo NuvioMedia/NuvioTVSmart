@@ -399,6 +399,16 @@
   display: block;
 }
 
+/* Supplied landscape artwork already contains its branding; trailers still need ours. */
+.home-screen-shell.home-layout-modern
+  .home-poster-card.has-landscape-artwork:not(.is-trailer-active)
+  .home-poster-expanded-gradient,
+.home-screen-shell.home-layout-modern
+  .home-poster-card.has-landscape-artwork:not(.is-trailer-active)
+  .home-poster-expanded-brand {
+  display: none;
+}
+
 .home-screen-shell.home-layout-modern .home-poster-card.is-expanded .home-poster-copy {
   display: none;
 }
