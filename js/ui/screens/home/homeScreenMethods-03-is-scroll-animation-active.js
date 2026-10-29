@@ -190,6 +190,10 @@ export function createHomeScreenMethods03() {
         globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
       );
     },
+    shouldUseImmediateCameraScroll() {
+      // Camera snapping must not change poster transitions or media hydration.
+      return this.shouldUseImmediateFocusScroll() || getTvRuntimePerformanceProfile().platform === "webos";
+    },
     hasCollectionHomeRows() {
       return Array.isArray(this.collections) && this.collections.length > 0;
     },

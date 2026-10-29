@@ -35,9 +35,17 @@ function setup({ platform = "browser", constrained = false, legacyTizen = false 
   return { screen, frames, context };
 }
 
-for (const options of [{ constrained: true }, { platform: "tizen", legacyTizen: true }]) {
+for (const options of [
+  { constrained: true },
+  { platform: "tizen", legacyTizen: true },
+  { platform: "webos" }
+]) {
   test(`Home immediate policy cancels both cameras and clamps both axes: ${JSON.stringify(options)}`, () => {
     const { screen, frames, context } = setup(options);
+    if (options.platform === "webos") {
+      assert.equal(Boolean(screen.shouldUseImmediateFocusScroll()), false);
+      assert.equal(screen.shouldUseImmediateCameraScroll(), true);
+    }
     const container = {
       scrollWidth: 500,
       clientWidth: 100,
@@ -77,7 +85,7 @@ for (const options of [{ constrained: true }, { platform: "tizen", legacyTizen: 
   });
 }
 
-for (const platform of ["webos", "tizen", "browser"]) {
+for (const platform of ["tizen", "browser"]) {
   test(`Home retains animated scrolling and held navigation on normal ${platform}`, () => {
     const { screen, frames } = setup({ platform });
     const container = {
@@ -88,7 +96,7 @@ for (const platform of ["webos", "tizen", "browser"]) {
       scrollLeft: 0,
       scrollTop: 0
     };
-    assert.equal(Boolean(screen.shouldUseImmediateFocusScroll()), false);
+    assert.equal(Boolean(screen.shouldUseImmediateCameraScroll()), false);
     for (const method of ["animateScroll", "animateSpringScroll"]) {
       screen[method](container, "x", 200);
       assert.equal(container.scrollLeft, 0);

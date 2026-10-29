@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Improvements & Fixes
+
+- Snap Home camera and detail-rail scrolling on LG webOS while preserving poster animations and image-loading budgets (#1153) (@malkstar)
+
 ## 1.2.10
 
 ### Improvements & Fixes

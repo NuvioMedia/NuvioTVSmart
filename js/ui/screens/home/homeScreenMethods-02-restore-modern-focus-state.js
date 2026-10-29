@@ -151,7 +151,7 @@ export function createHomeScreenMethods02() {
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const key = axis === "y" ? "y" : "x";
-      if (this.shouldUseImmediateFocusScroll()) {
+      if (this.shouldUseImmediateCameraScroll()) {
         // Camera-follow callers must honor the same immediate policy as focus moves.
         this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
@@ -211,7 +211,7 @@ export function createHomeScreenMethods02() {
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const key = axis === "y" ? "y" : "x";
-      if (this.shouldUseImmediateFocusScroll()) {
+      if (this.shouldUseImmediateCameraScroll()) {
         this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;

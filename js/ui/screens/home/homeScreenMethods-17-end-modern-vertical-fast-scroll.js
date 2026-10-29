@@ -32,7 +32,7 @@ export function createHomeScreenMethods17() {
     },
     startModernVerticalFastScroll(direction) {
       const main = this.container?.querySelector(".home-modern-rows-viewport");
-      if (this.layoutMode !== "modern" || !main || !direction || this.shouldUseImmediateFocusScroll()) {
+      if (this.layoutMode !== "modern" || !main || !direction || this.shouldUseImmediateCameraScroll()) {
         // Constrained TV runtimes cannot sustain a frame-by-frame scrollTop write
         // over the fully mounted Home DOM. Let the existing throttled focus path
         // handle repeated D-pad input with immediate focus scrolling instead.
@@ -158,7 +158,7 @@ export function createHomeScreenMethods17() {
           if (delta <= 1) {
             return;
           }
-          if (this.shouldUseImmediateFocusScroll()) {
+          if (this.shouldUseImmediateCameraScroll()) {
             this.cancelScrollAnimation(next.container, "y");
             next.container.scrollTop = Math.round(Number(next.value || 0));
             return;
@@ -224,7 +224,7 @@ export function createHomeScreenMethods17() {
           cancelAnimationFrame(this._trackHorizRaf);
           this._trackHorizRaf = null;
         }
-        if (this.shouldUseImmediateHorizontalScrollForNode(target) || this.shouldUseImmediateFocusScroll()) {
+        if (this.shouldUseImmediateHorizontalScrollForNode(target) || this.shouldUseImmediateCameraScroll()) {
           const next = this.getModernTrackAlignedScrollTarget(target, layoutAdjustment);
           if (next?.container) {
             this.cancelScrollAnimation(next.container, "x");
