@@ -88,3 +88,120 @@ test("poster settings are read once per layout, stay fresh, and preserve card ma
     "a later render must read current profile settings"
   );
 });
+
+test("landscape artwork keeps its own branding while backdrop fallbacks retain overlays", async () => {
+  const context = vm.createContext({
+    Router: { getCurrent: () => "home" },
+    getTvRuntimePerformanceProfile: () => ({ isTvRuntime: false }),
+    isCollectionFolderItem: () => false,
+    customPosterForItem: (item) => item,
+    normalizeCatalogItem: (item) => item,
+    firstNonEmpty: (...values) => values.find(Boolean) || "",
+    buildPosterSubtitle: () => "2026",
+    normalizeTmdbBackdropUrl: (value) => value,
+    normalizeTmdbPosterUrl: (value) => value,
+    isTitleItemWatched: () => false,
+    escapeHtml: String,
+    escapeAttribute: String,
+    buildLazyImageAttributes: (src) => `src="${src}"`
+  });
+  const source = await readFile(
+    new URL("./homeScreenHelpers-15-create-poster-card-markup.js", import.meta.url),
+    "utf8"
+  );
+  vm.runInContext(
+    source
+      .slice(source.indexOf("export function createPosterCardMarkup"))
+      .replace(/^export /gm, ""),
+    context
+  );
+  for (const logo of ["", "logo.png"]) {
+    for (const expanded of [false, true]) {
+      for (const landscape of [false, true]) {
+        const render = (landscapePoster, row = {}) =>
+          context.createPosterCardMarkup(
+            {
+              id: "tt1",
+              name: "Title",
+              poster: "poster.png",
+              background: "backdrop.png",
+              landscapePoster,
+              logo
+            },
+            0,
+            0,
+            "movie",
+            { homeCatalogKey: "test", ...row },
+            true,
+            "modern",
+            expanded,
+            landscape
+          );
+        const supplied = render("landscape.png");
+        assert.ok(supplied.includes("has-landscape-artwork"));
+        assert.ok(!supplied.includes('class="home-poster-landscape-copy"'));
+        assert.ok(
+          supplied.includes('class="home-poster-expanded-brand"'),
+          "keep branding available over trailers"
+        );
+        const fallback = render("");
+        assert.ok(!fallback.includes("has-landscape-artwork"));
+        assert.equal(fallback.includes('class="home-poster-landscape-copy"'), landscape);
+        assert.ok(
+          !render("landscape.png", { suppressPosterText: true }).includes(
+            'class="home-poster-landscape-copy"'
+          )
+        );
+        assert.ok(supplied.includes('aria-label="Title"'));
+      }
+    }
+  }
+});
+
+test("landscape artwork stays unobscured until the card trailer is revealed", async () => {
+  const { load } = await import("cheerio");
+  const { default: postcss } = await import("postcss");
+  const rules = [];
+  for (const file of ["components-14.css", "components-17.css"]) {
+    const css = await readFile(new URL(`../../../../css/${file}`, import.meta.url), "utf8");
+    postcss.parse(css).walkRules((rule) => {
+      rule.walkDecls("display", (decl) => {
+        for (const selector of rule.selectors) {
+          if (
+            /\.home-poster-expanded-(gradient|brand)(?![\w-])/.test(selector) &&
+            !selector.includes("::")
+          ) {
+            rules.push({ selector, value: decl.value });
+          }
+        }
+      });
+    });
+  }
+  for (const artwork of [false, true]) {
+    for (const expanded of [false, true]) {
+      for (const trailer of [false, true]) {
+        const $ = load(
+          `<div class="home-screen-shell home-layout-modern"><article class="home-poster-card is-landscape ${artwork ? "has-landscape-artwork" : ""} ${expanded ? "is-expanded" : ""} ${trailer ? "is-trailer-active" : ""}"><div class="home-poster-expanded-gradient"></div><div class="home-poster-expanded-brand"></div></article></div>`
+        );
+        for (const part of ["gradient", "brand"]) {
+          const element = $(`.home-poster-expanded-${part}`);
+          let display;
+          let specificity = -1;
+          for (const rule of rules) {
+            // These display selectors use classes only; :not contributes its argument's class.
+            const weight = (rule.selector.match(/\./g) || []).length;
+            if (element.is(rule.selector) && weight >= specificity) {
+              display = rule.value;
+              specificity = weight;
+            }
+          }
+          assert.equal(
+            display,
+            artwork && !trailer ? "none" : part === "gradient" || expanded ? "block" : "none",
+            `${part}: artwork=${artwork}, expanded=${expanded}, trailer=${trailer}`
+          );
+        }
+      }
+    }
+  }
+});

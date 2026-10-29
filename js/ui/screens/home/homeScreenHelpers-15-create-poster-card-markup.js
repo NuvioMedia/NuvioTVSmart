@@ -319,6 +319,7 @@ export function createPosterCardMarkup(
   const expandedVisualSrc = firstNonEmpty(backdropSrc, posterSrc);
   const expandedClass = isExpanded ? " is-expanded" : "";
   const landscapeClass = useLandscapePoster ? " is-landscape" : "";
+  const landscapeArtworkClass = layoutMode === "modern" && preferredLandscapePosterSrc ? " has-landscape-artwork" : "";
   const focusableClass = isLoading ? "" : " focusable";
   const loadingClass = isLoading ? " home-poster-card-loading" : "";
   const shouldShowLabels = showLabels && !isLoading && !suppressPosterText;
@@ -329,7 +330,7 @@ export function createPosterCardMarkup(
   const titleWidth = titleWidths[safeIndex % titleWidths.length];
   const subtitleWidth = subtitleWidths[safeIndex % subtitleWidths.length];
   return `
-    <article class="home-content-card home-poster-card${focusableClass}${expandedClass}${landscapeClass}${loadingClass}" role="button" aria-label="${escapeAttribute(normalized.name || "Untitled")}"
+    <article class="home-content-card home-poster-card${focusableClass}${expandedClass}${landscapeClass}${landscapeArtworkClass}${loadingClass}" role="button" aria-label="${escapeAttribute(normalized.name || "Untitled")}"
              ${isLoading ? "" : 'tabindex="0"'}
              ${
                isLoading
@@ -378,7 +379,7 @@ export function createPosterCardMarkup(
           }
         </div>
         ${
-          !isLoading && useLandscapePoster && !suppressPosterText
+          !isLoading && useLandscapePoster && !preferredLandscapePosterSrc && !suppressPosterText
             ? `
           <div class="home-poster-landscape-copy" aria-hidden="true">
             ${
