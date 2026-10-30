@@ -42,6 +42,13 @@ export function createHomeScreenMethods24() {
         viewportChanged = false
       } = {}
     ) {
+      // Opening the sidebar must not start artwork work behind the open menu.
+      // Android keeps the drawer outside the Home lazy rows; a sidebar anchor
+      // has no row, so this pass used to walk the whole image index and hydrate
+      // the visible rows while the viewer was navigating the menu.
+      if (typeof this.isSidebarFocusActive === "function" && this.isSidebarFocusActive()) {
+        return;
+      }
       const anchorRow = anchorNode instanceof HTMLElement ? anchorNode.closest(HOME_LAZY_IMAGE_ROW_SELECTOR) : null;
       const anchorImagePending = Boolean(
         anchorNode?.querySelector?.(".content-poster[data-src], .home-poster-landscape-logo[data-src], .home-continue-bg[data-src]")
@@ -164,6 +171,11 @@ export function createHomeScreenMethods24() {
       { forceFullScan = false, refreshIndex = false, focusedRowOnly = false, includeNeighborRows = false } = {}
     ) {
       if (!this.container) {
+        return;
+      }
+      // A frame may already be queued when the sidebar takes focus. Drop it
+      // here as well, so the menu does not inherit the Home hydration burst.
+      if (typeof this.isSidebarFocusActive === "function" && this.isSidebarFocusActive()) {
         return;
       }
       const anchorRow = anchorNode?.closest?.(HOME_LAZY_IMAGE_ROW_SELECTOR) || null;
