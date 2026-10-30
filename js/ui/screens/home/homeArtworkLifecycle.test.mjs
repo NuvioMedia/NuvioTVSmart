@@ -137,6 +137,7 @@ function makeScreen(context, { rows, images }) {
     lastHomeLazyImageHydrationAnchorRow: null,
     isPerformanceConstrained: () => false,
     isLegacyTvRuntime: () => false,
+    isSidebarFocusActive: () => false,
     getCurrentFocusedNode: () => null
   });
 }
@@ -193,6 +194,22 @@ test("browser and folder detail do not evict images through the Home lifecycle",
     screen.hydrateHomeLazyImages(null, { forceFullScan: true, refreshIndex: true });
     assert.equal(image.src, "https://art/a.jpg");
   }
+});
+
+test("sidebar focus does not start a Home artwork pass", () => {
+  const context = buildHome();
+  const row = makeRow(context, { top: 100 });
+  const images = [makeImage(context, { row, src: "https://art/g.jpg" })];
+  const screen = makeScreen(context, { rows: [row], images });
+  screen.isSidebarFocusActive = () => true;
+
+  screen.scheduleHomeLazyImageHydration(row, { refreshIndex: true });
+  assert.equal(images[0].src, "", "opening the menu must not hydrate posters behind it");
+
+  // A frame queued before the sidebar took focus must also be dropped.
+  screen.hydrateHomeLazyImages(row, { forceFullScan: true, refreshIndex: true });
+  assert.equal(images[0].src, "");
+  assert.equal(images[0].dataset.src, "https://art/g.jpg");
 });
 
 test("a released and rehydrated poster rejects the earlier request even when the URL is unchanged", async () => {
