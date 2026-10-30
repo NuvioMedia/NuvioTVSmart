@@ -142,7 +142,8 @@ export function createDefaultExpandedState(sectionId) {
       continueWatching: false,
       detailPage: false,
       focusedPoster: false,
-      cardAppearance: false
+      cardAppearance: false,
+      customPosters: false
     };
   }
 

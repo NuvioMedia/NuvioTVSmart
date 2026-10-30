@@ -21,6 +21,9 @@ export function registerLayoutActions(model) {
   this.actionMap.set("layout:toggle:cardAppearance", () => {
     this.toggleExpandedSection("layout", "cardAppearance");
   });
+  this.actionMap.set("layout:toggle:customPosters", () => {
+    this.toggleExpandedSection("layout", "customPosters");
+  });
   HOME_LAYOUT_OPTIONS.forEach((option) => {
     this.actionMap.set(`layout:layout:${option.id}`, () => {
       LayoutPreferences.set({ homeLayout: option.id });

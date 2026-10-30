@@ -79,6 +79,16 @@
   line-height: 1.2;
 }
 
+.settings-section-label {
+  color: var(--text-secondary);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  padding: 4px 8px 0;
+  text-transform: uppercase;
+}
+
 .settings-account-card {
   padding: 28px;
 }
