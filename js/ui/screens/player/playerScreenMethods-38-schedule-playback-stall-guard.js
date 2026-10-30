@@ -221,6 +221,7 @@ export function createPlayerScreenMethods38() {
           return;
         }
 
+        if (this.tryServerPlaybackFallback?.()) return;
         this.releaseStartupAudioGate({ resume: false });
         if (startup) {
           this.markPlaybackSourceFailed(this.activePlaybackUrl);

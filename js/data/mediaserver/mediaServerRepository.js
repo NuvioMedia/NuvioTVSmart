@@ -13,6 +13,7 @@ import {
   serverEndpoint
 } from "./mediaBrowserClient.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
+import { Platform } from "../../platform/index.js";
 import { I18n } from "../../i18n/index.js";
 const PAGE_SIZE = 100;
 const LIST_FIELDS =
@@ -144,11 +145,23 @@ function playableSources(item) {
         (source) => String(source.Type || "").toLowerCase() !== "placeholder"
       );
 }
-export function buildServerDeviceProfile() {
+export function buildServerDeviceProfile({ allowDirectPlay = true } = {}) {
+  const nativeTv = allowDirectPlay && (Platform.isWebOS() || Platform.isTizen());
   return {
     Name: "Nuvio Smart TV",
     MaxStreamingBitrate: 120000000,
     DirectPlayProfiles: [
+      // TV native pipelines support these formats even when HTML canPlayType underreports them.
+      ...(nativeTv
+        ? [
+            {
+              Type: "Video",
+              Container: "mkv,mp4,m4v,ts",
+              VideoCodec: "h264,hevc",
+              AudioCodec: "aac,mp3,ac3,eac3"
+            }
+          ]
+        : []),
       { Type: "Video", Container: "mp4,m4v,mov", VideoCodec: "h264", AudioCodec: "aac,mp3" }
     ],
     TranscodingProfiles: [
@@ -655,7 +668,7 @@ export const MediaServerRepository = {
       return { status: "error", message: error?.message || "servers_failure_unreachable" };
     }
   },
-  async resolve(stream) {
+  async resolve(stream, { allowDirectPlay = true } = {}) {
     const target = (stream.clientResolve || stream.raw?.clientResolve)?.mediaServer;
     if (!target) return { status: "unavailable" };
     const pid = profile();
@@ -665,18 +678,18 @@ export const MediaServerRepository = {
       UserId: connection.remoteUserId,
       MediaSourceId: target.mediaSourceId,
       MaxStreamingBitrate: 120000000,
-      EnableDirectPlay: true,
+      EnableDirectPlay: allowDirectPlay,
       EnableDirectStream: true,
       EnableTranscoding: true,
       AllowVideoStreamCopy: true,
       AllowAudioStreamCopy: true,
       AutoOpenLiveStream: false,
       IsPlayback: true,
-      DeviceProfile: buildServerDeviceProfile()
+      DeviceProfile: buildServerDeviceProfile({ allowDirectPlay })
     };
-    const resumeItem = await get(connection, "item", target.itemId, { fields: "UserData" }).catch(
-      () => null
-    );
+    const resumeItem = allowDirectPlay
+      ? await get(connection, "item", target.itemId, { fields: "UserData" }).catch(() => null)
+      : null;
     if (profile() !== pid) return { status: "unavailable" };
     const info = await mediaServerRequest(connection, `/Items/${key(target.itemId)}/PlaybackInfo`, {
       method: "POST",
@@ -684,7 +697,7 @@ export const MediaServerRepository = {
         userId: connection.remoteUserId,
         mediaSourceId: target.mediaSourceId,
         maxStreamingBitrate: body.MaxStreamingBitrate,
-        enableDirectPlay: true
+        enableDirectPlay: allowDirectPlay
       },
       body
     });
@@ -694,7 +707,7 @@ export const MediaServerRepository = {
       info?.MediaSources?.find((entry) => String(entry.Type).toLowerCase() !== "placeholder");
     if (!source) return { status: "unavailable" };
     let url, playMethod;
-    if (source.SupportsDirectPlay) {
+    if (source.SupportsDirectPlay && allowDirectPlay) {
       url = mediaServerUrl(connection, `/Videos/${key(target.itemId)}/stream`, {
         static: true,
         mediaSourceId: source.Id,

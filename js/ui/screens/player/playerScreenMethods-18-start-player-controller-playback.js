@@ -57,6 +57,7 @@ export function createPlayerScreenMethods18() {
           typeof PlayerController.getLastPlaybackErrorCode === "function" ? Number(PlayerController.getLastPlaybackErrorCode() || 0) : 0;
         const detail = String(error?.message || error?.name || error || "").trim();
         const candidate = sourceCandidate || this.getStreamCandidateByUrl(playbackUrl) || this.getCurrentStreamCandidate();
+        if (this.tryServerPlaybackFallback?.(candidate)) return;
         this.markPlaybackSourceFailed(playbackUrl);
         if (!this.hasPresentedPlaybackFrame) {
           this.showStartupError(this.getStartupErrorMessage(mediaErrorCode, detail, candidate), {

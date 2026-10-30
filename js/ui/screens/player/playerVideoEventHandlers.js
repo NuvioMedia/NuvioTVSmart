@@ -103,6 +103,8 @@ export function createPlayerVideoEventHandlers(video, isTizenAvPlayPlayback) {
     const avplayError = String(eventDetail?.avplayError || "").toLowerCase();
     const normalizedPlaybackErrorDetail = String(playbackErrorDetail || "").toLowerCase();
     const currentSourceCandidate = this.getStreamCandidateByUrl(this.activePlaybackUrl) || this.getCurrentStreamCandidate();
+    const serverPlayback = currentSourceCandidate?.serverPlayback || currentSourceCandidate?.raw?.serverPlayback;
+    if (serverPlayback?.fallbackRequested && this.tryServerPlaybackFallback?.(currentSourceCandidate)) return;
     const expiredPlaybackUrl = isExpiredStreamUrl(this.activePlaybackUrl);
     const currentEngineFsState = this.currentEngineFsStream || null;
     const publicEngineFsUrl = String(currentEngineFsState?.publicPlaybackUrl || "").trim();
@@ -229,6 +231,7 @@ export function createPlayerVideoEventHandlers(video, isTizenAvPlayPlayback) {
       const startupErrorMessage = this.getStartupErrorMessage(mediaErrorCode, playbackErrorDetail, currentSourceCandidate);
       this.clearPlaybackStallGuard();
       this.releaseStartupAudioGate({ resume: false });
+      if (this.tryServerPlaybackFallback?.(currentSourceCandidate)) return;
       this.showStartupError(startupErrorMessage, {
         mediaErrorCode,
         detail: playbackErrorDetail,
@@ -255,6 +258,7 @@ export function createPlayerVideoEventHandlers(video, isTizenAvPlayPlayback) {
       return;
     }
 
+    if (this.tryServerPlaybackFallback?.(currentSourceCandidate)) return;
     this.markPlaybackSourceFailed(this.activePlaybackUrl);
 
     this.clearPlaybackStallGuard();
