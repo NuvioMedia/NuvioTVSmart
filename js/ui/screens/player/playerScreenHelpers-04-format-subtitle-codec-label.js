@@ -301,20 +301,33 @@ export function getBitmapSubtitleFormatLabel(track = {}) {
   return "bitmap";
 }
 
+export function isBitmapSubtitleSupportReason(reason = "") {
+  return ["bitmap", "bitmap-runtime", "webos-bitmap", "webos-bitmap-runtime", "tizen-bitmap", "tizen-bitmap-runtime"].includes(reason);
+}
+
 export function getBitmapSubtitleSupportState(track = {}) {
-  if (!getEmbeddedBitmapSubtitleFormat(track) || !Environment.isWebOS()) {
+  const format = getEmbeddedBitmapSubtitleFormat(track);
+  if (!format || (!Environment.isWebOS() && !Environment.isTizen())) {
+    return { supported: true, unsupportedReason: null };
+  }
+  // Tizen renders PGS through AVPlay. Only VobSub needs the local bitmap
+  // decoder because AVPlay does not draw that embedded format.
+  if (Environment.isTizen() && format !== "vobsub") {
     return { supported: true, unsupportedReason: null };
   }
 
-  if (track?.supported === false && ["webos-bitmap", "webos-bitmap-runtime"].includes(track?.unsupportedReason)) {
+  if (track?.supported === false && isBitmapSubtitleSupportReason(track?.unsupportedReason)) {
     return {
       supported: false,
       unsupportedReason: track.unsupportedReason
     };
   }
 
-  if (!canUseWebOsBitmapSubtitles()) {
-    return { supported: false, unsupportedReason: "webos-bitmap" };
+  if (!canUseEmbeddedBitmapSubtitles()) {
+    return {
+      supported: false,
+      unsupportedReason: Environment.isTizen() ? "tizen-bitmap" : "webos-bitmap"
+    };
   }
   return { supported: true, unsupportedReason: null };
 }
@@ -418,8 +431,21 @@ export function getEmbeddedBitmapSubtitleFormat(track = {}) {
   return normalizeBitmapSubtitleFormat(getTrackMetadataStrings(track).join(" "));
 }
 
-export function canUseWebOsBitmapSubtitles() {
-  return Environment.isWebOS() && supportsBitmapSubtitleDecoding();
+let bitmapSubtitleDecodingSupport = null;
+
+export function canUseEmbeddedBitmapSubtitles() {
+  if (Environment.isTizen()) {
+    const capabilities = TizenCapabilities.get();
+    if ((capabilities.tizenVersionKnown && capabilities.tizenMajorVersion < 4) || !capabilities.supportsWebService) {
+      return false;
+    }
+  } else if (!Environment.isWebOS()) {
+    return false;
+  }
+  if (bitmapSubtitleDecodingSupport !== true) {
+    bitmapSubtitleDecodingSupport = supportsBitmapSubtitleDecoding();
+  }
+  return bitmapSubtitleDecodingSupport === true;
 }
 
 export function getWebOsAudioTrackCompatibilityText(track = {}) {

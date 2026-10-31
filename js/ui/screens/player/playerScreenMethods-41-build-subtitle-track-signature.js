@@ -100,6 +100,8 @@ export function createPlayerScreenMethods41() {
       );
       const displayLabel = (useEmbeddedLabel ? meaningfulEmbeddedLabel : avplayLabel || meaningfulEmbeddedLabel) || subtitleLabel(index);
       const selectedLanguage = avplayLanguage || embeddedLanguage;
+      const bitmapSubtitle = Boolean(embeddedTrack?.bitmapSubtitle);
+      const embeddedCodec = cleanDisplayText(embeddedTrack?.codec);
       return {
         ...track,
         label: displayLabel,
@@ -109,8 +111,13 @@ export function createPlayerScreenMethods41() {
         // placeholders such as "unknown" or "und".
         language: selectedLanguage,
         lang: track?.lang || selectedLanguage,
-        codec: track?.codec || embeddedTrack?.codec || "",
+        codec: bitmapSubtitle ? embeddedCodec || track?.codec || "" : track?.codec || embeddedTrack?.codec || "",
         format: track?.format || embeddedTrack?.format || "",
+        // Keep the container identity available for the software VobSub path:
+        // AVPlay reports this track as text/plain and cannot draw its bitmaps.
+        bitmapSubtitle,
+        bitmapSubtitleFormat: embeddedTrack?.bitmapSubtitleFormat || null,
+        sourceTrackId: Number(embeddedTrack?.sourceTrackId) || -1,
         supported: support.supported,
         unsupportedReason: embeddedTrack?.unsupportedReason || support.unsupportedReason || null,
         forced: isForcedSubtitleTrack(track) || isForcedSubtitleTrack(embeddedTrack),

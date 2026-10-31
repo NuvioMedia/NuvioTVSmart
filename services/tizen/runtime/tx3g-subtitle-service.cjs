@@ -49,7 +49,7 @@ function handleRequest(request, response) {
   }
 
   if (parsed.pathname === "/settings") {
-    sendJson(response, 200, { tx3g: true, embeddedText: true, service: "nuvio-tx3g" });
+    sendJson(response, 200, { tx3g: true, embeddedText: true, bitmapSubtitle: true, service: "nuvio-tx3g" });
     return;
   }
 
@@ -57,11 +57,13 @@ function handleRequest(request, response) {
   var isTx3gRequest = parsed.pathname === "/tx3g";
   var isEmbeddedTextTimelineRequest = parsed.pathname === "/embedded-text-timeline";
   var isTx3gTimelineRequest = parsed.pathname === "/tx3g-timeline";
+  var isBitmapSubtitleRequest = parsed.pathname === "/bitmap-subtitle";
   if (
     (!isEmbeddedTextRequest &&
       !isTx3gRequest &&
       !isEmbeddedTextTimelineRequest &&
-      !isTx3gTimelineRequest) ||
+      !isTx3gTimelineRequest &&
+      !isBitmapSubtitleRequest) ||
     request.method !== "GET"
   ) {
     sendJson(response, 404, { returnValue: false, errorCode: "NOT_FOUND" });
@@ -88,7 +90,9 @@ function handleRequest(request, response) {
         ? "Subtitle source URL is required"
         : isEmbeddedTextRequest
           ? "Embedded text source URL and trackOrdinal are required"
-          : "TX3G source URL and trackNumber are required"
+          : isBitmapSubtitleRequest
+            ? "Bitmap subtitle source URL and trackNumber are required"
+            : "TX3G source URL and trackNumber are required"
     });
     return;
   }
@@ -104,6 +108,14 @@ function handleRequest(request, response) {
       return parser.extractTx3gTimeline({
         url: sourceUrl,
         trackNumber: isFinite(trackNumber) && trackNumber > 0 ? trackNumber : undefined
+      });
+    }
+    if (isBitmapSubtitleRequest) {
+      return getEmbeddedTextParser().getBitmapSubtitleWindow({
+        url: sourceUrl,
+        trackNumber: trackNumber,
+        startSeconds: startSeconds,
+        endSeconds: endSeconds
       });
     }
     return isEmbeddedTextRequest
@@ -127,12 +139,19 @@ function handleRequest(request, response) {
     })
     .catch(function (error) {
       var errorCode = String(
-        (error && error.code) || (isEmbeddedTextRequest ? "EMBEDDED_TEXT_PARSE_FAILED" : "TX3G_PARSE_FAILED")
+        (error && error.code) ||
+          (isBitmapSubtitleRequest
+            ? "BITMAP_SUBTITLE_FAILED"
+            : isEmbeddedTextRequest
+              ? "EMBEDDED_TEXT_PARSE_FAILED"
+              : "TX3G_PARSE_FAILED")
       );
       console.warn(
-        isEmbeddedTextRequest || isEmbeddedTextTimelineRequest
-          ? "[Nuvio embedded text] extraction failed"
-          : "[Nuvio TX3G] extraction failed",
+        isBitmapSubtitleRequest
+          ? "[Nuvio bitmap subtitle] extraction failed"
+          : isEmbeddedTextRequest || isEmbeddedTextTimelineRequest
+            ? "[Nuvio embedded text] extraction failed"
+            : "[Nuvio TX3G] extraction failed",
         errorCode,
         error && error.message ? error.message : error
       );
@@ -142,9 +161,11 @@ function handleRequest(request, response) {
         errorText: String(
           error && error.message
             ? error.message
-            : error || (isEmbeddedTextRequest || isEmbeddedTextTimelineRequest
-                ? "Embedded text extraction failed"
-                : "TX3G extraction failed")
+            : error || (isBitmapSubtitleRequest
+                ? "Bitmap subtitle extraction failed"
+                : isEmbeddedTextRequest || isEmbeddedTextTimelineRequest
+                  ? "Embedded text extraction failed"
+                  : "TX3G extraction failed")
         )
       });
     });

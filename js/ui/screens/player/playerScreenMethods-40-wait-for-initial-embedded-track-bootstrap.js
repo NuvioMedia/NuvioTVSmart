@@ -113,15 +113,19 @@ export function createPlayerScreenMethods40() {
       this.clearWebOsEmbeddedTextSubtitleOverlay({ dispose: true });
       const hadBitmapSelection = Boolean(this.bitmapSubtitleTrack);
       this.clearBitmapSubtitleOverlay({ dispose: true });
-      if (this.selectedEmbeddedSubtitleTrackIndex < 0) {
-        return;
-      }
-      if (hadBitmapSelection && typeof PlayerController.setWebOsEmbeddedSubtitleTrack === "function") {
-        PlayerController.setWebOsEmbeddedSubtitleTrack(-1);
-      } else if (Environment.isTizen() && typeof PlayerController.setAvPlaySubtitleTrack === "function") {
-        PlayerController.setAvPlaySubtitleTrack(-1);
-      } else if (typeof PlayerController.setWebOsEmbeddedSubtitleTrack === "function") {
-        PlayerController.setWebOsEmbeddedSubtitleTrack(-1);
+      if (hadBitmapSelection) {
+        if (Environment.isTizen()) {
+          PlayerController.setAvPlaySubtitleTrack?.(-1);
+          this.selectedSubtitleTrackIndex = -1;
+        } else {
+          PlayerController.setWebOsEmbeddedSubtitleTrack?.(-1);
+        }
+      } else if (this.selectedEmbeddedSubtitleTrackIndex >= 0) {
+        if (Environment.isTizen() && typeof PlayerController.setAvPlaySubtitleTrack === "function") {
+          PlayerController.setAvPlaySubtitleTrack(-1);
+        } else if (typeof PlayerController.setWebOsEmbeddedSubtitleTrack === "function") {
+          PlayerController.setWebOsEmbeddedSubtitleTrack(-1);
+        }
       }
       this.selectedEmbeddedSubtitleTrackIndex = -1;
     },

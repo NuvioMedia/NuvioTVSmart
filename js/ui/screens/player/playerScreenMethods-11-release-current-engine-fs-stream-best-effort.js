@@ -14,7 +14,7 @@ export function createPlayerScreenMethods11() {
     isEmbeddedTextSubtitleSourceTrack,
     isUnsupportedEmbeddedSubtitleTrack,
     getEmbeddedBitmapSubtitleFormat,
-    canUseWebOsBitmapSubtitles,
+    canUseEmbeddedBitmapSubtitles,
     normalizeTrackLanguageCode,
     getTrackLanguageValue,
     getMeaningfulTrackLabel,
@@ -199,7 +199,7 @@ export function createPlayerScreenMethods11() {
             // Keep WebOS bitmap tracks visible when the local decoder is
             // unavailable so the user sees the reason instead of a missing
             // subtitle entry. Other browser paths retain their existing filter.
-            return Environment.isWebOS() || canUseWebOsBitmapSubtitles();
+            return Environment.isWebOS() || canUseEmbeddedBitmapSubtitles();
           }
           return !isUnsupportedEmbeddedSubtitleTrack(track);
         })
@@ -262,8 +262,10 @@ export function createPlayerScreenMethods11() {
     warmBitmapSubtitleSharedResources() {
       if (
         !this.hasPresentedPlaybackFrame ||
-        !canUseWebOsBitmapSubtitles() ||
-        !this.embeddedSubtitleTracks.some((track) => track.bitmapSubtitle)
+        !canUseEmbeddedBitmapSubtitles() ||
+        !this.embeddedSubtitleTracks.some(
+          (track) => track.bitmapSubtitle && (!Environment.isTizen() || track.bitmapSubtitleFormat === "vobsub")
+        )
       ) {
         return;
       }
