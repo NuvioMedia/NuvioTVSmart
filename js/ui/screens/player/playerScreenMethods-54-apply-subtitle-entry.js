@@ -115,7 +115,9 @@ export function createPlayerScreenMethods54() {
         // the UI entry does not carry embeddedSubtitleTrackIndex. Recover the
         // local metadata here before selecting AVPlay; otherwise the Tizen
         // extractor fallback is never activated for the normal UI path.
-        const tizenEmbeddedTrack = Environment.isTizen() ? this.getEmbeddedSubtitleTrackByNativeIndex(targetTrackIndex) : null;
+        const tizenEmbeddedTrack = Environment.isTizen()
+          ? this.getEmbeddedSubtitleTrackForAvPlayTrack(entry.track || {}, targetTrackIndex)
+          : null;
         const useTizenEmbeddedTextHtmlFallback = isTizenEmbeddedTextSubtitleFallbackTrack(tizenEmbeddedTrack);
         const applied =
           typeof PlayerController.setAvPlaySubtitleTrack === "function"

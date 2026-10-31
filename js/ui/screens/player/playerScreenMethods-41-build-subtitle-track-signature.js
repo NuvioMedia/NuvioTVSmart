@@ -51,9 +51,27 @@ export function createPlayerScreenMethods41() {
         return !embeddedSignatures.has(signature);
       });
     },
+    getEmbeddedSubtitleTrackForAvPlayTrack(track, fallbackIndex = track?.avplayTrackIndex) {
+      const extraInfo = track?.extraInfo && typeof track.extraInfo === "object" ? track.extraInfo : {};
+      const rawTextTrackNumber = extraInfo.track_num ?? extraInfo.trackNumber ?? extraInfo.track_number;
+      const avplayTextTrackNumber =
+        rawTextTrackNumber === null || rawTextTrackNumber === undefined || rawTextTrackNumber === "" ? NaN : Number(rawTextTrackNumber);
+      // AVPlay's TEXT track_num is the container text ordinal. Prefer it over
+      // the exposed-list position: when AVPlay omits a track, the position
+      // shifts and the wrong local metadata would supply the language.
+      const embeddedTrackByTextOrdinal =
+        Number.isInteger(avplayTextTrackNumber) && avplayTextTrackNumber >= 0
+          ? this.getEmbeddedSubtitleTrackByEmbeddedIndex(avplayTextTrackNumber)
+          : null;
+      const targetIndex = Number(fallbackIndex);
+      return embeddedTrackByTextOrdinal || this.getEmbeddedSubtitleTrackByNativeIndex(Number.isFinite(targetIndex) ? targetIndex : -1);
+    },
     mergeAvPlaySubtitleTrackMetadata(track, index) {
       const avplayTrackIndex = Number(track?.avplayTrackIndex);
-      const embeddedTrack = this.getEmbeddedSubtitleTrackByNativeIndex(Number.isFinite(avplayTrackIndex) ? avplayTrackIndex : index);
+      const embeddedTrack = this.getEmbeddedSubtitleTrackForAvPlayTrack(
+        track,
+        Number.isFinite(avplayTrackIndex) ? avplayTrackIndex : index
+      );
       const support = getEmbeddedSubtitleSupportState({
         ...embeddedTrack,
         ...track,
