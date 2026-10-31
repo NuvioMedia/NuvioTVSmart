@@ -92,7 +92,10 @@ export function createPlayerControllerMethods05() {
       this.avplayNativeSubtitleRendering = mode === "native" && applied;
       return applied;
     },
-    trySelectAvPlaySubtitleTrackIndex(trackIndex, { nudge = false, reactivate = false, renderMode = this.avplaySubtitleRenderMode } = {}) {
+    trySelectAvPlaySubtitleTrackIndex(
+      trackIndex,
+      { nudge = false, reactivate = false, renderMode = this.avplaySubtitleRenderMode, keepSilent = false } = {}
+    ) {
       const avplay = this.getAvPlay();
       const targetIndex = Number(trackIndex);
       if (!avplay || typeof avplay.setSelectTrack !== "function" || !Number.isFinite(targetIndex) || targetIndex < 0) {
@@ -114,7 +117,9 @@ export function createPlayerControllerMethods05() {
       // during selection and switch it back to silent immediately afterward.
       // A hidden -> hidden reselect can leave affected TVs reporting the track
       // while never re-arming onsubtitlechange (the callback source for HTML).
-      const preselectSilent = mode === "native";
+      // Bitmap tracks pass keepSilent so AVPlay never flashes its own output
+      // during selection; they own the presentation through the local decoder.
+      const preselectSilent = keepSilent || mode === "native";
       const debugCaptureStartedAt = Number(globalThis.__NUVIO_DEBUG_TIZEN_AVPLAY_STARTED_AT__ || 0);
       this.avplaySubtitleDiagnosticCallbackPendingAt =
         globalThis.__NUVIO_DEBUG_TIZEN_AVPLAY__ === true ? Math.max(Date.now(), debugCaptureStartedAt) : 0;
@@ -177,7 +182,10 @@ export function createPlayerControllerMethods05() {
       });
       return true;
     },
-    retryAvPlaySubtitleTrackSelection(trackIndex, { force = false, nudge = false, renderMode = this.avplaySubtitleRenderMode } = {}) {
+    retryAvPlaySubtitleTrackSelection(
+      trackIndex,
+      { force = false, nudge = false, renderMode = this.avplaySubtitleRenderMode, keepSilent = false } = {}
+    ) {
       if (this.avplaySeekInFlight) {
         return false;
       }
@@ -195,7 +203,8 @@ export function createPlayerControllerMethods05() {
       const attempted = this.trySelectAvPlaySubtitleTrackIndex(canonicalIndex, {
         nudge,
         reactivate: force,
-        renderMode
+        renderMode,
+        keepSilent
       });
       return attempted || this.getCurrentAvPlaySubtitleTrackIndex() === canonicalIndex;
     },

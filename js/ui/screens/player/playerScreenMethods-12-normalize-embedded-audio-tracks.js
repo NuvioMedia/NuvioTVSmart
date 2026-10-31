@@ -11,6 +11,7 @@ export function createPlayerScreenMethods12() {
     cleanDisplayText,
     getTx3gSubtitleSupportMessage,
     getBitmapSubtitleSupportMessage,
+    isBitmapSubtitleSupportReason,
     getAudioTrackSupportState,
     normalizeTrackLanguageCode,
     getUsableAudioTrackLanguageValue,
@@ -118,7 +119,7 @@ export function createPlayerScreenMethods12() {
       }
       if (this.embeddedBitmapSubtitleSupportNotice) {
         notices.push(this.embeddedBitmapSubtitleSupportNotice);
-      } else if (this.embeddedSubtitleTracks.some((track) => ["webos-bitmap", "webos-bitmap-runtime"].includes(track?.unsupportedReason))) {
+      } else if (this.embeddedSubtitleTracks.some((track) => isBitmapSubtitleSupportReason(track?.unsupportedReason))) {
         notices.push(getBitmapSubtitleSupportMessage());
       }
       if (TizenCapabilities.isAdvancedSubtitleStylingLimited()) {

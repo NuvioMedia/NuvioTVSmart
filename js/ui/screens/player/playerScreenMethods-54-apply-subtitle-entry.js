@@ -119,6 +119,17 @@ export function createPlayerScreenMethods54() {
         const tizenEmbeddedTrack = Environment.isTizen()
           ? this.getEmbeddedSubtitleTrackForAvPlayTrack(entry.track || {}, targetTrackIndex)
           : null;
+        // AVPlay selects VobSub but does not draw it. Render this track from the
+        // container with the local bitmap decoder, keeping AVPlay silent.
+        if (
+          Environment.isTizen() &&
+          tizenEmbeddedTrack?.bitmapSubtitleFormat === "vobsub" &&
+          this.applyBitmapEmbeddedSubtitleTrack(tizenEmbeddedTrack, tizenEmbeddedTrack.embeddedTrackIndex, {
+            avplayTrackIndex: targetTrackIndex
+          })
+        ) {
+          return;
+        }
         const useTizenEmbeddedTextHtmlFallback = isTizenEmbeddedTextSubtitleFallbackTrack(tizenEmbeddedTrack);
         const applied =
           typeof PlayerController.setAvPlaySubtitleTrack === "function"
@@ -129,6 +140,7 @@ export function createPlayerScreenMethods54() {
         if (!applied) {
           return;
         }
+        this.clearBitmapSubtitleOverlay({ dispose: true });
         this.selectedSubtitleTrackIndex = Number.isFinite(targetTrackIndex) ? targetTrackIndex : -1;
         this.selectedEmbeddedSubtitleTrackIndex = -1;
         this.selectedAddonSubtitleId = null;

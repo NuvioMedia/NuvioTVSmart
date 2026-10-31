@@ -15,6 +15,7 @@ export function createPlayerScreenMethods49() {
     getBitmapSubtitleFormatLabel,
     getTx3gSubtitleSupportMessage,
     getBitmapSubtitleSupportMessage,
+    isBitmapSubtitleSupportReason,
     isForcedSubtitleTrack,
     isForcedAddonSubtitle,
     getSubtitleEntryLanguageSource,
@@ -78,7 +79,7 @@ export function createPlayerScreenMethods49() {
             metaParts,
             t("player_subtitle_tizen_dash_unsupported", {}, "Subtitle switching for DASH streams may not be supported by this TV.")
           );
-        } else if (entry.unsupportedReason === "webos-bitmap" || entry.unsupportedReason === "webos-bitmap-runtime") {
+        } else if (isBitmapSubtitleSupportReason(entry.unsupportedReason)) {
           pushUniqueText(metaParts, getBitmapSubtitleFormatLabel(track));
           pushUniqueText(metaParts, getBitmapSubtitleSupportMessage());
         }

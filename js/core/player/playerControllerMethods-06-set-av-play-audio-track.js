@@ -159,7 +159,7 @@ export function createPlayerControllerMethods06() {
         // Track switching is still valid without a seek nudge.
       }
     },
-    setAvPlaySubtitleTrack(trackIndex, { renderMode = this.avplaySubtitleRenderMode } = {}) {
+    setAvPlaySubtitleTrack(trackIndex, { renderMode = this.avplaySubtitleRenderMode, keepSilent = false } = {}) {
       if (!this.isUsingAvPlay()) {
         return false;
       }
@@ -172,6 +172,7 @@ export function createPlayerControllerMethods06() {
       const selectionToken = Number(this.avplaySubtitleSelectionToken || 0) + 1;
       this.avplaySubtitleSelectionToken = selectionToken;
       this.avplaySubtitleRenderMode = normalizeAvPlaySubtitleRenderMode(renderMode);
+      this.avplaySubtitleKeepSilent = Boolean(keepSilent);
       // AVPlay can keep reporting the previous TEXT index after subtitles were
       // hidden. Match Android's explicit TEXT re-enable by forcing only the
       // bounded retries that return from Off/an addon to a built-in track.
@@ -247,7 +248,8 @@ export function createPlayerControllerMethods06() {
         if (
           !this.trySelectAvPlaySubtitleTrackIndex(canonicalIndex, {
             reactivate: shouldForceSubtitleReactivation,
-            renderMode: this.avplaySubtitleRenderMode
+            renderMode: this.avplaySubtitleRenderMode,
+            keepSilent: this.avplaySubtitleKeepSilent
           })
         ) {
           throw new Error("setSelectTrack failed");
@@ -278,7 +280,8 @@ export function createPlayerControllerMethods06() {
           }
           this.retryAvPlaySubtitleTrackSelection(canonicalIndex, {
             force: shouldForceSubtitleReactivation,
-            renderMode: this.avplaySubtitleRenderMode
+            renderMode: this.avplaySubtitleRenderMode,
+            keepSilent: this.avplaySubtitleKeepSilent
           });
           this.syncAvPlayTrackInfo({ force: true });
           this.emitVideoEvent("avplaytrackschanged", { playbackEngine: this.playbackEngine });
@@ -307,7 +310,8 @@ export function createPlayerControllerMethods06() {
         if (
           !this.retryAvPlaySubtitleTrackSelection(canonicalIndex, {
             force: pendingReactivation,
-            renderMode: this.avplaySubtitleRenderMode
+            renderMode: this.avplaySubtitleRenderMode,
+            keepSilent: this.avplaySubtitleKeepSilent
           })
         ) {
           throw new Error("setSelectTrack failed");

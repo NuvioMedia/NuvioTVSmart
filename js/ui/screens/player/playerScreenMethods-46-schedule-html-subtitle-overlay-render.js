@@ -70,6 +70,12 @@ export function createPlayerScreenMethods46() {
           ...values
         });
       };
+      // VobSub is drawn by the local bitmap decoder; AVPlay remains selected
+      // only to keep the track state, with its own output muted.
+      if (this.bitmapSubtitleTrack) {
+        logTizenSubtitleRendererDiagnostic("delegated-to-bitmap-decoder");
+        return;
+      }
       // SubRip is rendered from the bounded Matroska extractor below. Ignore a
       // late AVPlay callback only while that HTML overlay is active, so a failed
       // extractor can still fall back to native AVPlay rendering.

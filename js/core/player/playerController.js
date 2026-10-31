@@ -298,6 +298,7 @@ export const PlayerController = {
   avplaySubtitlesSilent: false,
   avplayNativeSubtitleRendering: false,
   avplaySubtitleRenderMode: "native",
+  avplaySubtitleKeepSilent: false,
   avplayExternalSubtitlePath: "",
   avplayExternalSubtitleDelayMs: 0,
   appliedAvPlayExternalSubtitleDelayKey: "",

@@ -189,8 +189,8 @@ export function createPlayerScreenMethods43() {
         this.bitmapSubtitleScratchCanvas = null;
       }
     },
-    markEmbeddedBitmapSubtitleUnsupported(track, reason = "webos-bitmap-runtime") {
-      if (!Environment.isWebOS() || !getEmbeddedBitmapSubtitleFormat(track)) {
+    markEmbeddedBitmapSubtitleUnsupported(track, reason = Environment.isTizen() ? "tizen-bitmap-runtime" : "webos-bitmap-runtime") {
+      if ((!Environment.isWebOS() && !Environment.isTizen()) || !getEmbeddedBitmapSubtitleFormat(track)) {
         return;
       }
       track.supported = false;
