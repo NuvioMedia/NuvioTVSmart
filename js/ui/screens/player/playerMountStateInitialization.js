@@ -38,6 +38,11 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.subtitleAutoSyncLoadedTrackKey = "";
   this.subtitleAutoSyncLoadToken = 0;
   this.subtitleAutoSyncCueFocusIndex = 0;
+  this.automaticSubtitleSyncRunToken = 0;
+  this.automaticSubtitleSyncTimer = null;
+  this.automaticSubtitleSyncStartupKey = "";
+  this.autoSyncedSubtitleUrl = "";
+  this.currentAddonSubtitleSource = null;
   this.subtitleDialogTab = "builtIn";
   this.subtitleDialogIndex = 0;
   this.subtitleLanguageRailIndex = 0;

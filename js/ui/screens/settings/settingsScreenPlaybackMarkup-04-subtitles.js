@@ -18,6 +18,12 @@ export function renderPlaybackSubtitleBody(model) {
     labelForSubtitlePlaybackLanguage,
     renderModeLabel
   } = internals;
+  const autoSyncEnabled = Boolean(model.player.subtitleStyle?.autoSyncEnabled);
+  const autoSyncToleranceMs = Math.trunc(Number(model.player.subtitleStyle?.autoSyncToleranceMs || 0));
+  const autoSyncToleranceValue =
+    autoSyncToleranceMs > 0
+      ? t("autosync_tolerance_value", [autoSyncToleranceMs], `${autoSyncToleranceMs} ms`)
+      : t("autosync_tolerance_off", {}, "Off");
   return `
           <div class="settings-stack">
             ${this.renderActionRow({
@@ -27,6 +33,42 @@ export function renderPlaybackSubtitleBody(model) {
               value: labelForSubtitlePlaybackLanguage(model.player.subtitleLanguage)
             })}
             ${this.renderActionRow({ focusKey: "playback:secondarySubtitleLanguage", title: t("sub_secondary_lang", {}, "Secondary subtitle language"), subtitle: t("sub_secondary_lang_sub", {}, "Fallback language when the preferred language is unavailable"), value: labelForSubtitlePlaybackLanguage(model.player.secondarySubtitleLanguage) })}
+            ${this.renderToggleRow({
+              focusKey: "playback:subtitleAutoSync",
+              title: t("autosync_setting_title", {}, "Auto Sync Subtitles"),
+              subtitle: t(
+                "autosync_setting_description",
+                {},
+                "Match the selected add-on subtitle to the timing of the subtitles embedded in the video."
+              ),
+              checked: autoSyncEnabled
+            })}
+            ${
+              autoSyncEnabled
+                ? `
+                  ${this.renderActionRow({
+                    focusKey: "playback:subtitleAutoSyncTolerance",
+                    title: t("autosync_tolerance_title", {}, "Auto Sync Tolerance"),
+                    subtitle: t(
+                      "autosync_tolerance_description",
+                      {},
+                      "Keep the original timing when the correction needed is this small or smaller."
+                    ),
+                    value: autoSyncToleranceValue
+                  })}
+                  ${this.renderToggleRow({
+                    focusKey: "playback:subtitleAutoSyncThorough",
+                    title: t("autosync_thorough_title", {}, "Thorough Auto Sync Search"),
+                    subtitle: t(
+                      "autosync_thorough_description",
+                      {},
+                      "Keep comparing other subtitles and embedded tracks for a closer match before syncing. When off, the first strong match is used sooner. Only confident matches are ever applied."
+                    ),
+                    checked: model.player.subtitleStyle?.autoSyncThorough !== false
+                  })}
+                `
+                : ""
+            }
             ${this.renderToggleRow({
               focusKey: "playback:useForcedSubtitles",
               title: t("settings.playback.useForcedSubtitles.title", {}, "Use forced subtitles"),

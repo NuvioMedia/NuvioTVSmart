@@ -2843,4 +2843,16 @@
     <string name="mdblist_last_synced">Dernière synchronisation&#160;: %1$s</string>
     <string name="sub_strip_sdh">Retirer les annotations SDH</string>
     <string name="sub_strip_sdh_desc">Masquer les descriptions sonores et les indications de locuteur dans les sous-titres texte</string>
+    <string name="autosync_setting_title">Synchronisation automatique des sous-titres</string>
+    <string name="autosync_setting_description">Aligner le sous-titre d’addon sélectionné sur le minutage des sous-titres intégrés à la vidéo.</string>
+    <string name="autosync_tolerance_title">Tolérance de la synchronisation automatique</string>
+    <string name="autosync_tolerance_description">Conserver le minutage d’origine lorsque la correction nécessaire est inférieure ou égale à cette valeur.</string>
+    <string name="autosync_tolerance_off">Désactivée</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Recherche approfondie de la synchronisation automatique</string>
+    <string name="autosync_thorough_description">Continuer à comparer d’autres sous-titres et pistes intégrées pour trouver une correspondance plus précise avant de synchroniser. Lorsque cette option est désactivée, la première correspondance fiable est utilisée plus tôt. Seules les correspondances fiables sont appliquées.</string>
+    <string name="autosync_toast_failed">Échec de la synchronisation&#160;: la synchronisation automatique n’a pas pu faire correspondre ce sous-titre à la vidéo.</string>
+    <string name="autosync_toast_failed_no_reference">Échec de la synchronisation&#160;: cette vidéo ne contient aucun sous-titre intégré à comparer.</string>
+    <string name="autosync_toast_failed_unsupported">Échec de la synchronisation&#160;: la synchronisation automatique ne prend pas en charge ce format de sous-titres.</string>
+    <string name="autosync_label_synced">Synchronisé automatiquement</string>
 </resources>

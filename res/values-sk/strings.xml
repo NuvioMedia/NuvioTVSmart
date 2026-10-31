@@ -2981,4 +2981,16 @@
     <string name="mdblist_last_synced">Naposledy synchronizované %1$s</string>
     <string name="sub_strip_sdh">Odstrániť SDH titulky</string>
     <string name="sub_strip_sdh_desc">Skryť opisy zvukov a označenia rečníkov z textových titulkov</string>
+    <string name="autosync_setting_title">Automatická synchronizácia titulkov</string>
+    <string name="autosync_setting_description">Prispôsobiť časovanie vybraných titulkov z doplnku podľa titulkov vložených vo videu.</string>
+    <string name="autosync_tolerance_title">Tolerancia automatickej synchronizácie</string>
+    <string name="autosync_tolerance_description">Ponechať pôvodné časovanie, ak je potrebná oprava rovná alebo menšia ako táto hodnota.</string>
+    <string name="autosync_tolerance_off">Vypnuté</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Dôkladné vyhľadávanie automatickej synchronizácie</string>
+    <string name="autosync_thorough_description">Pred synchronizáciou pokračovať v porovnávaní ostatných titulkov a vložených stôp pre presnejšiu zhodu. Keď je možnost vypnutá, prvá silná zhoda sa použije skôr. Použijú sa iba dostatočne spoľahlivé zhody.</string>
+    <string name="autosync_toast_failed">Synchronizácia zlyhala: Automatickej synchronizácii sa nepodarilo priradiť tieto titulky k videu.</string>
+    <string name="autosync_toast_failed_no_reference">Synchronizácia zlyhala: toto video nemá žiadne vložené titulky na porovnanie.</string>
+    <string name="autosync_toast_failed_unsupported">Synchronizácia zlyhala: Automatická synchronizácia nepodporuje tento formát titulkov.</string>
+    <string name="autosync_label_synced">Automaticky synchronizované</string>
 </resources>

@@ -75,6 +75,7 @@ export function createPlayerScreenMethods73() {
         this.subtitleDelayOverlayVisible = false;
         this.subtitleTimingDialogVisible = false;
         this.resetSubtitleAutoSyncState();
+        this.resetAutomaticSubtitleSyncState({ resetStartupKey: true });
         this.pauseOverlayMetaRequestToken = Number(this.pauseOverlayMetaRequestToken || 0) + 1;
         this.nextEpisodeTransitionMeta = null;
         this.streamCandidatesByVideoId?.clear?.();

@@ -685,6 +685,63 @@ function selectTrack(tracks, trackNumber) {
   throw parserError("TRACK_NOT_FOUND", "Requested TX3G track was not found");
 }
 
+function selectTimelineTrack(tracks, trackNumber) {
+  var requested = Math.trunc(Number(trackNumber));
+  if (isFiniteNumber(requested) && requested > 0) {
+    return selectTrack(tracks, requested);
+  }
+  var best = null;
+  tracks.forEach(function (track) {
+    if (!track || track.samples.length < 8) return;
+    if (!best || track.samples.length > best.samples.length) best = track;
+  });
+  if (!best) {
+    throw parserError("TRACK_NOT_FOUND", "No usable TX3G subtitle track was found");
+  }
+  return best;
+}
+
+function buildTx3gTimelinePayload(track) {
+  var timescale = Math.max(1, Number(track.timescale || 1));
+  var cues = [];
+  for (var index = 0; index < track.samples.length; index += 1) {
+    var startUnits = Number(track.starts[index] || 0);
+    var endUnits = Math.max(startUnits + 1, getSampleEnd(track, index));
+    cues.push({
+      startMs: Math.max(0, Math.round((startUnits / timescale) * 1000)),
+      durationMs: Math.max(1, Math.round(((endUnits - startUnits) / timescale) * 1000))
+    });
+  }
+  if (cues.length > 12000) {
+    throw parserError("TIMELINE_TOO_LARGE", "TX3G subtitle timeline exceeds the supported safety limit");
+  }
+  return {
+    returnValue: true,
+    format: "timeline",
+    trackNumber: track.id,
+    codecId: "TX3G",
+    language: track.language || "",
+    name: "",
+    cueCount: cues.length,
+    windowStartSeconds: cues.length ? cues[0].startMs / 1000 : 0,
+    windowEndSeconds: cues.length ? cues[cues.length - 1].startMs / 1000 : 0,
+    cues: cues
+  };
+}
+
+function extractTx3gTimeline(options) {
+  var sourceUrl = String(options && options.url || "").trim();
+  if (!/^https?:\/\//i.test(sourceUrl)) {
+    return Promise.reject(parserError("INVALID_URL", "TX3G source URL is invalid"));
+  }
+  var reader = new RangeReader(sourceUrl);
+  return findMoov(reader).then(function (moov) {
+    var tracks = parseTracks(moov.body);
+    var track = selectTimelineTrack(tracks, options && options.trackNumber);
+    return buildTx3gTimelinePayload(track);
+  });
+}
+
 function extractTx3gWindow(options) {
   var sourceUrl = String(options && options.url || "").trim();
   var trackNumber = Number(options && options.trackNumber);
@@ -771,6 +828,8 @@ function extractTx3gWindow(options) {
 
 module.exports = {
   extractTx3gWindow: extractTx3gWindow,
+  extractTx3gTimeline: extractTx3gTimeline,
+  buildTx3gTimelinePayload: buildTx3gTimelinePayload,
   parseTracks: parseTracks,
   decodeTx3gSample: decodeTx3gSample,
   parserError: parserError

@@ -79,6 +79,7 @@ export function createPlayerScreenMethods54() {
       }
       const selectionToken = Number(this.subtitleSelectionToken || 0) + 1;
       this.subtitleSelectionToken = selectionToken;
+      this.resetAutomaticSubtitleSyncState();
       const previousSubtitleSelectionKey = this.getActiveSubtitleSelectionKey();
 
       const isEmbeddedEntry = Object.prototype.hasOwnProperty.call(entry, "embeddedSubtitleTrackIndex");

@@ -3061,4 +3061,16 @@
     <string name="mdblist_last_synced">Son eşitleme: %1$s</string>
     <string name="sub_strip_sdh">SDH altyazılarını sadeleştir</string>
     <string name="sub_strip_sdh_desc">Metin altyazılarındaki ses betimlemelerini ve konuşmacı etiketlerini gizler</string>
+    <string name="autosync_setting_title">Altyazıları Otomatik Eşitle</string>
+    <string name="autosync_setting_description">Seçilen eklenti altyazısını videoya gömülü altyazıların zamanlamasıyla eşleştirir.</string>
+    <string name="autosync_tolerance_title">Otomatik Eşitleme Toleransı</string>
+    <string name="autosync_tolerance_description">Gereken düzeltme bu değerde veya daha küçük olduğunda orijinal zamanlamayı korur.</string>
+    <string name="autosync_tolerance_off">Kapalı</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Kapsamlı Otomatik Eşitleme Araması</string>
+    <string name="autosync_thorough_description">Eşitlemeden önce daha yakın bir eşleşme için diğer altyazıları ve gömülü parçaları karşılaştırmaya devam eder. Kapalıyken ilk güçlü eşleşme daha hızlı kullanılır. Yalnızca güvenilir eşleşmeler uygulanır.</string>
+    <string name="autosync_toast_failed">Eşitleme başarısız: Otomatik Eşitleme bu altyazıyı video ile eşleştiremedi.</string>
+    <string name="autosync_toast_failed_no_reference">Eşitleme başarısız: Bu videoda karşılaştırılacak gömülü altyazı yok.</string>
+    <string name="autosync_toast_failed_unsupported">Eşitleme başarısız: Otomatik Eşitleme bu altyazı formatını desteklemiyor.</string>
+    <string name="autosync_label_synced">Otomatik eşitlendi</string>
 </resources>
