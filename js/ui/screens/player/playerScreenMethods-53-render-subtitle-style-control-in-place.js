@@ -269,7 +269,7 @@ export function createPlayerScreenMethods53() {
           !Number.isFinite(avplayTrackIndex) ||
           avplayTrackIndex < 0 ||
           typeof PlayerController.setAvPlaySubtitleTrack !== "function" ||
-          !PlayerController.setAvPlaySubtitleTrack(avplayTrackIndex, { renderMode: "html" })
+          !PlayerController.setAvPlaySubtitleTrack(avplayTrackIndex, { renderMode: "html", keepSilent: true })
         ) {
           return false;
         }

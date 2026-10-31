@@ -207,7 +207,9 @@ test("Tizen selects the AVPlay index silently and renders VobSub from the contai
   };
   const applied = context.applyBitmapEmbeddedSubtitleTrack(track, 0, { avplayTrackIndex: 3 });
   assert.equal(applied, true);
-  assert.deepEqual(avplayCalls, [{ trackIndex: 3, options: { renderMode: "html" } }]);
+  assert.deepEqual(avplayCalls, [
+    { trackIndex: 3, options: { renderMode: "html", keepSilent: true } }
+  ]);
   assert.equal(context.bitmapSubtitleTrack, track);
   assert.equal(context.selectedSubtitleTrackIndex, 3);
   assert.equal(context.selectedEmbeddedSubtitleTrackIndex, -1);
