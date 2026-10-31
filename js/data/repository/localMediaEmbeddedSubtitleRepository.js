@@ -106,6 +106,61 @@ async function requestTizenTx3gWindow({ url, trackNumber, startSeconds, endSecon
   return payload || {};
 }
 
+async function requestTizenSubtitleTimeline({ path, url, trackNumber, trackOrdinal }) {
+  const capabilities = TizenCapabilities.get();
+  if (capabilities.tizenVersionKnown && capabilities.tizenMajorVersion < 4) {
+    throw new Error("Tizen subtitle timeline requires Tizen 4.0 or newer");
+  }
+  const service = await withTimeout(
+    TizenEngineFsService.ensureStarted({ purpose: "subtitle" }),
+    REQUEST_TIMEOUT_MS,
+    "Tizen subtitle service start timed out"
+  );
+  if (service?.status !== "success") {
+    throw new Error(service?.detail || "Tizen subtitle service unavailable");
+  }
+
+  const baseUrl = String(TizenEngineFsService.getLocalBaseUrls?.()[0] || "").trim();
+  if (!baseUrl) {
+    throw new Error("Tizen subtitle service URL unavailable");
+  }
+  let endpoint = "";
+  try {
+    const parsed = new URL(baseUrl);
+    parsed.port = String(TIZEN_TX3G_PORT);
+    endpoint = `${parsed.origin}${path}`;
+  } catch (_) {
+    throw new Error("Tizen subtitle service URL unavailable");
+  }
+
+  const query = [`url=${encodeURIComponent(String(url || ""))}`];
+  if (Number.isFinite(Number(trackNumber)) && Number(trackNumber) > 0) {
+    query.push(`trackNumber=${encodeURIComponent(String(trackNumber))}`);
+  }
+  if (Number.isFinite(Number(trackOrdinal)) && Number(trackOrdinal) >= 0) {
+    query.push(`trackOrdinal=${encodeURIComponent(String(trackOrdinal))}`);
+  }
+  const response = await withTimeout(
+    fetch(`${endpoint}?${query.join("&")}`, { method: "GET", cache: "no-store" }),
+    REQUEST_TIMEOUT_MS,
+    "Tizen subtitle timeline request timed out"
+  );
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (_) {
+    payload = null;
+  }
+  if (!response.ok || payload?.returnValue === false) {
+    throw new Error(
+      payload?.errorText ||
+        payload?.errorCode ||
+        `Tizen subtitle timeline request failed with HTTP ${response.status}`
+    );
+  }
+  return payload || {};
+}
+
 async function requestTizenEmbeddedTextWindow({ url, trackOrdinal, startSeconds, endSeconds }) {
   const capabilities = TizenCapabilities.get();
   if (capabilities.tizenVersionKnown && capabilities.tizenMajorVersion < 4) {
@@ -152,6 +207,71 @@ async function requestTizenEmbeddedTextWindow({ url, trackOrdinal, startSeconds,
 }
 
 export const localMediaEmbeddedSubtitleRepository = {
+  async getTimeline({ url, trackNumber, trackOrdinal }) {
+    const targetUrl = String(url || "").trim();
+    const targetTrack = Math.trunc(Number(trackNumber));
+    const targetOrdinal = Math.trunc(Number(trackOrdinal));
+    const hasTrackNumber = Number.isFinite(targetTrack) && targetTrack > 0;
+    const hasTrackOrdinal = Number.isFinite(targetOrdinal) && targetOrdinal >= 0;
+    if (!/^https?:\/\//i.test(targetUrl)) {
+      throw new Error("Invalid embedded subtitle timeline request");
+    }
+
+    const tizenPath = hasTrackOrdinal
+      ? "/embedded-text-timeline"
+      : hasTrackNumber
+        ? "/tx3g-timeline"
+        : "/embedded-text-timeline";
+    let result;
+    try {
+      result = await withTimeout(
+        Platform.isTizen()
+          ? requestTizenSubtitleTimeline({
+              path: tizenPath,
+              url: targetUrl,
+              trackNumber: hasTrackNumber ? targetTrack : undefined,
+              trackOrdinal: hasTrackOrdinal ? targetOrdinal : undefined
+            })
+          : requestWebOsCompanionService({
+              method: "embeddedSubtitleTimeline",
+              parameters: {
+                url: targetUrl,
+                trackNumber: hasTrackNumber ? targetTrack : undefined,
+                trackOrdinal: hasTrackOrdinal ? targetOrdinal : undefined
+              }
+            }),
+        REQUEST_TIMEOUT_MS
+      );
+    } catch (error) {
+      throw createRequestError(error, "Embedded subtitle timeline extraction failed");
+    }
+
+    const payload = result?.payload || result || {};
+    if (payload.returnValue === false) {
+      throw createRequestError(payload, "Embedded subtitle timeline extraction failed");
+    }
+    const cues = (Array.isArray(payload.cues) ? payload.cues : [])
+      .map((cue) => {
+        const startMs = Math.trunc(Number(cue?.startMs));
+        const durationMs = Math.trunc(Number(cue?.durationMs));
+        return {
+          startMs: Number.isFinite(startMs) ? Math.max(0, startMs) : NaN,
+          durationMs: Number.isFinite(durationMs) && durationMs > 0 ? durationMs : null
+        };
+      })
+      .filter((cue) => Number.isFinite(cue.startMs));
+    if (!cues.length) {
+      throw new Error("Embedded subtitle timeline is empty");
+    }
+    return {
+      trackNumber: Math.trunc(Number(payload.trackNumber)) || (hasTrackNumber ? targetTrack : -1),
+      codecId: String(payload.codecId || ""),
+      language: String(payload.language || ""),
+      name: String(payload.name || ""),
+      cueCount: cues.length,
+      cues
+    };
+  },
   async getWindow({
     url,
     trackNumber,

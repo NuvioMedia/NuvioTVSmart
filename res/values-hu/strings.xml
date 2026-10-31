@@ -3234,4 +3234,16 @@
     <string name="mdblist_last_synced">Utolsó szinkronizálás: %1$s</string>
     <string name="sub_strip_sdh">SDH-jelölések eltávolítása</string>
     <string name="sub_strip_sdh_desc">A hanghatások leírásának és a beszélők nevének elrejtése a szöveges feliratokban</string>
+    <string name="autosync_setting_title">Feliratok automatikus időzítése</string>
+    <string name="autosync_setting_description">A bővítményből kiválasztott feliratot a videó beágyazott feliratához időzíti.</string>
+    <string name="autosync_tolerance_title">Automatikus időzítés tűréshatára</string>
+    <string name="autosync_tolerance_description">Az eredeti időzítés megmarad, ha a szükséges korrekció nem nagyobb ennél.</string>
+    <string name="autosync_tolerance_off">Ki</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Alaposabb feliratszinkronizálás</string>
+    <string name="autosync_thorough_description">A pontosabb egyezésért további feliratokat és beágyazott sávokat is összehasonlít. Kikapcsolva hamarabb alkalmazza az első megbízható egyezést. Csak biztos egyezés esetén módosítja az időzítést.</string>
+    <string name="autosync_toast_failed">Nem sikerült a feliratot a videóhoz időzíteni.</string>
+    <string name="autosync_toast_failed_no_reference">Nem sikerült a feliratot időzíteni: a videóban nincs összehasonlítható beágyazott felirat.</string>
+    <string name="autosync_toast_failed_unsupported">Nem sikerült a feliratot időzíteni: ez a feliratformátum nem támogatott.</string>
+    <string name="autosync_label_synced">Automatikusan időzítve</string>
 </resources>

@@ -2,6 +2,7 @@
 
 ### Improvements & Fixes
 
+- Added automatic subtitle synchronization for add-on subtitles on LG webOS and Samsung Tizen, aligned with Android TV AutoSync (#1058) (@WhiteGiso)
 - Snap Home camera and detail-rail scrolling on LG webOS while preserving poster animations and image-loading budgets (#1153) (@malkstar)
 - Stopped Home artwork hydration from running behind an open sidebar on TV, avoiding the menu-open stall (@WhiteGiso)
 

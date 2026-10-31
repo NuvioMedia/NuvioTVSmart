@@ -105,8 +105,37 @@
   padding: min(0.21vw, 4px) min(0.52vw, 10px);
 }
 
+.player-subtitle-option-title-row {
+  display: flex;
+  align-items: center;
+  gap: min(0.42vw, 8px);
+  min-width: 0;
+}
+
+.player-subtitle-autosync-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: min(0.21vw, 4px);
+  min-height: min(1.46vw, 28px);
+  padding: min(0.16vw, 3px) min(0.52vw, 10px);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--player-atv-text-secondary);
+  font-size: min(0.83vw, 16px);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.player-subtitle-autosync-chip svg {
+  width: min(0.63vw, 12px);
+  height: min(0.63vw, 12px);
+  flex: 0 0 auto;
+}
+
 .player-subtitle-modal .player-dialog-item.selected .player-subtitle-language-count,
-.player-subtitle-modal .player-dialog-item.selected .player-subtitle-source-chip {
+.player-subtitle-modal .player-dialog-item.selected .player-subtitle-source-chip,
+.player-subtitle-modal .player-dialog-item.selected .player-subtitle-autosync-chip {
   background: rgba(0, 0, 0, 0.14);
   color: currentColor;
 }

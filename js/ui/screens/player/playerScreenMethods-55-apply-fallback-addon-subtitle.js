@@ -12,7 +12,8 @@ export function createPlayerScreenMethods55() {
     normalizeTrackLanguageCode,
     escapeHtml,
     escapeAttribute,
-    createSubtitleOptionVirtualState
+    createSubtitleOptionVirtualState,
+    t
   } = internals;
 
   return {
@@ -21,6 +22,7 @@ export function createPlayerScreenMethods55() {
       if (!subtitle?.url) {
         return;
       }
+      const startupSelection = Boolean(this.startupSubtitlePreferenceApplying);
       const subtitleId = subtitle.id || subtitle.url || `subtitle-${subtitleIndex}`;
       const isCurrentSelection = () => Number(selectionToken) === Number(this.subtitleSelectionToken);
       if (!isCurrentSelection()) {
@@ -31,6 +33,10 @@ export function createPlayerScreenMethods55() {
       if ((usingAvPlay && Environment.isTizen()) || Environment.isWebOS()) {
         try {
           if (await this.applyTvHtmlAddonSubtitle(subtitle, subtitleIndex, selectionToken)) {
+            this.maybeRunAutomaticSubtitleSync(subtitle, {
+              source: this.currentAddonSubtitleSource,
+              startup: startupSelection
+            });
             return;
           }
         } catch (error) {
@@ -238,11 +244,18 @@ export function createPlayerScreenMethods55() {
       });
     },
     renderSubtitleOptionItemMarkup(item, index, optionKey) {
+      const autoSynced = typeof this.isSubtitleOptionAutoSynced === "function" && this.isSubtitleOptionAutoSynced(item);
+      const autoSyncedChip = autoSynced
+        ? `<span class="player-subtitle-autosync-chip"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>${escapeHtml(t("autosync_label_synced", {}, "Auto synced"))}</span>`
+        : "";
       return `
                 <div class="player-dialog-item focusable${item.selected ? " selected" : ""}${item.disabled ? " disabled" : ""}" role="radio" aria-checked="${item.selected ? "true" : "false"}" data-subtitle-rail="options" data-subtitle-index="${index}" data-subtitle-key="${escapeAttribute(optionKey)}" aria-disabled="${item.disabled ? "true" : "false"}">
                   <div class="player-subtitle-option-copy">
                     <span class="player-subtitle-source-chip">${escapeHtml(item.sourceLabel || "")}</span>
-                    <div class="player-dialog-item-main">${escapeHtml(item.title || "")}</div>
+                    <div class="player-subtitle-option-title-row">
+                      <div class="player-dialog-item-main">${escapeHtml(item.title || "")}</div>
+                      ${autoSyncedChip}
+                    </div>
                     ${item.meta ? `<div class="player-dialog-item-sub">${escapeHtml(item.meta)}</div>` : ""}
                   </div>
                   <div class="player-dialog-item-check">${item.selected ? "&#10003;" : ""}</div>

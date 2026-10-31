@@ -35,6 +35,7 @@ var DEFAULT_TEXT_CUE_DURATION_MS = 5000;
 var MAX_TEXT_CUE_DURATION_MS = 30000;
 var MAX_CONCURRENT_CLUSTER_REQUESTS = 3;
 var MAX_CONCURRENT_CUED_BLOCK_REQUESTS = 6;
+var MAX_TEXT_SUBTITLE_TIMELINE_CUES = 12000;
 var PGS_SYNC_SCAN_BATCH_CUES = 8;
 var PGS_MAX_SYNC_SCAN_CUES = 96;
 var PGS_MAX_SYNC_LOOKBACK_MS = 15 * 60 * 1000;
@@ -792,6 +793,71 @@ function selectTextSubtitleCues(metadata, trackNumber, startMs, endMs) {
   });
   if (previous && startMs - previous.timeMs <= 30000) selected.unshift(previous);
   return selected;
+}
+
+function selectTimelineTextTrack(metadata, trackNumber, trackOrdinal) {
+  var requested = findTextSubtitleTrack(metadata, trackNumber, trackOrdinal);
+  if (requested) return requested;
+  var hasSelector =
+    (Number.isFinite(Math.trunc(Number(trackNumber))) && Math.trunc(Number(trackNumber)) > 0) ||
+    (Number.isFinite(Math.trunc(Number(trackOrdinal))) && Math.trunc(Number(trackOrdinal)) >= 0);
+  if (hasSelector) return null;
+
+  // No explicit track: use the dialogue-dense text track, the same choice
+  // Android's indexed timeline loader makes for its reference track.
+  var best = null;
+  var bestScore = -1;
+  metadata.tracks.filter(isTextSubtitleTrack).forEach(function (track) {
+    var cues = getTrackCues(metadata, track.number);
+    if (cues.length < 8) return;
+    var span = cues[cues.length - 1].timeMs - cues[0].timeMs;
+    if (span < 45000) return;
+    var score = cues.length + Math.min(span / 60000, 60);
+    if (score > bestScore) {
+      best = track;
+      bestScore = score;
+    }
+  });
+  return best;
+}
+
+function buildTextSubtitleTimelinePayload(metadata, track) {
+  var timecodeScaleMs = Number(metadata.timecodeScaleNs || 1000000) / 1000000;
+  var cues = getTrackCues(metadata, track.number)
+    .map(function (cue) {
+      var startMs = Math.max(0, Math.round(Number(cue.timeMs) || 0));
+      var durationTicks = Number(cue.durationTicks);
+      return {
+        startMs: startMs,
+        durationMs:
+          Number.isFinite(durationTicks) && durationTicks > 0
+            ? Math.max(1, Math.round(durationTicks * timecodeScaleMs))
+            : null
+      };
+    })
+    .filter(function (cue) {
+      return Number.isFinite(cue.startMs);
+    })
+    .sort(function (left, right) {
+      return left.startMs - right.startMs;
+    });
+  if (cues.length > MAX_TEXT_SUBTITLE_TIMELINE_CUES) {
+    throw bitmapSubtitleError(
+      "TIMELINE_TOO_LARGE",
+      "Embedded subtitle timeline exceeds the supported safety limit"
+    );
+  }
+  return {
+    format: "timeline",
+    trackNumber: track.number,
+    codecId: track.codecId || "",
+    language: track.language || "",
+    name: track.name || "",
+    cueCount: cues.length,
+    windowStartSeconds: cues.length ? cues[0].startMs / 1000 : 0,
+    windowEndSeconds: cues.length ? cues[cues.length - 1].startMs / 1000 : 0,
+    cues: cues
+  };
 }
 
 function cuePositionKey(cue) {
@@ -2098,6 +2164,25 @@ async function getEmbeddedTextSubtitleWindow(options) {
   }
 }
 
+async function getEmbeddedTextSubtitleTimeline(options) {
+  var mediaUrl = normalizeMediaUrl(options && options.url);
+  var metadata = await loadMetadata(mediaUrl);
+  var track = selectTimelineTextTrack(
+    metadata,
+    options && options.trackNumber,
+    options && options.trackOrdinal
+  );
+  if (!track) {
+    throw bitmapSubtitleError(
+      "TRACK_NOT_FOUND",
+      "No usable embedded text subtitle track was found"
+    );
+  }
+  return Object.assign(buildTextSubtitleTimelinePayload(metadata, track), {
+    returnValue: true
+  });
+}
+
 async function getBitmapSubtitleWindow(options) {
   var mediaUrl = normalizeMediaUrl(options && options.url);
   var trackNumber = Math.trunc(Number(options && options.trackNumber));
@@ -2223,6 +2308,7 @@ module.exports = {
   },
   getBitmapSubtitleWindow: getBitmapSubtitleWindow,
   getEmbeddedTextSubtitleWindow: getEmbeddedTextSubtitleWindow,
+  getEmbeddedTextSubtitleTimeline: getEmbeddedTextSubtitleTimeline,
   prepareBitmapSubtitleSource: prepareBitmapSubtitleSource,
   clearBitmapSubtitleCaches: clearBitmapSubtitleCaches,
   _test: {
@@ -2230,6 +2316,8 @@ module.exports = {
     parseCues: parseCues,
     parseCluster: parseCluster,
     getTrackCues: getTrackCues,
+    selectTimelineTextTrack: selectTimelineTextTrack,
+    buildTextSubtitleTimelinePayload: buildTextSubtitleTimelinePayload,
     loadCueFrames: loadCueFrames,
     requestRange: requestRange,
     cancelRequestContext: cancelRequestContext,

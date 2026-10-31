@@ -199,6 +199,7 @@ export function createPlayerScreenMethods17() {
       this.subtitleDelayOverlayVisible = false;
       this.subtitleTimingDialogVisible = false;
       this.resetSubtitleAutoSyncState();
+      this.resetAutomaticSubtitleSyncState({ resetStartupKey: true });
       this.audioDialogVisible = false;
       this.speedDialogVisible = false;
       this.episodePanelVisible = false;

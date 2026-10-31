@@ -2981,4 +2981,16 @@
     <string name="party_invite_scan">Escaneie com um celular para entrar</string>
     <string name="party_invite_share">Ou compartilhe o código. Seus amigos podem digitá-lo em Watch Party em qualquer app Nuvio.</string>
     <string name="party_invite_qr">QR code de convite da Watch Party</string>
+    <string name="autosync_setting_title">Sincronizar legendas automaticamente</string>
+    <string name="autosync_setting_description">Ajuste a legenda do addon ao tempo das legendas do vídeo.</string>
+    <string name="autosync_tolerance_title">Tolerância da sincronização</string>
+    <string name="autosync_tolerance_description">Mantenha o tempo original quando a correção for igual ou menor que isso.</string>
+    <string name="autosync_tolerance_off">Desativado</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Busca detalhada</string>
+    <string name="autosync_thorough_description">Continue comparando outras legendas e faixas do vídeo para um ajuste mais preciso. Quando desativado, a primeira correspondência forte é usada mais rápido. Só ajustes confiáveis são aplicados.</string>
+    <string name="autosync_toast_failed">Falha na sincronização: não foi possível ajustar esta legenda ao vídeo.</string>
+    <string name="autosync_toast_failed_no_reference">Falha na sincronização: este vídeo não tem legendas internas para comparar.</string>
+    <string name="autosync_toast_failed_unsupported">Falha na sincronização: este formato de legenda não é aceito.</string>
+    <string name="autosync_label_synced">Sincronizado automaticamente</string>
 </resources>

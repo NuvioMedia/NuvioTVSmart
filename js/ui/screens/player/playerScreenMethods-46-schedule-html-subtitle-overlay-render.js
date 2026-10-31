@@ -179,6 +179,12 @@ export function createPlayerScreenMethods46() {
             this.selectedSubtitleTrackIndex = -1;
             this.selectedEmbeddedSubtitleTrackIndex = -1;
             this.selectedManifestSubtitleTrackId = null;
+            this.setAddonSubtitleAutoSyncSource({
+              subtitle,
+              subtitleId,
+              rawBody: raw.body,
+              isAss: true
+            });
             this.invalidateTrackDialogCaches();
             this.renderControlButtons();
             this.renderSubtitleDialog();
@@ -196,6 +202,7 @@ export function createPlayerScreenMethods46() {
             this.selectedSubtitleTrackIndex = -1;
             this.selectedEmbeddedSubtitleTrackIndex = -1;
             this.selectedManifestSubtitleTrackId = null;
+            this.setAddonSubtitleAutoSyncSource({ subtitle, subtitleId, cues: fallbackCues });
             this.renderHtmlSubtitleOverlayCue([]);
             this.scheduleHtmlSubtitleOverlayRender();
             this.invalidateTrackDialogCaches();
@@ -229,6 +236,7 @@ export function createPlayerScreenMethods46() {
           this.selectedSubtitleTrackIndex = -1;
           this.selectedEmbeddedSubtitleTrackIndex = -1;
           this.selectedManifestSubtitleTrackId = null;
+          this.setAddonSubtitleAutoSyncSource({ subtitle, subtitleId, cues, rawBody: raw.body });
           this.renderHtmlSubtitleOverlayCue([]);
           this.scheduleHtmlSubtitleOverlayRender();
           this.invalidateTrackDialogCaches();
@@ -278,6 +286,7 @@ export function createPlayerScreenMethods46() {
       this.selectedSubtitleTrackIndex = -1;
       this.selectedEmbeddedSubtitleTrackIndex = -1;
       this.selectedManifestSubtitleTrackId = null;
+      this.setAddonSubtitleAutoSyncSource({ subtitle, subtitleId, cues, rawBody: text });
       this.renderHtmlSubtitleOverlayCue([]);
       this.scheduleHtmlSubtitleOverlayRender();
       this.invalidateTrackDialogCaches();

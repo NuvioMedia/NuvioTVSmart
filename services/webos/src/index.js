@@ -10,6 +10,7 @@ var SUPABASE_PROXY_PATH = require("./supabaseProxy").SUPABASE_PROXY_PATH;
 var bitmapSubtitles = require("./bitmapSubtitles");
 var getBitmapSubtitleWindow = bitmapSubtitles.getBitmapSubtitleWindow;
 var getEmbeddedTextSubtitleWindow = bitmapSubtitles.getEmbeddedTextSubtitleWindow;
+var getEmbeddedTextSubtitleTimeline = bitmapSubtitles.getEmbeddedTextSubtitleTimeline;
 var prepareBitmapSubtitleSource = bitmapSubtitles.prepareBitmapSubtitleSource;
 
 var RUNTIME_PATH = path.resolve(__dirname, "..", "runtime", "media-http.cjs");
@@ -539,6 +540,33 @@ function registerEmbeddedTextSubtitleCommand() {
           buildErrorPayload(error, {
             embeddedTextSubtitle: true,
             errorCode: String((error && error.code) || "EMBEDDED_TEXT_SUBTITLE_FAILED"),
+            errorDetails: (error && error.details) || null
+          })
+        );
+      });
+  });
+}
+
+function registerEmbeddedTextSubtitleTimelineCommand() {
+  service.register("embeddedSubtitleTimeline", function (message) {
+    var payload = getMessagePayload(message);
+    getEmbeddedTextSubtitleTimeline({
+      url: payload.url,
+      trackNumber: payload.trackNumber,
+      trackOrdinal: payload.trackOrdinal
+    })
+      .then(function (result) {
+        respond(message, Object.assign(buildBasePayload(), result, { returnValue: true }));
+      })
+      .catch(function (error) {
+        if (!error || error.code !== "REQUEST_SUPERSEDED") {
+          console.error("[" + SERVICE_ID + "] embedded text subtitle timeline failed:", error);
+        }
+        respond(
+          message,
+          buildErrorPayload(error, {
+            embeddedTextSubtitle: true,
+            errorCode: String((error && error.code) || "EMBEDDED_TEXT_TIMELINE_FAILED"),
             errorDetails: (error && error.details) || null
           })
         );
@@ -1517,6 +1545,7 @@ registerTracksCommand();
 registerSubtitleTextCommand();
 registerBitmapSubtitleCommand();
 registerEmbeddedTextSubtitleCommand();
+registerEmbeddedTextSubtitleTimelineCommand();
 registerTorrentProxyCommands();
 registerEngineFsDiagnosticCommand();
 

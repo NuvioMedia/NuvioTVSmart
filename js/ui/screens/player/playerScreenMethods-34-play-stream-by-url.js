@@ -190,6 +190,7 @@ export function createPlayerScreenMethods34() {
       this.subtitleDelayOverlayVisible = false;
       this.subtitleTimingDialogVisible = false;
       this.resetSubtitleAutoSyncState();
+      this.resetAutomaticSubtitleSyncState({ resetStartupKey: true });
       this.audioDialogVisible = false;
       this.speedDialogVisible = false;
       if (!preserveWebOsTrackSelections) {

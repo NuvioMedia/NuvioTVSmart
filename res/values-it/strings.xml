@@ -3308,4 +3308,16 @@
     <string name="mdblist_last_synced">Ultima sincronizzazione: %1$s</string>
     <string name="sub_strip_sdh">Rimuovi sottotitoli SDH</string>
     <string name="sub_strip_sdh_desc">Nascondi descrizioni sonore ed etichette dei parlanti dai sottotitoli testuali</string>
+    <string name="autosync_setting_title">Sincronizzazione automatica dei sottotitoli</string>
+    <string name="autosync_setting_description">Abbina la temporizzazione del sottotitolo selezionato da un addon a quella dei sottotitoli incorporati nel video.</string>
+    <string name="autosync_tolerance_title">Tolleranza di sincronizzazione automatica</string>
+    <string name="autosync_tolerance_description">Mantieni la temporizzazione originale quando la correzione necessaria è pari o inferiore a questo valore.</string>
+    <string name="autosync_tolerance_off">Disattivata</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Ricerca approfondita con sincronizzazione automatica</string>
+    <string name="autosync_thorough_description">Continua a confrontare gli altri sottotitoli e le tracce incorporate per trovare una corrispondenza più precisa prima della sincronizzazione. Se disattivata, viene usata prima la prima corrispondenza affidabile. Vengono applicate solo corrispondenze sicure.</string>
+    <string name="autosync_toast_failed">Sincronizzazione non riuscita: Auto Sync non ha trovato una corrispondenza tra questo sottotitolo e il video.</string>
+    <string name="autosync_toast_failed_no_reference">Sincronizzazione non riuscita: questo video non contiene sottotitoli incorporati da confrontare.</string>
+    <string name="autosync_toast_failed_unsupported">Sincronizzazione non riuscita: Auto Sync non supporta questo formato di sottotitoli.</string>
+    <string name="autosync_label_synced">Sincronizzato automaticamente</string>
 </resources>

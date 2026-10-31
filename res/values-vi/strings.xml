@@ -1672,4 +1672,16 @@
     <string name="mdblist_last_synced">Đồng bộ lần cuối %1$s</string>
     <string name="sub_strip_sdh">Loại bỏ chú thích phụ đề</string>
     <string name="sub_strip_sdh_desc">Ẩn các mô tả âm thanh và nhãn người nói khỏi văn bản phụ đề.</string>
+    <string name="autosync_setting_title">Tự động đồng bộ phụ đề</string>
+    <string name="autosync_setting_description">Khớp phụ đề từ tiện ích đã chọn với thời gian của phụ đề nhúng sẵn trong video.</string>
+    <string name="autosync_tolerance_title">Dung sai tự động đồng bộ</string>
+    <string name="autosync_tolerance_description">Giữ nguyên thời gian gốc nếu độ lệch cần hiệu chỉnh nhỏ hơn hoặc bằng giá trị này.</string>
+    <string name="autosync_tolerance_off">Tắt</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Tìm kiếm tự động đồng bộ chính xác</string>
+    <string name="autosync_thorough_description">Tiếp tục so sánh các phụ đề khác với bản nhúng sẵn để tìm bản khớp hơn trước khi đồng bộ. Khi tắt, bản khớp đầu tiên sẽ được dùng ngay. Chỉ bản khớp có độ tin cậy cao mới được áp dụng</string>
+    <string name="autosync_toast_failed">Đồng bộ thất bại: Tự động đồng bộ không thể khớp phụ đề này với video.</string>
+    <string name="autosync_toast_failed_no_reference">Đồng bộ thất bại: video này không có phụ đề nhúng sẵn để so sánh.</string>
+    <string name="autosync_toast_failed_unsupported">Đồng bộ thất bại: Tự động đồng bộ không hỗ trợ đồng bộ định dạng phụ đề này.</string>
+    <string name="autosync_label_synced">Đã tự động đồng bộ</string>
 </resources>

@@ -3088,4 +3088,16 @@
     <string name="mdblist_last_synced">Ostatnia synchronizacja %1$s</string>
     <string name="sub_strip_sdh">Usuń napisy SDH</string>
     <string name="sub_strip_sdh_desc">Ukryj opisy dźwięków i etykiety mówców z napisów tekstowych</string>
+    <string name="autosync_setting_title">Automatyczna synchronizacja napisów</string>
+    <string name="autosync_setting_description">Dopasuj napisy z dodatku do napisów osadzonych w wideo.</string>
+    <string name="autosync_tolerance_title">Tolerancja synchronizacji</string>
+    <string name="autosync_tolerance_description">Zachowaj oryginalny czas, gdy wymagana korekta jest równa lub mniejsza od tej wartości.</string>
+    <string name="autosync_tolerance_off">Wył.</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Dokładne wyszukiwanie synchronizacji</string>
+    <string name="autosync_thorough_description">Porównuj kolejne ścieżki napisów w poszukiwaniu lepszego dopasowania przed synchronizacją. Po wyłączeniu pierwsze silne dopasowanie jest używane szybciej. Tylko pewne dopasowania są stosowane.</string>
+    <string name="autosync_toast_failed">Synchronizacja nie powiodła się: nie udało się dopasować napisów do wideo.</string>
+    <string name="autosync_toast_failed_no_reference">Synchronizacja nie powiodła się: wideo nie zawiera osadzonych napisów do porównania.</string>
+    <string name="autosync_toast_failed_unsupported">Synchronizacja nie powiodła się: ten format napisów nie jest obsługiwany.</string>
+    <string name="autosync_label_synced">Zsynchronizowane automatycznie</string>
 </resources>

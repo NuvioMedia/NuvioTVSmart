@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./settingsScreenContext.js";
+import { AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../../core/player/subtitleAutoSyncEngine.js";
 
 export function registerPlaybackActionsPart02(model) {
   const {
@@ -63,6 +64,32 @@ export function registerPlaybackActionsPart02(model) {
         ...currentSettings.subtitleStyle,
         showOnlyPreferredLanguages: enabled
       }
+    });
+  });
+  this.actionMap.set("playback:subtitleAutoSync", () => {
+    const currentSettings = PlayerSettingsStore.get();
+    updateSubtitleStyle({
+      autoSyncEnabled: !currentSettings.subtitleStyle?.autoSyncEnabled
+    });
+  });
+  this.actionMap.set("playback:subtitleAutoSyncTolerance", () => {
+    const current = Math.trunc(Number(PlayerSettingsStore.get().subtitleStyle?.autoSyncToleranceMs || 0));
+    this.openOptionDialog({
+      title: t("autosync_tolerance_title", {}, "Auto Sync Tolerance"),
+      options: AUTO_SYNC_TOLERANCE_OPTIONS_MS.map((value) => ({
+        id: String(value),
+        label: value > 0 ? t("autosync_tolerance_value", [value], `${value} ms`) : t("autosync_tolerance_off", {}, "Off")
+      })),
+      selectedId: String(current),
+      returnFocusKey: "playback:subtitleAutoSyncTolerance",
+      onSelect: (option) => {
+        updateSubtitleStyle({ autoSyncToleranceMs: Math.trunc(Number(option.id)) || 0 });
+      }
+    });
+  });
+  this.actionMap.set("playback:subtitleAutoSyncThorough", () => {
+    updateSubtitleStyle({
+      autoSyncThorough: PlayerSettingsStore.get().subtitleStyle?.autoSyncThorough === false
     });
   });
   this.actionMap.set("playback:subtitleLanguage", () => {

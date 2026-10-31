@@ -2786,4 +2786,16 @@
     <string name="party_invite_scan">Escanea con un celular para unirte</string>
     <string name="party_invite_share">O comparte el código. Tus amigos pueden ingresarlo en Watch Party en cualquier app de Nuvio.</string>
     <string name="party_invite_qr">Código QR de invitación a la Watch Party</string>
+    <string name="autosync_setting_title">Sincronización automática de subtítulos</string>
+    <string name="autosync_setting_description">Ajusta el subtítulo del addon seleccionado al tiempo de los subtítulos integrados en el video.</string>
+    <string name="autosync_tolerance_title">Tolerancia de sincronización automática</string>
+    <string name="autosync_tolerance_description">Mantiene el tiempo original cuando la corrección necesaria es igual o menor a este valor.</string>
+    <string name="autosync_tolerance_off">Desactivada</string>
+    <string name="autosync_tolerance_value">%1$d ms</string>
+    <string name="autosync_thorough_title">Búsqueda exhaustiva de sincronización automática</string>
+    <string name="autosync_thorough_description">Continúa comparando otros subtítulos y pistas integradas para encontrar una coincidencia más precisa antes de sincronizar. Cuando está desactivada, se utiliza antes la primera coincidencia sólida. Solo se aplican coincidencias confiables.</string>
+    <string name="autosync_toast_failed">Error de sincronización: la sincronización automática no pudo hacer coincidir este subtítulo con el video.</string>
+    <string name="autosync_toast_failed_no_reference">Error de sincronización: este video no tiene subtítulos integrados para comparar.</string>
+    <string name="autosync_toast_failed_unsupported">Error de sincronización: la sincronización automática no admite este formato de subtítulos.</string>
+    <string name="autosync_label_synced">Sincronizado automáticamente</string>
 </resources>
