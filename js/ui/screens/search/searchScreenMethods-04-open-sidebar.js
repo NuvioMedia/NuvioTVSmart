@@ -9,7 +9,6 @@ export function createSearchScreenMethods04() {
     getRootSidebarSelectedNode,
     isRootSidebarNode,
     isPerformanceConstrainedRuntime,
-    getTvRuntimePerformanceProfile,
     setModernSidebarExpanded,
     setLegacySidebarExpanded,
     escapeSelectorValue
@@ -131,7 +130,7 @@ export function createSearchScreenMethods04() {
       }
     },
     shouldUseImmediateFocusScroll() {
-      return isPerformanceConstrainedRuntime() || getTvRuntimePerformanceProfile().platform === "webos";
+      return isPerformanceConstrainedRuntime();
     },
     animateScroll(container, axis, targetValue, duration = 150, options = {}) {
       if (!container) {

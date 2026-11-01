@@ -16,9 +16,7 @@ export function createDiscoverScreenMethods04() {
     shouldUseImmediateFocusScroll() {
       const profile = getTvRuntimePerformanceProfile();
       return (
-        Boolean(profile.isPerformanceConstrained) ||
-        profile.platform === "webos" ||
-        Boolean(globalThis?.document?.body?.classList?.contains("performance-constrained"))
+        Boolean(profile.isPerformanceConstrained) || Boolean(globalThis?.document?.body?.classList?.contains("performance-constrained"))
       );
     },
     restoreFocusedCard({ scrollMode = "center" } = {}) {

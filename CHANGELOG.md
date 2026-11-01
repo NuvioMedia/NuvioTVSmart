@@ -3,7 +3,7 @@
 ### Improvements & Fixes
 
 - Added automatic subtitle synchronization for add-on subtitles on LG webOS and Samsung Tizen, aligned with Android TV AutoSync (#1058) (@WhiteGiso)
-- Snap focus scrolling on LG webOS across Home, Search, Discover and detail rails while preserving poster animations and image-loading budgets (#1153) (@malkstar, @WhiteGiso)
+- Restored animated Home, detail, Search and Discover focus scrolling on LG webOS, aligned with Android TV (@WhiteGiso)
 - Stopped Home artwork hydration from running behind an open sidebar on TV, avoiding the menu-open stall (@WhiteGiso)
 - Aligned the expanded Modern sidebar and both sidebar label styles with the current Android TV metrics (#1099) (@WhiteGiso)
 
