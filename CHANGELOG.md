@@ -6,6 +6,7 @@
 - Restored animated Home, detail, Search and Discover focus scrolling on LG webOS, aligned with Android TV (@WhiteGiso)
 - Returning to Home from Settings, Library and other screens no longer restyles the whole catalog, and opening the sidebar no longer stalls on trailer teardown (@WhiteGiso)
 - Dates and Discover filters now follow the app language (@WhiteGiso)
+- The Home hero and detail trailer button now pick the trailer in the TMDB language before falling back to English, aligned with Android TV (@WhiteGiso)
 - Posters waiting to load or failing no longer show their title as broken-image text, and artwork deep in Home now loads after long scrolls (@WhiteGiso)
 - Stopped Home artwork hydration from running behind an open sidebar on TV, avoiding the menu-open stall (@WhiteGiso)
 - Aligned the expanded Modern sidebar and both sidebar label styles with the current Android TV metrics (#1099) (@WhiteGiso)

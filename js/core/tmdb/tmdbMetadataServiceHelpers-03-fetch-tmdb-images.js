@@ -27,9 +27,15 @@ export async function fetchTmdbImages({ type, tmdbId, apiKey, includeImageLangua
   }
 }
 
-export async function resolveTrailerCandidates({ type, tmdbId, apiKey, language, initialResults = [] }) {
+export async function resolveTrailerCandidates({ type, tmdbId, apiKey, language, initialResults = null }) {
   const preferredLanguage = normalizeTmdbTrailerLanguage(language);
-  const preferred = rankTmdbVideoCandidates(initialResults, preferredLanguage);
+  // Like Android's TrailerService: query the preferred language first and fall
+  // back to English only when it has nothing. Callers without an enrichment
+  // response (Home hero, detail trailer button) used to skip straight to en-US.
+  const localizedResults = Array.isArray(initialResults)
+    ? initialResults
+    : await fetchTmdbVideos({ type, tmdbId, apiKey, language: preferredLanguage });
+  const preferred = rankTmdbVideoCandidates(localizedResults, preferredLanguage);
   if (preferred.length || preferredLanguage === TMDB_TRAILER_FALLBACK_LANGUAGE) {
     return preferred;
   }
