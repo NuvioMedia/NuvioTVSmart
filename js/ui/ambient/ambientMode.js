@@ -1,5 +1,6 @@
 import { isAmbientTrailerPlaying } from "./ambientPlaybackPolicy.js";
 import { WebOSPlayerExtensions } from "../../platform/webos/webosPlayerExtensions.js";
+import { TizenScreenSaver } from "../../platform/tizen/tizenScreenSaver.js";
 import { Platform } from "../../platform/index.js";
 import { AmbientModeStore } from "../../data/local/ambientModeStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
@@ -93,9 +94,16 @@ export const AmbientMode = {
       true
     );
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) this.dismiss();
+      if (document.hidden) {
+        this.dismiss();
+        this.setTizenScreenSaverBlocked(false);
+      }
       this.lastInteraction = now();
     });
+    if (Platform.isTizen())
+      document.addEventListener("nuvio:beforeExitApp", () =>
+        this.setTizenScreenSaverBlocked(false)
+      );
     this.interval = setInterval(() => this.tick(), 1000);
     this.tick();
   },
@@ -110,6 +118,11 @@ export const AmbientMode = {
       return;
     }
     this.swallowedKey = null;
+  },
+  setTizenScreenSaverBlocked(blocked) {
+    if (!Platform.isTizen()) return;
+    if (blocked) TizenScreenSaver.block();
+    else TizenScreenSaver.unblock();
   },
   allowed(settings) {
     const route = Router.getCurrent();
@@ -147,9 +160,11 @@ export const AmbientMode = {
         }, 20000);
     }
     if (!this.allowed(settings)) {
+      this.setTizenScreenSaverBlocked(false);
       if (this.showing) this.dismiss();
       return;
     }
+    this.setTizenScreenSaverBlocked(true);
     if (!this.showing && now() - this.lastInteraction >= settings.timeoutMinutes * 60000)
       this.show();
   },
