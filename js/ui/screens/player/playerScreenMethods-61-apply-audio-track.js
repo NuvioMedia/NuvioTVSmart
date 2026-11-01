@@ -28,6 +28,7 @@ export function createPlayerScreenMethods61() {
         this.failedAutomaticAudioFallbackEntryId = "";
       }
       if (rememberSelection) {
+        this.userAudioTrackSelected = true;
         this.startupAudioFallbackApplied = false;
       }
       if (

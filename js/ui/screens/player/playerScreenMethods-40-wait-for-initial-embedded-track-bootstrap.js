@@ -66,6 +66,9 @@ export function createPlayerScreenMethods40() {
         this.lastEmbeddedTrackProbeUrl = probeUrl;
         this.embeddedSubtitleTracks = canLoadSubtitleTracks ? this.normalizeEmbeddedSubtitleTracks(tracks) : [];
         this.embeddedAudioTracks = canLoadAudioTracks ? this.normalizeEmbeddedAudioTracks(tracks) : [];
+        if (canLoadAudioTracks) {
+          this.maybeReapplyTizenStartupAudioPreference();
+        }
         this.warmBitmapSubtitleSharedResources();
         const selectedEmbeddedSubtitleTrack =
           typeof PlayerController.getSelectedWebOsEmbeddedSubtitleTrackIndex === "function"

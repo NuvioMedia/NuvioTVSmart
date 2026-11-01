@@ -219,6 +219,40 @@ export function createPlayerScreenMethods51() {
       }
       return null;
     },
+    maybeReapplyTizenStartupAudioPreference() {
+      if (
+        !Environment.isTizen() ||
+        !this.startupAudioPreferenceApplied ||
+        this.userAudioTrackSelected ||
+        this.tizenLateAudioPreferenceAttempted ||
+        !this.embeddedAudioTracks?.length
+      ) {
+        return false;
+      }
+      const targets = this.getStartupPreferredAudioLanguageTargets();
+      if (!targets.length) {
+        return false;
+      }
+      this.invalidateTrackDialogCaches();
+      const rememberedOption = this.findRememberedAudioOption();
+      if (rememberedOption?.entry) {
+        if (rememberedOption.entry.selected) {
+          return false;
+        }
+        this.tizenLateAudioPreferenceAttempted = true;
+        this.startupAudioPreferenceApplied = false;
+        return true;
+      }
+      const selectedOption = this.collectAudioOptionItems().find((entry) => entry.selected);
+      if (selectedOption?.supported && targets.some((target) => this.matchesStartupAudioTarget(selectedOption, target))) {
+        return false;
+      }
+      // Metadata arrived after the bounded fallback had already settled startup.
+      // Re-open the normal preference pass once, unless the viewer chose a track.
+      this.tizenLateAudioPreferenceAttempted = true;
+      this.startupAudioPreferenceApplied = false;
+      return true;
+    },
     applyStartupAudioPreference() {
       if (this.startupAudioPreferenceApplied || this.startupAudioPreferenceApplying) {
         return false;
