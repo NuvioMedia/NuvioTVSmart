@@ -68,6 +68,8 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.startupAudioPreferenceApplied = false;
   this.startupAudioPreferenceApplying = false;
   this.startupAudioFallbackApplied = false;
+  this.userAudioTrackSelected = false;
+  this.tizenLateAudioPreferenceAttempted = false;
   this.startupAudioTrackSetSignature = "";
   this.startupAudioPreferenceRetryTimer = null;
   this.startupAudioPreferenceRetryDeadline = 0;

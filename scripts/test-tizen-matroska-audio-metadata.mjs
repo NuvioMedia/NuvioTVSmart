@@ -284,6 +284,75 @@ assert.equal(
   "match by container stream index when AVPlay has no codec"
 );
 PlayerController.getAvPlayAudioTracks = () => nativeTracks;
+screen.invalidateTrackDialogCaches = () => {
+  screen.trackDialogCache = {};
+};
+screen.findRememberedAudioOption = () => null;
+screen.getStartupPreferredAudioLanguageTargets = () => ["en"];
+screen.startupAudioPreferenceApplied = true;
+screen.getAudioEntries = () => [
+  { id: "0", track: merged[0], selected: true, supported: true },
+  { id: "1", track: merged[1], selected: false, supported: true }
+];
+assert.equal(
+  screen.maybeReapplyTizenStartupAudioPreference(),
+  true,
+  "reopen the startup preference when metadata arrives after a fallback"
+);
+assert.equal(screen.startupAudioPreferenceApplied, false);
+screen.startupAudioPreferenceApplied = true;
+assert.equal(
+  screen.maybeReapplyTizenStartupAudioPreference(),
+  false,
+  "retry the late correction only once per stream"
+);
+assert.equal(screen.startupAudioPreferenceApplied, true);
+screen.tizenLateAudioPreferenceAttempted = false;
+screen.userAudioTrackSelected = true;
+assert.equal(
+  screen.maybeReapplyTizenStartupAudioPreference(),
+  false,
+  "never override a manual audio selection"
+);
+assert.equal(screen.startupAudioPreferenceApplied, true);
+screen.userAudioTrackSelected = false;
+screen.tizenLateAudioPreferenceAttempted = false;
+screen.getAudioEntries = () => [
+  { id: "0", track: merged[0], selected: false, supported: true },
+  { id: "1", track: merged[1], selected: true, supported: true }
+];
+assert.equal(
+  screen.maybeReapplyTizenStartupAudioPreference(),
+  false,
+  "leave an already preferred selection untouched"
+);
+assert.equal(screen.startupAudioPreferenceApplied, true);
+screen.findRememberedAudioOption = () => ({ entry: { selected: false } });
+screen.startupAudioPreferenceApplied = true;
+screen.tizenLateAudioPreferenceAttempted = false;
+assert.equal(
+  screen.maybeReapplyTizenStartupAudioPreference(),
+  true,
+  "reopen startup matching when a remembered track was not applied yet"
+);
+assert.equal(screen.startupAudioPreferenceApplied, false);
+screen.findRememberedAudioOption = () => null;
+
+let lateAppliedIndex = -1;
+screen.getAudioEntries = () => [
+  { id: "0", track: merged[0], selected: lateAppliedIndex !== 1, supported: true },
+  { id: "1", track: merged[1], selected: lateAppliedIndex === 1, supported: true }
+];
+screen.applyAudioTrack = (index) => {
+  lateAppliedIndex = index;
+};
+screen.clearStartupAudioPreferenceRetry = () => {};
+screen.isAudioPreferenceDiscoveryPending = () => false;
+screen.startupAudioPreferenceApplied = false;
+assert.equal(screen.applyStartupAudioPreference(), true);
+assert.equal(lateAppliedIndex, 1, "late metadata applies English through the normal startup pass");
+assert.equal(screen.startupAudioPreferenceApplied, true);
+
 screen.embeddedAudioTracks[1].raw = {
   ...screen.embeddedAudioTracks[1].raw,
   containerStreamIndex: 4

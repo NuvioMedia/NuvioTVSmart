@@ -203,6 +203,8 @@ export function createPlayerScreenMethods34() {
         this.startupAudioPreferenceApplied = false;
         this.startupAudioPreferenceApplying = false;
         this.startupAudioFallbackApplied = false;
+        this.userAudioTrackSelected = false;
+        this.tizenLateAudioPreferenceAttempted = false;
         this.startupAudioTrackSetSignature = "";
         this.builtInSubtitleCount = 0;
         this.embeddedSubtitleTracks = [];
