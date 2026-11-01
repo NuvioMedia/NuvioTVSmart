@@ -2,7 +2,7 @@
 import * as internals from "./discoverScreen.js";
 
 export function createDiscoverScreenMethods02() {
-  const { Router, ScreenUtils, catalogRepository, focusWithoutAutoScroll, formatAddonTypeLabel } = internals;
+  const { Router, ScreenUtils, catalogRepository, focusWithoutAutoScroll, formatAddonTypeLabel, formatGenreLabel, t } = internals;
 
   return {
     async reloadItems({ suppressLoadingRender = false, preserveExistingItems = false, partialRender = false } = {}) {
@@ -177,13 +177,13 @@ export function createDiscoverScreenMethods02() {
       if (kind === "catalog") {
         return this.catalogOptions.map((entry) => ({
           value: entry.key,
-          label: entry.catalogName || "Select"
+          label: entry.catalogName || t("discover_select_catalog", {}, "Select")
         }));
       }
       if (kind === "genre") {
         return this.genreOptions.map((value) => ({
           value,
-          label: value
+          label: formatGenreLabel(value)
         }));
       }
       return [];
@@ -231,8 +231,8 @@ export function createDiscoverScreenMethods02() {
     syncRenderedFilterValues() {
       const valueByKind = {
         type: formatAddonTypeLabel(this.selectedType),
-        catalog: this.getSelectedCatalog()?.catalogName || "Select",
-        genre: this.selectedGenre || "Default"
+        catalog: this.getSelectedCatalog()?.catalogName || t("discover_select_catalog", {}, "Select"),
+        genre: formatGenreLabel(this.selectedGenre || "Default")
       };
       Object.entries(valueByKind).forEach(([kind, value]) => {
         const node = this.container?.querySelector(`.library-picker-anchor[data-picker="${kind}"] .library-picker-value`);

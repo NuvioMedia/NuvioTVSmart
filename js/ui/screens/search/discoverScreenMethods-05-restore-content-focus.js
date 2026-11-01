@@ -15,6 +15,8 @@ export function createDiscoverScreenMethods05() {
     setLegacySidebarExpanded,
     DISCOVER_POSTER_PREFETCH_MARGIN_PX,
     formatAddonTypeLabel,
+    formatGenreLabel,
+    t,
     escapeHtml,
     scrollNodeIntoContainerView
   } = internals;
@@ -138,20 +140,28 @@ export function createDiscoverScreenMethods05() {
     renderPickerRowMarkup() {
       const selectedCatalog = this.getSelectedCatalog();
       return [
-        this.renderFilterPicker("type", "Type", formatAddonTypeLabel(this.selectedType)),
-        this.renderFilterPicker("catalog", "Catalog", selectedCatalog?.catalogName || "Select"),
-        this.renderFilterPicker("genre", "Genre", this.selectedGenre || "Default")
+        this.renderFilterPicker("type", t("discover_filter_type", {}, "Type"), formatAddonTypeLabel(this.selectedType)),
+        this.renderFilterPicker(
+          "catalog",
+          t("discover_filter_catalog", {}, "Catalog"),
+          selectedCatalog?.catalogName || t("discover_select_catalog", {}, "Select")
+        ),
+        this.renderFilterPicker("genre", t("discover_filter_genre", {}, "Genre"), formatGenreLabel(this.selectedGenre || "Default"))
       ].join("");
     },
     renderPickerMarkup(kind) {
       if (kind === "type") {
-        return this.renderFilterPicker("type", "Type", formatAddonTypeLabel(this.selectedType));
+        return this.renderFilterPicker("type", t("discover_filter_type", {}, "Type"), formatAddonTypeLabel(this.selectedType));
       }
       if (kind === "catalog") {
-        return this.renderFilterPicker("catalog", "Catalog", this.getSelectedCatalog()?.catalogName || "Select");
+        return this.renderFilterPicker(
+          "catalog",
+          t("discover_filter_catalog", {}, "Catalog"),
+          this.getSelectedCatalog()?.catalogName || t("discover_select_catalog", {}, "Select")
+        );
       }
       if (kind === "genre") {
-        return this.renderFilterPicker("genre", "Genre", this.selectedGenre || "Default");
+        return this.renderFilterPicker("genre", t("discover_filter_genre", {}, "Genre"), formatGenreLabel(this.selectedGenre || "Default"));
       }
       return "";
     },

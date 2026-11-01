@@ -6,6 +6,7 @@ import { watchedItemsRepository } from "../../../data/repository/watchedItemsRep
 import { watchedTitleStateRepository } from "../../../data/repository/watchedTitleStateRepository.js";
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 import { I18n } from "../../../i18n/index.js";
+import { localizedGenreLabel } from "../../../i18n/genreLabels.js";
 import { Platform } from "../../../platform/index.js";
 import { MODERN_HOME_CONSTANTS } from "../home/modernHomeLayout.js";
 import { renderContentFilterPicker } from "../../components/filterPicker.js";
@@ -82,6 +83,7 @@ export {
   DISCOVER_POSTER_PREFETCH_MARGIN_PX,
   toTitleCase,
   formatAddonTypeLabel,
+  formatGenreLabel,
   escapeHtml,
   t,
   groupNodesByOffsetTop,
@@ -110,11 +112,17 @@ function formatAddonTypeLabel(value) {
   const type = String(value || "")
     .trim()
     .toLowerCase();
-  if (!type) return "Movie";
+  if (!type || type === "movie") return t("type_movie", {}, "Movie");
   if (type === "tv") return "TV";
-  if (type === "series") return "Series";
-  if (type === "movie") return "Movie";
+  if (type === "series") return t("type_series", {}, "Series");
   return toTitleCase(type);
+}
+
+// "Default" is the stored genre value; only its label is localized, like Android TV.
+function formatGenreLabel(value) {
+  return value === "Default"
+    ? t("discover_genre_default", {}, "Default")
+    : localizedGenreLabel(value);
 }
 
 function escapeHtml(value) {
