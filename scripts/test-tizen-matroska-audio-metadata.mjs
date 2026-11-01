@@ -57,7 +57,21 @@ assert.equal(
   parseMatroskaAudioTracks(fixture([entry(7, 2, "eng", "A_AC3", "pt-BR")]))[0].language,
   "pt-BR"
 );
-assert.equal(parseMatroskaAudioTracks(fixture([entry(7, 2, null, "A_AC3")]))[0].language, "");
+assert.equal(
+  parseMatroskaAudioTracks(fixture([entry(7, 2, null, "A_AC3", "en-US")]))[0].language,
+  "en-US",
+  "LanguageBCP47 alone is enough"
+);
+assert.equal(
+  parseMatroskaAudioTracks(fixture([entry(7, 2, null, "A_AC3")]))[0].language,
+  "eng",
+  "a missing Language follows the Matroska default"
+);
+assert.equal(
+  parseMatroskaAudioTracks(fixture([entry(7, 2, "und", "A_AC3")]))[0].language,
+  "und",
+  "an explicit und stays undetermined"
+);
 assert.deepEqual(
   parseMatroskaAudioTracks(fixture([czech, czech])),
   [],
@@ -102,7 +116,7 @@ const reply = (
 });
 globalThis.fetch = async (_url, options) => {
   fetches += 1;
-  assert.equal(options.headers.Range, "bytes=0-1048575");
+  assert.equal(options.headers.Range, "bytes=0-65535");
   assert.equal(options.credentials, "omit");
   return reply();
 };
@@ -164,6 +178,66 @@ assert.deepEqual(
   tracks
 );
 
+const serviceWithoutLanguages = [
+  ...tracks.map((track) => ({ ...track, language: "" })),
+  { id: 4, type: "text", language: "", codec: "S_TEXT/UTF8" }
+];
+globalThis.fetch = async (url) =>
+  url.startsWith("http://127.0.0.1:2710/tracks/")
+    ? { ok: true, json: async () => serviceWithoutLanguages }
+    : reply();
+const mergedServiceTracks = await localMediaTracksRepository.getTracks(
+  "https://example.test/service-without-languages.mkv"
+);
+assert.deepEqual(
+  mergedServiceTracks
+    .filter((track) => String(track.type).toLowerCase() === "audio")
+    .map((track) => track.language),
+  ["cze", "eng"],
+  "fill missing service languages from the Matroska header"
+);
+assert.equal(
+  mergedServiceTracks.some((track) => String(track.type).toLowerCase() === "text"),
+  true,
+  "keep the service's subtitle metadata"
+);
+
+const hangingService = new Promise(() => {});
+TizenEngineFsService.ensureStarted = async () => hangingService;
+const originalProbeTimeout = globalThis.setTimeout;
+globalThis.setTimeout = (fn, ms) => originalProbeTimeout(fn, ms === 2000 ? 5 : ms);
+try {
+  globalThis.fetch = async (_url, options) => {
+    assert.equal(options.headers.Range, "bytes=0-65535");
+    return reply();
+  };
+  const hangingTracks = await localMediaTracksRepository.getTracks(
+    "https://example.test/service-hangs.mkv"
+  );
+  assert.deepEqual(
+    hangingTracks.map(({ id, language, containerStreamIndex }) => ({
+      id,
+      language,
+      containerStreamIndex
+    })),
+    [
+      { id: 2, language: "cze", containerStreamIndex: 1 },
+      { id: 3, language: "eng", containerStreamIndex: 2 }
+    ],
+    "the header answers without waiting for a stalled service"
+  );
+  globalThis.fetch = async () => reply(Buffer.from("not an MKV"));
+  assert.deepEqual(
+    await localMediaTracksRepository.getTracks(
+      "https://example.test/service-hangs-without-header.mkv"
+    ),
+    [],
+    "a stalled service cannot hold startup after the header is unusable"
+  );
+} finally {
+  globalThis.setTimeout = originalProbeTimeout;
+}
+
 const { Environment } = await import("../js/platform/environment.js");
 const { PlayerController } = await import("../js/core/player/playerController.js");
 const { createPlayerScreenMethods12 } =
@@ -202,6 +276,14 @@ assert.equal(
   1,
   "select English instead of the first Czech track"
 );
+const noCodecNativeTracks = nativeTracks.map(({ codec, ...track }) => track);
+PlayerController.getAvPlayAudioTracks = () => noCodecNativeTracks;
+assert.equal(
+  screen.getEmbeddedAudioTrackForAvPlayTrack(noCodecNativeTracks[1], 1)?.language,
+  "en",
+  "match by container stream index when AVPlay has no codec"
+);
+PlayerController.getAvPlayAudioTracks = () => nativeTracks;
 screen.embeddedAudioTracks[1].raw = {
   ...screen.embeddedAudioTracks[1].raw,
   containerStreamIndex: 4
@@ -244,22 +326,30 @@ assert.deepEqual(parseMatroskaAudioTracks(indexedHeader), []);
 let ranges = [];
 globalThis.fetch = async (_url, options) => {
   ranges.push(options.headers.Range);
-  return ranges.length === 1
-    ? reply(indexedHeader)
-    : reply(
-        tracksElement,
-        206,
-        `bytes ${absoluteTracks}-${absoluteTracks + tracksElement.length - 1}/5000000`
-      );
+  return ranges.length === 1 ? reply(indexedHeader) : reply(tracksElement, 206, null);
 };
 assert.deepEqual(
   await fetchMatroskaAudioTracks("https://example.test/tracks-after-clusters.mkv"),
   tracks
 );
-assert.deepEqual(ranges, [
-  "bytes=0-1048575",
-  `bytes=${absoluteTracks}-${absoluteTracks + 1048575}`
-]);
+assert.deepEqual(ranges, ["bytes=0-65535", `bytes=${absoluteTracks}-${absoluteTracks + 65535}`]);
+const eightBytePosition = Buffer.alloc(8);
+eightBytePosition.writeUInt32BE(0, 0);
+eightBytePosition.writeUInt32BE(relativeTracks, 4);
+const eightByteSeekHead = element(
+  "114d9b74",
+  element(
+    "4dbb",
+    Buffer.concat([
+      element("53ab", Buffer.from("1654ae6b", "hex")),
+      element("53ac", eightBytePosition)
+    ])
+  )
+);
+assert.equal(
+  matroskaTracksOffset(Buffer.concat([prefix, eightByteSeekHead, clusterHeader])),
+  absoluteTracks
+);
 for (const response of [
   reply(tracksElement, 200),
   reply(tracksElement, 206, "bytes 0-100/5000000"),
@@ -277,7 +367,66 @@ for (const response of [
 for (let end = 0; end < seekHead.length; end++) {
   assert.equal(matroskaTracksOffset(Buffer.concat([prefix, seekHead.subarray(0, end)])), null);
 }
+
+// Attachments or cover art can push Tracks past the first 64 KiB chunk.
+const padding = Buffer.concat(Array.from({ length: 700 }, () => element("ec", Buffer.alloc(100))));
+const largeHeader = Buffer.concat([
+  header,
+  Buffer.from("1853806701ffffffffffffff", "hex"),
+  padding,
+  tracksElement
+]);
+const rangedReply = (body, start, size) => {
+  const slice = body.subarray(start, start + size);
+  return reply(slice, 206, `bytes ${start}-${start + slice.length - 1}/${body.length}`);
+};
+globalThis.fetch = async (_url, options) => {
+  const match = /bytes=(\d+)-(\d+)/.exec(options.headers.Range);
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  return rangedReply(largeHeader, start, end - start + 1);
+};
+assert.deepEqual(
+  await fetchMatroskaAudioTracks("https://example.test/large-header.mkv"),
+  tracks,
+  "read the second chunk when Tracks follows a large attachment"
+);
 globalThis.fetch = originalFetch;
 console.log(
   "Indexed MKV Tracks: bounded offset, Cluster bypass, bad range and invalid target checks passed"
 );
+
+const { createPlayerScreenMethods11 } =
+  await import("../js/ui/screens/player/playerScreenMethods-11-release-current-engine-fs-stream-best-effort.js");
+const gateScreen = {
+  ...createPlayerScreenMethods11(),
+  getTrackProbeUrl: () => "https://example.test/gate.mkv",
+  isCurrentSourceAdaptiveManifest: () => false
+};
+PlayerController.playbackEngine = "tizen-avplay";
+PlayerController.avplayActive = true;
+assert.equal(
+  gateScreen.canDiscoverEmbeddedAudioTracks(),
+  true,
+  "Tizen AVPlay must expose embedded audio metadata"
+);
+PlayerController.avplayActive = false;
+assert.equal(gateScreen.canDiscoverEmbeddedAudioTracks(), false);
+PlayerController.avplayActive = true;
+console.log("Tizen AVPlay audio metadata gate: accepts tizen-avplay and rejects inactive playback");
+
+const originalGetTracks = localMediaTracksRepository.getTracks;
+let prefetchedUrl = "";
+localMediaTracksRepository.getTracks = async (url) => {
+  prefetchedUrl = url;
+  return [];
+};
+const prefetchScreen = {
+  ...gateScreen,
+  getCurrentStreamCandidate: () => ({}),
+  isCurrentSourceLikelyMkv: () => true
+};
+prefetchScreen.prefetchTizenEmbeddedAudioTracks("https://example.test/prefetch.mkv", {});
+assert.equal(prefetchedUrl, "https://example.test/prefetch.mkv");
+localMediaTracksRepository.getTracks = originalGetTracks;
+console.log("Tizen MKV prefetch starts the shared header read before playback");

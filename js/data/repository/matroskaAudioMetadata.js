@@ -1,3 +1,4 @@
+const INITIAL_HEADER_BYTES = 64 * 1024;
 const MAX_HEADER_BYTES = 1024 * 1024;
 const PROBE_TIMEOUT_MS = 3000;
 
@@ -70,8 +71,9 @@ function parseTrackEntries(bytes, element) {
         containerStreamIndex,
         codec: string(0x86),
         name: string(0x536e),
-        // Missing language stays unknown; do not turn untagged tracks into English guesses.
-        language: string(0x22b59d) || string(0x22b59c)
+        // Matroska defaults a missing Language to English, as Media3 and
+        // mkvmerge-based muxers do. An explicit und still stays unknown.
+        language: string(0x22b59d) || string(0x22b59c) || "eng"
       };
     })
     .filter((track) => track.type === "audio");
@@ -131,10 +133,11 @@ export function matroskaTracksOffset(bytes) {
           const fields = children(bytes, seek.start, seek.end);
           const integer = (id) => {
             const field = fields.find((entry) => entry.id === id);
-            if (!field || field.end - field.start > 6) return null;
-            return bytes
+            if (!field || field.end - field.start > 8) return null;
+            const value = bytes
               .subarray(field.start, field.end)
-              .reduce((value, byte) => value * 256 + byte, 0);
+              .reduce((total, byte) => total * 256 + byte, 0);
+            return Number.isSafeInteger(value) ? value : null;
           };
           if (integer(0x53ab) !== 0x1654ae6b) continue;
           const relative = integer(0x53ac);
@@ -159,48 +162,56 @@ export async function fetchMatroskaAudioTracks(url) {
   if (!/^https?:\/\//i.test(url) || typeof AbortController !== "function") return [];
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
-  const readRange = async (offset) => {
+  const readRange = async (offset, size) => {
     let reader;
     try {
       const response = await fetch(url, {
-        headers: { Range: `bytes=${offset}-${offset + MAX_HEADER_BYTES - 1}` },
+        headers: { Range: `bytes=${offset}-${offset + size - 1}` },
         signal: controller.signal,
         credentials: "omit"
       });
       const range = response.headers.get("content-range");
       if (
         response.status !== 206 ||
-        (offset > 0 && !range) ||
         (range && !new RegExp(`^bytes ${offset}-\\d+/\\d+$`, "i").test(range)) ||
         !response.body?.getReader
       )
         return null;
       reader = response.body.getReader();
-      const bytes = new Uint8Array(MAX_HEADER_BYTES);
+      const bytes = new Uint8Array(size);
       let length = 0;
       while (true) {
         const { done, value } = await reader.read();
         if (done) return bytes.subarray(0, length);
-        if (length + value.length > MAX_HEADER_BYTES) return null;
+        if (length + value.length > size) return null;
         bytes.set(value, length);
         length += value.length;
-        if (length === MAX_HEADER_BYTES) return bytes;
+        if (length === size) return bytes;
       }
     } finally {
       if (reader) void reader.cancel().catch(() => {});
     }
   };
   try {
-    const header = await readRange(0);
+    const header = await readRange(0, INITIAL_HEADER_BYTES);
     if (!header) return [];
     const tracks = parseMatroskaAudioTracks(header);
     if (tracks.length) return tracks;
     const offset = matroskaTracksOffset(header);
-    if (offset == null) return [];
-    const indexed = await readRange(offset);
-    // The advertised position must contain Tracks, never another Segment or index.
-    if (!indexed || readElement(indexed, 0, indexed.length).id !== 0x1654ae6b) return [];
-    return parseMatroskaAudioTracks(indexed);
+    if (offset != null) {
+      const indexed = await readRange(offset, INITIAL_HEADER_BYTES);
+      // The advertised position must contain Tracks, never another Segment or index.
+      if (!indexed || readElement(indexed, 0, indexed.length).id !== 0x1654ae6b) return [];
+      return parseMatroskaAudioTracks(indexed);
+    }
+    // Large attachments can push Tracks past the first chunk.
+    if (header.length < INITIAL_HEADER_BYTES) return [];
+    const tail = await readRange(INITIAL_HEADER_BYTES, MAX_HEADER_BYTES - INITIAL_HEADER_BYTES);
+    if (!tail) return [];
+    const combined = new Uint8Array(header.length + tail.length);
+    combined.set(header);
+    combined.set(tail, header.length);
+    return parseMatroskaAudioTracks(combined);
   } catch (_) {
     return [];
   } finally {

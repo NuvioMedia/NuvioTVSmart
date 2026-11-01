@@ -230,7 +230,17 @@ export function createPlayerScreenMethods40() {
       const getCanonicalCodec = (entry) => formatAudioCodecName(getAuthoritativeAudioCodecValue(entry));
       const avplayCodec = getCanonicalCodec(track) || getCanonicalCodec(avplayTracks[avplayOrdinal]);
       if (!avplayCodec) {
-        return null;
+        // Some Tizen streams expose neither a codec nor a language for AVPlay.
+        // The Matroska stream index still identifies the track exactly.
+        const matchedByStreamIndex = (this.embeddedAudioTracks || []).find((entry) => {
+          const raw = entry?.raw || {};
+          const streamIndex = Number(raw.containerStreamIndex ?? raw.index);
+          return Number.isFinite(streamIndex) && streamIndex === avplayTrackIndex;
+        });
+        if (matchedByStreamIndex) {
+          return matchedByStreamIndex;
+        }
+        return avplayTracks.length === (this.embeddedAudioTracks || []).length ? this.embeddedAudioTracks[avplayOrdinal] || null : null;
       }
 
       const avplayCodecTracks = avplayTracks.filter((entry) => getCanonicalCodec(entry) === avplayCodec);

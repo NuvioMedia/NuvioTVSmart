@@ -233,6 +233,7 @@ export function createPlayerScreenMethods34() {
       } else {
         this.engineFsPlaybackToken = "";
         this.stopEngineFsKeepAlive();
+        this.prefetchTizenEmbeddedAudioTracks(streamUrl, sourceCandidate);
       }
       this.embeddedTrackRequestPromise = null;
       this.embeddedTrackRequestUrl = "";
