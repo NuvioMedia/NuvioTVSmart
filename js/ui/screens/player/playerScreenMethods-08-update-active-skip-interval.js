@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { segmentCategory } from "../../../core/player/skipIntervalRules.js";
 
 export function createPlayerScreenMethods08() {
   const { PlayerSettingsStore, findActiveSkipIntervalRule, SKIP_INTRO_COUNTDOWN_MS, clamp, isPlayerDomNodeAttached, getSkipIntervalKey } =
@@ -27,9 +28,31 @@ export function createPlayerScreenMethods08() {
         // skip seek settles. Keep the skipped interval hidden through that churn.
         active = null;
       }
+      if (!active && previous && !suppressionActive) {
+        // A provider swap can shift the same segment by a second (API recap ->
+        // chapter recap). Keep its button alive without resetting the timer.
+        const positionSec = Number(currentTime);
+        const previousIntervalCategory = segmentCategory(previous.type);
+        if (previousIntervalCategory && Number.isFinite(positionSec)) {
+          const replacement = this.skipIntervals.find((interval) => {
+            const start = Number(interval?.startTime);
+            return (
+              segmentCategory(interval?.type) === previousIntervalCategory &&
+              Number.isFinite(start) &&
+              positionSec < start &&
+              start - positionSec <= 2
+            );
+          });
+          if (replacement) {
+            active = replacement;
+          }
+        }
+      }
       const previousKey = getSkipIntervalKey(previous);
       const nextKey = getSkipIntervalKey(active);
-      if (previousKey !== nextKey) {
+      const previousCategory = segmentCategory(previous?.type);
+      const nextCategory = segmentCategory(active?.type);
+      if (previousCategory !== nextCategory) {
         this.skipIntervalDismissed = false;
         this.skipIntroAutoHidden = false;
         this.skipIntroCountdownProgress = 0;

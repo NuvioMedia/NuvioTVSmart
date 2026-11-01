@@ -9,6 +9,7 @@ export function createPlayerScreenMethods32() {
     renderPlayerImageBadgeChip,
     getTrackLanguageLabel,
     PlayerController,
+    PlayerSettingsStore,
     deltaMsForKeyRepeat,
     calculateRemainingPlaybackMilliseconds,
     t,
@@ -23,6 +24,17 @@ export function createPlayerScreenMethods32() {
       if (this.playerRouteActive) MediaServerScrobbleService.update(this.buildScrobbleContext());
       if (this.isExternalFrameMode()) {
         return;
+      }
+      if (
+        PlayerSettingsStore.get().skipIntroEnabled &&
+        !this.chapterSkipIntervalsLoaded &&
+        !this.chaptersFetchInFlight &&
+        this.hasPresentedPlaybackFrame &&
+        Number(this.getPlaybackDurationSeconds() || 0) > 0 &&
+        Date.now() >= Number(this.chapterSkipIntervalsRetryAt || 0)
+      ) {
+        this.chapterSkipIntervalsRetryAt = Date.now() + 5000;
+        void this.refreshChapterSkipIntervals?.();
       }
       syncPlayerPlaybackBadges(this, PlayerController, renderPlayerImageBadgeChip, getTrackLanguageLabel);
       const isLivePlayback = this.isLivePlayback();

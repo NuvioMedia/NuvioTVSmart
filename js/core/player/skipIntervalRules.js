@@ -1,5 +1,28 @@
 const OUTRO_SEGMENT_TYPES = new Set(["outro", "ed", "mixed-ed"]);
 
+export function segmentCategory(type) {
+  switch (
+    String(type || "")
+      .trim()
+      .toLowerCase()
+  ) {
+    case "intro":
+    case "op":
+    case "mixed-op":
+      return "opening";
+    case "outro":
+    case "ed":
+    case "mixed-ed":
+    case "credits":
+    case "ending":
+      return "ending";
+    case "recap":
+      return "recap";
+    default:
+      return null;
+  }
+}
+
 export const POST_OUTRO_AUTOPLAY_GAP_SECONDS = 5;
 export const END_OF_VIDEO_EPSILON_SECONDS = 1;
 

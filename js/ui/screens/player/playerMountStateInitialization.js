@@ -258,6 +258,12 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.parentalGuideLineAnimationFrame = null;
   this.parentalGuideLineProgress = 0;
   this.skipIntervals = [];
+  this.chapterSkipIntervalsLoaded = false;
+  this.chapterSkipIntervalsRetryAt = 0;
+  this.chaptersRequestToken = 0;
+  this.chaptersFetchInFlight = false;
+  this.skipIntroApiIntervals = [];
+  this.skipIntroChapterIntervals = [];
   this.activeSkipInterval = null;
   this.skipIntervalDismissed = false;
   this.skipIntroAutoHidden = false;

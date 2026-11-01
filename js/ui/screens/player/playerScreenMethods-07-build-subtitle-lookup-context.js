@@ -1,6 +1,8 @@
 import { resolveStreamFilename } from "./streamFilename.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { fetchMatroskaChapters, isMatroskaSource } from "../../../data/repository/matroskaChapters.js";
+import { chapterSkipIntervals, mergeSkipIntervals } from "../../../core/player/chapterSkipIntervals.js";
 
 export function createPlayerScreenMethods07() {
   const {
@@ -316,6 +318,38 @@ export function createPlayerScreenMethods07() {
         this.maybeShowParentalGuideOverlay();
       }
     },
+    async fetchPlayerChapters() {
+      if (this.chapterSkipIntervalsLoaded) {
+        return { chapters: [], ready: true };
+      }
+      const playbackUrl = String(this.activePlaybackUrl || "").trim();
+      if (!playbackUrl) {
+        return { chapters: [], ready: false };
+      }
+      const streamCandidate = this.getCurrentStreamCandidate();
+      if (!isMatroskaSource(playbackUrl, streamCandidate)) {
+        return { chapters: [], ready: true };
+      }
+      if (!this.hasPresentedPlaybackFrame || Number(this.getPlaybackDurationSeconds?.() || 0) <= 0) {
+        return { chapters: [], ready: false };
+      }
+      if (this.chaptersFetchInFlight) {
+        return { chapters: [], ready: false };
+      }
+      const requestToken = (this.chaptersRequestToken || 0) + 1;
+      this.chaptersRequestToken = requestToken;
+      this.chaptersFetchInFlight = true;
+      let chapters = [];
+      try {
+        chapters = await fetchMatroskaChapters(playbackUrl, this.getCurrentStreamRequestHeaders(streamCandidate));
+      } finally {
+        this.chaptersFetchInFlight = false;
+      }
+      if (this.chaptersRequestToken !== requestToken) {
+        return { chapters: [], ready: false };
+      }
+      return { chapters, ready: true };
+    },
     async fetchSkipIntervals() {
       const requestToken = (this.skipIntervalsRequestToken || 0) + 1;
       this.skipIntervalsRequestToken = requestToken;
@@ -341,39 +375,75 @@ export function createPlayerScreenMethods07() {
         ? Boolean(identity.imdbId && identity.season && identity.episode)
         : Boolean(identity.imdbId || identity.tmdbId || contentId || videoId);
       if (!hasIdentity) {
+        this.skipIntroApiIntervals = [];
         this.skipIntervals = [];
-        this.activeSkipInterval = null;
-        this.skipIntervalDismissed = false;
-        this.skipIntroAutoHidden = false;
-        this.skipIntroCountdownProgress = 0;
-        this.skipIntroCountdownLastTickAt = Date.now();
-        this.skipIntroCountdownStartAt = 0;
-        this.skipIntroSuppressedKey = "";
-        this.skipIntroSuppressedUntil = 0;
-        this.stopSkipIntroCountdownAnimation();
-        this.renderSkipIntroButton();
+        this.updateActiveSkipInterval(this.getPlaybackCurrentSeconds());
+      }
+      const applyIntervals = () => {
+        if (this.skipIntervalsRequestToken !== requestToken) {
+          return;
+        }
+        this.skipIntervals = mergeSkipIntervals(this.skipIntroApiIntervals, this.skipIntroChapterIntervals, !isSeries);
+        this.updateActiveSkipInterval(this.getPlaybackCurrentSeconds());
+      };
+      const apiPromise = hasIdentity
+        ? (isSeries
+            ? skipIntroRepository.getSkipIntervals(identity.imdbId, identity.season, identity.episode)
+            : skipIntroRepository.getMovieSkipIntervals({
+                imdbId: identity.imdbId,
+                tmdbId: identity.tmdbId,
+                contentId,
+                videoId
+              })
+          ).then((intervals) => {
+            if (this.skipIntervalsRequestToken !== requestToken) {
+              return;
+            }
+            this.skipIntroApiIntervals = Array.isArray(intervals) ? intervals : [];
+            applyIntervals();
+          })
+        : Promise.resolve();
+      const chaptersPromise = this.fetchPlayerChapters().then(({ chapters, ready }) => {
+        if (this.skipIntervalsRequestToken !== requestToken) {
+          return;
+        }
+        if (ready) {
+          this.chapterSkipIntervalsLoaded = true;
+        }
+        if (!chapters.length) {
+          return;
+        }
+        const durationMs = Math.round(Number(this.getPlaybackDurationSeconds() || 0) * 1000);
+        this.skipIntroChapterIntervals = chapterSkipIntervals(chapters, durationMs);
+        if (this.skipIntroChapterIntervals.length) {
+          applyIntervals();
+        }
+      });
+      await Promise.all([apiPromise, chaptersPromise]);
+    },
+    async refreshChapterSkipIntervals() {
+      if (!PlayerSettingsStore.get().skipIntroEnabled || this.chapterSkipIntervalsLoaded || this.chaptersFetchInFlight) {
         return;
       }
-      const intervals = isSeries
-        ? await skipIntroRepository.getSkipIntervals(identity.imdbId, identity.season, identity.episode)
-        : await skipIntroRepository.getMovieSkipIntervals({
-            imdbId: identity.imdbId,
-            tmdbId: identity.tmdbId,
-            contentId,
-            videoId
-          });
-      if (this.skipIntervalsRequestToken !== requestToken) {
+      const playbackUrl = String(this.activePlaybackUrl || "").trim();
+      const { chapters, ready } = await this.fetchPlayerChapters();
+      if (playbackUrl !== String(this.activePlaybackUrl || "").trim()) {
         return;
       }
-      this.skipIntervals = Array.isArray(intervals) ? intervals : [];
-      this.skipIntervalDismissed = false;
-      this.skipIntroAutoHidden = false;
-      this.skipIntroCountdownProgress = 0;
-      this.skipIntroCountdownLastTickAt = Date.now();
-      this.skipIntroCountdownStartAt = 0;
-      this.skipIntroSuppressedKey = "";
-      this.skipIntroSuppressedUntil = 0;
-      this.stopSkipIntroCountdownAnimation();
+      if (ready) {
+        this.chapterSkipIntervalsLoaded = true;
+      }
+      if (!chapters.length) {
+        return;
+      }
+      const durationMs = Math.round(Number(this.getPlaybackDurationSeconds() || 0) * 1000);
+      const chapterIntervals = chapterSkipIntervals(chapters, durationMs);
+      if (!chapterIntervals.length) {
+        return;
+      }
+      const isSeries = isSeriesItemType(this.buildPlaybackIdentityContext().itemType);
+      this.skipIntroChapterIntervals = chapterIntervals;
+      this.skipIntervals = mergeSkipIntervals(this.skipIntroApiIntervals, this.skipIntroChapterIntervals, !isSeries);
       this.updateActiveSkipInterval(this.getPlaybackCurrentSeconds());
     }
   };
