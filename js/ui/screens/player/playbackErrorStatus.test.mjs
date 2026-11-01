@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 const { PlayerController } = await import("../../../core/player/playerController.js");
+const { Platform } = await import("../../../platform/index.js");
 const { createPlayerScreenMethods16 } =
   await import("./playerScreenMethods-16-refresh-loading-overlay-presentation.js");
 const { createPlayerScreenMethods17 } =
@@ -114,6 +115,17 @@ test("HTTP explanation ranges match Android TV, including uncommon 4xx and 5xx",
   }
   for (const status of [0, 200, 399, 600])
     assert.equal(screen.getHttpPlaybackErrorMessage(status), "");
+});
+
+test("Tizen relies on the playback proxy for declared request headers", () => {
+  globalThis.__NUVIO_PLATFORM__ = "tizen";
+  Platform.current = null;
+  try {
+    assert.equal(screen.getWebHeaderRestrictedStreamMessage(candidate), "");
+  } finally {
+    delete globalThis.__NUVIO_PLATFORM__;
+    Platform.current = null;
+  }
 });
 
 test("production HLS diagnostic preserves captured text and structured response codes", () => {
