@@ -73,6 +73,29 @@ const APP_VERSION = typeof __NUVIO_APP_VERSION__ !== "undefined" ? __NUVIO_APP_V
 const UPDATE_DISMISSED_TAG_KEY = "app_update_dismissed_tag";
 const UPDATE_ROUTE_WAIT_TIMEOUT_MS = 60_000;
 
+// Settings icons are Material Icons ligatures from Google Fonts. The font only
+// downloads on first use, so the first Settings open painted "grid_view",
+// "palette"... as text. Fetch it at startup and keep ligatures hidden until it
+// is ready; after 3 s (offline) the names show again as before.
+function preloadMaterialIconFont() {
+  const root = document.documentElement;
+  const markReady = () => root.classList.add("material-icons-ready");
+  const timer = setTimeout(markReady, 3000);
+  try {
+    Promise.resolve(document.fonts?.load?.('24px "Material Icons"', "home"))
+      .then((faces) => {
+        if (Array.isArray(faces) && faces.length) {
+          clearTimeout(timer);
+          markReady();
+        }
+      })
+      .catch(() => {});
+  } catch (_) {
+    clearTimeout(timer);
+    markReady();
+  }
+}
+
 function markBootStage(stage) {
   const guard = globalThis.NuvioBootGuard;
   if (guard && typeof guard.stage === "function") {
@@ -594,6 +617,7 @@ async function bootstrapApp() {
   PlayerController.init();
 
   installCustomPosterFallback();
+  preloadMaterialIconFont();
   installWebOsImgurImageFallback();
   MediaServerSyncService.start();
   AmbientMode.start();

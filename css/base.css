@@ -124,3 +124,11 @@ select:focus,
 a:focus {
   outline: none !important;
 }
+
+/* Hide icon ligature names until the Material Icons font is ready (app.js). */
+html:not(.material-icons-ready) .material-icons,
+html:not(.material-icons-ready) .root-sidebar-icon-material,
+html:not(.material-icons-ready) .settings-nav-icon-material,
+html:not(.material-icons-ready) .settings-row-leading-icon {
+  visibility: hidden;
+}
