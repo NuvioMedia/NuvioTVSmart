@@ -130,9 +130,9 @@ export function createHomeScreenMethods30() {
         this.container.style.right = "0";
         this.container.style.bottom = "0";
         this.container.style.left = "0";
-        this.container.style.display = "none";
-        this.container.style.visibility = "hidden";
-        this.container.style.pointerEvents = "none";
+        // The home-dom-preserved class hides the layer (content-visibility or
+        // display:none). Inline visibility/pointer-events are inherited, so
+        // toggling them restyled every card on return (~1 s on webOS).
         this.container.classList.add("home-dom-preserved");
         this.homeDomPreserved = true;
       } else {

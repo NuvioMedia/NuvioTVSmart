@@ -187,11 +187,9 @@ export function createHomeScreenMethods13() {
         }
         target.classList.remove("is-expanded", "is-trailer-active", "is-expanded-backdrop-ready");
         const trailerLayer = target.querySelector(".home-poster-trailer-layer");
-        if (this.shouldUseImmediateFocusScroll()) {
-          this.scheduleTrailerLayerCleanup(trailerLayer);
-        } else {
-          this.clearTrailerLayer(trailerLayer);
-        }
+        // Tearing down a YouTube frame blocks the main thread for ~0.4s on TVs;
+        // pause and hide now, destroy after the collapse/sidebar animation.
+        this.scheduleTrailerLayerCleanup(trailerLayer);
         if (instant && target instanceof HTMLElement) {
           void target.offsetWidth;
           requestAnimationFrame(() => {
@@ -206,11 +204,7 @@ export function createHomeScreenMethods13() {
       });
       if (!preserveHeroMedia) {
         const heroLayer = this.container?.querySelector(".home-hero-trailer-layer");
-        if (this.shouldUseImmediateFocusScroll()) {
-          this.scheduleTrailerLayerCleanup(heroLayer);
-        } else {
-          this.clearTrailerLayer(heroLayer);
-        }
+        this.scheduleTrailerLayerCleanup(heroLayer);
         this.setHeroTrailerActive(false);
         this.heroTrailerPlaybackState = null;
       }

@@ -224,7 +224,9 @@ export const ThemeManager = {
       "--app-font-family",
       FONT_STACKS[String(theme.fontFamily || "INTER").toUpperCase()] || FONT_STACKS.INTER
     );
-    document.documentElement.dataset.nuvioTheme = themeName;
+    if (document.documentElement.dataset.nuvioTheme !== themeName) {
+      document.documentElement.dataset.nuvioTheme = themeName;
+    }
     syncBrandWordmarks(themeName);
     syncLoadingIndicatorPalette(colors);
     document.documentElement.style.setProperty("color-scheme", "dark");
