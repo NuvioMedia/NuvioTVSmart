@@ -27,6 +27,11 @@ const STARTUP_DIAGNOSTIC_EVENTS = new Set([
   "service request success",
   "service request failed"
 ]);
+const EXPECTED_STARTUP_EVENTS = new Set([
+  "ensure existing service unavailable",
+  "wrt service API unavailable",
+  "launcher attempt failed"
+]);
 const lastStartupDiagnostic = new Map();
 let startPromise = null;
 
@@ -58,7 +63,14 @@ function diagnostic(event, details) {
     }
     if (lastStartupDiagnostic.get(event) === serializedDetails) return;
     lastStartupDiagnostic.set(event, serializedDetails);
-    const logger = isFailure ? console.error : isWarning ? console.warn : console.log;
+    // A miss in the fallback chain is expected: only the final startup
+    // failure should reach the Console as an error.
+    const logger =
+      isFailure && !EXPECTED_STARTUP_EVENTS.has(event)
+        ? console.error
+        : isWarning
+          ? console.warn
+          : console.log;
     if (typeof logger !== "function") return;
     logger.call(console, `[Nuvio Tizen PluginService] ${event} ${serializedDetails}`);
   } catch (_) {
