@@ -264,9 +264,17 @@
 }
 
 .library-grid-card.focused .library-grid-poster {
-  border-color: var(--focus-color);
-  box-shadow: none; /* Android TV uses the inside focus border, not an outer halo. */
   background-color: var(--focus-bg);
+}
+
+/* Android TV uses the inside focus border, not an outer halo. Artwork carries
+   the ring itself; the placeholder keeps it with an inset shadow. */
+.library-grid-card.focused .library-grid-poster-image {
+  border: 4px solid var(--focus-color);
+}
+
+.library-grid-card.focused .library-grid-poster.placeholder {
+  box-shadow: inset 0 0 0 4px var(--focus-color);
 }
 
 .library-grid-poster {
@@ -276,17 +284,25 @@
   height: auto;
   aspect-ratio: 2 / 3;
   border-radius: var(--library-poster-radius, 24px);
-  border: 4px solid transparent;
-  background: var(--card-bg) center center / cover no-repeat;
-  background-origin: border-box;
-  background-clip: border-box;
-  transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease;
+  background: var(--card-bg);
 }
 
-.library-grid-poster.placeholder {
-  background: var(--card-bg);
+/* Absolutely positioned because Tizen 5's aspect-ratio fallback leaves the
+   poster with a zero-height content box; an in-flow image would collapse.
+   Offsets resolve against the padding box, so the artwork fills the 2:3 card
+   and keeps Android TV's ContentScale.Crop framing. */
+.library-grid-poster-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
 }
 
 .library-grid-title {

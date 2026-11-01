@@ -374,7 +374,7 @@
   /* Tizen 5 has no aspect-ratio; preserve the 2:3 poster box after expansion. */
   height: 0;
   aspect-ratio: auto;
-  padding-bottom: calc(150% - 8px);
+  padding-bottom: 150%;
 }
 
 .no-aspect-ratio .home-screen-shell .home-poster-frame,
