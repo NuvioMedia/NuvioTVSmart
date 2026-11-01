@@ -52,12 +52,25 @@ const bundle = await build({
 let clock = 0,
   route = "home",
   screen = {},
-  started = 0;
+  started = 0,
+  screenSaverBlocked = false,
+  screenSaverCalls = 0;
 const classes = () => ({ contains: () => false, add() {}, remove() {} });
 const fixtures = {
   Router: { getCurrent: () => route, getCurrentScreen: () => screen },
   ProfileManager: { getActiveProfileId: () => "1" },
   AmbientModeStore: { get: () => ({ enabled: true, timeoutMinutes: 1 }) },
+  Platform: { isTizen: () => true, isWebOS: () => false },
+  TizenScreenSaver: {
+    block() {
+      if (!screenSaverBlocked) screenSaverCalls++;
+      screenSaverBlocked = true;
+    },
+    unblock() {
+      if (screenSaverBlocked) screenSaverCalls++;
+      screenSaverBlocked = false;
+    }
+  },
   ScreenUtils: { indexFocusables() {} },
   DebridSettingsStore: { get: () => ({}) },
   StreamBadgeSettingsStore: { snapshot: () => ({}) },
@@ -84,6 +97,11 @@ ambient.show = () => {
 };
 ambient.signature = JSON.stringify(["1", fixtures.AmbientModeStore.get()]);
 ambient.tick();
+assert.equal(
+  screenSaverBlocked,
+  true,
+  "ambient keeps the Tizen screensaver off before the timeout"
+);
 clock = 61000;
 screen = {
   isTrailerPlaying: true,
@@ -91,6 +109,7 @@ screen = {
 };
 ambient.tick();
 assert.equal(started, 0);
+assert.equal(screenSaverBlocked, false, "trailer playback restores the Tizen screensaver");
 clock = 120000;
 ambient.tick();
 assert.equal(started, 0);
@@ -98,6 +117,7 @@ screen = {};
 clock = 121000;
 ambient.tick();
 assert.equal(started, 0);
+assert.equal(screenSaverBlocked, true, "idle screen blocks the Tizen screensaver again");
 clock = 180999;
 ambient.tick();
 assert.equal(started, 0);
@@ -107,6 +127,7 @@ assert.equal(started, 1);
 route = "detail";
 ambient.tick();
 assert.equal(started, 1, "route changes reset idle");
+assert.equal(screenSaverCalls, 3, "screensaver state only changes when needed");
 assert.equal(
   api.isAmbientTrailerPlaying({
     isTrailerPlaying: true,

@@ -56,7 +56,8 @@ for (const nativeAbort of [false, true]) {
       dispatchEvent() {}
     },
     CustomEvent: Event,
-    Platform: { isWebOS: () => false },
+    Platform: { isWebOS: () => false, isTizen: () => false },
+    TizenScreenSaver: { block() {}, unblock() {} },
     isAmbientTrailerPlaying: () => false,
     Router: { getCurrent: () => "home", getCurrentScreen: () => screen },
     ProfileManager: { getActiveProfileId: () => "1" },
