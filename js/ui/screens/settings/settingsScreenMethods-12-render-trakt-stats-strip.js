@@ -197,7 +197,7 @@ export function createSettingsScreenMethods12() {
       if (section.id === "advanced") return this.renderAdvancedSection(model);
       return this.renderAboutSection(model);
     },
-    async render({ refreshModel = true } = {}) {
+    async render({ refreshModel = true, skipUnchangedContent = false } = {}) {
       if (refreshModel || !this.model) {
         this.model = await this.collectModel();
       }
@@ -231,11 +231,9 @@ export function createSettingsScreenMethods12() {
         const enterClass = ScreenUtils.routeEnterClass(this, this.settingsRouteEnterPending, " settings-route-enter");
         shell.classList.toggle("settings-route-enter", enterClass === " settings-route-enter");
         shell.classList.toggle("tizen-fade-enter", enterClass === " tizen-fade-enter");
-        if (enterClass === " settings-route-enter") {
-          // Restart the enter animation. Skipped on fast-path runtimes: the
-          // read forces a sync layout on every settings open.
-          void shell.offsetWidth;
-        }
+        // No reflow to restart the enter animation: cleanup empties the
+        // container, so the shell is new here and its animation starts on the
+        // first style pass. The forced layout cost every settings open.
       }
 
       const rootSidebarSlot = this.container.querySelector("[data-settings-root-sidebar]");
@@ -282,19 +280,32 @@ export function createSettingsScreenMethods12() {
       updateSettingsScrollIndicatorsSoon(navSlot);
 
       const sectionChanged = this.renderedSectionId !== section.id;
-      const previousScrollState = !sectionChanged ? captureSettingsScrollState(contentSlot) : null;
       this.renderedSectionId = section.id;
       if (contentSlot) {
-        contentSlot.innerHTML = this.renderSection(section, this.model);
-        if (previousScrollState) {
-          restoreSettingsScrollState(contentSlot, previousScrollState);
-        }
-        if (sectionChanged) {
-          contentSlot.classList.remove("is-section-transitioning");
-          void contentSlot.offsetWidth;
-          contentSlot.classList.add("is-section-transitioning");
-        } else {
-          contentSlot.classList.remove("is-section-transitioning");
+        // Always build the markup: it also registers the section's actions.
+        const sectionHtml = this.renderSection(section, this.model);
+        const hadContent = Boolean(contentSlot.firstElementChild);
+        // The mount-time background refresh usually yields the same section;
+        // rebuilding it only re-ran the scroll capture and a full restyle.
+        const contentUnchanged = skipUnchangedContent && hadContent && !sectionChanged && this.renderedSectionHtml === sectionHtml;
+        if (!contentUnchanged) {
+          // A freshly mounted slot has no scroll position to keep.
+          const previousScrollState = !sectionChanged && hadContent ? captureSettingsScrollState(contentSlot) : null;
+          contentSlot.innerHTML = sectionHtml;
+          this.renderedSectionHtml = sectionHtml;
+          if (previousScrollState) {
+            restoreSettingsScrollState(contentSlot, previousScrollState);
+          }
+          if (sectionChanged) {
+            contentSlot.classList.remove("is-section-transitioning");
+            if (hadContent) {
+              // Restart the transition on reused content; new content animates anyway.
+              void contentSlot.offsetWidth;
+            }
+            contentSlot.classList.add("is-section-transitioning");
+          } else {
+            contentSlot.classList.remove("is-section-transitioning");
+          }
         }
       }
 

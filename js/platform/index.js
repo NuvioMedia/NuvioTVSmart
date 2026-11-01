@@ -8,6 +8,8 @@ const ADAPTERS = {
   tizen: tizenAdapter
 };
 
+let cachedWebOsMajorVersion = null;
+
 function parseWebOsMajorVersion() {
   const candidates = [
     String(globalThis.PalmSystem?.deviceInfo || ""),
@@ -110,7 +112,12 @@ export const Platform = {
     if (!this.isWebOS()) {
       return 0;
     }
-    return parseWebOsMajorVersion();
+    // PalmSystem.deviceInfo is a native bridge call (~6 ms on a G5) and the
+    // firmware cannot change while the app runs.
+    if (cachedWebOsMajorVersion === null) {
+      cachedWebOsMajorVersion = parseWebOsMajorVersion();
+    }
+    return cachedWebOsMajorVersion;
   },
 
   isTizen() {

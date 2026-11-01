@@ -158,7 +158,7 @@ export function createSettingsScreenMethods01() {
           this.sidebarProfile = sidebarProfile;
         }
         this.model = model;
-        await this.render({ refreshModel: false });
+        await this.render({ refreshModel: false, skipUnchangedContent: true });
       })().catch((error) => {
         if (this.isMounted && mountToken === this.settingsMountToken && Router.getCurrent() === "settings") {
           console.warn("Settings background model refresh failed", error);
