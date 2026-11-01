@@ -1,19 +1,26 @@
 ## Unreleased
 
+## 1.3.0
+
 ### Improvements & Fixes
 
 - Added automatic subtitle synchronization for add-on subtitles on LG webOS and Samsung Tizen, aligned with Android TV AutoSync (#1058) (@WhiteGiso)
+- Added skip intervals derived from Matroska chapters (#1189) (@WhiteGiso)
+- Added Android TV's "Always Backdrop with Logo for Landscape Posters" layout option, synced with the profile (@WhiteGiso)
+- Added Hebrew translations and fixed Hebrew P2P consent line breaks (@haveAnIssue, @WhiteGiso)
+- Media servers now list their streams instead of "No streams found", negotiate native TV formats and recover failed direct play (#1180, #1183) (@jaydeep-pipaliya, @WhiteGiso)
+- Improved Samsung Tizen playback: preferred audio and subtitle labels from MKV metadata, late audio-preference reapply, AVPlay track alignment, locally rendered embedded VobSub subtitles and no header warnings on the playback proxy path (#1127, #1128, #1163, #884, #1093) (@WhiteGiso)
+- Kept ambient mode above the Tizen screensaver and supported Tizen engines without AbortController (#1195, #1174) (@WhiteGiso)
 - Restored animated Home, detail, Search and Discover focus scrolling on LG webOS, aligned with Android TV (@WhiteGiso)
-- Returning to Home from Settings, Library and other screens no longer restyles the whole catalog, and opening the sidebar no longer stalls on trailer teardown (@WhiteGiso)
-- Opening Settings from Home is faster: Home artwork is released after the route change and Settings no longer forces extra layouts or a duplicate content rebuild (@WhiteGiso)
-- Dates and Discover filters now follow the app language (@WhiteGiso)
+- Made returning to Home, opening Settings and opening the sidebar faster and smoother on TV (#1186) (@WhiteGiso)
+- Choosing Home from the menu on another screen now lands on Home with the menu closed, aligned with Android TV (@WhiteGiso)
+- Home artwork now loads after long scrolls, and pending or failed posters show the card surface instead of their title as text (@WhiteGiso)
+- Supplied landscape artwork keeps its own branding without a duplicate title overlay (#1178) (@WhiteGiso)
 - The Home hero and detail trailer button now pick the trailer in the TMDB language before falling back to English, aligned with Android TV (@WhiteGiso)
-- Added Android TV's "Always Backdrop with Logo for Landscape Posters" layout option, synced with the profile like on Android (@WhiteGiso)
-- Settings icons no longer flash their names as text on the first open after launch (@WhiteGiso)
-- Aligned the player pause overlay layout, clock, typography, cast chips and scrim with Android TV (@WhiteGiso)
-- Posters waiting to load or failing no longer show their title as broken-image text, and artwork deep in Home now loads after long scrolls (@WhiteGiso)
-- Stopped Home artwork hydration from running behind an open sidebar on TV, avoiding the menu-open stall (@WhiteGiso)
-- Aligned the expanded Modern sidebar and both sidebar label styles with the current Android TV metrics (#1099) (@WhiteGiso)
+- Dates, Discover filters and the player clock now follow the app language and its time format (#1166) (@WhiteGiso)
+- Aligned the player pause overlay and the Modern sidebar metrics with Android TV (#1099) (@WhiteGiso)
+- Unified custom poster controls in the layout settings list (#1185) (@WhiteGiso)
+- Settings icons no longer flash their names as text on first open, and expected Tizen PluginService fallbacks no longer appear as Console errors (#1113) (@WhiteGiso)
 
 ## 1.2.10
 
