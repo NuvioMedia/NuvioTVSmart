@@ -5,38 +5,34 @@
   bottom: 0;
   left: 0;
   inset: 0;
+  /* ATV PlayerOverlayScaffold: horizontal 0.88 scrim, 0.34 tint, top-down fade */
   background:
     linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.28) 0%,
-      rgba(0, 0, 0, 0.56) 46%,
-      rgba(0, 0, 0, 0.82) 100%
+      rgba(0, 0, 0, 0.6) 0%,
+      rgba(0, 0, 0, 0.4) 30%,
+      rgba(0, 0, 0, 0.2) 60%,
+      rgba(0, 0, 0, 0) 100%
     ),
-    linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.9) 0%,
-      rgba(0, 0, 0, 0.72) 34%,
-      rgba(0, 0, 0, 0.36) 62%,
-      rgba(0, 0, 0, 0.12) 100%
-    );
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+    linear-gradient(rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.34)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0) 100%);
 }
 
 .player-pause-overlay-top {
   position: absolute;
-  top: var(--tv-safe-gutter);
-  right: var(--tv-safe-gutter);
+  /* ATV content padding top 40dp / end 56dp -> 80px / 112px */
+  top: 80px;
+  right: 112px;
   text-align: right;
   z-index: 1;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.38);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .player-pause-overlay-clock {
-  font-size: clamp(32px, 2.1vw, 40px);
-  font-weight: 560;
-  line-height: 1;
+  /* ATV headlineSmall copy(34sp, Normal), line height 32sp -> 68px / 64px */
+  font-size: 68px;
+  font-weight: 400;
+  line-height: 64px;
 }
 
 .player-pause-overlay-ends-at {
@@ -48,97 +44,119 @@
 
 .player-pause-overlay-content {
   position: absolute;
-  left: var(--tv-safe-gutter);
-  top: 50%;
-  transform: translateY(-50%);
-  right: var(--tv-safe-gutter);
+  /* ATV content padding 56dp sides, 120dp bottom; column aligned to the bottom */
+  left: 112px;
+  right: 112px;
+  bottom: 240px;
   max-width: none;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 14px;
-  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.62);
+  justify-content: flex-end;
 }
 
 .player-pause-kicker {
-  font-size: var(--tv-caption-text);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.64);
+  /* ATV bodyLarge 16sp / 24sp, TextTertiary */
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 48px;
+  color: var(--text-tertiary);
 }
 
 .player-pause-logo {
-  max-width: min(38vw, 520px);
-  max-height: 120px;
+  /* ATV logo height 96dp (ContentScale.Fit), md spacer 12dp above */
+  margin-top: 24px;
+  height: 192px;
+  width: auto;
+  max-width: 100%;
   object-fit: contain;
-  object-position: left center;
-  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.58));
+  object-position: left bottom;
+  align-self: flex-start;
 }
 
 .player-pause-title {
-  font-size: clamp(44px, 3vw, 62px);
-  font-weight: 740;
-  line-height: 1.05;
+  /* ATV headlineLarge 28sp / 36sp SemiBold, two lines */
+  margin-top: 24px;
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 72px;
   color: #ffffff;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .player-pause-meta-line {
-  font-size: var(--tv-secondary-text);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.72);
+  /* ATV bodyLarge, TextSecondary, top padding sm 8dp */
+  margin-top: 16px;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 48px;
+  color: var(--text-secondary);
 }
 
 .player-pause-episode-title {
-  font-size: clamp(28px, 1.9vw, 38px);
-  font-weight: 650;
-  line-height: 1.12;
-  color: rgba(255, 255, 255, 0.94);
+  /* ATV titleLarge 20sp / 28sp Medium, two lines, top padding md 12dp */
+  margin-top: 24px;
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 56px;
+  color: #ffffff;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .player-pause-description {
+  /* ATV bodyLarge, TextSecondary, three lines, top padding lg 16dp */
+  margin-top: 32px;
   max-width: 100%;
-  font-size: clamp(20px, 1.3vw, 26px);
-  line-height: 1.42;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 32px;
+  line-height: 48px;
+  color: var(--text-secondary);
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   overflow: hidden;
 }
 
 .player-pause-cast-section {
-  margin-top: 20px;
+  /* ATV 20dp spacer before the cast label */
+  margin-top: 40px;
   max-width: 100%;
 }
 
 .player-pause-cast-label {
-  font-size: var(--tv-caption-text);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.58);
+  /* ATV titleSmall 14sp / 20sp Medium, TextTertiary */
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 40px;
+  color: var(--text-tertiary);
 }
 
 .player-pause-cast-row {
-  margin-top: 12px;
+  /* ATV md spacer 12dp, chips spaced 14dp */
+  margin-top: 24px;
   display: flex;
   flex-wrap: nowrap;
-  gap: 14px;
+  gap: 28px;
   max-width: 100%;
   overflow: hidden;
 }
 
 .player-pause-cast-chip {
-  min-height: 44px;
-  max-width: 240px;
-  padding: 0 18px;
-  border-radius: 12px;
+  /* ATV bodyMedium 14sp / 20sp, padding 18dp x 10dp, radius md 12dp */
+  flex: 0 0 auto;
+  padding: 20px 36px;
+  border-radius: 24px;
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  font-size: var(--tv-caption-text);
-  font-weight: 500;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 40px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
 }
 
 .player-pause-cast-chip span {
@@ -246,12 +264,8 @@
   line-height: 1;
 }
 
-.no-flex-gap .player-pause-overlay-content > * + * {
-  margin-top: 14px;
-}
-
 .no-flex-gap .player-pause-cast-chip + .player-pause-cast-chip {
-  margin-left: 14px;
+  margin-left: 28px;
 }
 
 .legacy-tizen .player-pause-overlay,
@@ -280,20 +294,18 @@
 
 .legacy-tizen .player-pause-overlay-top,
 .tizen-tv .player-pause-overlay-top {
-  top: 34px;
-  right: 42px;
+  top: 80px;
+  right: 112px;
   left: auto;
-  width: 240px;
-  min-height: 48px;
   text-align: right;
 }
 
 .legacy-tizen .player-pause-overlay-clock,
 .tizen-tv .player-pause-overlay-clock {
   display: block;
-  font-size: 36px;
-  line-height: 42px;
-  font-weight: 600;
+  font-size: 68px;
+  line-height: 64px;
+  font-weight: 400;
 }
 
 .legacy-tizen .player-pause-overlay-ends-at,
@@ -306,83 +318,75 @@
 
 .legacy-tizen .player-pause-overlay-content,
 .tizen-tv .player-pause-overlay-content {
-  left: 56px;
-  right: 56px;
-  top: 50%;
-  bottom: auto;
-  transform: translateY(-50%);
+  left: 112px;
+  right: 112px;
+  top: auto;
+  bottom: 240px;
+  transform: none;
   display: block;
-  max-width: calc(100vw - 112px);
-  max-height: calc(100vh - 160px);
+  max-width: calc(100vw - 224px);
   overflow: hidden;
-}
-
-.legacy-tizen .player-pause-overlay-content > * + *,
-.tizen-tv .player-pause-overlay-content > * + * {
-  margin-top: 12px;
 }
 
 .legacy-tizen .player-pause-kicker,
 .tizen-tv .player-pause-kicker {
-  font-size: 16px;
-  line-height: 22px;
+  font-size: 32px;
+  line-height: 48px;
 }
 
 .legacy-tizen .player-pause-logo,
 .tizen-tv .player-pause-logo {
   display: block;
-  max-width: 480px;
-  max-height: 96px;
+  height: 192px;
+  max-width: 100%;
 }
 
 .legacy-tizen .player-pause-title,
 .tizen-tv .player-pause-title {
-  font-size: 52px;
-  line-height: 60px;
-  font-weight: 700;
-  max-width: 1180px;
+  font-size: 56px;
+  line-height: 72px;
+  font-weight: 600;
+  max-height: 144px;
 }
 
 .legacy-tizen .player-pause-meta-line,
 .tizen-tv .player-pause-meta-line {
-  font-size: 20px;
-  line-height: 28px;
+  font-size: 32px;
+  line-height: 48px;
 }
 
 .legacy-tizen .player-pause-episode-title,
 .tizen-tv .player-pause-episode-title {
-  font-size: 32px;
-  line-height: 40px;
-  max-width: 1180px;
+  font-size: 40px;
+  line-height: 56px;
+  max-height: 112px;
 }
 
 .legacy-tizen .player-pause-description,
 .tizen-tv .player-pause-description {
-  max-width: 1180px;
-  max-height: 112px;
-  font-size: 22px;
-  line-height: 28px;
-  -webkit-line-clamp: 4;
+  max-height: 144px;
+  font-size: 32px;
+  line-height: 48px;
+  -webkit-line-clamp: 3;
 }
 
 .legacy-tizen .player-pause-cast-section,
 .tizen-tv .player-pause-cast-section {
-  margin-top: 18px;
-  max-width: 1180px;
+  margin-top: 40px;
 }
 
 .legacy-tizen .player-pause-cast-label,
 .tizen-tv .player-pause-cast-label {
-  font-size: 16px;
-  line-height: 22px;
+  font-size: 28px;
+  line-height: 40px;
 }
 
 .legacy-tizen .player-pause-cast-row,
 .tizen-tv .player-pause-cast-row {
   display: block;
-  margin-top: 10px;
-  min-height: 56px;
-  max-height: 56px;
+  margin-top: 24px;
+  min-height: 80px;
+  max-height: 80px;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -390,15 +394,11 @@
 .legacy-tizen .player-pause-cast-chip,
 .tizen-tv .player-pause-cast-chip {
   display: inline-flex;
-  height: 44px;
-  min-height: 44px;
-  max-width: 220px;
   margin-left: 0;
-  margin-right: 12px;
-  margin-bottom: 8px;
+  margin-right: 28px;
   vertical-align: top;
-  font-size: 16px;
-  line-height: 20px;
+  font-size: 28px;
+  line-height: 40px;
 }
 
 .legacy-tizen .player-still-watching-actions,

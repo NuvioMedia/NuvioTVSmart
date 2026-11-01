@@ -1,50 +1,93 @@
 @media (max-width: 1366px), (max-height: 760px) {
+  /* Same Android TV pause overlay at 1dp = 4/3px (1280px wide viewport). */
   .legacy-tizen .player-pause-overlay-top,
   .tizen-tv .player-pause-overlay-top {
-    top: 24px;
-    right: 32px;
+    top: 53px;
+    right: 75px;
   }
 
   .legacy-tizen .player-pause-overlay-clock,
   .tizen-tv .player-pause-overlay-clock {
-    font-size: 30px;
-    line-height: 36px;
+    font-size: 45px;
+    line-height: 43px;
   }
 
   .legacy-tizen .player-pause-overlay-content,
   .tizen-tv .player-pause-overlay-content {
-    left: 40px;
-    right: 40px;
-    top: 50%;
-    bottom: auto;
-    transform: translateY(-50%);
-    max-width: calc(100vw - 80px);
-    max-height: calc(100vh - 116px);
+    left: 75px;
+    right: 75px;
+    bottom: 160px;
+    max-width: calc(100vw - 150px);
+  }
+
+  .legacy-tizen .player-pause-kicker,
+  .tizen-tv .player-pause-kicker,
+  .legacy-tizen .player-pause-meta-line,
+  .tizen-tv .player-pause-meta-line {
+    font-size: 21px;
+    line-height: 32px;
+  }
+
+  .legacy-tizen .player-pause-logo,
+  .tizen-tv .player-pause-logo {
+    margin-top: 16px;
+    height: 128px;
   }
 
   .legacy-tizen .player-pause-title,
   .tizen-tv .player-pause-title {
-    font-size: 40px;
+    margin-top: 16px;
+    font-size: 37px;
     line-height: 48px;
+    max-height: 96px;
+  }
+
+  .legacy-tizen .player-pause-meta-line,
+  .tizen-tv .player-pause-meta-line {
+    margin-top: 11px;
   }
 
   .legacy-tizen .player-pause-episode-title,
   .tizen-tv .player-pause-episode-title {
-    font-size: 26px;
-    line-height: 34px;
+    margin-top: 16px;
+    font-size: 27px;
+    line-height: 37px;
+    max-height: 74px;
   }
 
   .legacy-tizen .player-pause-description,
   .tizen-tv .player-pause-description {
+    margin-top: 21px;
     max-height: 96px;
-    font-size: 19px;
-    line-height: 24px;
-    -webkit-line-clamp: 4;
+    font-size: 21px;
+    line-height: 32px;
   }
 
   .legacy-tizen .player-pause-cast-section,
   .tizen-tv .player-pause-cast-section {
-    margin-top: 12px;
+    margin-top: 27px;
+  }
+
+  .legacy-tizen .player-pause-cast-label,
+  .tizen-tv .player-pause-cast-label {
+    font-size: 19px;
+    line-height: 27px;
+  }
+
+  .legacy-tizen .player-pause-cast-row,
+  .tizen-tv .player-pause-cast-row {
+    margin-top: 16px;
+    min-height: 53px;
+    max-height: 53px;
+  }
+
+  .legacy-tizen .player-pause-cast-chip,
+  .tizen-tv .player-pause-cast-chip {
+    margin-right: 19px;
+    padding: 13px 24px;
+    border-radius: 16px;
+    font-size: 19px;
+    line-height: 27px;
   }
 }
 
