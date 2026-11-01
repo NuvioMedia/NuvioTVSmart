@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Improvements & Fixes
+
+- Holding a seek now moves the player bar, time and end time together with the preview on every step, aligned with Android TV (@WhiteGiso)
+
 ## 1.3.0
 
 ### Improvements & Fixes
