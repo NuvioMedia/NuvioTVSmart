@@ -8,6 +8,7 @@
 - Opening Settings from Home is faster: Home artwork is released after the route change and Settings no longer forces extra layouts or a duplicate content rebuild (@WhiteGiso)
 - Dates and Discover filters now follow the app language (@WhiteGiso)
 - The Home hero and detail trailer button now pick the trailer in the TMDB language before falling back to English, aligned with Android TV (@WhiteGiso)
+- Added Android TV's "Always Backdrop with Logo for Landscape Posters" layout option, synced with the profile like on Android (@WhiteGiso)
 - Settings icons no longer flash their names as text on the first open after launch (@WhiteGiso)
 - Aligned the player pause overlay layout, clock, typography, cast chips and scrim with Android TV (@WhiteGiso)
 - Posters waiting to load or failing no longer show their title as broken-image text, and artwork deep in Home now loads after long scrolls (@WhiteGiso)

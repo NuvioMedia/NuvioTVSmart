@@ -103,7 +103,8 @@ test("landscape artwork keeps its own branding while backdrop fallbacks retain o
     isTitleItemWatched: () => false,
     escapeHtml: String,
     escapeAttribute: String,
-    buildLazyImageAttributes: (src) => `src="${src}"`
+    buildLazyImageAttributes: (src) => `src="${src}"`,
+    LayoutPreferences: { get: () => ({}) }
   });
   const source = await readFile(
     new URL("./homeScreenHelpers-15-create-poster-card-markup.js", import.meta.url),
@@ -115,6 +116,31 @@ test("landscape artwork keeps its own branding while backdrop fallbacks retain o
       .replace(/^export /gm, ""),
     context
   );
+  // Android "Always Backdrop with Logo for Landscape Posters": supplied
+  // landscape artwork is ignored and the backdrop gets the logo/title overlay.
+  const ignored = context.createPosterCardMarkup(
+    {
+      id: "tt1",
+      name: "Title",
+      poster: "poster.png",
+      background: "backdrop.png",
+      landscapePoster: "landscape.png"
+    },
+    0,
+    0,
+    "movie",
+    { homeCatalogKey: "test" },
+    true,
+    "modern",
+    false,
+    true,
+    false,
+    null,
+    { alwaysShowLandscapeClearlogo: true }
+  );
+  assert.ok(!ignored.includes("has-landscape-artwork"));
+  assert.ok(!ignored.includes("landscape.png"));
+  assert.ok(ignored.includes('class="home-poster-landscape-copy"'));
   for (const logo of ["", "logo.png"]) {
     for (const expanded of [false, true]) {
       for (const landscape of [false, true]) {

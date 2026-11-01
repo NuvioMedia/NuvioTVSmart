@@ -3320,4 +3320,6 @@
     <string name="autosync_toast_failed_no_reference">Sincronizzazione non riuscita: questo video non contiene sottotitoli incorporati da confrontare.</string>
     <string name="autosync_toast_failed_unsupported">Sincronizzazione non riuscita: Auto Sync non supporta questo formato di sottotitoli.</string>
     <string name="autosync_label_synced">Sincronizzato automaticamente</string>
+    <string name="layout_always_show_landscape_clearlogo">Mostra sempre lo sfondo con il logo per le locandine orizzontali</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">Ignora la locandina orizzontale dell\'addon e usa invece lo sfondo con il logo trasparente sovrapposto.</string>
 </resources>

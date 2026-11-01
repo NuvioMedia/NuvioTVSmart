@@ -3073,4 +3073,6 @@
     <string name="autosync_toast_failed_no_reference">Eşitleme başarısız: Bu videoda karşılaştırılacak gömülü altyazı yok.</string>
     <string name="autosync_toast_failed_unsupported">Eşitleme başarısız: Otomatik Eşitleme bu altyazı formatını desteklemiyor.</string>
     <string name="autosync_label_synced">Otomatik eşitlendi</string>
+    <string name="layout_always_show_landscape_clearlogo">Yatay Posterlerde Her Zaman Logolu Arka Plan</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">Eklentiden gelen yatay posteri yoksayar ve bunun yerine logo katmanlı arka plan kullanır.</string>
 </resources>

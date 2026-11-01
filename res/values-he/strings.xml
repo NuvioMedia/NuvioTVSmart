@@ -3292,4 +3292,6 @@
     <string name="mdblist_last_synced">סונכרן לאחרונה %1$s</string>
     <string name="sub_strip_sdh">הסרת כתוביות SDH</string>
     <string name="sub_strip_sdh_desc">הסתרת תיאורי קול ותוויות דוברים מכתוביות טקסט</string>
+    <string name="layout_always_show_landscape_clearlogo">תמיד רקע עם לוגו עבור פוסטרים לרוחב</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">התעלמות מפוסטר לרוחב מהתוסף, ושימוש ברקע עם שכבת לוגו שקוף במקום.</string>
 </resources>

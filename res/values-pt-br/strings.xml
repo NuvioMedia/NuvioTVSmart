@@ -2993,4 +2993,6 @@
     <string name="autosync_toast_failed_no_reference">Falha na sincronização: este vídeo não tem legendas internas para comparar.</string>
     <string name="autosync_toast_failed_unsupported">Falha na sincronização: este formato de legenda não é aceito.</string>
     <string name="autosync_label_synced">Sincronizado automaticamente</string>
+    <string name="layout_always_show_landscape_clearlogo">Sempre usar plano de fundo com logotipo em pôsteres horizontais</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">Ignore o pôster horizontal do addon e use o plano de fundo com logotipo sobreposto.</string>
 </resources>

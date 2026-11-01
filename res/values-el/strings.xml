@@ -2887,4 +2887,6 @@
     <string name="autosync_toast_failed_no_reference">Ο συγχρονισμός απέτυχε: αυτό το βίντεο δεν έχει ενσωματωμένους υπότιτλους για σύγκριση.</string>
     <string name="autosync_toast_failed_unsupported">Ο συγχρονισμός απέτυχε: ο αυτόματος συγχρονισμός δεν υποστηρίζει αυτή τη μορφή υποτίτλων.</string>
     <string name="autosync_label_synced">Αυτόματα συγχρονισμένος</string>
+    <string name="layout_always_show_landscape_clearlogo">Πάντα φόντο με λογότυπο για οριζόντιες αφίσες</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">Αγνόηση της οριζόντιας αφίσας από το πρόσθετο και χρήση φόντου με επικάλυψη clearlogo.</string>
 </resources>

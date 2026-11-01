@@ -2855,4 +2855,6 @@
     <string name="autosync_toast_failed_no_reference">Échec de la synchronisation&#160;: cette vidéo ne contient aucun sous-titre intégré à comparer.</string>
     <string name="autosync_toast_failed_unsupported">Échec de la synchronisation&#160;: la synchronisation automatique ne prend pas en charge ce format de sous-titres.</string>
     <string name="autosync_label_synced">Synchronisé automatiquement</string>
+    <string name="layout_always_show_landscape_clearlogo">Toujours utiliser l’arrière-plan avec logo pour les affiches paysage</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">Ignorer l’affiche paysage fournie par l’addon et utiliser à la place l’arrière-plan avec le logo en superposition.</string>
 </resources>

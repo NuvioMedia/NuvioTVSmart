@@ -2993,4 +2993,6 @@
     <string name="autosync_toast_failed_no_reference">Synchronizácia zlyhala: toto video nemá žiadne vložené titulky na porovnanie.</string>
     <string name="autosync_toast_failed_unsupported">Synchronizácia zlyhala: Automatická synchronizácia nepodporuje tento formát titulkov.</string>
     <string name="autosync_label_synced">Automaticky synchronizované</string>
+    <string name="layout_always_show_landscape_clearlogo">Vždy pozadie s logom pre plagáty na šírku</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">Ignorovať plagát na šírku z doplnku a namiesto neho použiť pozadie s prekrytím priesvitného loga.</string>
 </resources>

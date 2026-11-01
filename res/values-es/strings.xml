@@ -1695,4 +1695,6 @@
     <string name="autosync_toast_failed_no_reference">Error de sincronización: este vídeo no tiene subtítulos integrados con los que comparar.</string>
     <string name="autosync_toast_failed_unsupported">Error de sincronización: la sincronización automática no admite este formato de subtítulos.</string>
     <string name="autosync_label_synced">Sincronizado automáticamente</string>
+    <string name="layout_always_show_landscape_clearlogo">Usar siempre fondo con logotipo para pósteres horizontales</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">Ignora el póster horizontal del complemento y usa en su lugar el fondo con el logotipo superpuesto.</string>
 </resources>

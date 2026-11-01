@@ -105,6 +105,7 @@ export const layout_settings = {
       modern_sidebar_enabled: Boolean(layout.modernSidebar),
       modern_sidebar_blur_enabled: Boolean(layout.modernSidebarBlur),
       modern_landscape_posters_enabled: Boolean(layout.modernLandscapePostersEnabled),
+      always_show_landscape_clearlogo: Boolean(layout.alwaysShowLandscapeClearlogo),
       modern_hero_full_screen_backdrop: Boolean(layout.modernHeroFullScreenBackdropEnabled),
       hero_section_enabled: Boolean(layout.heroSectionEnabled),
       discover_location: normalizeDiscoverLocationForAndroid(layout.discoverLocation),
@@ -164,6 +165,7 @@ export const layout_settings = {
       "modern_sidebar_enabled",
       "modern_sidebar_blur_enabled",
       "modern_landscape_posters_enabled",
+      "always_show_landscape_clearlogo",
       "modern_hero_full_screen_backdrop",
       "hero_section_enabled",
       "poster_labels_enabled",
@@ -257,6 +259,9 @@ export const layout_settings = {
     }
     if (booleanOrNull(raw.modern_landscape_posters_enabled) != null) {
       partial.modernLandscapePostersEnabled = Boolean(raw.modern_landscape_posters_enabled);
+    }
+    if (booleanOrNull(raw.always_show_landscape_clearlogo) != null) {
+      partial.alwaysShowLandscapeClearlogo = Boolean(raw.always_show_landscape_clearlogo);
     }
     if (booleanOrNull(raw.modern_hero_full_screen_backdrop) != null) {
       partial.modernHeroFullScreenBackdropEnabled = Boolean(raw.modern_hero_full_screen_backdrop);

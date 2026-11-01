@@ -46,6 +46,20 @@ export function renderLayoutMarkup(model) {
             ${
               isModernLayout
                 ? this.renderToggleRow({
+                    focusKey: "layout:alwaysShowLandscapeClearlogo",
+                    title: t("layout_always_show_landscape_clearlogo", {}, "Always Backdrop with Logo for Landscape Posters"),
+                    subtitle: t(
+                      "layout_always_show_landscape_clearlogo_sub",
+                      {},
+                      "Ignore landscape poster from addon and use backdrop with clearlogo overlay instead."
+                    ),
+                    checked: Boolean(model.layout.alwaysShowLandscapeClearlogo)
+                  })
+                : ""
+            }
+            ${
+              isModernLayout
+                ? this.renderToggleRow({
                     focusKey: "layout:modernHeroFullScreenBackdrop",
                     title: t("settings.layout.fullscreenHeroBackdrop.title"),
                     subtitle: t("settings.layout.fullscreenHeroBackdrop.subtitle"),

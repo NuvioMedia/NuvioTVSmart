@@ -202,6 +202,11 @@ export function registerLayoutActions(model) {
       modernLandscapePostersEnabled: !LayoutPreferences.get().modernLandscapePostersEnabled
     });
   });
+  this.actionMap.set("layout:alwaysShowLandscapeClearlogo", () => {
+    LayoutPreferences.set({
+      alwaysShowLandscapeClearlogo: !LayoutPreferences.get().alwaysShowLandscapeClearlogo
+    });
+  });
   this.actionMap.set("layout:modernHeroFullScreenBackdrop", () => {
     LayoutPreferences.set({
       modernHeroFullScreenBackdropEnabled: !LayoutPreferences.get().modernHeroFullScreenBackdropEnabled

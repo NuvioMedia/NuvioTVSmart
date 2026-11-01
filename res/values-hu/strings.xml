@@ -3246,4 +3246,6 @@
     <string name="autosync_toast_failed_no_reference">Nem sikerült a feliratot időzíteni: a videóban nincs összehasonlítható beágyazott felirat.</string>
     <string name="autosync_toast_failed_unsupported">Nem sikerült a feliratot időzíteni: ez a feliratformátum nem támogatott.</string>
     <string name="autosync_label_synced">Automatikusan időzítve</string>
+    <string name="layout_always_show_landscape_clearlogo">Fekvő poszter helyett háttérkép logóval</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">A bővítmény fekvő posztere helyett a háttérkép jelenik meg a tartalom logójával.</string>
 </resources>

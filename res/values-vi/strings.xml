@@ -1684,4 +1684,6 @@
     <string name="autosync_toast_failed_no_reference">Đồng bộ thất bại: video này không có phụ đề nhúng sẵn để so sánh.</string>
     <string name="autosync_toast_failed_unsupported">Đồng bộ thất bại: Tự động đồng bộ không hỗ trợ đồng bộ định dạng phụ đề này.</string>
     <string name="autosync_label_synced">Đã tự động đồng bộ</string>
+    <string name="layout_always_show_landscape_clearlogo">Luôn dùng phông nền kèm logo cho poster ngang</string>
+    <string name="layout_always_show_landscape_clearlogo_sub">Bỏ qua poster ngang từ tiện ích và thay thế bằng phông nền có chèn lớp phủ logo trong suốt.</string>
 </resources>

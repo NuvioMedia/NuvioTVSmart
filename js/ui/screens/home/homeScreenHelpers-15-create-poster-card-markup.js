@@ -291,14 +291,18 @@ export function createPosterCardMarkup(
     `;
   }
   const isLoading = Boolean(item?.isLoading);
+  const cardSettings = posterSettings || LayoutPreferences.get();
   const normalized = customPosterForItem(
     normalizeCatalogItem(item, itemType),
     Router.getCurrent() === "folderDetail" || rowData?.rowKind === "collection" ? "collections" : "home",
     layoutMode === "modern" && preferLandscapePoster ? "landscape" : "poster",
-    posterSettings
+    cardSettings
   );
   const subtitle = buildPosterSubtitle(normalized, layoutMode);
-  const preferredLandscapePosterSrc = firstNonEmpty(normalized.landscapePoster);
+  // Android's "always backdrop with logo" ignores supplied landscape artwork and
+  // draws the backdrop with the clearlogo/title overlay instead.
+  const ignoreLandscapePoster = layoutMode === "modern" && Boolean(cardSettings.alwaysShowLandscapeClearlogo);
+  const preferredLandscapePosterSrc = ignoreLandscapePoster ? "" : firstNonEmpty(normalized.landscapePoster);
   const useLandscapePoster = layoutMode === "modern" && preferLandscapePoster;
   const landscapeVisualSrc = firstNonEmpty(
     preferredLandscapePosterSrc,
