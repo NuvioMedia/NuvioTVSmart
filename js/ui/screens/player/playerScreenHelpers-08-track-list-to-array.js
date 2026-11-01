@@ -406,7 +406,7 @@ export function formatEpisodePanelDate(value = "") {
     return "";
   }
   try {
-    return parsed.toLocaleDateString(undefined, {
+    return parsed.toLocaleDateString(I18n.getLocale(), {
       month: "long",
       day: "numeric",
       year: "numeric"

@@ -297,7 +297,7 @@ export function formatEpisodeCardDate(value = "") {
   if (Number.isNaN(parsed.getTime())) {
     return "";
   }
-  return parsed.toLocaleDateString(undefined, {
+  return parsed.toLocaleDateString(I18n.getLocale(), {
     month: "long",
     day: "numeric",
     year: "numeric"

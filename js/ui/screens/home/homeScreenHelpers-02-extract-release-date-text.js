@@ -200,7 +200,7 @@ export function extractReleaseDateText(item) {
       if (isoMatch) {
         const date = new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
         if (!Number.isNaN(date.getTime())) {
-          return date.toLocaleDateString("en-US", {
+          return date.toLocaleDateString(I18n.getLocale(), {
             year: "numeric",
             month: "long",
             day: "numeric"

@@ -3,6 +3,7 @@ import { MdbListAccount } from "../../../data/repository/mdbListAccount.js";
 import { MdbListLibrary } from "../../../data/repository/mdbListLibrary.js";
 import { ProfileManager } from "../../../core/profile/profileManager.js";
 import { QrCodeGenerator, t, escapeHtml, escapeAttribute } from "./settingsScreenContext.js";
+import { I18n } from "../../../i18n/index.js";
 
 export function stopMdbListAuthorization() {
   this.mdbListAuthNonce = (this.mdbListAuthNonce || 0) + 1;
@@ -139,7 +140,7 @@ export function registerMdbListAccountActions() {
       message:
         t("mdblist_tracking_description") +
         (MdbListTracking.getSnapshot().checkedAt
-          ? ` · ${t("mdblist_last_synced", [new Date(MdbListTracking.getSnapshot().checkedAt).toLocaleString()])}`
+          ? ` · ${t("mdblist_last_synced", [new Date(MdbListTracking.getSnapshot().checkedAt).toLocaleString(I18n.getLocale())])}`
           : ""),
       options: [
         { id: "sync", label: t("simkl_sync_now") },
@@ -155,7 +156,7 @@ export function registerMdbListAccountActions() {
             await MdbListTracking.refresh({ force: true, strict: true });
             MdbListAccount.check(scope);
             this.mdbListAccountMessage = t("mdblist_last_synced", [
-              new Date(MdbListTracking.getSnapshot().checkedAt).toLocaleString()
+              new Date(MdbListTracking.getSnapshot().checkedAt).toLocaleString(I18n.getLocale())
             ]);
           } catch (error) {
             try {

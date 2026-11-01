@@ -162,7 +162,7 @@ export function formatMovieReleaseDate(meta = {}) {
       if (LayoutPreferences.get().showFullReleaseDate === false) {
         return String(parsed.getFullYear());
       }
-      return new Intl.DateTimeFormat(undefined, {
+      return new Intl.DateTimeFormat(I18n.getLocale(), {
         month: "long",
         day: "numeric",
         year: "numeric"
