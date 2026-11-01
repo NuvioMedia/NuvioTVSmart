@@ -1,6 +1,6 @@
 import { Platform } from "../../platform/index.js";
 import { TizenEngineFsService } from "../../platform/tizen/tizenEngineFsService.js";
-import { fetchMatroskaAudioTracks } from "./matroskaAudioMetadata.js";
+import { fetchMatroskaTracks } from "./matroskaTrackMetadata.js";
 import {
   isWebOsCompanionServiceAvailable,
   requestWebOsCompanionService
@@ -75,6 +75,21 @@ function isAudioTrack(track) {
   );
 }
 
+function isSubtitleTrack(track) {
+  const type = String(track?.type || track?.track || "")
+    .trim()
+    .toLowerCase();
+  return type === "text" || type === "subtitle";
+}
+
+function appendHeaderSubtitles(tracks, headerTracks) {
+  if (tracks.some(isSubtitleTrack)) {
+    return tracks;
+  }
+  const headerSubtitles = (Array.isArray(headerTracks) ? headerTracks : []).filter(isSubtitleTrack);
+  return headerSubtitles.length ? tracks.concat(headerSubtitles) : tracks;
+}
+
 function hasKnownTrackLanguage(track) {
   const language = String(track?.language || track?.lang || track?.track_lang || "")
     .trim()
@@ -90,13 +105,15 @@ function mergeTizenTrackMetadata(serviceTracks, headerTracks) {
   const serviceAudio = tracks.filter(isAudioTrack);
   const headerAudio = (Array.isArray(headerTracks) ? headerTracks : []).filter(isAudioTrack);
   if (!serviceAudio.length) {
-    return headerAudio.length ? tracks.concat(headerAudio) : tracks;
+    return tracks.some(isSubtitleTrack)
+      ? tracks.concat(headerAudio)
+      : tracks.concat(headerTracks || []);
   }
   if (serviceAudio.length !== headerAudio.length) {
-    return tracks;
+    return appendHeaderSubtitles(tracks, headerTracks);
   }
   let audioIndex = 0;
-  return tracks.map((track) => {
+  const merged = tracks.map((track) => {
     if (!isAudioTrack(track)) {
       return track;
     }
@@ -113,6 +130,7 @@ function mergeTizenTrackMetadata(serviceTracks, headerTracks) {
       ...(fillStreamIndex ? { containerStreamIndex: headerTrack.containerStreamIndex } : {})
     };
   });
+  return appendHeaderSubtitles(merged, headerTracks);
 }
 
 async function requestTracksViaLuna(mediaUrl) {
@@ -215,7 +233,7 @@ export const localMediaTracksRepository = {
         // The packaged service may take far longer than playback startup to
         // answer, so read the container header at the same time instead of
         // serializing the two sources.
-        const headerPromise = fetchMatroskaAudioTracks(targetUrl);
+        const headerPromise = fetchMatroskaTracks(targetUrl);
         const servicePromise = (async () => {
           try {
             const service = await TizenEngineFsService.ensureStarted();
@@ -239,7 +257,9 @@ export const localMediaTracksRepository = {
           serviceAudio.length > 0 && serviceAudio.every(hasKnownTrackLanguage);
         let tracks;
         if (serviceHasLanguages) {
-          tracks = serviceTracks;
+          tracks = serviceTracks.some(isSubtitleTrack)
+            ? serviceTracks
+            : mergeTizenTrackMetadata(serviceTracks, await headerPromise);
         } else {
           const headerTracks = await headerPromise;
           if (!headerTracks.length && serviceTracks === null) {

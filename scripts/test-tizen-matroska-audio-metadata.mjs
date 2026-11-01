@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import {
-  parseMatroskaAudioTracks,
-  fetchMatroskaAudioTracks
-} from "../js/data/repository/matroskaAudioMetadata.js";
+  parseMatroskaTracks,
+  fetchMatroskaTracks
+} from "../js/data/repository/matroskaTrackMetadata.js";
 
 const element = (id, payload) => {
   const key = Buffer.from(id, "hex");
@@ -39,7 +39,7 @@ const fixture = (entries, unknown = false) => {
   ]);
 };
 const bytes = fixture([video, czech, english]);
-const tracks = parseMatroskaAudioTracks(bytes);
+const tracks = parseMatroskaTracks(bytes);
 assert.deepEqual(
   tracks.map(({ id, language, containerStreamIndex, codec }) => ({
     id,
@@ -52,39 +52,57 @@ assert.deepEqual(
     { id: 3, language: "eng", containerStreamIndex: 2, codec: "A_EAC3" }
   ]
 );
-assert.deepEqual(parseMatroskaAudioTracks(fixture([video, czech, english], true)), tracks);
+assert.deepEqual(parseMatroskaTracks(fixture([video, czech, english], true)), tracks);
 assert.equal(
-  parseMatroskaAudioTracks(fixture([entry(7, 2, "eng", "A_AC3", "pt-BR")]))[0].language,
+  parseMatroskaTracks(fixture([entry(7, 2, "eng", "A_AC3", "pt-BR")]))[0].language,
   "pt-BR"
 );
 assert.equal(
-  parseMatroskaAudioTracks(fixture([entry(7, 2, null, "A_AC3", "en-US")]))[0].language,
+  parseMatroskaTracks(fixture([entry(7, 2, null, "A_AC3", "en-US")]))[0].language,
   "en-US",
   "LanguageBCP47 alone is enough"
 );
 assert.equal(
-  parseMatroskaAudioTracks(fixture([entry(7, 2, null, "A_AC3")]))[0].language,
+  parseMatroskaTracks(fixture([entry(7, 2, null, "A_AC3")]))[0].language,
   "eng",
   "a missing Language follows the Matroska default"
 );
 assert.equal(
-  parseMatroskaAudioTracks(fixture([entry(7, 2, "und", "A_AC3")]))[0].language,
+  parseMatroskaTracks(fixture([entry(7, 2, "und", "A_AC3")]))[0].language,
   "und",
   "an explicit und stays undetermined"
 );
+const subtitleTracks = parseMatroskaTracks(
+  fixture([
+    video,
+    czech,
+    english,
+    entry(4, 17, "cze", "S_TEXT/UTF8"),
+    entry(5, 17, null, "S_TEXT/UTF8")
+  ])
+).filter((track) => track.type === "subtitle");
 assert.deepEqual(
-  parseMatroskaAudioTracks(fixture([czech, czech])),
+  subtitleTracks.map(({ id, language, containerStreamIndex, codec }) => ({
+    id,
+    language,
+    containerStreamIndex,
+    codec
+  })),
+  [
+    { id: 4, language: "cze", containerStreamIndex: 3, codec: "S_TEXT/UTF8" },
+    { id: 5, language: "eng", containerStreamIndex: 4, codec: "S_TEXT/UTF8" }
+  ],
+  "subtitle tracks keep their container order and language"
+);
+assert.deepEqual(
+  parseMatroskaTracks(fixture([czech, czech])),
   [],
   "duplicate track IDs are rejected"
 );
 for (let end = 0; end < bytes.length; end += 1) {
-  assert.deepEqual(
-    parseMatroskaAudioTracks(bytes.subarray(0, end)),
-    [],
-    `truncated header at ${end}`
-  );
+  assert.deepEqual(parseMatroskaTracks(bytes.subarray(0, end)), [], `truncated header at ${end}`);
 }
-assert.deepEqual(parseMatroskaAudioTracks(Buffer.from("not an MKV")), []);
+assert.deepEqual(parseMatroskaTracks(Buffer.from("not an MKV")), []);
 
 const originalFetch = globalThis.fetch;
 let cancels = 0;
@@ -120,21 +138,28 @@ globalThis.fetch = async (_url, options) => {
   assert.equal(options.credentials, "omit");
   return reply();
 };
-assert.deepEqual(await fetchMatroskaAudioTracks("https://example.test/movie.mkv"), tracks);
+assert.deepEqual(await fetchMatroskaTracks("https://example.test/movie.mkv"), tracks);
 assert.equal(reads, 2, "read only the requested header response");
 assert.equal(cancels, 1);
 globalThis.fetch = async () => reply(bytes, 200);
-assert.deepEqual(await fetchMatroskaAudioTracks("https://example.test/ignored-range"), []);
+assert.deepEqual(await fetchMatroskaTracks("https://example.test/ignored-range"), []);
 assert.equal(reads, 2, "never consume a server's full-file response");
 globalThis.fetch = async () => reply(bytes, 206, "bytes 50-100/200");
-assert.deepEqual(await fetchMatroskaAudioTracks("https://example.test/wrong-range"), []);
+assert.deepEqual(await fetchMatroskaTracks("https://example.test/wrong-range"), []);
+let nonMatroskaRequests = 0;
+globalThis.fetch = async () => {
+  nonMatroskaRequests += 1;
+  return reply(Buffer.from("not an MKV"));
+};
+assert.deepEqual(await fetchMatroskaTracks("https://example.test/not-matroska.mp4"), []);
+assert.equal(nonMatroskaRequests, 1, "skip the larger read when the probe is not Matroska");
 globalThis.fetch = async () => reply(new Uint8Array(1048577));
-assert.deepEqual(await fetchMatroskaAudioTracks("https://example.test/oversized"), []);
+assert.deepEqual(await fetchMatroskaTracks("https://example.test/oversized"), []);
 globalThis.fetch = async () => {
   throw new TypeError("CORS");
 };
-assert.deepEqual(await fetchMatroskaAudioTracks("https://example.test/cors"), []);
-assert.deepEqual(await fetchMatroskaAudioTracks("file:///movie.mkv"), []);
+assert.deepEqual(await fetchMatroskaTracks("https://example.test/cors"), []);
+assert.deepEqual(await fetchMatroskaTracks("file:///movie.mkv"), []);
 
 const originalTimeout = globalThis.setTimeout;
 globalThis.setTimeout = (fn, ms) => originalTimeout(fn, ms === 3000 ? 5 : ms);
@@ -142,7 +167,7 @@ globalThis.fetch = async (_url, { signal }) =>
   new Promise((_resolve, reject) => {
     signal.addEventListener("abort", () => reject(new Error("aborted")));
   });
-assert.deepEqual(await fetchMatroskaAudioTracks("https://example.test/stalled"), []);
+assert.deepEqual(await fetchMatroskaTracks("https://example.test/stalled"), []);
 globalThis.setTimeout = originalTimeout;
 
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -176,6 +201,27 @@ globalThis.fetch = async (url) => {
 assert.deepEqual(
   await localMediaTracksRepository.getTracks("https://example.test/service.mkv"),
   tracks
+);
+const headerWithSubtitles = fixture([
+  video,
+  czech,
+  english,
+  entry(4, 17, "cze", "S_TEXT/UTF8"),
+  entry(5, 17, null, "S_TEXT/UTF8")
+]);
+globalThis.fetch = async (url) =>
+  url.startsWith("http://127.0.0.1:2710/tracks/")
+    ? { ok: true, json: async () => tracks }
+    : reply(headerWithSubtitles);
+const serviceWithHeaderSubtitles = await localMediaTracksRepository.getTracks(
+  "https://example.test/service-audio-only.mkv"
+);
+assert.deepEqual(
+  serviceWithHeaderSubtitles
+    .filter((track) => track.type === "subtitle")
+    .map((track) => track.language),
+  ["cze", "eng"],
+  "append header subtitle metadata when the service returns only audio"
 );
 
 const serviceWithoutLanguages = [
@@ -374,7 +420,7 @@ console.log(
 );
 
 // SeekHead points beyond the first Cluster, without downloading Cluster data.
-const { matroskaTracksOffset } = await import("../js/data/repository/matroskaAudioMetadata.js");
+const { matroskaTracksOffset } = await import("../js/data/repository/matroskaTrackMetadata.js");
 const tracksElement = element("1654ae6b", Buffer.concat([video, czech, english]));
 const relativeTracks = 2000000;
 const position = Buffer.alloc(4);
@@ -391,14 +437,14 @@ const clusterHeader = Buffer.from("1f43b67501ffffffffffffff", "hex");
 const indexedHeader = Buffer.concat([prefix, seekHead, clusterHeader]);
 const absoluteTracks = prefix.length + relativeTracks;
 assert.equal(matroskaTracksOffset(indexedHeader), absoluteTracks);
-assert.deepEqual(parseMatroskaAudioTracks(indexedHeader), []);
+assert.deepEqual(parseMatroskaTracks(indexedHeader), []);
 let ranges = [];
 globalThis.fetch = async (_url, options) => {
   ranges.push(options.headers.Range);
   return ranges.length === 1 ? reply(indexedHeader) : reply(tracksElement, 206, null);
 };
 assert.deepEqual(
-  await fetchMatroskaAudioTracks("https://example.test/tracks-after-clusters.mkv"),
+  await fetchMatroskaTracks("https://example.test/tracks-after-clusters.mkv"),
   tracks
 );
 assert.deepEqual(ranges, ["bytes=0-65535", `bytes=${absoluteTracks}-${absoluteTracks + 65535}`]);
@@ -430,7 +476,7 @@ for (const response of [
 ]) {
   let request = 0;
   globalThis.fetch = async () => (++request === 1 ? reply(indexedHeader) : response);
-  assert.deepEqual(await fetchMatroskaAudioTracks("https://example.test/invalid-index.mkv"), []);
+  assert.deepEqual(await fetchMatroskaTracks("https://example.test/invalid-index.mkv"), []);
   assert.equal(request, 2, "never follow another index recursively");
 }
 for (let end = 0; end < seekHead.length; end++) {
@@ -456,7 +502,7 @@ globalThis.fetch = async (_url, options) => {
   return rangedReply(largeHeader, start, end - start + 1);
 };
 assert.deepEqual(
-  await fetchMatroskaAudioTracks("https://example.test/large-header.mkv"),
+  await fetchMatroskaTracks("https://example.test/large-header.mkv"),
   tracks,
   "read the second chunk when Tracks follows a large attachment"
 );
@@ -479,10 +525,86 @@ assert.equal(
   true,
   "Tizen AVPlay must expose embedded audio metadata"
 );
+assert.equal(
+  gateScreen.canDiscoverEmbeddedSubtitleTracks(),
+  true,
+  "Tizen AVPlay must expose embedded subtitle metadata"
+);
 PlayerController.avplayActive = false;
 assert.equal(gateScreen.canDiscoverEmbeddedAudioTracks(), false);
+assert.equal(gateScreen.canDiscoverEmbeddedSubtitleTracks(), false);
 PlayerController.avplayActive = true;
-console.log("Tizen AVPlay audio metadata gate: accepts tizen-avplay and rejects inactive playback");
+console.log("Tizen AVPlay metadata gate: accepts tizen-avplay for audio and subtitles");
+
+const subtitleScreen = {
+  ...createPlayerScreenMethods11(),
+  ...createPlayerScreenMethods40(),
+  ...createPlayerScreenMethods41()
+};
+subtitleScreen.embeddedSubtitleTracks = subtitleScreen.normalizeEmbeddedSubtitleTracks(
+  parseMatroskaTracks(headerWithSubtitles)
+);
+assert.equal(
+  subtitleScreen.mergeAvPlaySubtitleTrackMetadata(
+    { avplayTrackIndex: 3, language: "", extraInfo: { track_num: "0" } },
+    0
+  ).language,
+  "cs",
+  "Czech subtitle language comes from the MKV header"
+);
+assert.equal(
+  subtitleScreen.mergeAvPlaySubtitleTrackMetadata(
+    { avplayTrackIndex: 4, language: "", extraInfo: { track_num: "1" } },
+    1
+  ).language,
+  "en",
+  "untagged English subtitle uses the Matroska default"
+);
+
+const { createPlayerVideoLifecycleHandlers } =
+  await import("../js/ui/screens/player/playerVideoLifecycleHandlers.js");
+const startupCalls = [];
+const startupContext = {
+  paused: false,
+  isStartupErrorVisible: () => false,
+  reapplyPendingWebOsAddonSubtitle: () => {},
+  attemptPendingPlaybackRestore: () => {},
+  loadEmbeddedSubtitleTracks: () => {
+    startupCalls.push("load");
+    return Promise.resolve();
+  },
+  refreshTrackDialogs: () => {
+    startupCalls.push("refresh");
+  },
+  updateUiTick: () => {},
+  markPlaybackProgress: () => {},
+  applyAudioAmplification: () => {},
+  applySubtitlePresentationSettings: () => {},
+  applyAspectMode: () => {},
+  ensureTrackDataWarmup: () => {},
+  updateMediaSessionPositionState: () => {},
+  schedulePauseOverlay: () => {},
+  startTrackDiscoveryWindow: () => {},
+  scheduleLoadingCompletionCheck: () => {},
+  attemptSilentAudioRecovery: () => {}
+};
+PlayerController.getAvPlayAudioTracks = () => [{ avplayTrackIndex: 1, language: "" }];
+const startupHandlers = createPlayerVideoLifecycleHandlers.call(startupContext, {}, () => true);
+startupHandlers.onLoadedMetadata();
+assert.deepEqual(
+  startupCalls.slice(0, 2),
+  ["load", "refresh"],
+  "Tizen loads metadata before applying startup preferences"
+);
+startupCalls.length = 0;
+PlayerController.getAvPlayAudioTracks = () => [{ avplayTrackIndex: 1, language: "eng" }];
+startupHandlers.onLoadedMetadata();
+assert.equal(
+  startupCalls[0],
+  "refresh",
+  "known AVPlay audio languages keep the immediate startup path"
+);
+assert.equal(startupCalls.includes("load"), false);
 
 const originalGetTracks = localMediaTracksRepository.getTracks;
 let prefetchedUrl = "";
