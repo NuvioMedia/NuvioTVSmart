@@ -526,10 +526,10 @@
   --legacy-sidebar-focus-scale: 1.1;
   /* ATV collapsedWidth 184dp -> 368px */
   --modern-sidebar-collapsed-width: 368px;
-  /* ATV expandedWidth 262dp -> 524px */
-  --modern-sidebar-open-width: 524px;
-  /* ATV expandedWidth minus start/end padding 262dp - 14dp - 8dp -> 480px */
-  --modern-sidebar-surface-width: 480px;
+  /* ATV expandedWidth 230dp -> 460px */
+  --modern-sidebar-open-width: 460px;
+  /* ATV expandedWidth minus start/end padding 230dp - 14dp - 8dp -> 416px */
+  --modern-sidebar-surface-width: 416px;
   /* ATV sidebar panel top/start/bottom 16dp/14dp/12dp -> 32px/28px/24px */
   --modern-sidebar-surface-top: 32px;
   --modern-sidebar-surface-left: 28px;
@@ -766,11 +766,11 @@
     width 350ms cubic-bezier(0.4, 0, 0.2, 1),
     transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
-  /* ATV titleLarge 20sp / 28sp -> 40px / 56px */
-  font-size: min(2.08vw, 40px);
-  font-weight: inherit;
-  line-height: min(2.92vw, 56px);
-  letter-spacing: 0;
+  /* ATV bodyLarge 16sp / 24sp -> 32px / 48px */
+  font-size: min(1.67vw, 32px);
+  font-weight: 400;
+  line-height: min(2.5vw, 48px);
+  letter-spacing: 1px;
 }
 
 .home-sidebar.content-expanded .home-nav-label {

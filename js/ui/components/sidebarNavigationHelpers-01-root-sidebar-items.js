@@ -183,20 +183,12 @@ export function fitSidebarLabel(node, minFontSizePx) {
 export function fitRootSidebarText(container) {
   const targets = getSidebarTextFitTargets(container);
   targets.forEach((node) => {
-    if (node.matches(".home-nav-label")) {
-      fitSidebarLabel(node, 24);
-      return;
-    }
     if (node.matches(".modern-sidebar-pill-label")) {
       fitSidebarLabel(node, 28);
       return;
     }
-    if (node.matches(".modern-sidebar-profile-name")) {
-      // Android TV AutoResizeText uses a 9sp floor; the Web TV canvas is 2x.
-      fitSidebarLabel(node, 18);
-      return;
-    }
-    fitSidebarLabel(node, 30);
+    // Android TV AutoResizeText uses a 9sp floor; the Web TV canvas is 2x.
+    fitSidebarLabel(node, 18);
   });
 }
 

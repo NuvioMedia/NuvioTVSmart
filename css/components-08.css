@@ -304,14 +304,25 @@
   min-width: 0;
   flex: 1;
   font-family: var(--app-font-family);
-  /* ATV titleLarge 20sp / 28sp -> 40px / 56px */
-  font-size: min(2.08vw, 40px);
-  font-weight: 500;
-  line-height: min(2.92vw, 56px);
-  letter-spacing: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
+}
+
+.modern-sidebar-nav-label {
+  /* ATV bodyLarge 16sp / 24sp -> 32px / 48px */
+  font-size: min(1.67vw, 32px);
+  font-weight: 400;
+  line-height: min(2.5vw, 48px);
+  letter-spacing: 1px;
+}
+
+.modern-sidebar-pill-label {
+  /* ATV titleLarge 20sp / 30sp -> 40px / 60px */
+  font-size: min(2.08vw, 40px);
+  font-weight: 500;
+  line-height: min(3.125vw, 60px);
+  letter-spacing: 0;
 }
 
 .modern-sidebar-nav-label,
