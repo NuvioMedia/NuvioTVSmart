@@ -14,6 +14,8 @@ export function createHomeScreenMethods20() {
     buildWatchedTitleIdSet,
     getSidebarProfileState,
     setModernSidebarPillIconOnly,
+    setModernSidebarExpanded,
+    setLegacySidebarExpanded,
     HOME_PERF_DEBUG,
     homePerfNow,
     logHomePerf,
@@ -128,6 +130,13 @@ export function createHomeScreenMethods20() {
         this.container.style.removeProperty("left");
         this.container.style.removeProperty("visibility");
         this.container.style.removeProperty("pointer-events");
+        // The preserved DOM still has the menu that opened the route expanded;
+        // Android lands on Home with the drawer closed, so apply that state too.
+        if (this.layoutPrefs?.modernSidebar) {
+          setModernSidebarExpanded(this.container, false);
+        } else {
+          setLegacySidebarExpanded(this.container, false);
+        }
         setModernSidebarPillIconOnly(this.container, this.pillIconOnly);
         this.scheduleModernSidebarPillAutoCollapse();
         this.homeLoadToken = (this.homeLoadToken || 0) + 1;
