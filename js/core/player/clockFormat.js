@@ -60,19 +60,31 @@ export function resolveWebOsHour12(localeInfo, intlApi = null) {
 export function resolveSystemHour12({
   tizenApi = null,
   webOsLocaleInfo = null,
-  intlApi = null
+  intlApi = null,
+  locale = undefined
 } = {}) {
-  if (typeof tizenApi?.time?.getTimeFormat === "function") {
-    // Tizen 9 can report an `ap` pattern even when the browser's default
-    // formatter follows the TV's 24-hour cycle. Intl is the formatter used
-    // below, so prefer its resolved cycle and keep the Tizen API as fallback.
-    const intlHour12 = resolveIntlHour12(intlApi);
-    if (typeof intlHour12 === "boolean") {
-      return intlHour12;
-    }
+  const webOsHour12 = resolveWebOsHour12(webOsLocaleInfo, intlApi);
+  if (typeof webOsHour12 === "boolean") {
+    return webOsHour12;
+  }
 
+  // Resolve the cycle from the locale that formats the clock, otherwise a
+  // runtime 12-hour default is applied to a 24-hour locale. That mismatch
+  // renders Swedish and other 24-hour locales with an `fm`/`pm` suffix.
+  const intlHour12 = resolveIntlHour12(intlApi, locale);
+
+  if (typeof tizenApi?.time?.getTimeFormat === "function") {
     try {
       const platformHour12 = parsePlatformTimeFormat(tizenApi.time.getTimeFormat());
+      // A 24-hour platform pattern is authoritative. Tizen 9 can report an
+      // `ap` pattern even when the TV follows the 24-hour cycle, so a
+      // 12-hour pattern is trusted only when Intl cannot resolve one.
+      if (platformHour12 === false) {
+        return false;
+      }
+      if (typeof intlHour12 === "boolean") {
+        return intlHour12;
+      }
       if (typeof platformHour12 === "boolean") {
         return platformHour12;
       }
@@ -81,12 +93,7 @@ export function resolveSystemHour12({
     }
   }
 
-  const webOsHour12 = resolveWebOsHour12(webOsLocaleInfo, intlApi);
-  if (typeof webOsHour12 === "boolean") {
-    return webOsHour12;
-  }
-
-  return resolveIntlHour12(intlApi);
+  return intlHour12;
 }
 
 export function buildClockFormatOptions(hour12 = null) {

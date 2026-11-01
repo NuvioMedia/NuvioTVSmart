@@ -351,7 +351,8 @@ export function formatClock(date = new Date(), webOsLocaleInfo = null) {
   const hour12 = resolveSystemHour12({
     tizenApi: typeof tizen !== "undefined" ? tizen : null,
     webOsLocaleInfo,
-    intlApi: typeof Intl !== "undefined" ? Intl : null
+    intlApi: typeof Intl !== "undefined" ? Intl : null,
+    locale
   });
   const localeKey = `${String(locale || "__default__")}:${String(hour12)}`;
   const options = buildClockFormatOptions(hour12);
