@@ -227,7 +227,24 @@ export function createPlayerScreenMethods34() {
       this.clearTrackDiscoveryTimer();
       this.trackDiscoveryStartedAt = 0;
       this.trackDiscoveryDeadline = 0;
+      const previousPlaybackUrl = this.activePlaybackUrl;
       this.activePlaybackUrl = streamUrl;
+      if (previousPlaybackUrl !== streamUrl) {
+        this.skipIntervals = [];
+        this.activeSkipInterval = null;
+        this.skipIntervalDismissed = false;
+        this.skipIntroAutoHidden = false;
+        this.skipIntroCountdownProgress = 0;
+        this.skipIntroSuppressedKey = "";
+        this.skipIntroSuppressedUntil = 0;
+        this.stopSkipIntroCountdownAnimation?.();
+        this.chapterSkipIntervalsLoaded = false;
+        this.chapterSkipIntervalsRetryAt = 0;
+        this.chaptersRequestToken = Number(this.chaptersRequestToken || 0) + 1;
+        this.skipIntroApiIntervals = [];
+        this.skipIntroChapterIntervals = [];
+        void this.fetchSkipIntervals();
+      }
       this.currentEngineFsStream = nextEngineFsState || null;
       if (this.currentEngineFsStream) {
         this.engineFsPlaybackToken = claimEngineFsPlayback(this.currentEngineFsStream);

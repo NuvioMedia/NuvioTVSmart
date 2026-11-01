@@ -2,7 +2,7 @@ const INITIAL_HEADER_BYTES = 64 * 1024;
 const MAX_HEADER_BYTES = 1024 * 1024;
 const PROBE_TIMEOUT_MS = 3000;
 
-function readElement(bytes, offset, limit) {
+export function readElement(bytes, offset, limit) {
   const readVint = (start, isId) => {
     const first = bytes[start];
     if (!first) throw new Error("Invalid EBML integer");
@@ -28,7 +28,7 @@ function readElement(bytes, offset, limit) {
   return { id: id.value, start, end: size.unknown ? Infinity : start + size.value };
 }
 
-function children(bytes, start, end) {
+export function children(bytes, start, end) {
   const elements = [];
   while (start < end) {
     const element = readElement(bytes, start, end);
