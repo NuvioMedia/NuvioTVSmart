@@ -51,7 +51,9 @@ function loadImage(url, signal) {
       image.src = "";
       finish(null);
     };
-    image.onload = () => finish(image.naturalWidth > 0 ? image : null);
+    // onload already proves the image is usable. Some TV engines report
+    // naturalWidth as 0 until the image is attached, which left Ambient black.
+    image.onload = () => finish(image);
     image.onerror = () => finish(null);
     signal.addEventListener("abort", cancel, { once: true });
     timer = setTimeout(cancel, 10000);

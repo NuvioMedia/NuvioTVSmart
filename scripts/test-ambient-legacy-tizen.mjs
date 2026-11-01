@@ -82,6 +82,8 @@ for (const nativeAbort of [false, true]) {
   assert.equal(ambient.slides.length, 1);
   ambient.show();
   assert.equal(images.length, 2, "load backdrop and logo concurrently without AbortController");
+  // Legacy TV engines can report zero intrinsic width after a successful load.
+  images[0].naturalWidth = 0;
   images[0].onload();
   images[1].onerror();
   await flush();
