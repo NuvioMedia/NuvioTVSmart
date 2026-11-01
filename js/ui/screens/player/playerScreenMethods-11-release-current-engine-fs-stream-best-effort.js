@@ -136,7 +136,7 @@ export function createPlayerScreenMethods11() {
     canDiscoverEmbeddedSubtitleTracks() {
       const usingNativePlayback =
         typeof PlayerController.isUsingNativePlayback === "function" ? PlayerController.isUsingNativePlayback() : false;
-      if (!usingNativePlayback) {
+      if (!usingNativePlayback && !Environment.isTizen()) {
         return false;
       }
 
@@ -145,13 +145,14 @@ export function createPlayerScreenMethods11() {
         return false;
       }
 
-      if (Environment.isWebOS()) {
-        return true;
+      if (Environment.isTizen()) {
+        // AVPlay is the native engine on Tizen, but its name is "tizen-avplay"
+        // rather than "native-*". These tracks only label AVPlay's own list.
+        return Boolean(typeof PlayerController.isUsingAvPlay === "function" && PlayerController.isUsingAvPlay());
       }
 
-      if (Environment.isTizen()) {
-        const usingAvPlay = typeof PlayerController.isUsingAvPlay === "function" ? PlayerController.isUsingAvPlay() : false;
-        return Boolean(usingAvPlay);
+      if (Environment.isWebOS()) {
+        return true;
       }
 
       return typeof PlayerController.isLikelyDirectFileUrl === "function" ? PlayerController.isLikelyDirectFileUrl(probeUrl) : false;

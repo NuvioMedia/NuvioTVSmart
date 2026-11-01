@@ -67,20 +67,21 @@ function parseTrackEntries(bytes, element) {
       ids.add(id);
       return {
         id,
-        type: type === 2 ? "audio" : "other",
+        type: type === 2 ? "audio" : type === 17 ? "subtitle" : "other",
         containerStreamIndex,
         codec: string(0x86),
         name: string(0x536e),
         // Matroska defaults a missing Language to English, as Media3 and
         // mkvmerge-based muxers do. An explicit und still stays unknown.
-        language: string(0x22b59d) || string(0x22b59c) || "eng"
+        language: string(0x22b59d) || string(0x22b59c) || "eng",
+        forced: integer(0x55aa) === 1
       };
     })
-    .filter((track) => track.type === "audio");
+    .filter((track) => track.type === "audio" || track.type === "subtitle");
 }
 
 // Read one bounded header and, when indexed, one bounded Tracks range.
-export function parseMatroskaAudioTracks(bytes) {
+export function parseMatroskaTracks(bytes) {
   try {
     const header = readElement(bytes, 0, bytes.length);
     if (header.id === 0x1654ae6b)
@@ -158,7 +159,7 @@ export function matroskaTracksOffset(bytes) {
   return null;
 }
 
-export async function fetchMatroskaAudioTracks(url) {
+export async function fetchMatroskaTracks(url) {
   if (!/^https?:\/\//i.test(url) || typeof AbortController !== "function") return [];
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
@@ -194,15 +195,25 @@ export async function fetchMatroskaAudioTracks(url) {
   };
   try {
     const header = await readRange(0, INITIAL_HEADER_BYTES);
-    if (!header) return [];
-    const tracks = parseMatroskaAudioTracks(header);
+    // Skip the larger read for containers that cannot carry Matroska tracks.
+    if (
+      !header ||
+      header.length < 4 ||
+      header[0] !== 0x1a ||
+      header[1] !== 0x45 ||
+      header[2] !== 0xdf ||
+      header[3] !== 0xa3
+    ) {
+      return [];
+    }
+    const tracks = parseMatroskaTracks(header);
     if (tracks.length) return tracks;
     const offset = matroskaTracksOffset(header);
     if (offset != null) {
       const indexed = await readRange(offset, INITIAL_HEADER_BYTES);
       // The advertised position must contain Tracks, never another Segment or index.
       if (!indexed || readElement(indexed, 0, indexed.length).id !== 0x1654ae6b) return [];
-      return parseMatroskaAudioTracks(indexed);
+      return parseMatroskaTracks(indexed);
     }
     // Large attachments can push Tracks past the first chunk.
     if (header.length < INITIAL_HEADER_BYTES) return [];
@@ -211,7 +222,7 @@ export async function fetchMatroskaAudioTracks(url) {
     const combined = new Uint8Array(header.length + tail.length);
     combined.set(header);
     combined.set(tail, header.length);
-    return parseMatroskaAudioTracks(combined);
+    return parseMatroskaTracks(combined);
   } catch (_) {
     return [];
   } finally {

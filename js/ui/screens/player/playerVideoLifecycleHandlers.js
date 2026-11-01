@@ -2,7 +2,7 @@
 import * as internals from "./playerScreenContext.js";
 
 export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback) {
-  const { PlayerController, PlayerSettingsStore, Environment, TrackingScrobbleService } = internals;
+  const { PlayerController, PlayerSettingsStore, Environment, TrackingScrobbleService, getUsableAudioTrackLanguageValue } = internals;
   const onWaiting = () => {
     this.seekLoadingVisualComplete = false;
     if (this.isStartupErrorVisible()) {
@@ -234,6 +234,17 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
     this.reapplyPendingWebOsAddonSubtitle?.(true);
     this.attemptPendingPlaybackRestore({ force: true });
 
+    // Tizen can publish AVPlay's audio list before the header metadata is
+    // loaded. Start that read before the startup preference pass so the first
+    // AVPlay track is not latched while the languages are still missing.
+    if (Environment.isTizen()) {
+      const avplayAudioTracks = typeof PlayerController.getAvPlayAudioTracks === "function" ? PlayerController.getAvPlayAudioTracks() : [];
+      const needsEmbeddedAudioMetadata =
+        !avplayAudioTracks.length || avplayAudioTracks.some((track) => !getUsableAudioTrackLanguageValue(track));
+      if (needsEmbeddedAudioMetadata) {
+        void this.loadEmbeddedSubtitleTracks();
+      }
+    }
     this.startupTrackPreferenceReady = true;
     this.refreshTrackDialogs();
     this.updateUiTick();
