@@ -66,7 +66,7 @@ function setup({ platform = "browser", constrained = false, bodyConstrained = fa
   };
 }
 
-for (const options of [{ constrained: true }, { bodyConstrained: true }]) {
+for (const options of [{ constrained: true }, { bodyConstrained: true }, { platform: "webos" }]) {
   test(`Search cancels both cameras and clamps targets with ${JSON.stringify(options)}`, () => {
     const { search, frames, context } = setup(options);
     const container = {
@@ -150,7 +150,14 @@ for (const options of [{ constrained: true }, { bodyConstrained: true }]) {
   });
 }
 
-for (const platform of ["webos", "tizen", "browser"]) {
+test("webOS camera snapping leaves the constrained runtime profile unchanged", () => {
+  const { search, discover, context } = setup({ platform: "webos" });
+  assert.equal(context.internals.isPerformanceConstrainedRuntime(), false);
+  assert.equal(search.shouldUseImmediateFocusScroll(), true);
+  assert.equal(discover.shouldUseImmediateFocusScroll(), true);
+});
+
+for (const platform of ["tizen", "browser"]) {
   test(`Normal ${platform} retains Search animations and Discover fast scroll`, () => {
     const { search, discover, frames } = setup({ platform });
     const container = {
