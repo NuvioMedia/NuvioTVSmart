@@ -291,7 +291,7 @@ function renderModernHeroMarkup({
             typeof renderHeroBackdropImage === "function"
               ? renderHeroBackdropImage(display)
               : display.backdrop
-                ? `<img class="home-hero-backdrop" src="${escapeAttribute(display.backdrop)}" alt="${escapeAttribute(display.title)}" decoding="async" fetchpriority="high" />`
+                ? `<img class="home-hero-backdrop" src="${escapeAttribute(display.backdrop)}" alt="" decoding="async" fetchpriority="high" />`
                 : '<div class="home-hero-backdrop placeholder"></div>'
           }
           </div>

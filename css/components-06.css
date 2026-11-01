@@ -363,6 +363,14 @@
   background: linear-gradient(135deg, #1b2028, #12161d);
 }
 
+/* Artwork that is pending, being rescaled or out of fallbacks would paint a
+   broken-image frame and glyph; draw a transparent pixel so only the card
+   surface shows, like Android TV. */
+img:not([src]),
+img.placeholder {
+  content: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+}
+
 .featured-backdrop {
   width: 100%;
   max-height: 220px;

@@ -57,11 +57,11 @@ export function createHomeScreenMethods05() {
               transitionMode: heroTransitionMode
             });
           } else {
-            backdrop.setAttribute("alt", display.title || "featured");
+            backdrop.setAttribute("alt", "");
           }
         } else if (src) {
           backdrop.setAttribute("src", src);
-          backdrop.setAttribute("alt", display.title || "featured");
+          backdrop.setAttribute("alt", "");
           backdrop.classList.remove("placeholder");
         } else {
           backdrop.removeAttribute("src");

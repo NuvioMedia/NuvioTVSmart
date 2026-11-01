@@ -78,6 +78,10 @@ export function createHomeScreenMethods30() {
         cancelAnimationFrame(this.homeLazyImageHydrationRaf);
         this.homeLazyImageHydrationRaf = 0;
       }
+      if (this.homeViewportSettleHydrationTimer) {
+        clearTimeout(this.homeViewportSettleHydrationTimer);
+        this.homeViewportSettleHydrationTimer = null;
+      }
       if (this.homeLazyImageHydrationSettleTimer) {
         clearTimeout(this.homeLazyImageHydrationSettleTimer);
         this.homeLazyImageHydrationSettleTimer = null;

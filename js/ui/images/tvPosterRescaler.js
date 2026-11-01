@@ -178,6 +178,7 @@ export function shouldRescaleHomeArtwork() {
 // A worker that hangs would hold its slot forever and every later poster
 // would stay blank, which is worse than the oversized decode this replaces.
 const JOB_TIMEOUT_MS = 15000;
+const WORKER_JOB_SLOTS = 2;
 
 function createPool() {
   const workerUrl = URL.createObjectURL(new Blob([WORKER_SOURCE], { type: "text/javascript" }));
@@ -225,7 +226,12 @@ function spawnWorker(state) {
   };
   worker.onerror = () => retireWorker(state, worker, "worker error");
   state.workers.push(worker);
-  state.idle.push(worker);
+  // Each job spends most of its time waiting on the network, and the worker
+  // handler is async, so two slots per worker overlap a download with the
+  // other job's decode (about OkHttp's five requests per host on Android).
+  for (let slot = 0; slot < WORKER_JOB_SLOTS; slot += 1) {
+    state.idle.push(worker);
+  }
   return true;
 }
 
@@ -262,11 +268,12 @@ function retireWorker(state, worker, reason) {
 
 function pump(state) {
   while (!state.disposed && state.idle.length && state.queue.length) {
-    // Highest priority first, oldest first within a priority, so the focused
-    // row resolves before the rows the user has not reached yet.
+    // Highest priority first, newest first within a priority: after a long
+    // scroll the latest requests are the cards on screen, while the rows passed
+    // on the way are still queued (they are not stale until evicted).
     let pick = 0;
     for (let index = 1; index < state.queue.length; index += 1) {
-      if (state.queue[index].priority < state.queue[pick].priority) {
+      if (state.queue[index].priority <= state.queue[pick].priority) {
         pick = index;
       }
     }

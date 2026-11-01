@@ -59,7 +59,7 @@ export function createFolderDetailScreenMethods03() {
                 <div class="seeall-card-poster-wrap">
                   ${
                     item.poster
-                      ? `<img class="seeall-card-poster-image" ${posterFallbackAttributes(item)} src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.name || "content")}" loading="${folderPosterLoadingMode()}" decoding="async" />`
+                      ? `<img class="seeall-card-poster-image" ${posterFallbackAttributes(item)} src="${escapeHtml(item.poster)}" alt="" loading="${folderPosterLoadingMode()}" decoding="async" />`
                       : `<div class="seeall-card-poster placeholder"></div>`
                   }
                   ${isTitleItemWatched(item, this.watchedTitleIds) ? renderTitleWatchedBadge() : ""}
@@ -105,7 +105,7 @@ export function createFolderDetailScreenMethods03() {
               <div class="seeall-card-poster-wrap">
                 ${
                   item.poster
-                    ? `<img class="seeall-card-poster-image" ${posterFallbackAttributes(item)} src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.name || "content")}" loading="${folderPosterLoadingMode()}" decoding="async" />`
+                    ? `<img class="seeall-card-poster-image" ${posterFallbackAttributes(item)} src="${escapeHtml(item.poster)}" alt="" loading="${folderPosterLoadingMode()}" decoding="async" />`
                     : `<div class="seeall-card-poster placeholder"></div>`
                 }
                 ${isTitleItemWatched(item, this.watchedTitleIds) ? renderTitleWatchedBadge() : ""}

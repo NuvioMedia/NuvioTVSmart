@@ -148,7 +148,7 @@ export function createMetaDetailsScreenMethods16() {
             <div class="detail-morelike-poster-wrap">
               ${
                 primaryImage
-                  ? `<img class="detail-morelike-poster-image"${posterFallbackAttributes(item, true)} src="${escapeHtml(primaryImage)}" alt="${escapeHtml(item.name || "content")}" loading="${detailImageLoadingMode()}" decoding="async"${fallbackImage ? ` data-fallback-src="${escapeHtml(fallbackImage)}"` : ""} onerror="var next=this.dataset.fallbackSrc||''; if(next && this.src !== next){ this.src = next; this.dataset.fallbackSrc=''; return; } this.hidden = true; var placeholder = this.nextElementSibling; if(placeholder){ placeholder.hidden = false; }" />`
+                  ? `<img class="detail-morelike-poster-image"${posterFallbackAttributes(item, true)} src="${escapeHtml(primaryImage)}" alt="" loading="${detailImageLoadingMode()}" decoding="async"${fallbackImage ? ` data-fallback-src="${escapeHtml(fallbackImage)}"` : ""} onerror="var next=this.dataset.fallbackSrc||''; if(next && this.src !== next){ this.src = next; this.dataset.fallbackSrc=''; return; } this.hidden = true; var placeholder = this.nextElementSibling; if(placeholder){ placeholder.hidden = false; }" />`
                   : ""
               }
               <div class="detail-morelike-poster placeholder"${primaryImage ? " hidden" : ""}></div>

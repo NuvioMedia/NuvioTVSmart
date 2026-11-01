@@ -201,7 +201,9 @@ export function animateHeroBackdropSwap(
   }
 
   const normalizedSrc = String(nextSrc || "").trim();
-  const normalizedAlt = String(nextAlt || "featured").trim() || "featured";
+  // Decorative: the logo/brand carries the title, and a pending backdrop would
+  // otherwise paint it as alt text over the hero.
+  const normalizedAlt = "";
   const currentSrc = String(backdrop.getAttribute("src") || "").trim();
   const transitionMode = options?.transitionMode || "crossfade";
   const token = Number(backdrop.heroBackdropTransitionToken || 0) + 1;

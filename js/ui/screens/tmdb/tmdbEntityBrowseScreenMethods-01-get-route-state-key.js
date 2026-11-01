@@ -270,7 +270,7 @@ export function createTmdbEntityBrowseScreenMethods01() {
                 <div class="tmdb-entity-card-poster-wrap">
                   ${
                     poster
-                      ? `<img class="tmdb-entity-card-poster" ${posterFallbackAttributes(item)} src="${escapeHtml(poster)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async" onerror="this.hidden=true; this.nextElementSibling.hidden=false" />`
+                      ? `<img class="tmdb-entity-card-poster" ${posterFallbackAttributes(item)} src="${escapeHtml(poster)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.nextElementSibling.hidden=false" />`
                       : ""
                   }
                   <div class="tmdb-entity-card-placeholder"${poster ? " hidden" : ""}></div>

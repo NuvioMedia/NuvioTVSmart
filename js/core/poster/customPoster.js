@@ -163,12 +163,34 @@ export function installCustomPosterFallback() {
     "error",
     (event) => {
       const image = event.target;
-      const original = image?.dataset?.originalPoster;
-      if (!original || image.tagName !== "IMG") return;
-      delete image.dataset.originalPoster;
-      if (image.getAttribute("src") === original) return;
-      event.stopImmediatePropagation();
-      image.src = original;
+      if (image?.tagName !== "IMG") return;
+      const original = image.dataset?.originalPoster;
+      if (original) {
+        delete image.dataset.originalPoster;
+        if (image.getAttribute("src") !== original) {
+          event.stopImmediatePropagation();
+          image.src = original;
+          return;
+        }
+      }
+      // Out of fallbacks: Chromium would draw the alt text over a broken frame.
+      // Leave the empty card surface instead, like Android TV's failed artwork.
+      // Logos keep their alt text; callers render the title in their place.
+      if (!image.dataset?.fallbackSrcs && !/logo/i.test(image.className)) {
+        image.alt = "";
+        image.classList.add("placeholder");
+      }
+    },
+    true
+  );
+  // A re-hydrated image that loads after an earlier failure must show again.
+  document.addEventListener(
+    "load",
+    (event) => {
+      const image = event.target;
+      if (image?.tagName === "IMG" && image.classList.contains("placeholder")) {
+        image.classList.remove("placeholder");
+      }
     },
     true
   );

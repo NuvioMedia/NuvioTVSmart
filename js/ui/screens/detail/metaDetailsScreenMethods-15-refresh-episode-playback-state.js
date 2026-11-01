@@ -271,7 +271,7 @@ export function createMetaDetailsScreenMethods15() {
                      data-trailer-index="${index}"
                      data-trailer-yt-id="${escapeHtml(ytId)}">
               <div class="detail-morelike-poster-wrap">
-                <img class="detail-morelike-poster-image" src="https://img.youtube.com/vi/${escapeHtml(ytId)}/hqdefault.jpg" alt="${escapeHtml(title)}" loading="lazy" decoding="async" />
+                <img class="detail-morelike-poster-image" src="https://img.youtube.com/vi/${escapeHtml(ytId)}/hqdefault.jpg" alt="" loading="lazy" decoding="async" />
                 <span class="detail-trailer-play-badge"><img src="assets/icons/trailer_play_button.svg" alt="" aria-hidden="true" /></span>
               </div>
               <div class="detail-morelike-name">${escapeHtml(title)}</div>

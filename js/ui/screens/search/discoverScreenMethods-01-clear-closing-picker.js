@@ -348,7 +348,7 @@ export function createDiscoverScreenMethods01() {
                      <div class="seeall-card-poster-wrap">
                        ${
                          item.poster
-                           ? `<img class="seeall-card-poster-image" ${posterFallbackAttributes(item)} data-src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.name || "content")}" loading="lazy" decoding="async" />`
+                           ? `<img class="seeall-card-poster-image" ${posterFallbackAttributes(item)} data-src="${escapeHtml(item.poster)}" alt="" loading="lazy" decoding="async" />`
                            : `<div class="seeall-card-poster placeholder"></div>`
                        }
                        ${isTitleItemWatched(item, this.watchedTitleIds) ? renderTitleWatchedBadge() : ""}
