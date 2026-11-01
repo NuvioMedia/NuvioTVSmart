@@ -6,6 +6,7 @@ export function createPlayerScreenMethods11() {
     PlayerController,
     TrackingScrobbleService,
     Environment,
+    localMediaTracksRepository,
     warmBitmapSubtitleDecoder,
     SUBTITLE_LANGUAGE_UNKNOWN_KEY,
     subtitleLabel,
@@ -156,14 +157,27 @@ export function createPlayerScreenMethods11() {
       return typeof PlayerController.isLikelyDirectFileUrl === "function" ? PlayerController.isLikelyDirectFileUrl(probeUrl) : false;
     },
     canDiscoverEmbeddedAudioTracks() {
+      // AVPlay is the native engine on Tizen, but its name is "tizen-avplay"
+      // rather than "native-*". These tracks only label AVPlay's own audio
+      // list, so do not require the browser native-video gate here.
       if (Environment.isTizen()) {
-        const usingNativePlayback =
-          typeof PlayerController.isUsingNativePlayback === "function" ? PlayerController.isUsingNativePlayback() : false;
         const usingAvPlay = typeof PlayerController.isUsingAvPlay === "function" ? PlayerController.isUsingAvPlay() : false;
         const probeUrl = this.getTrackProbeUrl();
-        return Boolean(usingNativePlayback && usingAvPlay && probeUrl && !this.isCurrentSourceAdaptiveManifest());
+        return Boolean(usingAvPlay && probeUrl && !this.isCurrentSourceAdaptiveManifest());
       }
       return this.canDiscoverEmbeddedSubtitleTracks();
+    },
+    prefetchTizenEmbeddedAudioTracks(probeUrl = this.getTrackProbeUrl(), streamCandidate = this.getCurrentStreamCandidate()) {
+      if (!Environment.isTizen()) {
+        return;
+      }
+      const targetUrl = String(probeUrl || "").trim();
+      if (!targetUrl || this.isCurrentSourceAdaptiveManifest() || !this.isCurrentSourceLikelyMkv(targetUrl, streamCandidate)) {
+        return;
+      }
+      // Warm the shared cache before AVPlay publishes its track list. The
+      // startup audio gate then sees the languages while it is still closed.
+      void localMediaTracksRepository.getTracks(targetUrl).catch(() => []);
     },
     shouldUseEmbeddedSubtitleTracks() {
       if (!this.canDiscoverEmbeddedSubtitleTracks() || this.embeddedSubtitleTracks.length <= 0) {

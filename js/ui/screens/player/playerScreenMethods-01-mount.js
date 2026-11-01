@@ -222,6 +222,9 @@ export function createPlayerScreenMethods01() {
             maxWaitMs: prioritizeWebOsRemoteMkvPlayback ? WEBOS_REMOTE_MKV_AUDIO_GATE_MAX_WAIT_MS : 0
           });
         }
+        if (!this.currentEngineFsStream) {
+          this.prefetchTizenEmbeddedAudioTracks(initialStreamUrl, sourceCandidate);
+        }
         const playbackStartPromise = this.startPlayerControllerPlayback(
           this.activePlaybackUrl,
           this.buildPlaybackContext(sourceCandidate),
