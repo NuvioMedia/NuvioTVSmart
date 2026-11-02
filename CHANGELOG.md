@@ -1,8 +1,15 @@
 ## Unreleased
 
+## 1.3.1
+
 ### Improvements & Fixes
 
 - Holding a seek now moves the player bar, time and end time together with the preview on every step, aligned with Android TV (@WhiteGiso)
+- Library posters now render as images so Samsung Tizen paints them correctly (#1209) (@WhiteGiso)
+- Ambient mode now displays images that report zero natural width (#1211) (@WhiteGiso)
+- Smoother post-play mini window on Smart TV: the video plane stays rectangular, the ending movie no longer shows behind the recommendation backdrop during the entrance transition, and the video keeps playing without the extra GPU compositing (@WhiteGiso)
+- Post-play now hides every subtitle renderer (HTML, bitmap, ASS and native webOS/Tizen), aligned with Android TV (@WhiteGiso)
+- Released the webOS startup audio gate after track discovery so the parental guide can appear (@WhiteGiso)
 
 ## 1.3.0
 
