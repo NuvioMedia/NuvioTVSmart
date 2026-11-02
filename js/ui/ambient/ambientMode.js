@@ -27,6 +27,14 @@ const BLOCKED_ROUTES = new Set([
   "serverConnection"
 ]);
 const now = () => globalThis.performance?.now?.() ?? Date.now();
+function measure(node) {
+  try {
+    const rect = node?.getBoundingClientRect?.();
+    return rect ? `${Math.round(rect.width)}x${Math.round(rect.height)}` : "?";
+  } catch (_) {
+    return "?";
+  }
+}
 let lastImageFailure = "";
 function logImageFailure(url, reason) {
   let host = "";
@@ -354,6 +362,10 @@ export const AmbientMode = {
       this.slideShownLogged = true;
       // Diagnostic for the Tizen black-screen report (#1172).
       console.warn("Ambient slide shown", { id: slide.id });
+      const opacity = globalThis.getComputedStyle?.(backdrop)?.opacity ?? "?";
+      console.warn(
+        `Ambient paint viewport=${globalThis.innerWidth ?? "?"}x${globalThis.innerHeight ?? "?"} root=${measure(this.root)} stage=${measure(stage)} backdrop=${measure(backdrop)} opacity=${opacity}`
+      );
     }
     this.slideTimer = setTimeout(() => {
       void this.nextSlide(signal);
