@@ -1,5 +1,11 @@
 ## Unreleased
 
+## 1.3.6
+
+### Improvements & Fixes
+
+- Ambient now shows the loaded slide when Tizen pauses the fade at zero opacity, while keeping the normal fade on engines where it advances (#1172) (@WhiteGiso)
+
 ## 1.3.5
 
 ### Improvements & Fixes
