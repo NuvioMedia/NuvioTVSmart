@@ -89,7 +89,12 @@ class CatalogRepository {
           nextSkip: hasMore ? skip + rawItemCount : skip
         };
 
-        if (cacheGeneration === this.cacheGeneration) this.catalogCache.set(cacheKey, row);
+        // An empty page is usually a transient addon or upstream failure. Keep
+        // it out of the response cache so the next Home request retries it,
+        // matching Android, which has no catalog-response cache.
+        if (cacheGeneration === this.cacheGeneration && items.length) {
+          this.catalogCache.set(cacheKey, row);
+        }
         return row;
       })
     );
