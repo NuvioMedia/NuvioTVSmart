@@ -300,3 +300,63 @@ test("Tizen bitmap repository reads the window from the local subtitle service",
   assert.equal(windowData.data.length, 3);
   assert.match(windowData.idxContent, /filepos/);
 });
+
+const { createPlayerScreenMethods44 } =
+  await import("../js/ui/screens/player/playerScreenMethods-44-load-web-os-embedded-text-subtitle-window.js");
+const { localMediaEmbeddedSubtitleRepository } =
+  await import("../js/data/repository/localMediaEmbeddedSubtitleRepository.js");
+
+test("Tizen reselects the AVPlay track natively when the extractor is unavailable", async () => {
+  const previousGetWindow = localMediaEmbeddedSubtitleRepository.getWindow;
+  const previousSetTrack = PlayerController.setAvPlaySubtitleTrack;
+  const previousApplyMode = PlayerController.applyAvPlaySubtitleRenderMode;
+  const previousWarn = console.warn;
+  const calls = [];
+  try {
+    localMediaEmbeddedSubtitleRepository.getWindow = async () => {
+      throw new Error("Tizen embedded text subtitle service unavailable");
+    };
+    PlayerController.setAvPlaySubtitleTrack = (trackIndex, options) => {
+      calls.push({ trackIndex, options });
+      return true;
+    };
+    PlayerController.applyAvPlaySubtitleRenderMode = (mode) => {
+      calls.push({ mode });
+      return true;
+    };
+    console.warn = () => {};
+    const track = {
+      embeddedTrackIndex: 0,
+      sourceTrackId: 4,
+      sourceTrackOrdinal: 0,
+      codec: "S_TEXT/UTF8",
+      language: "fr"
+    };
+    const context = Object.assign(createPlayerScreenMethods44(), {
+      webOsEmbeddedTextSubtitleTrack: track,
+      webOsEmbeddedTextSubtitleLoading: false,
+      webOsEmbeddedTextSubtitleFallbackUnavailable: false,
+      webOsEmbeddedTextSubtitleUsingHtml: false,
+      webOsEmbeddedTextSubtitleUsingAss: false,
+      webOsEmbeddedTextSubtitleWindowStart: 0,
+      webOsEmbeddedTextSubtitleWindowEnd: 0,
+      webOsEmbeddedTextSubtitleWindowFailureCount: 0,
+      webOsEmbeddedTextSubtitleLastErrorAt: 0,
+      webOsEmbeddedTextSubtitleLoadToken: 0,
+      selectedSubtitleTrackIndex: 3,
+      subtitleSelectionToken: 1,
+      subtitleDelayMs: 0,
+      getTrackProbeUrl: () => "https://example.test/video.mkv",
+      getPlaybackCurrentSeconds: () => 10,
+      markEmbeddedTextSubtitleUnsupported() {}
+    });
+    const applied = await context.loadWebOsEmbeddedTextSubtitleWindow(10);
+    assert.equal(applied, false);
+    assert.deepEqual(calls, [{ trackIndex: 3, options: { renderMode: "native" } }]);
+  } finally {
+    localMediaEmbeddedSubtitleRepository.getWindow = previousGetWindow;
+    PlayerController.setAvPlaySubtitleTrack = previousSetTrack;
+    PlayerController.applyAvPlaySubtitleRenderMode = previousApplyMode;
+    console.warn = previousWarn;
+  }
+});

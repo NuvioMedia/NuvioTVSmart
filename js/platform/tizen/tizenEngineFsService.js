@@ -7,7 +7,10 @@ const START_TIMEOUT_MS = 12000;
 const PROBE_TIMEOUT_MS = 2500;
 const SERVICE_START_CALL_TIMEOUT_MS = 4000;
 const TIZEN_DEFAULT_OPERATION = "http://tizen.org/appcontrol/operation/default";
-const PURPOSES_ALLOWING_LEGACY_SERVICE = new Set(["p2p", "playback-proxy"]);
+// Subtitle extraction is optional and falls back to native AVPlay when the
+// service cannot start, so it may attempt the legacy path on TVs that report
+// web.service=false. Generic callers keep the capability gate.
+const PURPOSES_ALLOWING_LEGACY_SERVICE = new Set(["p2p", "playback-proxy", "subtitle"]);
 
 let startPromise = null;
 
@@ -101,8 +104,15 @@ async function startViaApplicationControl(serviceId, operation = TIZEN_DEFAULT_O
 }
 
 async function startViaWrtService(serviceId) {
+  // The packaged index.html imports wrt:service in a module and exposes it
+  // here; the runtime itself does not define a global wrt object. Accept both
+  // the named namespace and a default export from the bridge.
+  const wrtBridge = globalThis.__NUVIO_TIZEN_WRT_SERVICE__;
   const wrtService =
-    globalThis.wrt?.service || globalThis.webapis?.wrt?.service || globalThis.webapis?.service;
+    (wrtBridge && typeof wrtBridge.startService === "function" ? wrtBridge : wrtBridge?.default) ||
+    globalThis.wrt?.service ||
+    globalThis.webapis?.wrt?.service ||
+    globalThis.webapis?.service;
   if (!wrtService) {
     diagnostic("wrt service API unavailable", { serviceId });
     throw new Error("wrt service API unavailable");
