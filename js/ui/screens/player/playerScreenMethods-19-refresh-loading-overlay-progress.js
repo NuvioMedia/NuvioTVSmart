@@ -1,5 +1,8 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { TmdbService } from "../../../core/tmdb/tmdbService.js";
+import { TmdbMetadataService } from "../../../core/tmdb/tmdbMetadataService.js";
+import { TmdbSettingsStore } from "../../../data/local/tmdbSettingsStore.js";
 
 export function createPlayerScreenMethods19() {
   const {
@@ -9,7 +12,8 @@ export function createPlayerScreenMethods19() {
     cleanDisplayText,
     extractReleaseYear,
     extractPauseOverlayCast,
-    normalizeItemType
+    normalizeItemType,
+    isSeriesItemType
   } = internals;
 
   return {
@@ -262,17 +266,92 @@ export function createPlayerScreenMethods19() {
       const requestToken = Number(this.pauseOverlayMetaRequestToken || 0) + 1;
       this.pauseOverlayMetaRequestToken = requestToken;
 
+      // Android TV resolves the addon meta and then applies the TMDB
+      // translation over it, so the pause overlay never keeps an English
+      // synopsis when the configured language has a localized overview.
+      const [metaResult, tmdbMeta] = await Promise.all([
+        metaRepository.getMetaFromAllAddons(itemType, itemId).catch((error) => {
+          if (requestToken === this.pauseOverlayMetaRequestToken) {
+            console.warn("Pause overlay metadata fetch failed", error);
+          }
+          return null;
+        }),
+        this.fetchPauseOverlayTmdbMeta(itemType, itemId)
+      ]);
+      if (requestToken !== this.pauseOverlayMetaRequestToken) {
+        return;
+      }
+
+      const baseMeta = metaResult?.status === "success" && metaResult?.data ? metaResult.data : null;
+      if (!baseMeta && !tmdbMeta) {
+        return;
+      }
+      const meta = this.buildPauseOverlayMeta(baseMeta);
+      this.pauseOverlayMeta = tmdbMeta
+        ? {
+            ...meta,
+            title: tmdbMeta.title || meta.title,
+            episodeTitle: tmdbMeta.episodeTitle || meta.episodeTitle,
+            description: tmdbMeta.description || meta.description,
+            logoUrl: tmdbMeta.logoUrl || meta.logoUrl,
+            cast: meta.cast?.length ? meta.cast : tmdbMeta.cast
+          }
+        : meta;
+      this.renderPauseOverlay();
+    },
+    async fetchPauseOverlayTmdbMeta(itemType, itemId) {
+      const settings = TmdbSettingsStore.get();
+      const isSeries = isSeriesItemType(itemType);
+      if (!settings.enabled || !settings.useBasicInfo || (!isSeries && itemType !== "movie")) {
+        return null;
+      }
+
+      const season = this.params?.season == null ? null : Number(this.params.season);
+      const episode = this.params?.episode == null ? null : Number(this.params.episode);
       try {
-        const result = await metaRepository.getMetaFromAllAddons(itemType, itemId);
-        if (requestToken !== this.pauseOverlayMetaRequestToken || result?.status !== "success" || !result?.data) {
-          return;
+        const tmdbId = await TmdbService.ensureTmdbId(
+          String(this.params?.tmdbId || "").trim() || itemId,
+          itemType,
+          { fallbackImdbId: this.params?.imdbId }
+        );
+        if (!tmdbId) {
+          return null;
         }
-        this.pauseOverlayMeta = this.buildPauseOverlayMeta(result.data);
-        this.renderPauseOverlay();
+        const [enrichment, episodeEntry] = await Promise.all([
+          TmdbMetadataService.fetchEnrichment({
+            tmdbId,
+            contentType: itemType,
+            language: settings.language
+          }),
+          isSeries && season != null && episode > 0
+            ? TmdbMetadataService.fetchEpisodeEnrichment({
+                tmdbId,
+                seasonNumbers: [season],
+                language: settings.language
+              })
+                .then((episodes) => episodes.get(`${season}:${episode}`) || null)
+                .catch(() => null)
+            : null
+        ]);
+        if (!enrichment && !episodeEntry) {
+          return null;
+        }
+        return {
+          title: enrichment?.localizedTitle || "",
+          episodeTitle: episodeEntry?.title || "",
+          // Disabling TMDB episodes must keep the addon episode synopsis
+          // instead of replacing it with the show-level description.
+          description: isSeries
+            ? settings.useEpisodes
+              ? episodeEntry?.overview || enrichment?.description || ""
+              : ""
+            : enrichment?.description || "",
+          logoUrl: settings.useArtwork ? enrichment?.logo || "" : "",
+          cast: extractPauseOverlayCast({ credits: enrichment?.credits || null })
+        };
       } catch (error) {
-        if (requestToken === this.pauseOverlayMetaRequestToken) {
-          console.warn("Pause overlay metadata fetch failed", error);
-        }
+        console.warn("Pause overlay TMDB enrichment failed", error);
+        return null;
       }
     },
     clearPauseOverlayTimer() {
