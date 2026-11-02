@@ -38,6 +38,7 @@ import { installPartyEffects } from "./ui/screens/party/partyEffects.js";
 import {
   hasPendingLaunchDeepLink,
   openPendingLaunchDeepLink,
+  takeTizenLaunchDeepLink,
   takeWebOsLaunchDeepLink
 } from "./core/deeplink/launchDeepLink.js";
 
@@ -523,6 +524,21 @@ function setupProviderCredentialForegroundLifecycle() {
   window.addEventListener("focus", requestAfterBackground);
 }
 
+/**
+ * Samsung Tizen title deep links: the link a launch carries waits through startup, as on webOS. An app opened again
+ * while it runs gets an appcontrol event on the same page, with the new request.
+ */
+function setupTizenAppControlLifecycle() {
+  if (!Platform.isTizen()) return;
+
+  takeTizenLaunchDeepLink();
+  window.addEventListener("appcontrol", () => {
+    if (takeTizenLaunchDeepLink() && appShellRendered) {
+      void openPendingLaunchDeepLink(Router, NON_BACKSTACK_ROUTES);
+    }
+  });
+}
+
 function setupTizenPlaybackLifecycle() {
   if (!Platform.isTizen()) return;
 
@@ -624,6 +640,7 @@ async function bootstrapApp() {
   FocusEngine.init();
   setupProviderCredentialForegroundLifecycle();
   setupTizenPlaybackLifecycle();
+  setupTizenAppControlLifecycle();
   setupPluginRuntimeLifecycle();
   setupWebOsAppLifecycle();
 

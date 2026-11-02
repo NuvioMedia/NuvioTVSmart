@@ -56,6 +56,45 @@ export function takeWebOsLaunchDeepLink({ params = currentLaunchParams() } = {})
   return link;
 }
 
+function currentTizenAppControl() {
+  try {
+    return (
+      globalThis.tizen?.application?.getCurrentApplication?.()?.getRequestedAppControl?.()
+        ?.appControl || null
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The title deep link of the current Samsung Tizen launch, or null. Apps open Nuvio with
+ * tizen.application.launchAppControl, carrying the link as the app control's uri or, as on webOS, as contentTarget
+ * in its data: [{ key: "contentTarget", value: ["nuvio://tmdb/movie/603"] }].
+ *
+ * @returns {{ type: "movie" | "series", id: string } | null}
+ */
+export function readTizenLaunchDeepLink(appControl = currentTizenAppControl()) {
+  if (!appControl) {
+    return null;
+  }
+  const entry = (appControl.data || []).find((item) => item?.key === "contentTarget");
+  const target = entry?.value?.[0] || appControl.uri || "";
+  return typeof target === "string" && target ? parseTitleDeepLink(target) : null;
+}
+
+/**
+ * Keeps the link of a Tizen launch (at startup, then on each appcontrol event) for openPendingLaunchDeepLink, as
+ * takeWebOsLaunchDeepLink does on webOS.
+ *
+ * @returns {{ type: "movie" | "series", id: string } | null} the title carried by this launch
+ */
+export function takeTizenLaunchDeepLink({ appControl = currentTizenAppControl() } = {}) {
+  const link = readTizenLaunchDeepLink(appControl);
+  pendingLaunchDeepLink = link || pendingLaunchDeepLink;
+  return link;
+}
+
 export function hasPendingLaunchDeepLink() {
   return Boolean(pendingLaunchDeepLink);
 }
