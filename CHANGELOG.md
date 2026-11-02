@@ -1,5 +1,11 @@
 ## Unreleased
 
+## 1.3.3
+
+### Improvements & Fixes
+
+- A failing optional Samsung screensaver API can no longer stop Ambient before it opens on older Tizen engines; the AppCommon access is now fully best-effort (#1172) (@WhiteGiso)
+
 ## 1.3.2
 
 ### Improvements & Fixes
