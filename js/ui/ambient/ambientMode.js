@@ -367,6 +367,18 @@ export const AmbientMode = {
         `Ambient paint viewport=${globalThis.innerWidth ?? "?"}x${globalThis.innerHeight ?? "?"} root=${measure(this.root)} stage=${measure(stage)} backdrop=${measure(backdrop)} opacity=${opacity}`
       );
     }
+    clearTimeout(this.paintTimer);
+    this.paintTimer = setTimeout(() => {
+      this.paintTimer = 0;
+      if (signal.aborted || !this.showing || !stage.isConnected) return;
+      const opacity = globalThis.getComputedStyle?.(backdrop)?.opacity;
+      if (Number(opacity) !== 0) return;
+      stage.classList.add("ambient-static");
+      // Diagnostic for the Tizen black-screen report (#1172).
+      console.warn(
+        `Ambient paint fallback opacity=${opacity} root=${measure(this.root)} stage=${measure(stage)} backdrop=${measure(backdrop)}`
+      );
+    }, 500);
     this.slideTimer = setTimeout(() => {
       void this.nextSlide(signal);
     }, 13250);
@@ -382,6 +394,8 @@ export const AmbientMode = {
       this.slideSignal = null;
     }
     clearTimeout(this.slideTimer);
+    clearTimeout(this.paintTimer);
+    this.paintTimer = 0;
     this.root?.remove();
     this.root = null;
     const canRestoreFocus =

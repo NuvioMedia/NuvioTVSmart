@@ -117,6 +117,22 @@
   }
 }
 
+/* Some Tizen 5.x engines pause the Ambient CSS animations at 0% while the app
+   is idle, leaving a loaded slide invisible. This class is only added when the
+   first frame is still at opacity 0 after half a second. */
+.ambient-static .ambient-backdrop,
+.ambient-static .ambient-shade,
+.ambient-static .ambient-title,
+.ambient-static .ambient-genres {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+.ambient-static .ambient-title,
+.ambient-static .ambient-genres {
+  transform: none !important;
+}
+
 .player-stream-info-overlay {
   position: absolute;
   inset: 0;
