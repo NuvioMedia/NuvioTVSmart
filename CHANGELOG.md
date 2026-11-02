@@ -1,5 +1,11 @@
 ## Unreleased
 
+## 1.3.2
+
+### Improvements & Fixes
+
+- Ambient images now load inside the document on Samsung Tizen, fixing the remaining black overlay on engines that do not complete detached image loads, with targeted Console diagnostics for catalog and image failures (#1172) (@WhiteGiso)
+
 ## 1.3.1
 
 ### Improvements & Fixes
