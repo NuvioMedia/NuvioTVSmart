@@ -5,15 +5,10 @@ export function catalogRequiresExtras(catalog) {
 }
 
 export function catalogShouldShowOnHome(catalog = {}) {
-  const isSearchOnly =
-    Array.isArray(catalog?.extra) &&
-    catalog.extra.some(
-      (entry) =>
-        String(entry?.name || entry || "")
-          .trim()
-          .toLowerCase() === "search" && Boolean(entry?.isRequired)
-    );
-  if (isSearchOnly) {
+  // A required extra (search, genre, ...) makes the catalog unusable as a
+  // parameterless Home row; AIOStreams/AIOMetadata also mark those catalogs
+  // showInHome=false, but not every addon does.
+  if (catalogRequiresExtras(catalog)) {
     return false;
   }
   return catalog?.hasExplicitShowInHome !== true || catalog?.showInHome === true;
