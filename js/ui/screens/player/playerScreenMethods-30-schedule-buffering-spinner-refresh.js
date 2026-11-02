@@ -68,6 +68,16 @@ export function createPlayerScreenMethods30() {
       this.startupAudioTrackSetSignature = "";
       PlayerController.setStartupAudioGate?.(false, { resume });
     },
+    syncStartupGateAndParentalGuide() {
+      // Track discovery can finish after the loading overlay is gone, so the
+      // loading-completion loop is no longer there to release the gate.
+      if (this.startupAudioGateActive && this.isStartupGateReleaseReady()) {
+        this.releaseStartupAudioGate();
+      }
+      if (!this.parentalGuideShown) {
+        this.maybeShowParentalGuideOverlay();
+      }
+    },
     isPlaybackStartupSettled() {
       if (!this.hasPresentedPlaybackFrame || this.pendingPlaybackRestore || this.startupAudioGateActive) {
         return false;
