@@ -5,7 +5,9 @@ import {
   hasPendingLaunchDeepLink,
   openPendingLaunchDeepLink,
   readWebOsLaunchDeepLink,
+  readTizenLaunchDeepLink,
   resetLaunchDeepLinkForTests,
+  takeTizenLaunchDeepLink,
   takeWebOsLaunchDeepLink
 } from "../js/core/deeplink/launchDeepLink.js";
 
@@ -104,6 +106,40 @@ test("webOS launch params carry the link as contentTarget", () => {
     launch(params);
     assert.equal(readWebOsLaunchDeepLink(), null, JSON.stringify(params));
   }
+});
+
+test("Tizen app controls carry the link as contentTarget data or as the uri", () => {
+  const data = (value) => ({ data: [{ key: "contentTarget", value: [value] }] });
+  assert.deepEqual(readTizenLaunchDeepLink(data("nuvio://tmdb/movie/603")), {
+    type: "movie",
+    id: "tmdb:603"
+  });
+  assert.deepEqual(readTizenLaunchDeepLink({ uri: "nuvio://series/tt0944947", data: [] }), {
+    type: "series",
+    id: "tt0944947"
+  });
+  for (const control of [
+    null,
+    {},
+    { data: [] },
+    { uri: "" },
+    data("nuvio://party/abc234"),
+    data(603)
+  ]) {
+    assert.equal(readTizenLaunchDeepLink(control), null, JSON.stringify(control));
+  }
+});
+
+test("a Tizen launch's link waits through startup and opens once", async () => {
+  resetLaunchDeepLinkForTests();
+  takeTizenLaunchDeepLink({ appControl: { uri: "nuvio://tmdb/series/1396" } });
+  takeTizenLaunchDeepLink({ appControl: { data: [] } });
+  const router = fakeRouter("profileSelection");
+  assert.equal(await openPendingLaunchDeepLink(router, STARTUP_ROUTES), false);
+  router.current = "home";
+  assert.equal(await openPendingLaunchDeepLink(router, STARTUP_ROUTES), true);
+  assert.deepEqual(router.opened, [["detail", { itemId: "tmdb:1396", itemType: "series" }]]);
+  assert.equal(hasPendingLaunchDeepLink(), false);
 });
 
 test("a normal launch without params opens nothing", async () => {
