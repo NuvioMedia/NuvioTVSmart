@@ -125,6 +125,13 @@ export function getTizenCapabilities(runtime = globalThis) {
       ? normalizeBooleanCapability(webServiceCapability.value)
       : null;
   const engineFsServicePackaged = runtime?.__NUVIO_TIZEN_ENGINEFS_SERVICE_ENABLED__ !== false;
+  // Samsung exposes web.service as an optional capability. Some supported
+  // TVs/firmwares report false even though the packaged service can still be
+  // started through wrt:service. Callers with an explicit local-service
+  // contract (P2P, playback proxy, subtitles) bypass this flag and let the
+  // real probe decide; generic callers keep the capability gate. Version and
+  // package gates stay authoritative so Tizen 4 and service-less packages
+  // remain unsupported.
   const supportsWebService = isTizen && engineFsServicePackaged && webServiceSupported !== false;
   const p2pVersionSupported =
     isTizen &&
@@ -132,11 +139,6 @@ export function getTizenCapabilities(runtime = globalThis) {
       tizenMajorVersion: tizenVersion.major,
       chromiumMajorVersion
     });
-  // Samsung exposes web.service as an optional capability. Some supported
-  // TVs/firmwares report false even though the packaged service can still be
-  // started through wrt:service. Let the real local service probe decide in
-  // that case; keep the version and package gates authoritative so Tizen 4
-  // and service-less packages remain unsupported.
   const supportsP2p = isTizen && engineFsServicePackaged && p2pVersionSupported;
   // The Tizen plugin runtime is intentionally disabled on older firmware.
   // Keep this independent from EngineFS: P2P/media proxy support remains

@@ -284,7 +284,14 @@ export function createPlayerScreenMethods44() {
             // Keep playback alive when the optional extractor is unavailable on
             // a supported firmware; AVPlay can still render natively on devices
             // that implement the selected text codec despite the documented gap.
-            PlayerController.applyAvPlaySubtitleRenderMode?.("native");
+            // Reselect in native mode so the track is re-armed while muted and
+            // unmuted, matching the sequence some TVs need to draw it.
+            const nativeTrackIndex = Number(this.selectedSubtitleTrackIndex);
+            if (nativeTrackIndex >= 0 && typeof PlayerController.setAvPlaySubtitleTrack === "function") {
+              PlayerController.setAvPlaySubtitleTrack(nativeTrackIndex, { renderMode: "native" });
+            } else {
+              PlayerController.applyAvPlaySubtitleRenderMode?.("native");
+            }
           }
         }
         return false;
