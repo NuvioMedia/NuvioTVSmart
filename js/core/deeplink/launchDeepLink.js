@@ -1,11 +1,12 @@
 import { parseTitleDeepLink } from "./deepLinkParser.js";
 
 /**
- * webOS title deep links, the web side of the Android TV app's title links (launchSingleTop).
+ * Title deep links for the Smart TV apps, the web side of the Android TV app's title links (launchSingleTop).
  *
  * webOS hands deep links to apps in their launch params as contentTarget, the key LG's own launcher and search
- * use: {"contentTarget": "nuvio://tmdb/movie/603"}. The link waits through authentication, profile/PIN selection
- * and initial setup, and opens once on the detail screen when navigation is ready (see Router.navigate).
+ * use: {"contentTarget": "nuvio://tmdb/movie/603"}. Samsung Tizen hands them in the app control a launch carries,
+ * as the same contentTarget data or as its uri. The link waits through authentication, profile/PIN selection and
+ * initial setup, and opens once on the detail screen when navigation is ready (see Router.navigate).
  */
 
 let pendingLaunchDeepLink = null;
@@ -78,9 +79,13 @@ export function readTizenLaunchDeepLink(appControl = currentTizenAppControl()) {
   if (!appControl) {
     return null;
   }
-  const entry = (appControl.data || []).find((item) => item?.key === "contentTarget");
-  const target = entry?.value?.[0] || appControl.uri || "";
-  return typeof target === "string" && target ? parseTitleDeepLink(target) : null;
+  const data = Array.isArray(appControl.data) ? appControl.data : [];
+  const entry = data.find((item) => item?.key === "contentTarget");
+  const target = entry?.value?.[0];
+  const fromData = typeof target === "string" ? parseTitleDeepLink(target) : null;
+  return (
+    fromData || (typeof appControl.uri === "string" ? parseTitleDeepLink(appControl.uri) : null)
+  );
 }
 
 /**
