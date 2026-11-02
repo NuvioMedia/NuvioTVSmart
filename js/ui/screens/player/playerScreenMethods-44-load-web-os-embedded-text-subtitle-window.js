@@ -284,10 +284,16 @@ export function createPlayerScreenMethods44() {
             // Keep playback alive when the optional extractor is unavailable on
             // a supported firmware; AVPlay can still render natively on devices
             // that implement the selected text codec despite the documented gap.
-            // Reselect in native mode so the track is re-armed while muted and
-            // unmuted, matching the sequence some TVs need to draw it.
+            // Only re-arm the native track when this track never produced an
+            // HTML window; an active overlay must not be replaced by a late
+            // window failure. Reselecting while muted and unmuting matches the
+            // sequence some TVs need to draw the native track.
             const nativeTrackIndex = Number(this.selectedSubtitleTrackIndex);
-            if (nativeTrackIndex >= 0 && typeof PlayerController.setAvPlaySubtitleTrack === "function") {
+            if (
+              !this.webOsEmbeddedTextSubtitleUsingHtml &&
+              nativeTrackIndex >= 0 &&
+              typeof PlayerController.setAvPlaySubtitleTrack === "function"
+            ) {
               PlayerController.setAvPlaySubtitleTrack(nativeTrackIndex, { renderMode: "native" });
             } else {
               PlayerController.applyAvPlaySubtitleRenderMode?.("native");
