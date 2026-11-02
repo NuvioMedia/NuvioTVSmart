@@ -1,5 +1,11 @@
 ## Unreleased
 
+## 1.3.5
+
+### Improvements & Fixes
+
+- Added a first-slide Ambient paint diagnostic (viewport, root, stage, backdrop sizes and computed opacity) for the remaining Tizen black-screen report; no behavior change (#1172) (@WhiteGiso)
+
 ## 1.3.4
 
 ### Improvements & Fixes
