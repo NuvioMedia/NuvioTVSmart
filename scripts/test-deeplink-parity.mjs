@@ -5,7 +5,9 @@ import {
   hasPendingLaunchDeepLink,
   openPendingLaunchDeepLink,
   readWebOsLaunchDeepLink,
+  readTizenLaunchDeepLink,
   resetLaunchDeepLinkForTests,
+  takeTizenLaunchDeepLink,
   takeWebOsLaunchDeepLink
 } from "../js/core/deeplink/launchDeepLink.js";
 
@@ -43,6 +45,7 @@ test.beforeEach(() => {
   resetLaunchDeepLinkForTests();
   delete globalThis.webOSSystem;
   delete globalThis.PalmSystem;
+  delete globalThis.tizen;
 });
 
 // The title cases of the Android TV app's DeepLinkParserTest, plus the other forms its parser accepts.
@@ -104,6 +107,59 @@ test("webOS launch params carry the link as contentTarget", () => {
     launch(params);
     assert.equal(readWebOsLaunchDeepLink(), null, JSON.stringify(params));
   }
+});
+
+test("Tizen app controls carry the link as contentTarget data or as the uri", () => {
+  const data = (value) => ({ data: [{ key: "contentTarget", value: [value] }] });
+  assert.deepEqual(readTizenLaunchDeepLink(data("nuvio://tmdb/movie/603")), {
+    type: "movie",
+    id: "tmdb:603"
+  });
+  assert.deepEqual(readTizenLaunchDeepLink({ uri: "nuvio://series/tt0944947", data: [] }), {
+    type: "series",
+    id: "tt0944947"
+  });
+  assert.deepEqual(
+    readTizenLaunchDeepLink({
+      uri: "nuvio://series/tt0944947",
+      data: [{ key: "contentTarget", value: ["nuvio://party/abc234"] }]
+    }),
+    { type: "series", id: "tt0944947" }
+  );
+  for (const control of [
+    null,
+    {},
+    { data: [] },
+    { uri: "" },
+    { data: { key: "contentTarget" } },
+    data("nuvio://party/abc234"),
+    data(603)
+  ]) {
+    assert.equal(readTizenLaunchDeepLink(control), null, JSON.stringify(control));
+  }
+  const appControl = data("nuvio://tmdb/movie/603");
+  globalThis.tizen = {
+    application: {
+      getCurrentApplication: () => ({ getRequestedAppControl: () => ({ appControl }) })
+    }
+  };
+  assert.deepEqual(readTizenLaunchDeepLink(), { type: "movie", id: "tmdb:603" });
+  globalThis.tizen.application.getCurrentApplication = () => {
+    throw new Error("no app control");
+  };
+  assert.equal(readTizenLaunchDeepLink(), null);
+});
+
+test("a Tizen launch's link waits through startup and opens once", async () => {
+  resetLaunchDeepLinkForTests();
+  takeTizenLaunchDeepLink({ appControl: { uri: "nuvio://tmdb/series/1396" } });
+  takeTizenLaunchDeepLink({ appControl: { data: [] } });
+  const router = fakeRouter("profileSelection");
+  assert.equal(await openPendingLaunchDeepLink(router, STARTUP_ROUTES), false);
+  router.current = "home";
+  assert.equal(await openPendingLaunchDeepLink(router, STARTUP_ROUTES), true);
+  assert.deepEqual(router.opened, [["detail", { itemId: "tmdb:1396", itemType: "series" }]]);
+  assert.equal(hasPendingLaunchDeepLink(), false);
 });
 
 test("a normal launch without params opens nothing", async () => {
@@ -274,6 +330,89 @@ async function lifecycle(current, platform = "webos") {
     }
   };
 }
+
+async function tizenLifecycle(current, platform = "tizen", appControl = null) {
+  const { readFile } = await import("node:fs/promises");
+  const { default: vm } = await import("node:vm");
+  const source = await readFile(new URL("../js/app.js", import.meta.url), "utf8");
+  const handlers = new Map();
+  const router = fakeRouter(current);
+  let control = appControl;
+  const context = {
+    Platform: { isTizen: () => platform === "tizen" },
+    Router: router,
+    NON_BACKSTACK_ROUTES: STARTUP_ROUTES,
+    appShellRendered: true,
+    window: {
+      addEventListener: (name, callback) => handlers.set(name, callback)
+    },
+    takeTizenLaunchDeepLink: () => takeTizenLaunchDeepLink({ appControl: control }),
+    openPendingLaunchDeepLink,
+    console
+  };
+  vm.runInNewContext(
+    source.slice(
+      source.indexOf("function setupTizenAppControlLifecycle()"),
+      source.indexOf("function setupTizenPlaybackLifecycle()")
+    ) + "\nsetupTizenAppControlLifecycle();",
+    context
+  );
+  return {
+    router,
+    handlers,
+    setAppControl(value) {
+      control = value;
+    },
+    async appControlEvent() {
+      handlers.get("appcontrol")();
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+  };
+}
+
+test("Tizen startup link waits for startup and the appcontrol event opens a resident launch", async () => {
+  const cold = await tizenLifecycle("profileSelection", "tizen", {
+    data: [{ key: "contentTarget", value: ["nuvio://tmdb/movie/603"] }]
+  });
+  assert.equal(hasPendingLaunchDeepLink(), true);
+  assert.deepEqual(cold.router.opened, []);
+  cold.router.current = "home";
+  await openPendingLaunchDeepLink(cold.router, STARTUP_ROUTES);
+  assert.deepEqual(cold.router.opened, [["detail", { itemId: "tmdb:603", itemType: "movie" }]]);
+
+  resetLaunchDeepLinkForTests();
+  const resident = await tizenLifecycle("library");
+  assert.equal(resident.handlers.has("appcontrol"), true);
+  assert.equal(hasPendingLaunchDeepLink(), false);
+  resident.setAppControl({ uri: "nuvio://series/tt0944947" });
+  await resident.appControlEvent();
+  assert.deepEqual(resident.router.opened, [
+    ["detail", { itemId: "tt0944947", itemType: "series" }]
+  ]);
+  resident.setAppControl({ data: [] });
+  await resident.appControlEvent();
+  assert.equal(resident.router.current, "detail");
+  assert.equal(resident.router.opened.length, 1);
+});
+
+test("a Tizen appcontrol event cannot bypass startup routes", async () => {
+  const app = await tizenLifecycle("profileSelection");
+  app.setAppControl({ uri: "nuvio://tmdb/movie/603" });
+  await app.appControlEvent();
+  assert.deepEqual(app.router.opened, []);
+  assert.equal(hasPendingLaunchDeepLink(), true);
+  app.router.current = "home";
+  await openPendingLaunchDeepLink(app.router, STARTUP_ROUTES);
+  assert.deepEqual(app.router.opened, [["detail", { itemId: "tmdb:603", itemType: "movie" }]]);
+});
+
+test("webOS and browser install no Tizen appcontrol handler", async () => {
+  for (const platform of ["webos", "browser"]) {
+    const app = await tizenLifecycle("home", platform);
+    assert.equal(app.handlers.size, 0, platform);
+    assert.equal(hasPendingLaunchDeepLink(), false, platform);
+  }
+});
 
 test("real relaunch handler holds every startup gate, including PIN selection", async () => {
   const app = await lifecycle("profileSelection");

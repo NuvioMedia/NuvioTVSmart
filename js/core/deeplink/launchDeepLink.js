@@ -1,11 +1,12 @@
 import { parseTitleDeepLink } from "./deepLinkParser.js";
 
 /**
- * webOS title deep links, the web side of the Android TV app's title links (launchSingleTop).
+ * Title deep links for the Smart TV apps, the web side of the Android TV app's title links (launchSingleTop).
  *
  * webOS hands deep links to apps in their launch params as contentTarget, the key LG's own launcher and search
- * use: {"contentTarget": "nuvio://tmdb/movie/603"}. The link waits through authentication, profile/PIN selection
- * and initial setup, and opens once on the detail screen when navigation is ready (see Router.navigate).
+ * use: {"contentTarget": "nuvio://tmdb/movie/603"}. Samsung Tizen hands them in the app control a launch carries,
+ * as the same contentTarget data or as its uri. The link waits through authentication, profile/PIN selection and
+ * initial setup, and opens once on the detail screen when navigation is ready (see Router.navigate).
  */
 
 let pendingLaunchDeepLink = null;
@@ -52,6 +53,49 @@ export function readWebOsLaunchDeepLink(params = currentLaunchParams()) {
  */
 export function takeWebOsLaunchDeepLink({ params = currentLaunchParams() } = {}) {
   const link = readWebOsLaunchDeepLink(params);
+  pendingLaunchDeepLink = link || pendingLaunchDeepLink;
+  return link;
+}
+
+function currentTizenAppControl() {
+  try {
+    return (
+      globalThis.tizen?.application?.getCurrentApplication?.()?.getRequestedAppControl?.()
+        ?.appControl || null
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The title deep link of the current Samsung Tizen launch, or null. Apps open Nuvio with
+ * tizen.application.launchAppControl, carrying the link as the app control's uri or, as on webOS, as contentTarget
+ * in its data: [{ key: "contentTarget", value: ["nuvio://tmdb/movie/603"] }].
+ *
+ * @returns {{ type: "movie" | "series", id: string } | null}
+ */
+export function readTizenLaunchDeepLink(appControl = currentTizenAppControl()) {
+  if (!appControl) {
+    return null;
+  }
+  const data = Array.isArray(appControl.data) ? appControl.data : [];
+  const entry = data.find((item) => item?.key === "contentTarget");
+  const target = entry?.value?.[0];
+  const fromData = typeof target === "string" ? parseTitleDeepLink(target) : null;
+  return (
+    fromData || (typeof appControl.uri === "string" ? parseTitleDeepLink(appControl.uri) : null)
+  );
+}
+
+/**
+ * Keeps the link of a Tizen launch (at startup, then on each appcontrol event) for openPendingLaunchDeepLink, as
+ * takeWebOsLaunchDeepLink does on webOS.
+ *
+ * @returns {{ type: "movie" | "series", id: string } | null} the title carried by this launch
+ */
+export function takeTizenLaunchDeepLink({ appControl = currentTizenAppControl() } = {}) {
+  const link = readTizenLaunchDeepLink(appControl);
   pendingLaunchDeepLink = link || pendingLaunchDeepLink;
   return link;
 }
