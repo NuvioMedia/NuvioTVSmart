@@ -112,10 +112,9 @@ html[dir="rtl"] .player-post-play-synopsis-full-text {
   visibility: hidden;
 }
 
-#player.post-play-visible #videoPlayer::cue,
 #player.post-play-visible #videoPlayer::-webkit-media-text-track-container,
 #player.post-play-visible #videoPlayer::-webkit-media-text-track-display {
-  visibility: hidden;
+  display: none !important;
 }
 
 /* Android TV's FocusMarqueeText keeps episode card nodes stable and only

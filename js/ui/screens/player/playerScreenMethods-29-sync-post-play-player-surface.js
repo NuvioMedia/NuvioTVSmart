@@ -16,6 +16,34 @@ export function createPlayerScreenMethods29() {
       this.postPlaySubtitleOutputHidden = next;
       // Android hides the subtitle renderers while the post-play window owns
       // the player. Mute only the output so the selected track survives.
+      // HTML text tracks are muted too: hidden keeps the track alive without
+      // painting it, so an HLS/MP4 source cannot leak cues into the mini.
+      const textTracks = this.getVideoTextTrackList?.();
+      const tracks = textTracks ? Array.from(textTracks).filter(Boolean) : [];
+      if (next) {
+        this.postPlayHiddenTextTrackIndexes = tracks
+          .map((track, index) => (track.mode === "showing" ? index : -1))
+          .filter((index) => index >= 0);
+        this.postPlayHiddenTextTrackIndexes.forEach((index) => {
+          try {
+            tracks[index].mode = "hidden";
+          } catch (_) {
+            // Best effort on older engines.
+          }
+        });
+      } else {
+        (this.postPlayHiddenTextTrackIndexes || []).forEach((index) => {
+          try {
+            const track = tracks[index];
+            if (track && track.mode !== "disabled") {
+              track.mode = "showing";
+            }
+          } catch (_) {
+            // Best effort on older engines.
+          }
+        });
+        this.postPlayHiddenTextTrackIndexes = [];
+      }
       if (Environment.isTizen() && PlayerController.isUsingAvPlay?.()) {
         try {
           PlayerController.getAvPlay?.()?.setSilentSubtitle?.(next ? true : PlayerController.avplaySubtitleRenderMode === "html");
