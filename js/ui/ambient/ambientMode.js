@@ -27,6 +27,19 @@ const BLOCKED_ROUTES = new Set([
   "serverConnection"
 ]);
 const now = () => globalThis.performance?.now?.() ?? Date.now();
+let lastImageFailure = "";
+function logImageFailure(url, reason) {
+  let host = "";
+  try {
+    host = new URL(url).host;
+  } catch (_) {
+    /* Keep the reason when the URL is not parseable. */
+  }
+  const key = `${reason}:${host}`;
+  if (key === lastImageFailure) return;
+  lastImageFailure = key;
+  console.warn("Ambient image failed", { reason, host });
+}
 function shuffled(values) {
   const copy = [...values];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -39,24 +52,41 @@ function loadImage(url, signal) {
   return new Promise((resolve) => {
     if (!url || signal.aborted) return resolve(null);
     const image = new Image();
+    // Some Tizen engines only complete an image load once it is in the
+    // document. Keep it invisible until it is moved into the slide.
+    image.setAttribute(
+      "style",
+      "position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none"
+    );
+    document.body?.appendChild(image);
     let timer;
     const finish = (result) => {
       clearTimeout(timer);
       signal.removeEventListener("abort", cancel);
       image.onload = null;
       image.onerror = null;
+      image.removeAttribute("style");
+      image.remove?.();
       resolve(result);
     };
     const cancel = () => {
+      image.onload = null;
+      image.onerror = null;
       image.src = "";
       finish(null);
     };
     // onload already proves the image is usable. Some TV engines report
     // naturalWidth as 0 until the image is attached, which left Ambient black.
     image.onload = () => finish(image);
-    image.onerror = () => finish(null);
+    image.onerror = () => {
+      logImageFailure(url, "error");
+      finish(null);
+    };
     signal.addEventListener("abort", cancel, { once: true });
-    timer = setTimeout(cancel, 10000);
+    timer = setTimeout(() => {
+      logImageFailure(url, "timeout");
+      cancel();
+    }, 10000);
     image.src = url;
   });
 }
@@ -189,11 +219,13 @@ export const AmbientMode = {
         controller?.signal.aborted
       )
         return;
+      if (!slides.length) console.warn("Ambient catalog load returned no slides");
       if (slides.length || this.loadedSignature !== signature) this.slides = shuffled(slides);
       this.loadedSignature = signature;
       this.loadedAt = now();
-    } catch (_) {
+    } catch (error) {
       /* Keep the last successful selection on transient failure. */
+      console.warn("Ambient catalog load failed", error);
     } finally {
       if (this.generation === generation && this.controller === controller)
         this.loadingSignature = null;

@@ -32,7 +32,17 @@ for (const nativeAbort of [false, true]) {
     Image: class {
       constructor() {
         this.naturalWidth = 1920;
+        this.attributes = {};
         images.push(this);
+      }
+      setAttribute(name, value) {
+        this.attributes[name] = value;
+      }
+      removeAttribute(name) {
+        delete this.attributes[name];
+      }
+      remove() {
+        this.removed = true;
       }
       set src(value) {
         this.url = value;
@@ -47,6 +57,8 @@ for (const nativeAbort of [false, true]) {
       timers.delete(id);
     },
     performance: { now: () => 1000 },
+    console: { warn() {} },
+    URL,
     document: {
       hidden: false,
       body: element(),
@@ -82,10 +94,18 @@ for (const nativeAbort of [false, true]) {
   assert.equal(ambient.slides.length, 1);
   ambient.show();
   assert.equal(images.length, 2, "load backdrop and logo concurrently without AbortController");
+  assert.ok(images[0].attributes.style, "stage the backdrop in the document while loading");
+  assert.ok(
+    context.document.body.children.includes(images[0]),
+    "attach the staging image to the document body"
+  );
   // Legacy TV engines can report zero intrinsic width after a successful load.
   images[0].naturalWidth = 0;
   images[0].onload();
   images[1].onerror();
+  assert.equal(images[0].attributes.style, undefined, "remove the staging style after load");
+  assert.equal(images[0].removed, true, "remove the staging image after load");
+  assert.equal(images[1].removed, true, "remove the staging image after error");
   await flush();
   assert.equal(ambient.root.children.length, 1, "render first slide");
   const copy = ambient.root.children[0].children[2];
