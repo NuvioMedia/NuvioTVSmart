@@ -43,7 +43,7 @@ globalThis.fetch = async (raw, opt) => {
       expires_in: 3600
     });
   }
-  if (path === "/user") return response({ id: 7, name: "Fixture" });
+  if (path === "/user") return response({ user_id: 7, username: "fixture-user", name: "Fixture" });
   if (path === "/oauth/revoke_token/") return response({ success: true });
   throw new Error(path);
 };
@@ -57,6 +57,7 @@ session.nextPollAt = 0;
 assert.equal(await a.poll(session), true);
 assert(a.connected());
 assert.equal(a.user().id, 7);
+assert.equal(a.user().name, "fixture-user");
 const scope = a.scope();
 assert.deepEqual(
   await Promise.all([a.authorization(scope, "old"), a.authorization(scope, "old")]),
