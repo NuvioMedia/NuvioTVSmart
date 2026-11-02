@@ -399,14 +399,20 @@ assert.equal(screen.applyStartupAudioPreference(), true);
 assert.equal(lateAppliedIndex, 1, "late metadata applies English through the normal startup pass");
 assert.equal(screen.startupAudioPreferenceApplied, true);
 
+screen.embeddedAudioTracks[0].raw = {
+  ...screen.embeddedAudioTracks[0].raw,
+  containerStreamIndex: 3
+};
 screen.embeddedAudioTracks[1].raw = {
   ...screen.embeddedAudioTracks[1].raw,
   containerStreamIndex: 4
 };
-assert.equal(
-  screen.getEmbeddedAudioTrackForAvPlayTrack(nativeTracks[1], 1),
-  null,
-  "reject conflicting stream identity"
+assert.deepEqual(
+  nativeTracks.map(
+    (track, index) => screen.getEmbeddedAudioTrackForAvPlayTrack(track, index)?.language
+  ),
+  ["cs", "en"],
+  "match by codec occurrence when AVPlay renumbers around omitted unsupported tracks"
 );
 screen.embeddedAudioTracks.pop();
 assert.equal(
