@@ -27,14 +27,6 @@ const BLOCKED_ROUTES = new Set([
   "serverConnection"
 ]);
 const now = () => globalThis.performance?.now?.() ?? Date.now();
-function measure(node) {
-  try {
-    const rect = node?.getBoundingClientRect?.();
-    return rect ? `${Math.round(rect.width)}x${Math.round(rect.height)}` : "?";
-  } catch (_) {
-    return "?";
-  }
-}
 let lastImageFailure = "";
 function logImageFailure(url, reason) {
   let host = "";
@@ -107,8 +99,6 @@ export const AmbientMode = {
   start() {
     if (this.started) return;
     this.started = true;
-    // Diagnostic for the Tizen black-screen report (#1172).
-    console.warn("Ambient started");
     this.lastInteraction = now();
     window.addEventListener("keydown", (event) => this.key(event, false), true);
     window.addEventListener("keyup", (event) => this.key(event, true), true);
@@ -202,27 +192,10 @@ export const AmbientMode = {
         }, 20000);
     }
     if (!this.allowed(settings)) {
-      const reason = !settings.enabled
-        ? "disabled"
-        : !route
-          ? "no-route"
-          : BLOCKED_ROUTES.has(route)
-            ? "blocked-route"
-            : this.trailerPlaying
-              ? "trailer"
-              : document.hidden
-                ? "hidden"
-                : "unknown";
-      if (reason !== this.lastBlockedReason) {
-        this.lastBlockedReason = reason;
-        // Diagnostic for the Tizen black-screen report (#1172).
-        console.warn("Ambient idle blocked", { reason, route });
-      }
       this.setTizenScreenSaverBlocked(false);
       if (this.showing) this.dismiss();
       return;
     }
-    this.lastBlockedReason = "";
     this.setTizenScreenSaverBlocked(true);
     if (!this.showing && now() - this.lastInteraction >= settings.timeoutMinutes * 60000)
       this.show();
@@ -261,12 +234,6 @@ export const AmbientMode = {
   show() {
     if (this.showing) return;
     this.showing = true;
-    this.slideShownLogged = false;
-    // Diagnostic for the Tizen black-screen report (#1172).
-    console.warn("Ambient show", {
-      slides: this.slides.length,
-      route: Router.getCurrent()
-    });
     if (Platform.isWebOS())
       WebOSPlayerExtensions.startAmbientKeepAwake(() => this.showing && !document.hidden);
     const screen = Router.getCurrentScreen?.();
@@ -358,15 +325,6 @@ export const AmbientMode = {
     stage.appendChild(copy);
     this.root.textContent = "";
     this.root.appendChild(stage);
-    if (!this.slideShownLogged) {
-      this.slideShownLogged = true;
-      // Diagnostic for the Tizen black-screen report (#1172).
-      console.warn("Ambient slide shown", { id: slide.id });
-      const opacity = globalThis.getComputedStyle?.(backdrop)?.opacity ?? "?";
-      console.warn(
-        `Ambient paint viewport=${globalThis.innerWidth ?? "?"}x${globalThis.innerHeight ?? "?"} root=${measure(this.root)} stage=${measure(stage)} backdrop=${measure(backdrop)} opacity=${opacity}`
-      );
-    }
     clearTimeout(this.paintTimer);
     this.paintTimer = setTimeout(() => {
       this.paintTimer = 0;
@@ -374,10 +332,6 @@ export const AmbientMode = {
       const opacity = globalThis.getComputedStyle?.(backdrop)?.opacity;
       if (Number(opacity) !== 0) return;
       stage.classList.add("ambient-static");
-      // Diagnostic for the Tizen black-screen report (#1172).
-      console.warn(
-        `Ambient paint fallback opacity=${opacity} root=${measure(this.root)} stage=${measure(stage)} backdrop=${measure(backdrop)}`
-      );
     }, 500);
     this.slideTimer = setTimeout(() => {
       void this.nextSlide(signal);
