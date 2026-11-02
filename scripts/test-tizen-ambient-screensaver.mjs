@@ -44,4 +44,19 @@ TizenScreenSaver.block();
 TizenScreenSaver.unblock();
 assert.deepEqual(calls, [0, 1, 0, 1], "numeric states are used when constants are unavailable");
 
+globalThis.webapis = {
+  appcommon: {
+    get AppCommonScreenSaverState() {
+      throw new Error("unsupported enum");
+    },
+    setScreenSaver() {
+      throw new Error("must not be reached");
+    }
+  }
+};
+assert.doesNotThrow(() => {
+  TizenScreenSaver.block();
+  TizenScreenSaver.unblock();
+}, "unsupported AppCommon enums cannot break the Ambient tick");
+
 console.log("Tizen ambient screensaver checks passed");
