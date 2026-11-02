@@ -234,15 +234,8 @@ export function createPlayerScreenMethods40() {
       const avplayCodec = getCanonicalCodec(track) || getCanonicalCodec(avplayTracks[avplayOrdinal]);
       if (!avplayCodec) {
         // Some Tizen streams expose neither a codec nor a language for AVPlay.
-        // The Matroska stream index still identifies the track exactly.
-        const matchedByStreamIndex = (this.embeddedAudioTracks || []).find((entry) => {
-          const raw = entry?.raw || {};
-          const streamIndex = Number(raw.containerStreamIndex ?? raw.index);
-          return Number.isFinite(streamIndex) && streamIndex === avplayTrackIndex;
-        });
-        if (matchedByStreamIndex) {
-          return matchedByStreamIndex;
-        }
+        // Only the shared list order can identify the track, and only when
+        // AVPlay exposes every container audio stream.
         return avplayTracks.length === (this.embeddedAudioTracks || []).length ? this.embeddedAudioTracks[avplayOrdinal] || null : null;
       }
 
@@ -253,12 +246,10 @@ export function createPlayerScreenMethods40() {
       }
 
       const avplayCodecOrdinal = avplayTracks.slice(0, avplayOrdinal).filter((entry) => getCanonicalCodec(entry) === avplayCodec).length;
-      const matched = embeddedCodecTracks[avplayCodecOrdinal];
-      // Browser MKV metadata must agree on both codec occurrence and full-container stream index.
-      if (matched?.raw?.containerStreamIndex !== undefined && matched.raw.containerStreamIndex !== avplayTrackIndex) {
-        return null;
-      }
-      return matched || null;
+      // AVPlay omits unsupported codecs and renumbers the remaining tracks, so
+      // its index is not the container stream index. Codec occurrence is the
+      // only identity shared by both lists.
+      return embeddedCodecTracks[avplayCodecOrdinal] || null;
     },
     getEmbeddedAudioTrackByNativeIndex(index) {
       const targetIndex = Number(index);
