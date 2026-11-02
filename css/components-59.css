@@ -104,6 +104,20 @@ html[dir="rtl"] .player-post-play-synopsis-full-text {
   pointer-events: none;
 }
 
+/* Android hides subtitles in the post-play window; keep every Smart renderer
+   (HTML, bitmap, ASS and the native cue plane) out of the recommendation UI. */
+#playerUiRoot.post-play-visible .player-html-subtitles,
+#playerUiRoot.post-play-visible .player-bitmap-subtitles,
+#playerUiRoot.post-play-visible .player-ass-subtitles {
+  visibility: hidden;
+}
+
+#player.post-play-visible #videoPlayer::cue,
+#player.post-play-visible #videoPlayer::-webkit-media-text-track-container,
+#player.post-play-visible #videoPlayer::-webkit-media-text-track-display {
+  visibility: hidden;
+}
+
 /* Android TV's FocusMarqueeText keeps episode card nodes stable and only
    scrolls the focused title when its text overflows. The wrapper is the clip
    viewport; only the text span moves, so no duplicate title layer is painted. */

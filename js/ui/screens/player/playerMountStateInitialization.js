@@ -226,6 +226,7 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.postPlayPlayerSurfaceAnimationFrame = null;
   this.postPlayPlayerSurfaceAnimationUsesRaf = false;
   this.postPlayPlayerSurfaceRect = null;
+  this.postPlaySubtitleOutputHidden = false;
   this.postPlayTrailerMedia = null;
   this.postPlayTrailerMessageHandler = null;
   this.postPlayTrailerGeneration = 0;

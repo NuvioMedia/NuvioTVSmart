@@ -312,6 +312,7 @@ export function createPlayerScreenMethods28() {
       this.container?.classList.toggle("post-play-trailer-consumed", postPlayTrailerConsumed);
       this.container?.classList.toggle("post-play-returning", Boolean(postPlayState.hasReturnedToPlayer));
       this.syncPostPlayPlayerSurface(postPlayState);
+      this.setPostPlaySubtitleOutputHidden(postPlayVisible);
       this.syncPlayerActionOverlayOffset();
     },
     cancelPostPlayPlayerSurfaceAnimation() {

@@ -1242,6 +1242,7 @@ export class PostPlayRecommendationController {
         return [];
       }
       const firstRecommendation = this.cacheRecommendation(0, firstResolved);
+      this.preloadRecommendationArtwork(firstRecommendation);
       this.state.recommendations = Array.from({ length: this.candidateSeeds.length }, (_, index) =>
         index === 0 ? firstRecommendation : null
       );
@@ -1504,6 +1505,23 @@ export class PostPlayRecommendationController {
 
   awaitCandidateResolution(index, currentMeta = {}, token = this.pipelineToken) {
     return this.startCandidateResolution(index, currentMeta, token);
+  }
+
+  preloadRecommendationArtwork(recommendation = {}) {
+    const url = firstNonBlank(recommendation.backdrop, recommendation.poster);
+    if (!url) {
+      return;
+    }
+    // The post-play overlay mounts the backdrop synchronously. Warm the image
+    // during the prefetch so its decode cannot stall the entrance transition.
+    try {
+      const image = new Image();
+      image.decoding = "async";
+      image.src = url;
+      image.decode?.().catch(() => {});
+    } catch (_) {
+      // Image preloading is best effort.
+    }
   }
 
   cacheRecommendation(index, recommendation) {

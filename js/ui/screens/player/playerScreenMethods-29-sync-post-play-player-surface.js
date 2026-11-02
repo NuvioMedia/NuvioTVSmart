@@ -8,6 +8,35 @@ export function createPlayerScreenMethods29() {
     internals;
 
   return {
+    setPostPlaySubtitleOutputHidden(hidden) {
+      const next = Boolean(hidden);
+      if (next === this.postPlaySubtitleOutputHidden) {
+        return;
+      }
+      this.postPlaySubtitleOutputHidden = next;
+      // Android hides the subtitle renderers while the post-play window owns
+      // the player. Mute only the output so the selected track survives.
+      if (Environment.isTizen() && PlayerController.isUsingAvPlay?.()) {
+        try {
+          PlayerController.getAvPlay?.()?.setSilentSubtitle?.(next ? true : PlayerController.avplaySubtitleRenderMode === "html");
+        } catch (_) {
+          // Best effort on older AVPlay builds.
+        }
+        return;
+      }
+      if (Environment.isWebOS() && PlayerController.isUsingNativePlayback?.()) {
+        const mediaId = PlayerController.syncNativeMediaId?.();
+        if (!mediaId) {
+          return;
+        }
+        PlayerController.requestWebOsMediaCommand?.("setSubtitleEnable", {
+          mediaId,
+          enable: !next
+        }).catch(() => {
+          // Ignore Luna subtitle output failures.
+        });
+      }
+    },
     syncPostPlayPlayerSurface(state = this.getPostPlayState()) {
       const usingAvPlay = Boolean(Environment.isTizen() && PlayerController.isUsingAvPlay?.());
       const video = PlayerController.video;
@@ -21,9 +50,19 @@ export function createPlayerScreenMethods29() {
       const hidden = Boolean(state.isVisible && (state.isTrailerPlaying || state.hasAutoPlayedTrailer));
       const mode = hidden ? "hidden" : state.isVisible ? "mini" : "normal";
       const key = `${mode}:${usingAvPlay}:${viewportWidth}x${viewportHeight}:${document.documentElement?.dir || "ltr"}`;
+      const targetRect = { ...fullRect };
+      if (mode === "mini") {
+        targetRect.width = Math.round(viewportWidth * 0.32);
+        targetRect.height = Math.round(targetRect.width * (9 / 16));
+        targetRect.x = document.documentElement?.dir === "rtl" ? 32 : viewportWidth - targetRect.width - 32;
+        targetRect.y = 32;
+      }
 
       // The background is re-created when recommendations/focus change. Reapply
       // its opening even when the playback surface is already in the right mode.
+      // While entering the mini window the opening must sit on the final rect:
+      // following the still-fullscreen video plane would expose the ending
+      // movie across the recommendation backdrop for the whole tween.
       const syncBackground = (rect) => {
         const background = this.uiRefs?.postPlay?.querySelector(".player-post-play-background");
         const playerWindow = this.uiRefs?.postPlay?.querySelector(".player-post-play-player-window");
@@ -45,8 +84,9 @@ export function createPlayerScreenMethods29() {
         background.style.maskPosition = position;
         background.classList.toggle("has-player-window", mode !== "hidden");
       };
-      if (mode !== "hidden" && this.postPlayPlayerSurfaceRect) {
-        syncBackground(this.postPlayPlayerSurfaceRect);
+      const initialMaskRect = mode === "mini" ? targetRect : this.postPlayPlayerSurfaceRect;
+      if (mode !== "hidden" && initialMaskRect) {
+        syncBackground(initialMaskRect);
       } else {
         background?.classList.remove("has-player-window");
       }
@@ -66,13 +106,6 @@ export function createPlayerScreenMethods29() {
         return;
       }
 
-      const targetRect = { ...fullRect };
-      if (mode === "mini") {
-        targetRect.width = Math.round(viewportWidth * 0.32);
-        targetRect.height = Math.round(targetRect.width * (9 / 16));
-        targetRect.x = document.documentElement?.dir === "rtl" ? 32 : viewportWidth - targetRect.width - 32;
-        targetRect.y = 32;
-      }
       const currentRect = this.postPlayPlayerSurfaceRect || fullRect;
       const nativeViewport = PlayerController.getAvPlayViewportSize?.() || { width: 1920, height: 1080 };
       const applyRect = (rect) => {
@@ -89,6 +122,9 @@ export function createPlayerScreenMethods29() {
             "PLAYER_DISPLAY_MODE_FULL_SCREEN"
           );
         } else if (video?.style) {
+          // Keep the native video plane rectangular: a border-radius on the
+          // video forces webOS through GPU compositing and stutters the mini
+          // window. The rounded border lives on .player-post-play-player-window.
           Object.assign(video.style, {
             position: "fixed",
             left: `${rect.x}px`,
@@ -101,12 +137,13 @@ export function createPlayerScreenMethods29() {
             maxHeight: "none",
             objectFit: "cover",
             transform: "none",
-            borderRadius: mode === "mini" ? "12px" : "0px"
+            borderRadius: "0px"
           });
         }
-        // Keep the native object, HTML player, transparent opening, and focus
-        // target in the same CSS rectangle throughout Android's 420ms tween.
-        syncBackground(rect);
+        // On the way in, keep the opening on the final mini rect so the
+        // recommendation backdrop stays visible while the video shrinks.
+        // On the way back, keep it on the live video rect.
+        syncBackground(mode === "mini" ? targetRect : rect);
       };
       const finish = () => {
         this.postPlayPlayerSurfaceAnimationFrame = null;
