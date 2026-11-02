@@ -1,5 +1,11 @@
 ## Unreleased
 
+## 1.3.4
+
+### Improvements & Fixes
+
+- Added one-per-session Ambient diagnostics for the Tizen black-screen report: start, blocked idle reason, show and first rendered slide, with no behavior change (#1172) (@WhiteGiso)
+
 ## 1.3.3
 
 ### Improvements & Fixes
