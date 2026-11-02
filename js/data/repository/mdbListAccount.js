@@ -320,12 +320,12 @@ export const MdbListAccount = {
   },
   async refreshUser(scope = this.scope()) {
     const { payload } = await this.api(scope, "/user");
-    if (!Number.isSafeInteger(payload?.id) || payload.id <= 0)
+    if (!Number.isSafeInteger(payload?.user_id) || payload.user_id <= 0)
       throw failure("mdblist_invalid_response");
     this.check(scope);
     write(scope.profileId, {
       ...read(scope.profileId),
-      user: { id: payload.id, name: String(payload.name || payload.username || "") }
+      user: { id: payload.user_id, name: String(payload.username || payload.name || "") }
     });
     return payload;
   },
