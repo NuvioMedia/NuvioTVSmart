@@ -360,3 +360,57 @@ test("Tizen reselects the AVPlay track natively when the extractor is unavailabl
     console.warn = previousWarn;
   }
 });
+
+test("Tizen keeps an active HTML subtitle window when a later extractor request fails", async () => {
+  const previousGetWindow = localMediaEmbeddedSubtitleRepository.getWindow;
+  const previousSetTrack = PlayerController.setAvPlaySubtitleTrack;
+  const previousApplyMode = PlayerController.applyAvPlaySubtitleRenderMode;
+  const previousWarn = console.warn;
+  const calls = [];
+  try {
+    localMediaEmbeddedSubtitleRepository.getWindow = async () => {
+      throw new Error("Tizen embedded text subtitle service unavailable");
+    };
+    PlayerController.setAvPlaySubtitleTrack = (trackIndex, options) => {
+      calls.push({ trackIndex, options });
+      return true;
+    };
+    PlayerController.applyAvPlaySubtitleRenderMode = (mode) => {
+      calls.push({ mode });
+      return true;
+    };
+    console.warn = () => {};
+    const context = Object.assign(createPlayerScreenMethods44(), {
+      webOsEmbeddedTextSubtitleTrack: {
+        embeddedTrackIndex: 0,
+        sourceTrackId: 4,
+        sourceTrackOrdinal: 0,
+        codec: "S_TEXT/UTF8",
+        language: "fr"
+      },
+      webOsEmbeddedTextSubtitleLoading: false,
+      webOsEmbeddedTextSubtitleFallbackUnavailable: false,
+      webOsEmbeddedTextSubtitleUsingHtml: true,
+      webOsEmbeddedTextSubtitleUsingAss: false,
+      webOsEmbeddedTextSubtitleWindowStart: 0,
+      webOsEmbeddedTextSubtitleWindowEnd: 0,
+      webOsEmbeddedTextSubtitleWindowFailureCount: 0,
+      webOsEmbeddedTextSubtitleLastErrorAt: 0,
+      webOsEmbeddedTextSubtitleLoadToken: 0,
+      selectedSubtitleTrackIndex: 3,
+      subtitleSelectionToken: 1,
+      subtitleDelayMs: 0,
+      getTrackProbeUrl: () => "https://example.test/video.mkv",
+      getPlaybackCurrentSeconds: () => 10,
+      markEmbeddedTextSubtitleUnsupported() {}
+    });
+    const applied = await context.loadWebOsEmbeddedTextSubtitleWindow(10);
+    assert.equal(applied, false);
+    assert.deepEqual(calls, [{ mode: "native" }]);
+  } finally {
+    localMediaEmbeddedSubtitleRepository.getWindow = previousGetWindow;
+    PlayerController.setAvPlaySubtitleTrack = previousSetTrack;
+    PlayerController.applyAvPlaySubtitleRenderMode = previousApplyMode;
+    console.warn = previousWarn;
+  }
+});
