@@ -114,16 +114,13 @@ async function setup({ settings, metaRepository }) {
               return { contents, loader: "js" };
             }
           );
-          b.onLoad(
-            { filter: /playerScreenMethods-19-[^/]+\.js$/ },
-            async ({ path }) => ({
-              contents: (await readFile(path, "utf8")).replace(
-                /^import \* as internals from [^;]+;/m,
-                "const internals = fixtures;"
-              ),
-              loader: "js"
-            })
-          );
+          b.onLoad({ filter: /playerScreenMethods-19-[^/]+\.js$/ }, async ({ path }) => ({
+            contents: (await readFile(path, "utf8")).replace(
+              /^import \* as internals from [^;]+;/m,
+              "const internals = fixtures;"
+            ),
+            loader: "js"
+          }));
         }
       }
     ]

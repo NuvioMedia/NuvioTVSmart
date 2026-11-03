@@ -15,9 +15,10 @@ const {
 const { stream_badge_settings: cloud } =
   await import("../js/core/profile/profileSettingsSyncFeature-stream-badge-settings.js");
 assert.equal(normalizeStreamBadgeSettings({}).showInPlayer, false);
-const filter = (name, pattern) => ({
+const filter = (name, pattern, groupId = "") => ({
   name,
   pattern,
+  groupId,
   imageURL: `https://fixture.invalid/${name}.png`
 });
 const rules = {
@@ -27,12 +28,13 @@ const rules = {
       sourceUrl: "player",
       isActive: false,
       filters: [
-        filter("actual-video", "1080p"),
-        filter("hevc", "HEVC"),
-        filter("aac", "AAC"),
-        filter("ddp", "DDP"),
-        filter("french", "fra"),
-        filter("atmos", "Atmos")
+        filter("actual-video", "1080p", "resolution"),
+        filter("avc", "AVC", "codec"),
+        filter("hevc", "HEVC", "codec"),
+        filter("aac", "AAC", "audio"),
+        filter("ddp", "DDP", "audio"),
+        filter("french", "fra", "language"),
+        filter("atmos", "Atmos", "audio")
       ]
     }
   ]
@@ -128,12 +130,12 @@ assert.equal(node.hidden, true);
 screen.bufferingActive = false;
 sync(screen, controller, chip, language);
 assert.equal(node.hidden, false);
-// Stable ticks reuse metadata/matches; switching engine must clear previous codec badges.
+// Stable ticks reuse metadata/matches; switching engine must clear previous decoder badges.
 controller.hlsInstance = null;
 controller.playbackEngine = "html5";
 controller.video.audioTracks = [{ enabled: true, language: "eng", codec: "aac" }];
 sync(screen, controller, chip, language);
-assert(!node.innerHTML.includes("hevc") && !node.innerHTML.includes("atmos"));
+assert(!node.innerHTML.includes("actual-video") && !node.innerHTML.includes("atmos"));
 let reads = 0;
 Object.defineProperty(controller.video.audioTracks[0], "codec", {
   get() {
@@ -171,6 +173,7 @@ const av = {
       { type: "AUDIO", extra_info: { codec: "aac", channels: 2, language: "ita" } }
     ]
   }),
+  getAvPlayVideoDimensions: () => ({ width: 3840, height: 2160 }),
   parseAvPlayExtraInfo: (value) => value,
   pickAvPlayExtraValue: (value, keys) => keys.map((key) => value[key]).find((item) => item != null)
 };
@@ -184,6 +187,49 @@ const dash = {
   }
 };
 assert.match(text(info(dash), [info(dash).language]), /1080p.*AVC.*AAC.*2\.0 de/);
+// Tizen AVPlay (#1235): extra_info uses Width/Height and exposes no colour or JOC info.
+const { matchPlayerBadges } = await import("../js/core/streams/streamBadgeRules.js");
+const { metadataDynamicRange, refinePlaybackText } =
+  await import("../js/ui/screens/player/playerPlaybackBadges.js");
+const release = "The.Morning.Show.S03E04.2160p.ATVP.WEB-DL.DDP5.1.Atmos.HDR.DV.HEVC-MZABI.mkv";
+const tizen = info({
+  ...av,
+  getAvPlayVideoDimensions: () => ({ width: 3840, height: 1920 }),
+  getAvPlay: () => ({
+    getCurrentStreamInfo: () => [
+      { type: "VIDEO", extra_info: { fourCC: "HEVC", Width: "3840", Height: "1920" } },
+      { type: "AUDIO", extra_info: { fourCC: "audio/x-eac3", channels: "6" } }
+    ]
+  })
+});
+assert.equal(tizen.hdr, null);
+tizen.hdr = metadataDynamicRange(tizen.videoCodec, [release]);
+const visualRules = {
+  imports: [
+    {
+      sourceUrl: "visual",
+      filters: [
+        filter("4k", "\\b2160p\\b", "resolution"),
+        filter("webdl", "WEB-DL", "source"),
+        filter("dv", "\\bDV\\b", "visual"),
+        filter("hdr", "\\bHDR\\b", "visual"),
+        filter("sdr", "^(?!.*\\b(HDR|DV)\\b).*HEVC", "visual"),
+        filter("atmos", "Atmos", "audio"),
+        filter("ddp", "DDP", "audio"),
+        filter("5.1", "\\b5\\.1\\b", "channels")
+      ]
+    }
+  ]
+};
+assert.deepEqual(
+  matchPlayerBadges(refinePlaybackText(text(tizen), [release]), [release], visualRules).map(
+    (badge) => badge.name
+  ),
+  ["4k", "webdl", "dv", "hdr", "atmos", "ddp", "5.1"]
+);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.HDRip.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("AVC", ["Movie.HDR.DV.mkv"]), []);
+assert.doesNotMatch(refinePlaybackText("AAC 2.0", ["Movie.Atmos.mkv"]), /Atmos/);
 console.log(
   "Player badges passed: independent packs/cloud, actual metadata, selected audio, engine changes, defaults and stable ticks"
 );
