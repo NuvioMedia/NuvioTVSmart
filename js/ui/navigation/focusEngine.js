@@ -114,7 +114,23 @@ export const FocusEngine = {
   },
 
   handleKey(event) {
-    if (event?.target && !document.contains(event.target)) {
+    const normalizedEvent = buildNormalizedEvent(event);
+    const isBack = Platform.isBackEvent({
+      target: normalizedEvent.target,
+      key: normalizedEvent.key,
+      code: normalizedEvent.code,
+      keyName: normalizedEvent.keyName,
+      keyCode: normalizedEvent.keyCode,
+      originalKeyCode: normalizedEvent.originalKeyCode
+    });
+
+    // A key that targeted an element which has since been replaced is stale,
+    // except for Back. Key events are delivered asynchronously, so a Back
+    // pressed while a screen re-renders arrives pointing at a node the render
+    // already removed, and dropping it leaves the user with no way out of a
+    // screen that has nothing focusable left. handleKeyUp already clears the
+    // Back latch ahead of this same guard for the same reason.
+    if (!isBack && event?.target && !document.contains(event.target)) {
       return;
     }
 
@@ -122,7 +138,6 @@ export const FocusEngine = {
       return;
     }
 
-    const normalizedEvent = buildNormalizedEvent(event);
     const keyIdentity = this.getKeyIdentity(normalizedEvent);
     if (keyIdentity && (!normalizedEvent.repeat || !this.activeKeyDownStartedAt.has(keyIdentity))) {
       this.activeKeyDownStartedAt.set(keyIdentity, {
@@ -131,16 +146,7 @@ export const FocusEngine = {
       });
     }
 
-    if (
-      Platform.isBackEvent({
-        target: normalizedEvent.target,
-        key: normalizedEvent.key,
-        code: normalizedEvent.code,
-        keyName: normalizedEvent.keyName,
-        keyCode: normalizedEvent.keyCode,
-        originalKeyCode: normalizedEvent.originalKeyCode
-      })
-    ) {
+    if (isBack) {
       // Samsung TV delivers the mandatory Back key through keydown/keyup. A
       // held remote key can emit another keydown after the 250 ms timing
       // debounce, while the first Player -> Sources transition is still
