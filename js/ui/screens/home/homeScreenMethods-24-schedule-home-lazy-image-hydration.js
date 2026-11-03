@@ -98,7 +98,11 @@ export function createHomeScreenMethods24() {
           this.homeLazyImageNeighborTimer = null;
         }
       }
-      if (deferUntilVerticalSettle && !legacyFocusedRowPass && this.shouldUseImmediateFocusScroll() && this.layoutMode === "modern") {
+      // Bounded TV hydration must wait for the vertical camera to settle on
+      // every TV generation. On animated webOS the focus path used to start
+      // poster decodes while the spring was still running, which is the same
+      // decode burst the immediate-scroll policy already avoided.
+      if (deferUntilVerticalSettle && !legacyFocusedRowPass && this.shouldUseBoundedHomeImageHydration() && this.layoutMode === "modern") {
         if (this.homeLazyImageHydrationSettleTimer) {
           clearTimeout(this.homeLazyImageHydrationSettleTimer);
         }
