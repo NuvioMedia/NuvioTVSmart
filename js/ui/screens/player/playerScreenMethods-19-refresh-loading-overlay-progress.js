@@ -309,11 +309,9 @@ export function createPlayerScreenMethods19() {
       const season = this.params?.season == null ? null : Number(this.params.season);
       const episode = this.params?.episode == null ? null : Number(this.params.episode);
       try {
-        const tmdbId = await TmdbService.ensureTmdbId(
-          String(this.params?.tmdbId || "").trim() || itemId,
-          itemType,
-          { fallbackImdbId: this.params?.imdbId }
-        );
+        const tmdbId = await TmdbService.ensureTmdbId(String(this.params?.tmdbId || "").trim() || itemId, itemType, {
+          fallbackImdbId: this.params?.imdbId
+        });
         if (!tmdbId) {
           return null;
         }
