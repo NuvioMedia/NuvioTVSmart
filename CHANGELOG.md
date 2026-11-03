@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Improvements & Fixes
+
+- Home vertical navigation now waits for the camera to settle before starting poster artwork work on webOS, avoiding decode bursts during the scroll animation; the Modern sidebar no longer animates its layout width, matching Android TV's transform-only opening (@WhiteGiso)
+
 ## 1.3.6
 
 ### Improvements & Fixes
