@@ -14,6 +14,7 @@ import {
 } from "./mediaBrowserClient.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
 import { Platform } from "../../platform/index.js";
+import { TizenCapabilities } from "../../platform/tizen/tizenCapabilities.js";
 import { I18n } from "../../i18n/index.js";
 const PAGE_SIZE = 100;
 const LIST_FIELDS =
@@ -147,6 +148,12 @@ function playableSources(item) {
 }
 export function buildServerDeviceProfile({ allowDirectPlay = true } = {}) {
   const nativeTv = allowDirectPlay && (Platform.isWebOS() || Platform.isTizen());
+  // Samsung TVs from Tizen 6 (2021) onward decode AV1 in the native pipeline.
+  // Older Tizen and webOS keep the previous negotiation.
+  const nativeVideoCodecs =
+    nativeTv && Platform.isTizen() && TizenCapabilities.get().tizenMajorVersion >= 6
+      ? "h264,hevc,av1"
+      : "h264,hevc";
   return {
     Name: "Nuvio Smart TV",
     MaxStreamingBitrate: 120000000,
@@ -157,7 +164,7 @@ export function buildServerDeviceProfile({ allowDirectPlay = true } = {}) {
             {
               Type: "Video",
               Container: "mkv,mp4,m4v,ts",
-              VideoCodec: "h264,hevc",
+              VideoCodec: nativeVideoCodecs,
               AudioCodec: "aac,mp3,ac3,eac3"
             }
           ]
