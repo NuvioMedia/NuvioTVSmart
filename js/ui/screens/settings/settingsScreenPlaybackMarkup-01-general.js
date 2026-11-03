@@ -140,6 +140,12 @@ export function renderPlaybackGeneralBody(model) {
                 : ""
             }
             ${this.renderToggleRow({
+              focusKey: "playback:perTitleStreamLanguage",
+              title: t("playback_per_title_stream_language", {}, "Use per-title source language"),
+              subtitle: t("playback_per_title_stream_language_sub", {}, "Prioritize matching streams when a language is selected for a movie or series."),
+              checked: Boolean(model.player.perTitleStreamLanguageEnabled)
+            })}
+            ${this.renderToggleRow({
               focusKey: "playback:reuseLastLink",
               title: t("autoplay_reuse_last_link", {}, "Reuse Last Link"),
               subtitle: t(

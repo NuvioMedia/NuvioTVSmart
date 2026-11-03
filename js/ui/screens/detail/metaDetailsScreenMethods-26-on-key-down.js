@@ -1,5 +1,6 @@
 import { openDetailShuffle } from "./detailEpisodeShuffle.js";
 import { ProfileManager } from "../../../core/profile/profileManager.js";
+import { SourceLanguagePreferenceStore } from "../../../data/local/sourceLanguagePreferenceStore.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 
@@ -309,6 +310,15 @@ export function createMetaDetailsScreenMethods26() {
         if (selectedEpisode) {
           await this.openEpisodeStreamChooser(selectedEpisode.id);
         }
+        return;
+      }
+
+      if (action === "cycleSourceLanguage") {
+        const languages = ["", "en", "es", "la", "fr", "de", "it", "pt", "ja", "ko", "zh", "hi"];
+        const currentLanguage = SourceLanguagePreferenceStore.get(this.meta?.id);
+        const nextLanguage = languages[(languages.indexOf(currentLanguage) + 1) % languages.length];
+        SourceLanguagePreferenceStore.set(this.meta?.id, nextLanguage);
+        this.render(this.meta);
         return;
       }
 

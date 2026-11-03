@@ -1,5 +1,7 @@
 import { hasWatchProgressStarted, isWatchProgressCompleted } from "../../../domain/model/watchProgress.js";
 import { detailShuffleSettings } from "./detailEpisodeShuffle.js";
+import { PlayerSettingsStore } from "../../../data/local/playerSettingsStore.js";
+import { SourceLanguagePreferenceStore } from "../../../data/local/sourceLanguagePreferenceStore.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 
@@ -226,6 +228,13 @@ export function createMetaDetailsScreenMethods07() {
         this.trailerSource = trailerSource;
       }
       const trailerButtonEnabled = Boolean(LayoutPreferences.get().detailPageTrailerButtonEnabled);
+      const isSeries = ["series", "tv"].includes(String(this.params?.itemType || meta?.type || "").toLowerCase());
+      const sourceLanguage = isSeries && PlayerSettingsStore.get().perTitleStreamLanguageEnabled
+        ? SourceLanguagePreferenceStore.get(meta.id)
+        : "";
+      const languageButton = isSeries && PlayerSettingsStore.get().perTitleStreamLanguageEnabled
+        ? `<button class="series-secondary-btn focusable" data-action="cycleSourceLanguage" aria-label="Preferred source language">Language: ${escapeHtml(sourceLanguage.toUpperCase() || "Any")}</button>`
+        : "";
       const trailerButton =
         trailerButtonEnabled && hasTrailerCandidate
           ? `
@@ -253,6 +262,7 @@ export function createMetaDetailsScreenMethods07() {
                 </button>
                 ${showWatchedButton ? `<button class="series-circle-btn focusable${this.isMarkedWatched ? " is-selected" : ""}" data-action="toggleWatched" aria-label="${escapeAttribute(this.isMarkedWatched ? t("common.markUnwatched", {}, "Mark Unwatched") : t("common.markWatched", {}, "Mark Watched"))}">${renderWatchedGlyph(this.isMarkedWatched)}</button>` : ""}
                 ${trailerButton}
+                ${languageButton}
               </div>
               ${this.renderResumeIndicator()}
               ${creditLine ? `<p class="series-detail-support">${escapeHtml(creditPrefix)}: ${escapeHtml(creditLine)}</p>` : ""}

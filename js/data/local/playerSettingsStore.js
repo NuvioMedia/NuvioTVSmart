@@ -74,6 +74,7 @@ const DEFAULTS = {
   streamAutoPlayPreferBingeGroupForNextEpisode: true,
   streamAutoPlayReuseBingeGroup: false,
   streamReuseLastLinkEnabled: false,
+  perTitleStreamLanguageEnabled: false,
   streamReuseLastLinkCacheHours: 24,
   streamAutoPlayTimeoutSeconds: 3
 };
@@ -335,6 +336,7 @@ export function normalizePlayerSettings(settings = {}) {
     streamReuseLastLinkEnabled: Boolean(
       persistentSettings.streamReuseLastLinkEnabled ?? DEFAULTS.streamReuseLastLinkEnabled
     ),
+    perTitleStreamLanguageEnabled: Boolean(persistentSettings.perTitleStreamLanguageEnabled),
     streamReuseLastLinkCacheHours: normalizeReuseLastLinkCacheHours(
       persistentSettings.streamReuseLastLinkCacheHours
     ),

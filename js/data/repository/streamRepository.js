@@ -17,7 +17,16 @@ import { LocalDebridAvailabilityService } from "../../core/debrid/localDebridAva
 import { DebridStreamPresentation } from "../../core/debrid/directDebridStreamPresentation.js";
 import { PluginStore, getEffectivePluginProfileId } from "../local/pluginStore.js";
 import { DebridSettingsStore } from "../local/debridSettingsStore.js";
+import { PlayerSettingsStore } from "../local/playerSettingsStore.js";
+import { SourceLanguagePreferenceStore } from "../local/sourceLanguagePreferenceStore.js";
 import { StreamSearchSessionCache } from "./streamSearchSessionCache.js";
+
+const SOURCE_LANGUAGE_TERMS = { en: ["english", "eng"], es: ["spanish", "espanol", "español", "castellano", "spa"], la: ["latino", "latam", "lat"], fr: ["french", "français", "francais"], de: ["german", "deutsch"], it: ["italian", "italiano"], pt: ["portuguese", "português", "portugues"], ja: ["japanese"], ko: ["korean"], zh: ["chinese"], hi: ["hindi"] };
+function orderStreamsByLanguage(streams = [], language) {
+  const terms = SOURCE_LANGUAGE_TERMS[language] || [];
+  return streams.map((stream, index) => ({ stream, index, match: terms.some((term) => `${stream.name || ""} ${stream.title || ""} ${stream.description || ""}`.toLowerCase().includes(term)) }))
+    .sort((a, b) => Number(b.match) - Number(a.match) || a.index - b.index).map(({ stream }) => stream);
+}
 
 const STREAM_SOURCE_REQUEST_TIMEOUT_MS = 60_000;
 const PLUGIN_STREAM_REQUEST_TIMEOUT_MS = 120_000;
@@ -300,10 +309,16 @@ class StreamRepository {
       const presentedGroup = present
         ? DebridStreamPresentation.apply([checkedGroup])[0] || checkedGroup
         : checkedGroup;
+      const preferredLanguage = PlayerSettingsStore.get().perTitleStreamLanguageEnabled
+        ? SourceLanguagePreferenceStore.get(this.buildContentLevelMetaId(videoId))
+        : "";
+      const orderedGroup = preferredLanguage
+        ? { ...presentedGroup, streams: orderStreamsByLanguage(presentedGroup.streams, preferredLanguage) }
+        : presentedGroup;
       if (typeof shouldNotify !== "function" || shouldNotify()) {
-        notifyChunk(presentedGroup);
+        notifyChunk(orderedGroup);
       }
-      return presentedGroup;
+      return orderedGroup;
     };
 
     const addonTasks = installedAddons.map(async (addon) => {

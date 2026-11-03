@@ -105,6 +105,7 @@ export function registerPlaybackActionsPart01(model) {
   });
   const togglePlayerSetting = (focusKey, field) =>
     this.actionMap.set(focusKey, () => PlayerSettingsStore.set({ [field]: !PlayerSettingsStore.get()[field] }));
+  togglePlayerSetting("playback:perTitleStreamLanguage", "perTitleStreamLanguageEnabled");
   togglePlayerSetting("playback:loadingOverlay", "loadingOverlayEnabled");
   togglePlayerSetting("playback:loadingStatus", "showPlayerLoadingStatus");
   togglePlayerSetting("playback:pauseOverlay", "pauseOverlayEnabled");
