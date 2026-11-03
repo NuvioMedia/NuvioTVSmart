@@ -73,21 +73,19 @@
   overflow: visible;
   transform: translateZ(0);
   backface-visibility: hidden;
-  will-change: width;
-  transition: width 385ms cubic-bezier(0, 0, 0.2, 1);
 }
+
+/* Android lays the panel out at its final width and animates only the panel
+   transform. The shell has no in-flow children, so animating its width only
+   forced a layout pass on every sidebar frame. */
 
 .modern-sidebar-shell,
 .modern-sidebar-shell * {
   box-sizing: border-box;
 }
 
-.modern-sidebar-shell.expanded:not(.opening):not(.collapsing) {
+.modern-sidebar-shell.expanded {
   width: var(--modern-sidebar-open-width);
-}
-
-.modern-sidebar-shell.opening {
-  animation: modernSidebarShellOpen 395ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .modern-sidebar-pill,
@@ -441,16 +439,4 @@
 .modern-sidebar-shell.keep-pill-expanded .modern-sidebar-pill-chevron,
 .modern-sidebar-shell.keep-pill-expanded .modern-sidebar-pill-label {
   display: block;
-}
-
-@keyframes modernSidebarShellOpen {
-  from {
-    width: var(--modern-sidebar-collapsed-width);
-  }
-  47.95% {
-    width: 548px;
-  }
-  to {
-    width: var(--modern-sidebar-open-width);
-  }
 }
