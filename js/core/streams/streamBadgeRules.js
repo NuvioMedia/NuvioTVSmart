@@ -347,6 +347,7 @@ function compileStreamBadgeFilters(rules = {}) {
             flags = Array.from(new Set(flags.split(""))).join("");
             return {
               name: filter.name,
+              groupId: filter.groupId,
               badge: {
                 name: filter.name,
                 imageURL: filter.imageURL,
@@ -390,6 +391,40 @@ export function prepareStreamBadgeRules(rules = {}) {
   return Object.freeze(normalized);
 }
 
+function filterMatches(filter, candidate) {
+  return (
+    filter.lineRegex && !/[\r\n\u2028\u2029]/.test(candidate) ? filter.lineRegex : filter.regex
+  ).test(candidate);
+}
+
+// Player matching: decoder text first, then filename/stream name only for groups the decoder did not cover.
+export function matchPlayerBadges(playbackText = "", metaCandidates = [], rules = {}) {
+  const { filters } = compileStreamBadgeFilters(rules);
+  if (!filters.length) {
+    return [];
+  }
+  const playback = normalizeText(playbackText);
+  const meta = metaCandidates.map(normalizeText).filter(Boolean);
+  const playbackHits = filters.map(
+    (filter) => Boolean(playback) && filterMatches(filter, playback)
+  );
+  const coveredGroups = new Set(
+    filters
+      .filter((filter, index) => playbackHits[index] && filter.groupId)
+      .map((filter) => filter.groupId)
+  );
+  const matched = new Map();
+  filters.forEach((filter, index) => {
+    const hit =
+      playbackHits[index] ||
+      ((!filter.groupId || !coveredGroups.has(filter.groupId)) &&
+        meta.some((candidate) => filterMatches(filter, candidate)));
+    const key = streamBadgeDedupeKey(filter.badge);
+    if (hit && key && !matched.has(key)) matched.set(key, filter.badge);
+  });
+  return Array.from(matched.values(), (badge) => ({ ...badge }));
+}
+
 export function matchStreamBadges(stream = {}, rules = {}) {
   const { filters, matches } = compileStreamBadgeFilters(rules);
   if (!filters.length) {
@@ -409,14 +444,7 @@ export function matchStreamBadges(stream = {}, rules = {}) {
 
   const matched = new Map();
   filters.forEach((filter) => {
-    if (
-      candidates.some((candidate) =>
-        (filter.lineRegex && !/[\r\n\u2028\u2029]/.test(candidate)
-          ? filter.lineRegex
-          : filter.regex
-        ).test(candidate)
-      )
-    ) {
+    if (candidates.some((candidate) => filterMatches(filter, candidate))) {
       const key = streamBadgeDedupeKey(filter.badge);
       if (!key || matched.has(key)) {
         return;

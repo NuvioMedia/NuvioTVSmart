@@ -1,6 +1,7 @@
 import { StreamBadgeSettingsStore } from "../../../data/local/streamBadgeSettingsStore.js";
-import { matchStreamBadges } from "../../../core/streams/streamBadgeRules.js";
+import { matchPlayerBadges } from "../../../core/streams/streamBadgeRules.js";
 import { formatAudioCodecName, getAuthoritativeAudioCodecValue } from "../../../core/player/audioTrackCodecMetadata.js";
+import { resolveStreamFilename } from "./streamFilename.js";
 
 export function playbackMatchText(info = {}, languages = []) {
   const tokens = [];
@@ -50,11 +51,39 @@ export function playbackMatchText(info = {}, languages = []) {
   return [...new Set(tokens)].join(" ");
 }
 
+const REFINE_DTS_HD_MA = /dts-?hd[ ._-]?ma\b|master[ ._-]?audio/i;
+const REFINE_DTS_X = /\bdts[ ._:-]?x\b/i;
+const REFINE_HDR10_PLUS = /\bhdr10\+/i;
+
+// Adds details the decoder cannot report but the filename confirms, only on top of a decoder-confirmed base format.
+export function refinePlaybackText(decoderText = "", metadata = []) {
+  if (!decoderText.trim() || !metadata.length) return decoderText;
+  const joined = metadata.join(" ");
+  const extra = [];
+  const hasEac3OrTruehd = /DD\+|DDP|EAC3|TrueHD/.test(decoderText);
+  if (hasEac3OrTruehd && !decoderText.includes("Atmos") && /atmos/i.test(joined)) extra.push("Atmos");
+  if (decoderText.includes("DTS-HD") && !decoderText.includes("DTS-HD MA") && REFINE_DTS_HD_MA.test(joined)) extra.push("DTS-HD MA");
+  if (decoderText.includes("DTS") && !decoderText.includes("DTS:X") && REFINE_DTS_X.test(joined)) extra.push("DTS:X");
+  if (decoderText.includes("HDR10") && !decoderText.includes("HDR10+") && REFINE_HDR10_PLUS.test(joined)) extra.push("HDR10+");
+  return extra.length ? `${decoderText} ${extra.join(" ")}` : decoderText;
+}
+
+// AVPlay and <video> expose no colour info, so an HDR-capable codec takes its dynamic range from the filename.
+export function metadataDynamicRange(videoCodec, metadata = []) {
+  if (!/h26[5]|h\.265|hev[1c]|hvc1|dvh[1e]|av01|av1|vp09|vp9/i.test(String(videoCodec || ""))) return [];
+  const text = metadata.join(" ").replace(/[._]/g, " ");
+  const hdr = [];
+  if (/\b(dv|dovi|dolby ?vision)\b/i.test(text)) hdr.push("DV");
+  if (/\bhdr(10)?\b|\bhdr10(\+|plus)/i.test(text)) hdr.push("HDR10");
+  if (/\bhlg\b/i.test(text)) hdr.push("HLG");
+  return hdr;
+}
+
 export function readPlaybackMediaInfo(controller) {
   const video = controller.video;
   let videoInfo = {},
     audio = {},
-    hdr = [];
+    hdr = null;
   const usingAvPlay = controller.isUsingAvPlay?.();
   if (usingAvPlay) {
     const streams = controller.getAvPlay()?.getCurrentStreamInfo?.() || [];
@@ -65,16 +94,17 @@ export function readPlaybackMediaInfo(controller) {
     const avVideo = extra("VIDEO"),
       avAudio = extra("AUDIO");
     const pick = (source, keys) => controller.pickAvPlayExtraValue(source, keys);
+    const dimensions = controller.getAvPlayVideoDimensions?.();
     videoInfo = {
-      width: pick(avVideo, ["width", "video_width"]),
-      height: pick(avVideo, ["height", "video_height"]),
+      width: dimensions?.width,
+      height: dimensions?.height,
       codec: pick(avVideo, ["codec", "video_codec", "fourCC", "codec_name"]),
       bitDepth: Number(pick(avVideo, ["bit_depth", "bitDepth"])) || null
     };
     const selectedAudio =
       controller.avplayAudioTracks?.find((track) => track.avplayTrackIndex === controller.selectedAvPlayAudioTrackIndex) || {};
     const range = String(pick(avVideo, ["hdr_type", "hdr", "HDRType"]) || "").toUpperCase();
-    hdr = range === "HDR10" || range === "HLG" || range === "DV" ? [range] : [];
+    if (range === "HDR10" || range === "HLG" || range === "DV") hdr = [range];
     audio = {
       ...selectedAudio,
       codec: pick(avAudio, ["codec", "audio_type", "fourCC", "audio_codec"]) || selectedAudio.codec,
@@ -86,8 +116,7 @@ export function readPlaybackMediaInfo(controller) {
     const hls = controller.hlsInstance;
     const level = hls.levels?.[hls.currentLevel] || {};
     videoInfo = { width: level.width, height: level.height, codec: level.videoCodec };
-    if (level.videoRange === "PQ") hdr = ["HDR10"];
-    if (level.videoRange === "HLG") hdr = ["HLG"];
+    if (level.videoRange) hdr = level.videoRange === "PQ" ? ["HDR10"] : level.videoRange === "HLG" ? ["HLG"] : [];
     const selected = hls.audioTracks?.[hls.audioTrack];
     // A muxed level's audio codec is authoritative only without alternate audio tracks.
     audio = selected
@@ -173,8 +202,16 @@ export function syncPlayerPlaybackBadges(screen, controller, renderChip, languag
     state.dash = controller.dashInstance;
     state.key = key;
     const info = readPlaybackMediaInfo(controller);
+    const stream = screen.getCurrentStreamCandidate?.();
+    const meta = [
+      resolveStreamFilename(stream, screen.initialFilenameStreamCandidate, screen.params?.filename),
+      stream?.raw?.name || stream?.label
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+    if (!info.hdr) info.hdr = metadataDynamicRange(info.videoCodec, meta);
     const text = playbackMatchText(info, [info.language, info.language ? languageLabel({ language: info.language }) : ""]);
-    const badges = text ? matchStreamBadges({ name: text }, state.settings.playerRules) : [];
+    const badges = matchPlayerBadges(refinePlaybackText(text, meta), meta, state.settings.playerRules);
     const html = badges
       .filter((badge) => badge.imageURL)
       .map(renderChip)
