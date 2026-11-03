@@ -416,9 +416,22 @@
 }
 
 .settings-shell[data-settings-style="horizon"] .settings-nav-chevron,
-.settings-shell[data-settings-style="horizon"] .settings-scroll-indicator-up,
-.settings-shell[data-settings-style="horizon"] .settings-scroll-indicator-down {
+.settings-shell[data-settings-style="horizon"]
+  .settings-sidebar-frame
+  .settings-scroll-indicator-up,
+.settings-shell[data-settings-style="horizon"]
+  .settings-sidebar-frame
+  .settings-scroll-indicator-down {
   display: none;
+}
+
+.settings-shell[data-settings-style="horizon"]
+  .settings-sidebar-frame
+  .settings-scroll-indicator-left,
+.settings-shell[data-settings-style="horizon"]
+  .settings-sidebar-frame
+  .settings-scroll-indicator-right {
+  display: flex;
 }
 
 .home-row-continue-wide .home-continue-card {

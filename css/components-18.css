@@ -109,6 +109,11 @@
   overflow: hidden;
 }
 
+.settings-sidebar-frame .settings-scroll-indicator-left,
+.settings-sidebar-frame .settings-scroll-indicator-right {
+  display: none;
+}
+
 .settings-content-frame {
   position: relative;
   min-width: 0;
@@ -190,6 +195,8 @@
 
 .settings-sidebar-frame.can-scroll-backward .settings-scroll-indicator-up,
 .settings-sidebar-frame.can-scroll-forward .settings-scroll-indicator-down,
+.settings-sidebar-frame.can-scroll-backward .settings-scroll-indicator-left,
+.settings-sidebar-frame.can-scroll-forward .settings-scroll-indicator-right,
 .settings-content-frame.can-scroll-backward .settings-scroll-indicator-up,
 .settings-content-frame.can-scroll-forward .settings-scroll-indicator-down,
 .settings-trakt-scroll-frame.can-scroll-backward .settings-scroll-indicator-up,

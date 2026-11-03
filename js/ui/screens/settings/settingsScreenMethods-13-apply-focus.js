@@ -104,10 +104,14 @@ export function createSettingsScreenMethods13() {
       if (navNode) {
         navNode.classList.add("focused");
         focusSettingsNode(navNode);
-        if (this.suppressNextRailFocusScroll) {
+        const rail = navNode.closest?.(".settings-sidebar");
+        // Only the vertical rail restores its scroll position; the horizontal one has to follow focus.
+        const horizontalRail = Boolean(rail && rail.scrollWidth > rail.clientWidth + 1);
+        if (this.suppressNextRailFocusScroll && !horizontalRail) {
           this.suppressNextRailFocusScroll = false;
-          updateSettingsRailIndicators(navNode.closest?.(".settings-sidebar"));
+          updateSettingsRailIndicators(rail);
         } else {
+          this.suppressNextRailFocusScroll = false;
           scrollSettingsRailItem(navNode);
         }
         updateSettingsMarqueeTargets(this.container);

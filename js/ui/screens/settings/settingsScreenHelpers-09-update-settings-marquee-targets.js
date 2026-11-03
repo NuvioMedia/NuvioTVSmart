@@ -140,6 +140,8 @@ import {
 } from "./settingsScreenHelpers-01-settings-ui-state-key.js";
 import { clamp, t } from "./settingsScreenHelpers-04-row-icons.js";
 
+const SETTINGS_RAIL_HORIZONTAL_EDGE_PADDING = 24;
+
 export function updateSettingsMarqueeTargets(root) {
   root?.querySelectorAll?.(".settings-nav-label").forEach((label) => {
     label._settingsMarqueeAnimation?.cancel?.();
@@ -189,51 +191,84 @@ export function scrollSettingsRailItem(node, options = {}) {
     return;
   }
 
-  const clientHeight = rail.clientHeight || 0;
-  const maxScroll = Math.max(0, rail.scrollHeight - clientHeight);
-  if (!clientHeight || maxScroll <= 0) {
+  // HORIZON lays the rail out as a row, so the same helper has to scroll on x.
+  const horizontal = rail.scrollWidth > rail.clientWidth + 1;
+  const clientSize = horizontal ? rail.clientWidth || 0 : rail.clientHeight || 0;
+  const maxScroll = Math.max(0, horizontal ? rail.scrollWidth - clientSize : rail.scrollHeight - clientSize);
+  if (!clientSize || maxScroll <= 0) {
     return;
   }
 
   const railRect = rail.getBoundingClientRect();
   const itemRect = node.getBoundingClientRect();
-  const itemCenterInViewport = itemRect.top - railRect.top + (itemRect.height || node.offsetHeight || 0) / 2;
-  const targetCenter = clientHeight * SETTINGS_RAIL_SCROLL_TARGET_RATIO;
-  const nextScrollTop = clamp(rail.scrollTop + itemCenterInViewport - targetCenter, 0, maxScroll);
+  const current = Number(horizontal ? rail.scrollLeft : rail.scrollTop) || 0;
+  let next;
+  if (horizontal) {
+    // Android's LazyRow only moves when the focused tab is clipped by an edge.
+    const itemStart = itemRect.left - railRect.left;
+    const itemEnd = itemStart + (itemRect.width || node.offsetWidth || 0);
+    if (itemEnd > clientSize) {
+      next = current + itemEnd - clientSize + SETTINGS_RAIL_HORIZONTAL_EDGE_PADDING;
+    } else if (itemStart < 0) {
+      next = current + itemStart - SETTINGS_RAIL_HORIZONTAL_EDGE_PADDING;
+    } else {
+      next = current;
+    }
+  } else {
+    const itemCenterInViewport = itemRect.top - railRect.top + (itemRect.height || node.offsetHeight || 0) / 2;
+    const targetCenter = clientSize * SETTINGS_RAIL_SCROLL_TARGET_RATIO;
+    next = current + itemCenterInViewport - targetCenter;
+  }
+  const nextPosition = clamp(next, 0, maxScroll);
 
-  if (Math.abs(rail.scrollTop - nextScrollTop) < 1) {
+  if (Math.abs(current - nextPosition) < 1) {
     return;
   }
   if (options?.immediate) {
-    if (rail.settingsScrollAnimationFrame) {
-      cancelAnimationFrame(rail.settingsScrollAnimationFrame);
-      rail.settingsScrollAnimationFrame = null;
+    const frameKey = horizontal ? "settingsScrollAnimationFrameX" : "settingsScrollAnimationFrame";
+    if (rail[frameKey]) {
+      cancelAnimationFrame(rail[frameKey]);
+      rail[frameKey] = null;
     }
-    rail.scrollTop = nextScrollTop;
+    if (horizontal) {
+      rail.scrollLeft = nextPosition;
+    } else {
+      rail.scrollTop = nextPosition;
+    }
     updateSettingsRailIndicators(rail);
     return;
   }
-  animateSettingsRailScroll(rail, nextScrollTop);
+  animateSettingsRailScroll(rail, nextPosition, horizontal ? "x" : "y");
 }
 
-export function animateSettingsRailScroll(rail, nextScrollTop) {
+export function animateSettingsRailScroll(rail, nextPosition, axis = "y") {
   if (!rail) {
     return;
   }
 
-  if (rail.settingsScrollAnimationFrame) {
-    cancelAnimationFrame(rail.settingsScrollAnimationFrame);
-    rail.settingsScrollAnimationFrame = null;
+  const frameKey = axis === "x" ? "settingsScrollAnimationFrameX" : "settingsScrollAnimationFrame";
+  if (rail[frameKey]) {
+    cancelAnimationFrame(rail[frameKey]);
+    rail[frameKey] = null;
   }
 
-  const startTop = Number(rail.scrollTop || 0);
-  if (Math.abs(nextScrollTop - startTop) < 1 || typeof requestAnimationFrame !== "function") {
-    rail.scrollTop = nextScrollTop;
+  const readPosition = () => Number(axis === "x" ? rail.scrollLeft : rail.scrollTop) || 0;
+  const writePosition = (value) => {
+    if (axis === "x") {
+      rail.scrollLeft = value;
+    } else {
+      rail.scrollTop = value;
+    }
+  };
+
+  const startPosition = readPosition();
+  if (Math.abs(nextPosition - startPosition) < 1 || typeof requestAnimationFrame !== "function") {
+    writePosition(nextPosition);
     updateSettingsRailIndicators(rail);
     return;
   }
 
-  let position = startTop;
+  let position = startPosition;
   let velocity = 0;
   let lastTime = performance.now();
   const damping = 2 * SETTINGS_RAIL_SCROLL_DAMPING_RATIO * Math.sqrt(SETTINGS_RAIL_SCROLL_STIFFNESS);
@@ -241,23 +276,23 @@ export function animateSettingsRailScroll(rail, nextScrollTop) {
     const deltaSeconds = Math.min(0.034, Math.max(0.001, (now - lastTime) / 1000));
     lastTime = now;
 
-    const displacement = position - nextScrollTop;
+    const displacement = position - nextPosition;
     const acceleration = -SETTINGS_RAIL_SCROLL_STIFFNESS * displacement - damping * velocity;
     velocity += acceleration * deltaSeconds;
     position += velocity * deltaSeconds;
-    rail.scrollTop = position;
+    writePosition(position);
     updateSettingsRailIndicators(rail);
 
-    if (Math.abs(position - nextScrollTop) > 0.5 || Math.abs(velocity) > 0.5) {
-      rail.settingsScrollAnimationFrame = requestAnimationFrame(step);
+    if (Math.abs(position - nextPosition) > 0.5 || Math.abs(velocity) > 0.5) {
+      rail[frameKey] = requestAnimationFrame(step);
     } else {
-      rail.scrollTop = nextScrollTop;
-      rail.settingsScrollAnimationFrame = null;
+      writePosition(nextPosition);
+      rail[frameKey] = null;
       updateSettingsRailIndicators(rail);
     }
   };
 
-  rail.settingsScrollAnimationFrame = requestAnimationFrame(step);
+  rail[frameKey] = requestAnimationFrame(step);
 }
 
 export function updateSettingsRailIndicators(rail) {
@@ -270,10 +305,11 @@ export function updateSettingsRailIndicators(rail) {
     return;
   }
 
-  const maxScroll = Math.max(0, rail.scrollHeight - rail.clientHeight);
-  const scrollTop = Number(rail.scrollTop || 0);
-  frame.classList.toggle("can-scroll-backward", scrollTop > 1);
-  frame.classList.toggle("can-scroll-forward", maxScroll > 1 && scrollTop < maxScroll - 1);
+  const horizontal = rail.scrollWidth > rail.clientWidth + 1;
+  const maxScroll = Math.max(0, horizontal ? rail.scrollWidth - rail.clientWidth : rail.scrollHeight - rail.clientHeight);
+  const position = Number(horizontal ? rail.scrollLeft : rail.scrollTop) || 0;
+  frame.classList.toggle("can-scroll-backward", position > 1);
+  frame.classList.toggle("can-scroll-forward", maxScroll > 1 && position < maxScroll - 1);
 }
 
 export function updateSettingsRailIndicatorsSoon(rail) {
