@@ -19,6 +19,7 @@ globalThis.document = {
   body: {}
 };
 const { Platform } = await import("../js/platform/index.js");
+const { resetTizenCapabilitiesCache } = await import("../js/platform/tizen/tizenCapabilities.js");
 const { MediaServerRepository, buildServerDeviceProfile } =
   await import("../js/data/mediaserver/mediaServerRepository.js");
 const { createPlayerScreenMethods35 } =
@@ -44,6 +45,9 @@ function supports(profile, container, video, audio) {
 for (const name of ["webos", "tizen"]) {
   test(`${name}: native MKV/HEVC and Dolby audio are not limited to the browser profile`, () => {
     Platform.current = { name };
+    globalThis.__NUVIO_PLATFORM__ = name;
+    globalThis.__NUVIO_TIZEN_VERSION__ = name === "tizen" ? "9.0" : "";
+    resetTizenCapabilitiesCache();
     const profile = buildServerDeviceProfile();
     for (const container of ["mkv", "mp4", "ts"]) {
       for (const codec of ["h264", "hevc"]) {
@@ -55,7 +59,7 @@ for (const name of ["webos", "tizen"]) {
     for (const audio of ["dts", "truehd", "flac"]) {
       assert.equal(supports(profile, "mkv", "hevc", audio), false);
     }
-    assert.equal(supports(profile, "mkv", "av1", "aac"), false);
+    assert.equal(supports(profile, "mkv", "av1", "aac"), name === "tizen");
     assert.equal(supports(profile, "mov", "hevc", "eac3"), false);
     assert.equal(
       profile.DirectPlayProfiles[0].MaxAudioChannels,
@@ -69,6 +73,9 @@ for (const name of ["webos", "tizen"]) {
     const fallback = buildServerDeviceProfile({ allowDirectPlay: false });
     assert.equal(supports(fallback, "mp4", "hevc", "eac3"), false);
     assert.equal(supports(fallback, "mp4", "h264", "aac"), true);
+    resetTizenCapabilitiesCache();
+    delete globalThis.__NUVIO_PLATFORM__;
+    delete globalThis.__NUVIO_TIZEN_VERSION__;
   });
 }
 test("browser and unknown platforms keep the original negotiation profile", () => {
@@ -77,6 +84,41 @@ test("browser and unknown platforms keep the original negotiation profile", () =
     assert.deepEqual(buildServerDeviceProfile().DirectPlayProfiles, [
       { Type: "Video", Container: "mp4,m4v,mov", VideoCodec: "h264", AudioCodec: "aac,mp3" }
     ]);
+  }
+});
+
+test("Tizen 6+ advertises AV1; older Tizen and webOS keep the existing profile", () => {
+  const originalPlatform = Platform.current;
+  try {
+    globalThis.__NUVIO_PLATFORM__ = "tizen";
+    globalThis.__NUVIO_TIZEN_VERSION__ = "9.0";
+    resetTizenCapabilitiesCache();
+    Platform.current = { name: "tizen" };
+    const profile = buildServerDeviceProfile();
+    for (const container of ["mkv", "mp4", "m4v", "ts"]) {
+      assert.equal(supports(profile, container, "av1", "aac"), true);
+    }
+    assert.equal(supports(profile, "mov", "av1", "aac"), false);
+    assert.equal(
+      supports(buildServerDeviceProfile({ allowDirectPlay: false }), "mkv", "av1", "aac"),
+      false,
+      "the transcode fallback must not advertise AV1"
+    );
+
+    globalThis.__NUVIO_TIZEN_VERSION__ = "5.5";
+    resetTizenCapabilitiesCache();
+    assert.equal(supports(buildServerDeviceProfile(), "mkv", "av1", "aac"), false);
+
+    globalThis.__NUVIO_PLATFORM__ = "webos";
+    globalThis.__NUVIO_TIZEN_VERSION__ = "9.0";
+    resetTizenCapabilitiesCache();
+    Platform.current = { name: "webos" };
+    assert.equal(supports(buildServerDeviceProfile(), "mkv", "av1", "aac"), false);
+  } finally {
+    delete globalThis.__NUVIO_PLATFORM__;
+    delete globalThis.__NUVIO_TIZEN_VERSION__;
+    resetTizenCapabilitiesCache();
+    Platform.current = originalPlatform;
   }
 });
 
