@@ -89,7 +89,8 @@ export function createLibraryScreenMethods02() {
           this.controller.getSelectedWatchedLabel(),
           this.controller.getPickerOptions("watched"),
           "library-picker-flex"
-        )
+        ),
+        `<button class="library-view-mode-button focusable${state.selectedWatchedFilter === "unwatched" ? " selected" : ""}" data-action="toggleHideWatched" aria-pressed="${state.selectedWatchedFilter === "unwatched"}">${escapeHtml(t("library_filter_hide_watched", {}, "Hide watched"))}</button>`
       ]
         .filter(Boolean)
         .join("");

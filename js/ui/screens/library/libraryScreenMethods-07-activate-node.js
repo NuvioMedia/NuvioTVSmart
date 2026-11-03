@@ -74,6 +74,11 @@ export function createLibraryScreenMethods07() {
         await this.controller.selectViewMode(String(node.dataset.viewMode || "saved"));
         return;
       }
+      if (action === "toggleHideWatched") {
+        const selectedWatchedFilter = this.controller.state.selectedWatchedFilter;
+        this.controller.selectWatchedFilter(selectedWatchedFilter === "unwatched" ? "all" : "unwatched");
+        return;
+      }
       if (action === "refreshCloudLibrary") {
         await this.controller.refreshCloudLibrary();
         return;
