@@ -15,6 +15,7 @@ import { WatchProgressSyncService } from "../profile/watchProgressSyncService.js
 import { nativeVideoEngine } from "./engines/nativeVideoEngine.js";
 import { hlsJsEngine } from "./engines/hlsJsEngine.js";
 import { dashJsEngine } from "./engines/dashJsEngine.js";
+import { mp4MseEngine } from "./engines/mp4MseEngine.js";
 import { resolvePlatformAvplayEngine } from "./engines/platformAvplayEngine.js";
 import { isTerminalHlsHttpStatus } from "./hlsNetworkErrorPolicy.js";
 import { isShortPlaceholderDuration } from "./naturalPlaybackCompletion.js";
@@ -83,6 +84,7 @@ export {
   nativeVideoEngine,
   hlsJsEngine,
   dashJsEngine,
+  mp4MseEngine,
   resolvePlatformAvplayEngine,
   isTerminalHlsHttpStatus,
   isShortPlaceholderDuration,
@@ -280,7 +282,9 @@ export const PlayerController = {
   visibilityFlushHandler: null,
   hlsInstance: null,
   dashInstance: null,
+  mp4MseSession: null,
   playbackEngine: "none",
+  tizenMp4NativeFileEnabled: true,
   avplayActive: false,
   avplayUrl: "",
   avplayAudioTracks: [],

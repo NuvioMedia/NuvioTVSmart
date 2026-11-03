@@ -96,9 +96,13 @@ export function createPlayerScreenMethods34() {
       const nextEngineFsState = this.getEngineFsStateForStream(sourceCandidate);
       const prioritizeWebOsRemoteMkvPlayback =
         Environment.isWebOS() && !nextEngineFsState && this.isCurrentSourceLikelyMkv(streamUrl, sourceCandidate);
+      const isTizenMp4NativeFilePlayback =
+        typeof PlayerController.shouldPreferTizenNativeFileForMp4 === "function" &&
+        PlayerController.shouldPreferTizenNativeFileForMp4(streamUrl, this.resolvePlaybackMediaSourceType(sourceCandidate));
       const allowNativePlaybackDuringStartupAudioGate = shouldAllowNativePlaybackDuringStartupAudioGate({
         isHlsPlayback: this.isCurrentSourceLikelyHls(streamUrl, sourceCandidate),
-        isPrioritizedWebOsRemoteMkvPlayback: prioritizeWebOsRemoteMkvPlayback
+        isPrioritizedWebOsRemoteMkvPlayback: prioritizeWebOsRemoteMkvPlayback,
+        isTizenMp4NativeFilePlayback
       });
       const sameEngineFsState = this.isSameEngineFsState(this.currentEngineFsStream, nextEngineFsState);
       if (this.currentEngineFsStream && !this.isSameEngineFsState(this.currentEngineFsStream, nextEngineFsState)) {
@@ -145,6 +149,11 @@ export function createPlayerScreenMethods34() {
       this.clearBufferingSpinnerTimer();
       if (nextEngineFsState) {
         this.releaseStartupAudioGate({ resume: false });
+      } else if (isTizenMp4NativeFilePlayback) {
+        this.startupAudioGateActive = false;
+        this.startupAudioGateAllowsNativePlayback = false;
+        PlayerController.setStartupAudioGate?.(false, { resume: false });
+        PlayerController.setStartupPresentationAudioMuted?.(false);
       } else {
         this.enableStartupAudioGate({
           allowNativePlayback: allowNativePlaybackDuringStartupAudioGate,

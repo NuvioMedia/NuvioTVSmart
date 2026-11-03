@@ -42,7 +42,14 @@ export function createPlayerScreenMethods18() {
         ...(Object.keys(requestHeaders).length ? { requestHeaders } : {})
       };
       saveReusableStreamLink(this, sourceCandidate || this.getCurrentStreamCandidate(), { url: playbackUrl, headers: requestHeaders });
-      PlayerController.setStartupPresentationAudioMuted?.(true);
+      const isTizenMp4BrowserPath =
+        PlayerController.shouldPreferTizenNativeFileForMp4?.(playbackUrl, playbackContext.mediaSourceType) === true;
+      if (isTizenMp4BrowserPath) {
+        PlayerController.setStartupAudioGate?.(false, { resume: false });
+        PlayerController.setStartupPresentationAudioMuted?.(false);
+      } else {
+        PlayerController.setStartupPresentationAudioMuted?.(true);
+      }
       return Promise.resolve(PlayerController.play(playbackUrl, playbackContext)).catch((error) => {
         if (!this.isActiveMountToken(mountToken) || this.isExternalFrameMode()) {
           return;

@@ -2,7 +2,7 @@
 import * as internals from "./playerController.js";
 
 export function createPlayerControllerMethods12() {
-  const { Platform, nativeVideoEngine, WEBOS_MEDIA_TYPE_PROBE_TIMEOUT_MS } = internals;
+  const { Platform, nativeVideoEngine, mp4MseEngine, WEBOS_MEDIA_TYPE_PROBE_TIMEOUT_MS } = internals;
 
   return {
     getPlaybackEngineCandidates(url, sourceType = null, itemType = this.currentItemType) {
@@ -108,6 +108,13 @@ export function createPlayerControllerMethods12() {
 
       const candidates = [];
       const isRemoteDirectHttpSource = this.isRemoteDirectHttpSource(url);
+      if (this.shouldPreferTizenNativeFileForMp4(url, normalizedSourceType) && typeof globalThis.MediaSource === "function") {
+        // Tizen plays `<video src=mp4>` through the same platform progressive
+        // player as AVPlay, which drops audio on some files. MSE feeds the
+        // decoder the way hls.js does. The existing remote-source exclusion
+        // below still prevents an AVPlay failure from retrying through `<video>`.
+        pushCandidate(candidates, "mse-mp4");
+      }
       if (isTizenRuntime && canUseAvPlay) {
         pushCandidate(candidates, avplayEngine);
       }
@@ -161,6 +168,21 @@ export function createPlayerControllerMethods12() {
         return !/^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?:\/|$)/i.test(normalizedUrl);
       }
     },
+    shouldPreferTizenNativeFileForMp4(url = "", sourceType = null) {
+      if (!Platform.isTizen() || this.tizenMp4NativeFileEnabled !== true) {
+        return false;
+      }
+      const normalizedUrl = String(url || "").trim();
+      // Keep local EngineFS and other non-remote sources on the AVPlay-first
+      // path they use today; this switch is only for remote progressive MP4.
+      if (!this.isRemoteDirectHttpSource(normalizedUrl)) {
+        return false;
+      }
+      const normalizedSourceType = String(sourceType || this.guessMediaMimeType(normalizedUrl) || "").trim();
+      // A declared video/mp4 type is enough for redirect/proxy endpoints with no
+      // file extension; otherwise require an .mp4/.m4v path.
+      return this.normalizeMimeType(normalizedSourceType) === "video/mp4" || /\.(mp4|m4v)(?=($|[/?#&]))/i.test(normalizedUrl);
+    },
     getPlaybackCapabilities() {
       const supports = (mimeType) => this.canPlayNatively(mimeType);
       const capabilities = {
@@ -213,12 +235,43 @@ export function createPlayerControllerMethods12() {
       }
       this.dashInstance = null;
     },
+    teardownMp4MseSession() {
+      if (!this.mp4MseSession) {
+        return;
+      }
+      const session = this.mp4MseSession;
+      this.mp4MseSession = null;
+      session.destroy();
+    },
     teardownAdaptiveInstances() {
       this.teardownHlsInstance();
       this.teardownDashInstance();
+      this.teardownMp4MseSession();
       if (!this.isUsingAvPlay()) {
         this.playbackEngine = "none";
       }
+    },
+    playWithMp4Mse(url, { playToken = null, onFatalError = null } = {}) {
+      if (!this.video || !mp4MseEngine.isSupported() || !this.isPlaybackRequestActive(playToken)) {
+        return false;
+      }
+      this.teardownMp4MseSession();
+      try {
+        const session = mp4MseEngine.create(this.video, url, {
+          onFatalError: (error) => {
+            if (this.mp4MseSession === session) {
+              this.mp4MseSession = null;
+            }
+            onFatalError?.(error);
+          }
+        });
+        this.mp4MseSession = session;
+      } catch (error) {
+        console.warn("[Nuvio Tizen MP4] MSE session failed to start", error);
+        return false;
+      }
+      this.playbackEngine = "mse-mp4";
+      return true;
     },
     applyNativeSource(url, mimeType = null, engineName = "native-file") {
       const normalizedMimeType = this.normalizeMimeType(mimeType);

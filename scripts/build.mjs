@@ -660,6 +660,14 @@ async function runBuild() {
         path.join(distDir, "assets", "libs", "dashjs.LICENSE.md")
       ),
       cp(
+        path.join(rootDir, "node_modules", "mp4box", "dist", "mp4box.all.min.js"),
+        path.join(distDir, "assets", "libs", "mp4box.all.min.js")
+      ),
+      cp(
+        path.join(rootDir, "node_modules", "mp4box", "LICENSE"),
+        path.join(distDir, "assets", "libs", "mp4box.LICENSE")
+      ),
+      cp(
         path.join(rootDir, "node_modules", "assjs", "LICENSE"),
         path.join(distDir, "assets", "libs", "assjs.LICENSE")
       )

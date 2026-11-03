@@ -567,6 +567,8 @@
     <string name="playback_minimal_buffering_ui_sub">Show only the spinner when playback buffers after it has started.</string>
     <string name="playback_pause_overlay">Pause Overlay</string>
     <string name="playback_pause_overlay_sub">Show details overlay after 5 seconds while paused.</string>
+    <string name="tizen_mp4_native_file">Tizen MP4 compatibility</string>
+    <string name="tizen_mp4_native_file_sub">Direct MP4 streams play through the streaming (MSE) pipeline used for HLS instead of the TV\'s file player. Disable if playback regresses.</string>
     <string name="playback_show_clock_sub">Show current time and end time while controls are visible.</string>
     <string name="playback_osd_clock">OSD Clock</string>
     <string name="playback_skip_intro">Skip Intro</string>

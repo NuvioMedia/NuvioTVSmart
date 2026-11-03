@@ -14,6 +14,14 @@ const STREAMING_LIBS = [
       "https://cdn.jsdelivr.net/npm/dashjs@5.2.1/dist/legacy/umd/dash.all.min.js"
     ],
     isLoaded: () => Boolean(globalThis.dashjs)
+  },
+  {
+    id: "mp4box",
+    sources: [
+      "assets/libs/mp4box.all.min.js",
+      "https://cdn.jsdelivr.net/npm/mp4box@0.5.4/dist/mp4box.all.min.js"
+    ],
+    isLoaded: () => Boolean(globalThis.MP4Box?.createFile)
   }
 ];
 
@@ -64,8 +72,12 @@ function ensureStreamingLibrary(entry) {
   return loadingPromise;
 }
 
-export async function loadStreamingLibs({ hls = true, dash = true } = {}) {
-  const requiredLibraryIds = new Set([...(hls ? ["hls"] : []), ...(dash ? ["dash"] : [])]);
+export async function loadStreamingLibs({ hls = true, dash = true, mp4box = false } = {}) {
+  const requiredLibraryIds = new Set([
+    ...(hls ? ["hls"] : []),
+    ...(dash ? ["dash"] : []),
+    ...(mp4box ? ["mp4box"] : [])
+  ]);
   for (const entry of STREAMING_LIBS) {
     if (!requiredLibraryIds.has(entry.id) || entry.isLoaded()) {
       continue;
@@ -79,7 +91,10 @@ export async function loadStreamingLibs({ hls = true, dash = true } = {}) {
 }
 
 export function warmStreamingLibs(options = {}) {
-  if (streamingLibsWarmupScheduled || STREAMING_LIBS.every((entry) => entry.isLoaded())) {
+  if (
+    streamingLibsWarmupScheduled ||
+    STREAMING_LIBS.filter((entry) => entry.id !== "mp4box").every((entry) => entry.isLoaded())
+  ) {
     return;
   }
   streamingLibsWarmupScheduled = true;

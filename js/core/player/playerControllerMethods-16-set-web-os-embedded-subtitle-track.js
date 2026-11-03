@@ -128,7 +128,15 @@ export function createPlayerControllerMethods16() {
         });
     },
     choosePlaybackEngine(url, sourceType, itemType = this.currentItemType) {
-      if (Platform.isTizen() && this.canUseAvPlay() && !this.isTizenHlsSource(url, sourceType)) {
+      // Tizen keeps non-HLS sources on AVPlay by default. The MP4 compatibility
+      // switch is the one exception; every other source keeps this fast path so
+      // the browser never receives a remote URL that AVPlay already handles.
+      if (
+        Platform.isTizen() &&
+        this.canUseAvPlay() &&
+        !this.isTizenHlsSource(url, sourceType) &&
+        !this.shouldPreferTizenNativeFileForMp4(url, sourceType)
+      ) {
         return this.getPlatformAvplayEngineName();
       }
       const candidates = this.getPlaybackEngineCandidates(url, sourceType, itemType);
@@ -148,6 +156,10 @@ export function createPlayerControllerMethods16() {
     },
     async ensureAdaptiveLibrariesForSource(sourceType, playbackEngine = null) {
       const normalizedEngine = String(playbackEngine || "").trim();
+      if (normalizedEngine === "mse-mp4") {
+        await loadStreamingLibs({ hls: false, dash: false, mp4box: true });
+        return;
+      }
       if (Platform.isTizen() && normalizedEngine !== "hls.js" && normalizedEngine !== "dash.js") {
         return;
       }

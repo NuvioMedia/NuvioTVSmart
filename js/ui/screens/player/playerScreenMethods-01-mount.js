@@ -149,6 +149,7 @@ export function createPlayerScreenMethods01() {
 
       initializePlayerMountState.call(this, params, initialStreamUrl);
       const playerSettings = PlayerSettingsStore.get();
+      PlayerController.tizenMp4NativeFileEnabled = Boolean(playerSettings.tizenMp4NativeFile);
       this.subtitleRenderMode = normalizeSubtitleRenderMode(playerSettings.subtitleRenderMode);
       this.subtitleDelayMs = SubtitleDelayPreferencesStore.get(this.subtitleDelayPreferenceVideoId);
       this.subtitleStyleSettings = {
@@ -202,9 +203,13 @@ export function createPlayerScreenMethods01() {
         this.currentEngineFsStream = this.getEngineFsStateForStream(sourceCandidate);
         const prioritizeWebOsRemoteMkvPlayback =
           Environment.isWebOS() && !this.currentEngineFsStream && this.isCurrentSourceLikelyMkv(initialStreamUrl, sourceCandidate);
+        const isTizenMp4NativeFilePlayback =
+          typeof PlayerController.shouldPreferTizenNativeFileForMp4 === "function" &&
+          PlayerController.shouldPreferTizenNativeFileForMp4(initialStreamUrl, this.resolvePlaybackMediaSourceType(sourceCandidate));
         const allowNativePlaybackDuringStartupAudioGate = shouldAllowNativePlaybackDuringStartupAudioGate({
           isHlsPlayback: this.isCurrentSourceLikelyHls(initialStreamUrl, sourceCandidate),
-          isPrioritizedWebOsRemoteMkvPlayback: prioritizeWebOsRemoteMkvPlayback
+          isPrioritizedWebOsRemoteMkvPlayback: prioritizeWebOsRemoteMkvPlayback,
+          isTizenMp4NativeFilePlayback
         });
         if (prioritizeWebOsRemoteMkvPlayback) {
           // The probe must start only after webOS has accepted the media request,
@@ -215,6 +220,15 @@ export function createPlayerScreenMethods01() {
           this.engineFsPlaybackToken = claimEngineFsPlayback(this.currentEngineFsStream);
           this.releaseStartupAudioGate({ resume: false });
           this.startEngineFsKeepAlive(this.currentEngineFsStream);
+        } else if (isTizenMp4NativeFilePlayback) {
+          // This compatibility path must be audible from the first frame; the
+          // startup gate is designed for AVPlay track discovery and can keep
+          // the browser element muted.
+          this.engineFsPlaybackToken = "";
+          this.startupAudioGateActive = false;
+          this.startupAudioGateAllowsNativePlayback = false;
+          PlayerController.setStartupAudioGate?.(false, { resume: false });
+          PlayerController.setStartupPresentationAudioMuted?.(false);
         } else {
           this.engineFsPlaybackToken = "";
           this.enableStartupAudioGate({

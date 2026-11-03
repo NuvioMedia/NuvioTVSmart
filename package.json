@@ -55,6 +55,7 @@
     "hls.js": "1.7.3",
     "jszip": "^3.10.2",
     "libbitsub": "^1.12.1",
+    "mp4box": "0.5.4",
     "quickjs-emscripten": "^0.32.0"
   }
 }

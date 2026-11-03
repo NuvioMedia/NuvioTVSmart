@@ -107,8 +107,11 @@ export function createPlayerControllerMethods18() {
       let playbackUrl = requestedUrl;
       let tizenProxyUnavailable = false;
       let tizenAvPlayFallbackForProxyUnavailable = false;
+      // Tizen's packaged-app runtime lets fetch() read remote media without
+      // CORS, so "mse-mp4" uses the proxy only for declared request headers.
       const canUseTizenPlaybackProxy =
-        Platform.isTizen() && (this.canUseAvPlay() || preferredEngine === "hls.js" || preferredEngine === "native-hls");
+        Platform.isTizen() &&
+        (this.canUseAvPlay() || preferredEngine === "hls.js" || preferredEngine === "native-hls" || preferredEngine === "mse-mp4");
       const playbackProxy = canUseTizenPlaybackProxy ? TizenPlaybackProxy : Platform.isWebOS() ? WebOsPlaybackProxy : null;
       const isTizenAvPlayVod =
         Platform.isTizen() &&
@@ -326,6 +329,49 @@ export function createPlayerControllerMethods18() {
               }
               return fallbackStarted;
             }
+          });
+        }
+      } else if (preferredEngine === "mse-mp4") {
+        const avplayEngine = this.getPlatformAvplayEngineName();
+        const avplayFallbackUrl = TizenPlaybackProxy.requiresProxy(requestedUrl, requestHeaders, {
+          playbackEngine: avplayEngine,
+          resolveRedirects: false
+        })
+          ? playbackUrl
+          : requestedUrl;
+        const fallBackToAvPlay = (reason) => {
+          if (!this.isPlaybackRequestActive(playToken)) {
+            return false;
+          }
+          console.warn("[Nuvio Tizen MP4] MSE playback failed; falling back to AVPlay", reason?.message || String(reason || ""));
+          this.teardownMp4MseSession();
+          const fallbackStarted = this.canUseAvPlay() && this.playWithAvPlay(avplayFallbackUrl, requestHeaders, sourceType, playToken);
+          if (fallbackStarted) {
+            this.isPlaying = true;
+            return true;
+          }
+          this.isPlaying = false;
+          this.stopProgressSaving();
+          this.emitVideoEvent("error", {
+            playbackEngine: "mse-mp4",
+            mediaErrorCode: this.getLastPlaybackErrorCode() || 4
+          });
+          return false;
+        };
+        // The compatibility path is audible from the first frame; the startup
+        // gate exists for AVPlay track discovery.
+        this.startupAudioGateActive = false;
+        this.startupPresentationAudioMuted = false;
+        this.applyStartupAudioGateToVideo();
+        if (!this.playWithMp4Mse(playbackUrl, { playToken, onFatalError: fallBackToAvPlay })) {
+          if (!fallBackToAvPlay(new Error("MSE MP4 session unavailable"))) {
+            return;
+          }
+        } else {
+          this.attemptVideoPlay({
+            warningLabel: "MSE MP4 playback start rejected",
+            playToken,
+            onRejected: (error) => (this.isUnsupportedSourceError(error) ? fallBackToAvPlay(error) : false)
           });
         }
       } else if (preferredEngine === "hls.js") {

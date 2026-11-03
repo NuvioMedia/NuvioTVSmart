@@ -15,9 +15,12 @@ export function canReleasePlayingNativeStartupAudioGate({
 
 export function shouldAllowNativePlaybackDuringStartupAudioGate({
   isHlsPlayback = false,
-  isPrioritizedWebOsRemoteMkvPlayback = false
+  isPrioritizedWebOsRemoteMkvPlayback = false,
+  isTizenMp4NativeFilePlayback = false
 } = {}) {
-  return Boolean(isHlsPlayback || isPrioritizedWebOsRemoteMkvPlayback);
+  return Boolean(
+    isHlsPlayback || isPrioritizedWebOsRemoteMkvPlayback || isTizenMp4NativeFilePlayback
+  );
 }
 
 export function selectStartupAudioFallbackOption(options = []) {

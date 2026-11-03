@@ -108,6 +108,7 @@ export function registerPlaybackActionsPart01(model) {
   togglePlayerSetting("playback:loadingOverlay", "loadingOverlayEnabled");
   togglePlayerSetting("playback:loadingStatus", "showPlayerLoadingStatus");
   togglePlayerSetting("playback:pauseOverlay", "pauseOverlayEnabled");
+  togglePlayerSetting("playback:tizenMp4NativeFile", "tizenMp4NativeFile");
   togglePlayerSetting("playback:parentalGuide", "parentalGuideEnabled");
   ["intro", "recap", "outro", "movie-credits"].forEach((type) =>
     this.actionMap.set(`playback:autoSkip:${type}`, () => {

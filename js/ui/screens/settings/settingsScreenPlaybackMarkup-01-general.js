@@ -22,6 +22,20 @@ export function renderPlaybackGeneralBody(model) {
               subtitle: t("settings.playback.autoplayNextEpisode.subtitle"),
               checked: Boolean(model.player.autoplayNextEpisode)
             })}
+            ${
+              Platform.isTizen()
+                ? this.renderToggleRow({
+                    focusKey: "playback:tizenMp4NativeFile",
+                    title: t("tizen_mp4_native_file", {}, "Tizen MP4 compatibility"),
+                    subtitle: t(
+                      "tizen_mp4_native_file_sub",
+                      {},
+                      "Direct MP4 streams play through the streaming (MSE) pipeline used for HLS instead of the TV's file player. Disable if playback regresses."
+                    ),
+                    checked: Boolean(model.player.tizenMp4NativeFile)
+                  })
+                : ""
+            }
             ${this.renderToggleRow({
               focusKey: "playback:postPlayRecommendations",
               title: t("autoplay_post_play_recommendations", {}, "Post-play Recommendations"),

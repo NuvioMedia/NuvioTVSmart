@@ -34,6 +34,7 @@ const DEFAULTS = {
   loadingOverlayEnabled: true,
   showPlayerLoadingStatus: true,
   pauseOverlayEnabled: true,
+  tizenMp4NativeFile: true,
   parentalGuideEnabled: true,
   autoSkipSegmentTypes: [],
   nextEpisodeThresholdMode: "PERCENTAGE",
@@ -301,6 +302,9 @@ export function normalizePlayerSettings(settings = {}) {
     loadingOverlayEnabled: persistentSettings.loadingOverlayEnabled !== false,
     showPlayerLoadingStatus: persistentSettings.showPlayerLoadingStatus !== false,
     pauseOverlayEnabled: persistentSettings.pauseOverlayEnabled !== false,
+    tizenMp4NativeFile: Boolean(
+      persistentSettings.tizenMp4NativeFile ?? DEFAULTS.tizenMp4NativeFile
+    ),
     parentalGuideEnabled: persistentSettings.parentalGuideEnabled !== false,
     autoSkipSegmentTypes: [
       ...new Set(

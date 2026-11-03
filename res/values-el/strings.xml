@@ -519,6 +519,8 @@
     <string name="playback_loading_overlay_sub">Εμφάνιση οθόνης φόρτωσης μέχρι να εμφανιστεί το πρώτο καρέ βίντεο.</string>
     <string name="playback_pause_overlay">Οθόνη παύσης</string>
     <string name="playback_pause_overlay_sub">Εμφάνιση οθόνης λεπτομερειών μετά από 5 δευτερόλεπτα παύσης.</string>
+    <string name="tizen_mp4_native_file">Συμβατότητα MP4 Tizen</string>
+    <string name="tizen_mp4_native_file_sub">Οι άμεσες ροές MP4 αναπαράγονται μέσω της διαδρομής streaming (MSE) που χρησιμοποιείται για HLS αντί για το πρόγραμμα αναπαραγωγής αρχείων της TV. Απενεργοποιήστε το αν παρουσιαστεί πρόβλημα αναπαραγωγής.</string>
     <string name="playback_show_clock_sub">Εμφάνιση τρέχουσας ώρας και ώρας λήξης ενώ είναι ορατά τα χειριστήρια.</string>
     <string name="playback_osd_clock">Ρολόι OSD</string>
     <string name="playback_skip_intro">Παράλειψη εισαγωγής</string>
