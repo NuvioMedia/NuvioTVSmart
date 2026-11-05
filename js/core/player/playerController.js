@@ -281,6 +281,7 @@ export const PlayerController = {
   hlsInstance: null,
   dashInstance: null,
   playbackEngine: "none",
+  currentPlaybackIsLive: false,
   avplayActive: false,
   avplayUrl: "",
   avplayAudioTracks: [],

@@ -29,6 +29,15 @@ export function createPlayerScreenMethods14() {
       this.selectedManifestSubtitleTrackId = null;
       this.refreshTrackDialogs();
 
+      // hls.js/dash.js already fetched this manifest and expose the resulting
+      // tracks. Fetching it again competes with the player on live providers
+      // that allow a single connection, which is common for IPTV channels.
+      if (PlayerController.hlsInstance || PlayerController.dashInstance) {
+        this.manifestLoading = false;
+        this.refreshTrackDialogs();
+        return;
+      }
+
       const probeUrl = masterUrl || runtimeUrl || playbackUrl || "";
       const runtimeMimeType = runtimeUrl && runtimeUrl === probeUrl ? PlayerController.currentPlaybackMediaSourceType : null;
       let probeMimeType =

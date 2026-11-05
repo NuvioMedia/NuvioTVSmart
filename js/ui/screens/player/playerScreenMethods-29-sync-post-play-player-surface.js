@@ -1,4 +1,4 @@
-import { isLivePlayback } from "./livePlaybackUi.js";
+import { LiveDurationGrowth, isLivePlayback, nextLiveDurationGrowth } from "./livePlaybackUi.js";
 import { syncHtmlSubtitleClearance } from "./subtitleOverlayClearance.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
@@ -399,7 +399,24 @@ export function createPlayerScreenMethods29() {
       return stalledForMs >= BUFFERING_SPINNER_STALL_MS;
     },
     isLivePlayback() {
-      return isLivePlayback(this, PlayerController);
+      const mediaKey = this.activePlaybackUrl || PlayerController.video?.currentSrc || "";
+      const durationMs = Number(this.getPlaybackDurationSeconds?.() || 0) * 1000;
+      this.liveDurationGrowth = nextLiveDurationGrowth(
+        this.liveDurationGrowth,
+        mediaKey,
+        durationMs,
+        Boolean(this.hasPresentedPlaybackFrame)
+      );
+      const live = isLivePlayback(this, PlayerController) || this.liveDurationGrowth.grew;
+      PlayerController.currentPlaybackIsLive = live;
+      return live;
+    },
+    resetLivePlaybackState() {
+      this.livePlaybackLatched = false;
+      this.liveDurationGrowth = new LiveDurationGrowth();
+      // Keep the controller flag until the next tick: playStreamByUrl() runs
+      // before the outgoing stream's final flush, which must still see whether
+      // that stream was live.
     },
     isSeekBarAvailable() {
       return !this.isLivePlayback() && (!this.loadingVisible || this.hasPresentedPlaybackFrame || this.seekLoading);

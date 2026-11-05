@@ -19,6 +19,7 @@ export function initializePlayerMountState(params, initialStreamUrl) {
     normalizeParentalWarnings
   } = internals;
   this.livePlaybackLatched = false;
+  this.liveDurationGrowth = null;
   this.liveWatchClock = new LivePlaybackWatchClock();
   this.subtitles = [];
   this.embeddedSubtitleTracks = [];

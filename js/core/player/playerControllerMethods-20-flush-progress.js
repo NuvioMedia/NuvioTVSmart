@@ -20,6 +20,9 @@ export function createPlayerControllerMethods20() {
       context = null,
       { allowCloudSync = true, syncRemote = allowCloudSync } = {}
     ) {
+      if (this.currentPlaybackIsLive === true) {
+        return false;
+      }
       const active = context || this.createProgressContext();
       if (!active?.itemId) {
         return;

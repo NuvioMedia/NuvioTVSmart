@@ -1,3 +1,36 @@
+export const LIVE_DURATION_GROWTH_MS = 10_000;
+
+export class LiveDurationGrowth {
+  constructor() {
+    this.mediaKey = null;
+    this.firstDurationMs = 0;
+    this.grew = false;
+  }
+}
+
+// Native players can seek live HLS inside what they have loaded, so their
+// duration keeps growing instead of reporting a live window. Readings from the
+// previous media are ignored until the requested source has presented.
+export function nextLiveDurationGrowth(previous = null, mediaKey = "", durationMs = 0, fromRequestedMedia = true) {
+  const state = previous instanceof LiveDurationGrowth ? previous : new LiveDurationGrowth();
+  const key = String(mediaKey || "");
+  if (state.mediaKey !== key) {
+    state.mediaKey = key;
+    state.firstDurationMs = 0;
+    state.grew = false;
+  }
+  const duration = Number(durationMs);
+  if (!fromRequestedMedia || !Number.isFinite(duration) || duration <= 0 || state.grew) {
+    return state;
+  }
+  if (state.firstDurationMs === 0) {
+    state.firstDurationMs = duration;
+  } else if (duration > state.firstDurationMs + LIVE_DURATION_GROWTH_MS) {
+    state.grew = true;
+  }
+  return state;
+}
+
 // Android LivePlaybackUiPolicy: a media window is not a watched duration.
 export function isLivePlayback(screen, controller) {
   if (String(screen.params?.itemType || "").toLowerCase() === "channel" || screen.livePlaybackLatched) return true;
