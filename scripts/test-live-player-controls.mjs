@@ -296,6 +296,102 @@ test("More opens the first supported extra action and closes onto Play/Pause", (
   }
 });
 
+const { createPlayerScreenMethods36 } =
+  await import("../js/ui/screens/player/playerScreenMethods-36-reset-playback-engine-validation.js");
+test("HTTP 416 retries the current source from the start once, clearing resume", () => {
+  const previousEngine = PlayerController.playbackEngine;
+  PlayerController.playbackEngine = "hls.js";
+  const calls = [];
+  const source = { id: "src", url: "https://live.example/master.m3u8" };
+  const s = {
+    ...createPlayerScreenMethods36(),
+    activePlaybackUrl: source.url,
+    hasRetriedCurrentStreamAfter416: false,
+    pendingPlaybackRestore: { timeSeconds: 1800 },
+    lastPlaybackErrorAt: Date.now(),
+    loadingVisible: false,
+    paused: true,
+    sourcesError: "old",
+    updateLoadingVisibility() {},
+    getStreamCandidateByUrl: (url) => (url === source.url ? source : null),
+    getCurrentStreamCandidate: () => source,
+    playStreamByUrl(url, options) {
+      calls.push({ url, options });
+    }
+  };
+  try {
+    assert.equal(s.retryCurrentStreamFromStartAfter416(), true);
+    assert.equal(
+      s.pendingPlaybackRestore,
+      null,
+      "the stale resume position must not survive the restart"
+    );
+    assert.equal(s.hasRetriedCurrentStreamAfter416, true);
+    assert.equal(s.loadingVisible, true);
+    assert.equal(s.lastPlaybackErrorAt, 0);
+    assert.deepEqual(
+      calls.map((call) => call.url),
+      [source.url]
+    );
+    assert.equal(calls[0].options.forceEngine, "hls.js");
+    assert.equal(calls[0].options.preservePendingRestore, undefined);
+    assert.equal(calls[0].options.preservePlaybackState, undefined);
+    assert.equal(
+      s.retryCurrentStreamFromStartAfter416(),
+      false,
+      "only one full-restart retry is allowed"
+    );
+    assert.equal(calls.length, 1);
+  } finally {
+    PlayerController.playbackEngine = previousEngine;
+  }
+});
+
+async function loadVideoErrorHandlers(internals) {
+  const source = await readFile(
+    new URL("../js/ui/screens/player/playerVideoEventHandlers.js", import.meta.url),
+    "utf8"
+  );
+  const context = vm.createContext({ internals, console });
+  vm.runInContext(
+    source.replace(/^import .*$/gm, "").replace(/^export /gm, "") +
+      "\nthis.createVideoEventHandlers = createPlayerVideoEventHandlers;",
+    context
+  );
+  return context.createVideoEventHandlers;
+}
+
+test("HTTP 416 reaches the one-shot restart before any engine failover", async () => {
+  const retries = [];
+  const createVideoEventHandlers = await loadVideoErrorHandlers({
+    PlayerController: { getLastHlsErrorDiagnostic: () => ({ fatal: true, responseCode: 416 }) },
+    isExpiredStreamUrl: () => false,
+    isTerminalHlsHttpStatus: () => false,
+    logEngineFsDebug() {},
+    claimEngineFsPlayback() {}
+  });
+  const screen = {
+    isStartupErrorVisible: () => false,
+    getPlaybackEventErrorDetail: () => "HTTP 416",
+    getStreamCandidateByUrl: () => ({}),
+    getCurrentStreamCandidate: () => ({}),
+    tryServerPlaybackFallback: () => false,
+    activePlaybackUrl: "https://live.example/master.m3u8",
+    currentEngineFsStream: null,
+    hasPresentedPlaybackFrame: false,
+    retryCurrentStreamFromStartAfter416() {
+      retries.push("416");
+      return true;
+    }
+  };
+  const { onError } = createVideoEventHandlers.call(screen, {}, false);
+
+  // The native video error event can arrive without a detail payload; the
+  // cached hls.js diagnostic still identifies the 416.
+  await onError({ detail: { mediaErrorCode: 2 } });
+  assert.deepEqual(retries, ["416"]);
+});
+
 const { createPlayerScreenMethods15 } =
   await import("../js/ui/screens/player/playerScreenMethods-15-apply-manifest-track-selection.js");
 test("initial live markup never flashes a VOD bar, end time or removed source line", () => {

@@ -99,6 +99,12 @@ export function createPlayerVideoEventHandlers(video, isTizenAvPlayPlayback) {
     const mediaErrorCode = detailErrorCode || Number(video?.error?.code || 0) || controllerErrorCode;
     const eventDetail = event?.detail && typeof event.detail === "object" ? event.detail : {};
     const playbackErrorDetail = this.getPlaybackEventErrorDetail(eventDetail);
+    const hlsDiagnostic =
+      typeof PlayerController.getLastHlsErrorDiagnostic === "function" ? PlayerController.getLastHlsErrorDiagnostic() : null;
+    // A native video error carries no HTTP code, so fall back to the last
+    // fatal hls.js response for the same playback.
+    const cachedHlsResponseCode = hlsDiagnostic?.fatal ? Number(hlsDiagnostic.responseCode || 0) : 0;
+    const hlsResponseCode = Number(eventDetail.hlsResponseCode || cachedHlsResponseCode || 0);
     const terminalHlsHttpFailure = isTerminalHlsHttpStatus(eventDetail.hlsResponseCode);
     const avplayError = String(eventDetail?.avplayError || "").toLowerCase();
     const normalizedPlaybackErrorDetail = String(playbackErrorDetail || "").toLowerCase();
@@ -167,6 +173,13 @@ export function createPlayerVideoEventHandlers(video, isTizenAvPlayPlayback) {
           engineFs
         }
       });
+      return;
+    }
+
+    // A range request can fail when the position or segment is outside the
+    // window the provider still serves (common on live channels). Android
+    // replays the same stream from position 0 once before changing engines.
+    if (hlsResponseCode === 416 && this.retryCurrentStreamFromStartAfter416?.()) {
       return;
     }
 

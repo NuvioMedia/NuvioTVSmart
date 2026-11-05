@@ -27,6 +27,40 @@ export function createPlayerScreenMethods36() {
       this.postValidationRecoveryValidationActive = false;
       this.postValidationSameEngineRecoveryAttempts = 0;
     },
+    retryCurrentStreamFromStartAfter416() {
+      if (this.hasRetriedCurrentStreamAfter416) {
+        return false;
+      }
+      const retryUrl = String(this.activePlaybackUrl || "").trim();
+      const currentEngine = String(PlayerController.playbackEngine || "").trim();
+      if (!retryUrl || !currentEngine || currentEngine === "none") {
+        return false;
+      }
+
+      // Android retries a 416 once from position 0 and clears the resume
+      // position: the requested range is outside the currently available
+      // window, so replaying the same seek would fail again.
+      this.hasRetriedCurrentStreamAfter416 = true;
+      this.pendingPlaybackRestore = null;
+      this.lastPlaybackErrorAt = 0;
+      this.loadingVisible = true;
+      this.paused = false;
+      this.sourcesError = null;
+      this.updateLoadingVisibility();
+
+      const sourceCandidate = this.getStreamCandidateByUrl(retryUrl) || this.getCurrentStreamCandidate();
+      console.warn("Playback request returned HTTP 416; retrying the current source from the start once", {
+        url: retryUrl,
+        engine: currentEngine
+      });
+      void this.playStreamByUrl(retryUrl, {
+        preservePanel: true,
+        resetSilentAudioState: false,
+        forceEngine: currentEngine,
+        sourceCandidate
+      });
+      return true;
+    },
     resetPostValidationRecoveryValidationWindow() {
       if (!this.postValidationRecoveryValidationActive) {
         return;

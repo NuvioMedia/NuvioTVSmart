@@ -230,6 +230,7 @@ export function createPlayerScreenMethods34() {
       const previousPlaybackUrl = this.activePlaybackUrl;
       this.activePlaybackUrl = streamUrl;
       if (previousPlaybackUrl !== streamUrl) {
+        this.hasRetriedCurrentStreamAfter416 = false;
         this.resetLivePlaybackState?.();
         this.skipIntervals = [];
         this.activeSkipInterval = null;
