@@ -267,6 +267,7 @@ export function createPlayerScreenMethods21() {
         deferRemoveMs: ENGINEFS_NAVIGATION_CLEANUP_GRACE_MS
       });
       const streamParams = this.buildReturnStreamRouteParamsFromPlayer();
+      this.stopTrackingBeforeTeardown();
       try {
         PlayerController.stop();
       } catch (_) {
