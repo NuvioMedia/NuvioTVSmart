@@ -233,12 +233,16 @@ export function createPlayerScreenMethods64() {
       if (video) {
         const rect = this.calculateAspectRect(mode.id, video);
         const usingTizenAvPlay = Boolean(Environment.isTizen() && PlayerController.isUsingAvPlay?.());
+        const usingTizenHtmlVideo = Environment.isTizen() && !usingTizenAvPlay;
+        // Keep the video element on the player viewport wherever native text
+        // tracks render inside it. Tizen positions those cues against the
+        // viewport, so a letterboxed element clips their bottom line; webOS
+        // also needs the full viewport for its screensaver.
+        const useFullViewport = Environment.isWebOS() || usingTizenHtmlVideo;
         const canTransformVideo = !Environment.isWebOS() && !usingTizenAvPlay;
         const videoRect = usingTizenAvPlay ? rect.displayRect : rect;
         video.style.position = "fixed";
-        if (Environment.isWebOS()) {
-          // webOS suppresses its screensaver only when the video element itself
-          // occupies the full viewport. Keep aspect handling inside that element.
+        if (useFullViewport) {
           video.style.left = "0px";
           video.style.top = "0px";
           video.style.width = "100vw";
@@ -255,8 +259,11 @@ export function createPlayerScreenMethods64() {
         video.style.maxHeight = "none";
         video.style.background = "black";
         video.style.transformOrigin = "center center";
+        const stretchByObjectFit = usingTizenHtmlVideo && mode.id === "STRETCH";
         video.style.transform =
-          !canTransformVideo || (rect.scaleX === 1 && rect.scaleY === 1) ? "none" : `scale(${rect.scaleX}, ${rect.scaleY})`;
+          !canTransformVideo || stretchByObjectFit || (rect.scaleX === 1 && rect.scaleY === 1)
+            ? "none"
+            : `scale(${rect.scaleX}, ${rect.scaleY})`;
         if (typeof PlayerController.setAvPlayDisplayRect === "function") {
           PlayerController.setAvPlayDisplayRect(rect.displayRect, rect.displayMethod);
         }
