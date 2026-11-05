@@ -19,6 +19,9 @@ export function createMetaDetailsScreenMethods02() {
       this.shuffleVisit = nextShuffleVisit();
       this.shuffleDialog?.destroy();
       this.shuffleDialog = null;
+      this.commentOverlayDialog?.destroy();
+      this.commentOverlayDialog = null;
+      this.commentOverlay = null;
       this.params = params;
       this.isBackNavigation = Boolean(navigationContext?.isBackNavigation);
       this.pendingEpisodeSelection = null;

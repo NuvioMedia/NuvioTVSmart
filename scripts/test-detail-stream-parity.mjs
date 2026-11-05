@@ -38,7 +38,7 @@ const files = [
   ],
   [
     "detail/metaDetailsScreenMethods-16-render-comments-section.js",
-    "createMetaDetailsScreenMethods16"
+    "createMetaDetailsScreenMethods16, commentReaderTextStyle, formatCommentTimestamp"
   ],
   [
     "stream/streamScreenMethods-07-restore-stream-virtual-scroll-position.js",
@@ -418,6 +418,20 @@ assert.equal(more.hidden, false);
 preview.scrollHeight = 384;
 api.createMetaDetailsScreenMethods16().bindDetailChrome.call(chrome);
 assert.equal(isFocusable, false);
+
+for (const [length, fontSize, lineHeight] of [
+  [160, 80, 96],
+  [161, 60, 76],
+  [901, 32, 42]
+]) {
+  const style = api.commentReaderTextStyle(length);
+  assert.equal(style.fontSize, fontSize);
+  assert.equal(style.lineHeight, lineHeight);
+}
+assert.equal(api.formatCommentTimestamp("2026-11-05T16:14:26Z", null, "en-US"), "Nov 5, 2026");
+assert.equal(api.formatCommentTimestamp("", "2026-11-05T16:14:26Z", "en-US"), "Nov 5, 2026");
+assert.equal(api.formatCommentTimestamp("not-a-date", null, "en-US"), "");
+assert.equal(api.formatCommentTimestamp("", "", "en-US"), "");
 assert.equal(more.hidden, true);
 
 let dialogConfig,

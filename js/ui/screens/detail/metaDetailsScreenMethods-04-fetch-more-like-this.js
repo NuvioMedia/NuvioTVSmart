@@ -201,7 +201,8 @@ export function createMetaDetailsScreenMethods04() {
           review: Boolean(entry.review),
           likes: Number(entry.likes || 0),
           rating: entry.user_stats?.rating ?? entry.userStats?.rating ?? null,
-          createdAt: entry.created_at || entry.createdAt || ""
+          createdAt: entry.created_at || entry.createdAt || "",
+          updatedAt: entry.updated_at || entry.updatedAt || ""
         }));
       return {
         items,
