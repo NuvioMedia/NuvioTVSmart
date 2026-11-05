@@ -2,6 +2,7 @@
 
 ### Improvements & Fixes
 
+- Tizen HLS subtitles no longer lose their second line behind the letterboxed picture: the video player keeps the full player viewport, matching Android TV's subtitle overlay (#1256) (@WhiteGiso)
 - Home vertical navigation now waits for the camera to settle before starting poster artwork work on webOS, avoiding decode bursts during the scroll animation; the Modern sidebar no longer animates its layout width, matching Android TV's transform-only opening (@WhiteGiso)
 
 ## 1.3.6
