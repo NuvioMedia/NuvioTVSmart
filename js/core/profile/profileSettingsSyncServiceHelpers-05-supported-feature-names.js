@@ -51,6 +51,7 @@ import { androidColorIntToSubtitleTextOpacity, normalizeSubtitleTextOpacity } fr
 import { isFastHorizontalNavigationEnabled } from "../../platform/sharedKeys.js";
 
 import { FEATURE_ADAPTERS } from "./profileSettingsSyncServiceHelpers-04-feature-adapters.js";
+import { getEffectivePluginProfileId } from "../../data/local/pluginStore.js";
 import {
   withoutExcludedProfileSettingsKeys,
   stableStringify,
@@ -155,6 +156,26 @@ export function applyRemoteBlob(profileId, blob) {
 }
 
 export async function pullProfileSettingsUnlocked(resolvedProfileId) {
+  async function pullInheritedPluginGrouping(profileId) {
+    // A profile that shares the primary plugin store has no plugin settings
+    // blob of its own. Android restores the primary grouping explicitly.
+    if (
+      String(profileId) === "1" ||
+      String(getEffectivePluginProfileId(profileId)) !== "1" ||
+      !AuthManager.isAuthenticated ||
+      isSyncBackoffActive()
+    ) {
+      return false;
+    }
+    const primaryBlob = await pullRemoteBlob(1);
+    const feature = primaryBlob?.features?.plugin_settings;
+    if (!isPlainObject(feature)) {
+      return false;
+    }
+    return FEATURE_ADAPTERS.plugin_settings.import("1", feature, {
+      isRemoteFeaturePresent: true
+    });
+  }
   const version = ProfileManager.getProfileDataVersion(resolvedProfileId);
   try {
     if (!AuthManager.isAuthenticated || isSyncBackoffActive()) {
@@ -167,7 +188,6 @@ export async function pullProfileSettingsUnlocked(resolvedProfileId) {
     }
     const blob = await pullRemoteBlob(resolvedProfileId);
     if (
-      !blob ||
       version !== ProfileManager.getProfileDataVersion(resolvedProfileId) ||
       !AuthManager.isAuthenticated ||
       isSyncBackoffActive() ||
@@ -175,16 +195,21 @@ export async function pullProfileSettingsUnlocked(resolvedProfileId) {
     ) {
       return false;
     }
+    if (!blob) {
+      return pullInheritedPluginGrouping(resolvedProfileId);
+    }
 
     setCachedBlob(resolvedProfileId, blob);
 
     const remoteSignature = buildComparableSignatureFromBlob(blob);
     const localSignature = buildComparableSignatureFromLocal(resolvedProfileId);
     if (remoteSignature === localSignature) {
-      return false;
+      return pullInheritedPluginGrouping(resolvedProfileId);
     }
 
-    return applyRemoteBlob(String(resolvedProfileId), blob);
+    const applied = applyRemoteBlob(String(resolvedProfileId), blob);
+    const inheritedApplied = await pullInheritedPluginGrouping(resolvedProfileId);
+    return applied || inheritedApplied;
   } catch (error) {
     if (shouldTreatAsMissingResource(error)) {
       return false;

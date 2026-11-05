@@ -103,6 +103,7 @@ import { animeskip_settings } from "./profileSettingsSyncFeature-animeskip-setti
 import { stream_badge_settings } from "./profileSettingsSyncFeature-stream-badge-settings.js";
 import { track_preference } from "./profileSettingsSyncFeature-track-preference.js";
 import { debrid_settings } from "./profileSettingsSyncFeature-debrid-settings.js";
+import { plugin_settings } from "./profileSettingsSyncFeature-plugin-settings.js";
 
 export const FEATURE_ADAPTERS = {
   ambient_mode_settings,
@@ -117,5 +118,6 @@ export const FEATURE_ADAPTERS = {
   animeskip_settings,
   stream_badge_settings,
   track_preference,
-  debrid_settings
+  debrid_settings,
+  plugin_settings
 };

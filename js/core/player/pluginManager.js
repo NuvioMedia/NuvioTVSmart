@@ -1,4 +1,5 @@
 import { PluginStore, getEffectivePluginProfileId } from "../../data/local/pluginStore.js";
+import { queueProfileSettingsCloudSync } from "../../data/local/profileScopedStore.js";
 import { PluginCodeStore } from "../../data/local/pluginCodeStore.js";
 import { ProfileManager } from "../profile/profileManager.js";
 import { PluginRuntime } from "./pluginRuntime.js";
@@ -1280,14 +1281,20 @@ export const PluginManager = {
   setGroupStreamsByRepository(enabled) {
     if (!canEdit()) return false;
     const state = currentState();
+    const nextEnabled = Boolean(enabled);
     PluginStore.replace({
       ...state,
-      settings: { ...state.settings, groupStreamsByRepository: Boolean(enabled) },
+      settings: { ...state.settings, groupStreamsByRepository: nextEnabled },
       // Android keeps this setting local; it is not part of the remote
       // `plugins` repository payload. Preserve a repository mutation that may
       // already be waiting to be pushed.
       syncDirty: state.syncDirty
     });
+    if ((state.settings.groupStreamsByRepository === true) !== nextEnabled) {
+      // Android stores this one plugin preference in the profile settings
+      // blob so it survives app-data clears and follows the profile.
+      queueProfileSettingsCloudSync(getEffectivePluginProfileId());
+    }
     return true;
   },
 
