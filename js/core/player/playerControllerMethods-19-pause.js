@@ -251,6 +251,9 @@ export function createPlayerControllerMethods19() {
       allowCloudSync = true,
       seekTargetSeconds = this.getWebOsExactSeekTargetSeconds?.()
     } = {}) {
+      if (this.currentPlaybackIsLive === true) {
+        return false;
+      }
       const context = this.createProgressContext();
       if (!context.itemId) {
         return false;

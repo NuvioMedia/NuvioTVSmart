@@ -230,6 +230,7 @@ export function createPlayerScreenMethods34() {
       const previousPlaybackUrl = this.activePlaybackUrl;
       this.activePlaybackUrl = streamUrl;
       if (previousPlaybackUrl !== streamUrl) {
+        this.resetLivePlaybackState?.();
         this.skipIntervals = [];
         this.activeSkipInterval = null;
         this.skipIntervalDismissed = false;
@@ -290,7 +291,6 @@ export function createPlayerScreenMethods34() {
         }
       }
       this.loadSubtitles();
-      this.loadManifestTrackDataForCurrentStream(this.activePlaybackUrl);
       this.startTrackDiscoveryWindow({
         durationMs: prioritizeWebOsRemoteMkvPlayback ? WEBOS_REMOTE_MKV_AUDIO_GATE_MAX_WAIT_MS : 7000
       });
@@ -313,11 +313,26 @@ export function createPlayerScreenMethods34() {
       this.renderSubtitleDialog();
       this.renderAudioDialog();
       this.renderSpeedDialog();
+      const loadTrackDataAfterPlayback = (playbackUrl) => {
+        if (!this.isActiveMountToken(mountToken) || this.activePlaybackUrl !== playbackUrl) {
+          return;
+        }
+        this.loadManifestTrackDataForCurrentStream(playbackUrl);
+      };
       if (!prioritizeWebOsRemoteMkvPlayback) {
-        startPlayback(this.activePlaybackUrl, playbackContext, {
+        // Let the player own the first manifest request. Some live providers
+        // allow a single connection and reject the extra probe at startup.
+        const playbackUrl = this.activePlaybackUrl;
+        const playbackPromise = startPlayback(playbackUrl, playbackContext, {
           mountToken,
           sourceCandidate
         });
+        void playbackPromise.then(
+          () => loadTrackDataAfterPlayback(playbackUrl),
+          () => loadTrackDataAfterPlayback(playbackUrl)
+        );
+      } else {
+        loadTrackDataAfterPlayback(this.activePlaybackUrl);
       }
       this.paused = false;
       this.refreshTrackDialogs();

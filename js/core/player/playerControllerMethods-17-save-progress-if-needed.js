@@ -6,7 +6,7 @@ export function createPlayerControllerMethods17() {
 
   return {
     saveProgressIfNeeded() {
-      if (!this.playbackSessionActive || !this.isPlaying || this.isWebOsExactSeekInFlight?.()) {
+      if (this.currentPlaybackIsLive === true || !this.playbackSessionActive || !this.isPlaying || this.isWebOsExactSeekInFlight?.()) {
         return false;
       }
 

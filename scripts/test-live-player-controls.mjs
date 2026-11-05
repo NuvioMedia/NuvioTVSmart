@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
-import { isLivePlayback, LivePlaybackWatchClock } from "../js/ui/screens/player/livePlaybackUi.js";
+import vm from "node:vm";
+import {
+  LiveDurationGrowth,
+  isLivePlayback,
+  nextLiveDurationGrowth,
+  LivePlaybackWatchClock
+} from "../js/ui/screens/player/livePlaybackUi.js";
 
 test("Android live policy: channel or runtime evidence, never URL, tv, stream or unknown duration", () => {
   for (const itemType of ["movie", "series", "tv", "stream", "live", ""]) {
@@ -357,4 +364,101 @@ test("AVPlay live signal accepts native 1/0 and skips unavailable or busy native
       false
     );
   }
+});
+
+test("Android live progress guard: growing native duration marks live and live playback never saves resume", async () => {
+  assert.equal(nextLiveDurationGrowth(new LiveDurationGrowth(), "a", 1_320_000, true).grew, false);
+  const growing = nextLiveDurationGrowth(new LiveDurationGrowth(), "a", 8_000, true);
+  nextLiveDurationGrowth(growing, "a", 18_000, true);
+  nextLiveDurationGrowth(growing, "a", 32_000, true);
+  assert.equal(growing.grew, true, "a live duration that grows past 10s is live");
+
+  const skippedReadings = nextLiveDurationGrowth(new LiveDurationGrowth(), "a", 1_200_000, false);
+  nextLiveDurationGrowth(skippedReadings, "a", 2_700_000, true);
+  assert.equal(skippedReadings.grew, false, "readings from the previous media are ignored");
+  assert.equal(
+    nextLiveDurationGrowth(growing, "b", 2_700_000, true).grew,
+    false,
+    "a new media resets the growth"
+  );
+
+  globalThis.localStorage ??= { getItem: () => null, setItem() {}, removeItem() {} };
+  const { createPlayerControllerMethods20 } =
+    await import("../js/core/player/playerControllerMethods-20-flush-progress.js");
+  const { createPlayerControllerMethods17 } =
+    await import("../js/core/player/playerControllerMethods-17-save-progress-if-needed.js");
+  const { createPlayerControllerMethods19 } =
+    await import("../js/core/player/playerControllerMethods-19-pause.js");
+  assert.equal(
+    await createPlayerControllerMethods20().flushProgress.call(
+      { currentPlaybackIsLive: true },
+      10_000,
+      20_000
+    ),
+    false
+  );
+  assert.equal(
+    createPlayerControllerMethods17().saveProgressIfNeeded.call({
+      currentPlaybackIsLive: true,
+      playbackSessionActive: true,
+      isPlaying: true
+    }),
+    false
+  );
+  assert.equal(
+    await createPlayerControllerMethods19().flushCurrentProgress.call({
+      currentPlaybackIsLive: true
+    }),
+    false
+  );
+});
+
+async function loadManifestTrackMethods(playerController, fetchStub) {
+  const source = await readFile(
+    new URL(
+      "../js/ui/screens/player/playerScreenMethods-14-load-manifest-track-data-for-current-stream.js",
+      import.meta.url
+    ),
+    "utf8"
+  );
+  const context = vm.createContext({
+    internals: {
+      PlayerController: playerController,
+      Environment: { isWebOS: () => false },
+      uniqueNonEmptyValues: (values) => [...new Set((values || []).filter(Boolean))]
+    },
+    AbortController,
+    fetch: fetchStub,
+    console
+  });
+  vm.runInContext(
+    source.replace(/^import .*$/gm, "").replace(/^export /gm, "") +
+      "\nthis.methods = createPlayerScreenMethods14();",
+    context
+  );
+  return context.methods;
+}
+
+test("adaptive engine owns the manifest: the track probe does not issue a second request", async () => {
+  let fetchCount = 0;
+  const methods = await loadManifestTrackMethods({ hlsInstance: {}, video: null }, () => {
+    fetchCount += 1;
+    throw new Error("the probe must not run while hls.js owns the manifest");
+  });
+  const screen = {
+    activePlaybackUrl: "https://live.example/master.m3u8",
+    manifestAudioTracks: ["stale"],
+    manifestSubtitleTracks: [],
+    manifestVariants: [],
+    manifestLoadToken: 0,
+    manifestLoading: false,
+    getCurrentStreamCandidate: () => ({ url: "https://live.example/master.m3u8" }),
+    getCurrentStreamRequestHeaders: () => ({}),
+    refreshTrackDialogs() {},
+    parseManifestTracks: () => ({ audioTracks: [], subtitleTracks: [], variants: [] })
+  };
+  await methods.loadManifestTrackDataForCurrentStream.call(screen, screen.activePlaybackUrl);
+  assert.equal(fetchCount, 0);
+  assert.equal(screen.manifestLoading, false);
+  assert.equal(screen.manifestAudioTracks.length, 0);
 });

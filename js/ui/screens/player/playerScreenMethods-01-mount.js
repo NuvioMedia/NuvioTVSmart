@@ -37,6 +37,7 @@ export function createPlayerScreenMethods01() {
 
   return {
     async mount(params = {}, navigationContext = {}) {
+      PlayerController.currentPlaybackIsLive = false;
       streamRepository.setLocalPluginSearchPaused(false);
       this.container = document.getElementById("player");
       this.container.style.display = "block";
@@ -236,7 +237,18 @@ export function createPlayerScreenMethods01() {
             return;
           }
         }
-        this.loadManifestTrackDataForCurrentStream(this.activePlaybackUrl);
+        if (prioritizeWebOsRemoteMkvPlayback) {
+          this.loadManifestTrackDataForCurrentStream(this.activePlaybackUrl);
+        } else {
+          // The player must issue the first manifest request: some live
+          // providers limit concurrent connections and reject a probe.
+          const loadTrackDataAfterPlayback = () => {
+            if (this.isActiveMountToken(mountToken) && this.activePlaybackUrl === initialStreamUrl) {
+              this.loadManifestTrackDataForCurrentStream(this.activePlaybackUrl);
+            }
+          };
+          void playbackStartPromise.then(loadTrackDataAfterPlayback, loadTrackDataAfterPlayback);
+        }
         this.startTrackDiscoveryWindow({
           durationMs: prioritizeWebOsRemoteMkvPlayback ? WEBOS_REMOTE_MKV_AUDIO_GATE_MAX_WAIT_MS : 7000
         });
