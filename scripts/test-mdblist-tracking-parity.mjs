@@ -437,10 +437,10 @@ const cleanupSource = await readFile(
   "utf8"
 );
 const cleanupEvents = [];
-const cleanup = new Function(
+const cleanupMethods = new Function(
   "internals",
   cleanupSource.replace(/^import .*;\n/gm, "").replace("export function", "function") +
-    "; return createPlayerScreenMethods73().cleanup;"
+    "; return createPlayerScreenMethods73();"
 )({
   TrackingScrobbleService: {
     isEnabled: () => true,
@@ -450,7 +450,9 @@ const cleanup = new Function(
   PlayerController: {},
   streamRepository: {}
 });
+const cleanup = cleanupMethods.cleanup;
 const cleanupScreen = {
+  ...cleanupMethods,
   hasPresentedPlaybackFrame: true,
   closeStreamInfo() {},
   buildScrobbleContext: () => context,
