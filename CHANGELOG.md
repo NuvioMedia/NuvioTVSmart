@@ -2,6 +2,7 @@
 
 ### Improvements & Fixes
 
+- A live channel whose first segment answers HTTP 416 now restarts once from the beginning without a stale resume position, matching Android TV, instead of falling through to AVPlay/native-HLS and stalling (#1262) (@WhiteGiso)
 - Live channels no longer store a resume position, so reopening one starts at the live edge instead of seeking outside the stream window; the player also keeps the first manifest request on providers that allow a single connection (#1253) (@WhiteGiso)
 - Tizen HLS subtitles no longer lose their second line behind the letterboxed picture: the video player keeps the full player viewport, matching Android TV's subtitle overlay (#1256) (@WhiteGiso)
 - Home vertical navigation now waits for the camera to settle before starting poster artwork work on webOS, avoiding decode bursts during the scroll animation; the Modern sidebar no longer animates its layout width, matching Android TV's transform-only opening (@WhiteGiso)
