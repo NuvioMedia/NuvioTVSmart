@@ -16,6 +16,10 @@ export function createMetaDetailsScreenMethods21() {
 
   return {
     consumeBackRequest() {
+      if (this.commentOverlayDialog) {
+        this.closeCommentOverlay();
+        return true;
+      }
       if (this.synopsisDialog) {
         this.synopsisDialog.destroy();
         this.synopsisDialog = null;

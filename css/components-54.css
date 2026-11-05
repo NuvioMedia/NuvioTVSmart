@@ -380,7 +380,6 @@
   overflow: hidden;
 }
 
-.detail-comment-card.is-expanded p,
 .detail-comment-card.focused p {
   -webkit-line-clamp: 7;
   line-clamp: 7;
@@ -413,6 +412,171 @@
   padding: 24px var(--detail-safe-x);
   color: var(--detail-text-secondary);
   font-size: 28px;
+}
+
+.detail-comment-card p.is-spoiler {
+  color: #ffb74d;
+}
+
+/* ATV CommentsSection.kt CommentOverlay: full-screen reader with the Trakt
+   wordmark on the top end and the comment body scrolled by the D-pad. */
+
+.nuvio-dialog-panel.detail-comment-dialog {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  padding: 20px 48px;
+  background: linear-gradient(135deg, #070707 0%, #101010 52%, #151515 100%);
+  gap: 12px;
+}
+
+.detail-comment-dialog .nuvio-dialog-title {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 32px;
+  line-height: 1.25;
+}
+
+.detail-comment-overlay {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  outline: 0;
+}
+
+.detail-comment-overlay-brand {
+  position: absolute;
+  top: -44px;
+  right: 8px;
+  width: 336px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-comment-overlay-brand img {
+  width: 336px;
+  height: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}
+
+.detail-comment-overlay-brand span {
+  padding-left: 36px;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 24px;
+  line-height: 1.4;
+}
+
+.detail-comment-overlay-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-right: 20px;
+}
+
+.detail-comment-overlay-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 360px;
+}
+
+.detail-comment-overlay-head h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 44px;
+  line-height: 1.2;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-comment-overlay-username {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 32px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-comment-overlay-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 32px;
+  line-height: 1.3;
+}
+
+.detail-comment-overlay-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.detail-comment-overlay-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  color: #ffffff;
+  outline: 0;
+  scrollbar-width: none;
+}
+
+.detail-comment-overlay-body::-webkit-scrollbar {
+  display: none;
+}
+
+.detail-comment-overlay-body.is-spoiler {
+  color: #ffb74d;
+}
+
+.detail-comment-overlay-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 28px;
+  line-height: 1.35;
+}
+
+.detail-comment-overlay-hint {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.detail-comment-overlay-loading {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+[dir="rtl"] .detail-comment-overlay-brand {
+  right: auto;
+  left: 8px;
+}
+
+[dir="rtl"] .detail-comment-overlay-brand span {
+  padding-left: 0;
+  padding-right: 36px;
+}
+
+[dir="rtl"] .detail-comment-overlay-head {
+  padding-right: 0;
+  padding-left: 360px;
 }
 
 /* Final legacy-TV overrides. On older Chromium/WebKit, declarations such as

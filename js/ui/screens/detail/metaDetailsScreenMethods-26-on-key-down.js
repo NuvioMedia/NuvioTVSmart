@@ -290,8 +290,7 @@ export function createMetaDetailsScreenMethods26() {
       }
 
       if (action === "openComment") {
-        this.selectedCommentIndex = Number(current.dataset.commentIndex || 0);
-        current.classList.toggle("is-expanded");
+        this.openCommentOverlay(Number(current.dataset.commentIndex || 0));
         return;
       }
 
