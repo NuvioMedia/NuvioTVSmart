@@ -407,6 +407,11 @@
   margin-top: min(1.25vw, 24px); /* ATV metadata spacer 12dp -> 24px */
 }
 
+/* ATV PlayerScreen: live playback has no progress bar. */
+.player-progress-shell.hidden {
+  display: none;
+}
+
 .player-progress-shell.focused .player-progress-track {
   height: min(1.04vw, 20px); /* ATV focused 10dp -> 20px */
 }

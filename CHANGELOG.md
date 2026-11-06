@@ -2,6 +2,7 @@
 
 ### Improvements & Fixes
 
+- Live playback now hides the progress bar, and hls.js retries playlist 5xx responses for about 15 seconds like Android TV instead of ending the stream, so short provider outages no longer stop a channel (#1253, #1262) (@WhiteGiso)
 - Trakt comment cards now open the Android TV-style full-screen reader: spoiler reviews stay hidden until OK reveals them, the D-pad scrolls the review, and left/right moves between comments (#1263) (@WhiteGiso)
 - A live channel whose first segment answers HTTP 416 now restarts once from the beginning without a stale resume position, matching Android TV, instead of falling through to AVPlay/native-HLS and stalling (#1262) (@WhiteGiso)
 - Live channels no longer store a resume position, so reopening one starts at the live edge instead of seeking outside the stream window; the player also keeps the first manifest request on providers that allow a single connection (#1253) (@WhiteGiso)

@@ -558,3 +558,11 @@ test("adaptive engine owns the manifest: the track probe does not issue a second
   assert.equal(screen.manifestLoading, false);
   assert.equal(screen.manifestAudioTracks.length, 0);
 });
+
+test("live progress bar is really hidden and playlist 5xx retries match Android", async () => {
+  const css = await readFile(new URL("../css/components-35.css", import.meta.url), "utf8");
+  assert.match(css, /\.player-progress-shell\.hidden\s*\{\s*display:\s*none;/);
+  const retry = PlayerController.buildHlsConfig({}).playlistLoadPolicy.default.errorRetry;
+  assert.equal(retry.maxNumRetry, 12);
+  assert.equal(retry.maxRetryDelayMs, 5000);
+});
