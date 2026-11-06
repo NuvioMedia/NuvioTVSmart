@@ -137,6 +137,21 @@ for (const webos of [false, true]) {
 fixtures.Environment.isWebOS = () => false;
 const streamCss = await readFile("css/components-50.css", "utf8");
 assert.match(streamCss, /\.stream-route-card-heading\s*\{[^}]*white-space:\s*pre-line;/);
+const streamBaseCss = await readFile("css/components-44.css", "utf8");
+const ruleBody = (css, selector) =>
+  css.match(
+    new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{([^}]*)\\}")
+  )?.[1] || "";
+// Tizen 4 has no CSS grid, so its flex fallback must keep the Android TV
+// 40/60 split and the base 96px panel insets instead of reintroducing the
+// old fixed columns with their own padding.
+const tizenStream = ruleBody(streamCss, ".legacy-tizen .stream-route-content");
+assert.match(tizenStream, /display:\s*flex;/);
+assert.match(tizenStream, /padding:\s*0;/);
+assert.match(ruleBody(streamCss, ".legacy-tizen .stream-route-left"), /flex:\s*0 0 40%;/);
+assert.match(ruleBody(streamCss, ".legacy-tizen .stream-route-right"), /flex:\s*0 0 60%;/);
+assert.doesNotMatch(ruleBody(streamCss, ".legacy-tizen .stream-route-right"), /height:\s*\d+px/);
+assert.match(streamBaseCss, /\.stream-route-right\s*\{[^}]*padding:\s*96px 96px 96px 0;/);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: 0 }).posterCardCornerRadiusDp, 0);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: "bad" }).posterCardCornerRadiusDp, 12);
 assert.equal(normalizeLayout({ posterCardCornerRadiusDp: null }).posterCardCornerRadiusDp, 12);
