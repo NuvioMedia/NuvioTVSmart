@@ -28,8 +28,9 @@ export function toSyncedServer(server) {
 export function parseSyncedServers(rows) {
   if (!Array.isArray(rows)) throw new Error("Invalid media server sync response");
   if (!rows.length) return null;
-  if (!Array.isArray(rows[0]?.servers)) throw new Error("Invalid media server sync response");
-  const result = rows[0].servers.map((raw) => {
+  const servers = rows[0]?.servers_json !== undefined ? rows[0].servers_json : rows[0]?.servers;
+  if (!Array.isArray(servers)) throw new Error("Invalid media server sync response");
+  const result = servers.map((raw) => {
     const address = normalizeMediaServerAddress(raw.address, raw.provider_id);
     if (
       !["jellyfin", "emby"].includes(raw.provider_id) ||
