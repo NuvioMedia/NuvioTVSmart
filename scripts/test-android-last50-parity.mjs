@@ -9,6 +9,9 @@ const { createSettingsScreenMethods03 } =
   await import("../js/ui/screens/settings/settingsScreenMethods-03-render-text-dialog.js");
 const { createMetaDetailsScreenMethods18 } =
   await import("../js/ui/screens/detail/metaDetailsScreenMethods-18-stop-trailer-progress-timer.js");
+const { Platform } = await import("../js/platform/index.js");
+const { resolveContinueWatchingBlurNextUp, renderContinueWatchingCard } =
+  await import("../js/ui/screens/home/homeScreenHelpers-12-build-hero-indicators.js");
 
 test("encoded shape overrides landscape artwork and preserves original fallback", () => {
   const item = { id: "tt1234", type: "movie", poster: "original", landscapePoster: "wide" };
@@ -272,4 +275,35 @@ test("selection dialogs expose checked state while confirmation actions remain b
     s.renderActionRow({ title: "Memory", value: "2 GB" }),
     /<bdi class="settings-row-value" dir="ltr">2 GB<\/bdi>/
   );
+});
+
+test("Tizen honors the synced Continue Watching artwork blur preference (#1269)", () => {
+  const previousOverride = globalThis.__NUVIO_PLATFORM__;
+  try {
+    globalThis.__NUVIO_PLATFORM__ = "tizen";
+    Platform.current = null;
+    const enabled = resolveContinueWatchingBlurNextUp({ blurContinueWatchingNextUp: true });
+    assert.equal(enabled, true);
+    assert.equal(resolveContinueWatchingBlurNextUp({ blurContinueWatchingNextUp: false }), false);
+    assert.equal(resolveContinueWatchingBlurNextUp(null), false);
+    const markup = renderContinueWatchingCard(
+      {
+        contentId: "tt1269",
+        contentType: "series",
+        title: "Fixture",
+        isNextUp: true,
+        hasAired: true,
+        season: 1,
+        episode: 2,
+        thumbnail: "https://image.tmdb.org/t/p/w300/episode.jpg",
+        poster: "https://image.tmdb.org/t/p/w342/poster.jpg"
+      },
+      0,
+      { blurNextUp: enabled, useEpisodeThumbnails: true, cardStyle: "card" }
+    );
+    assert.match(markup, /home-continue-card-blur-next-up/);
+  } finally {
+    globalThis.__NUVIO_PLATFORM__ = previousOverride;
+    Platform.current = null;
+  }
 });
