@@ -20,38 +20,28 @@ function syncedServer(overrides = {}) {
   };
 }
 
-test("imports canonical cloud rows with the same connections as legacy rows", () => {
+test("imports the canonical servers_json cloud response", () => {
   const servers = [syncedServer(), syncedServer({ provider_id: "emby", id: "emby-connection" })];
   const imported = parseSyncedServers([{ servers_json: servers, updated_at: "2026-01-01" }]);
   assert.deepEqual(imported.map(toSyncedServer), servers);
-  assert.deepEqual(imported, parseSyncedServers([{ servers }]));
-  assert.deepEqual(imported, parseSyncedServers([{ servers_json: undefined, servers }]));
-});
-
-test("canonical connections and empty arrays take precedence over stale legacy state", () => {
-  const servers = [syncedServer()];
-  assert.deepEqual(parseSyncedServers([{ servers_json: [], servers }]), []);
-  assert.deepEqual(
-    parseSyncedServers([{ servers_json: servers, servers: [] }]).map(toSyncedServer),
-    servers
-  );
-  assert.deepEqual(parseSyncedServers([{ servers: [] }]), []);
+  assert.deepEqual(parseSyncedServers([{ servers_json: [] }]), []);
   assert.equal(parseSyncedServers([]), null);
 });
 
-test("rejects malformed envelopes without falling back to legacy connections", () => {
-  for (const rows of [null, {}, [null], [{}], [{ servers: null }], [{ servers: {} }]]) {
-    assert.throws(() => parseSyncedServers(rows), /Invalid media server sync response/);
+test("rejects malformed envelopes, including the obsolete servers field", () => {
+  const rows = [null, {}, [null], [{}], [{ servers: [syncedServer()] }], [{ servers: [] }]];
+  for (const row of rows) {
+    assert.throws(() => parseSyncedServers(row), /Invalid media server sync response/);
   }
   for (const servers_json of [null, {}, "[]", false, 0]) {
     assert.throws(
-      () => parseSyncedServers([{ servers_json, servers: [syncedServer()] }]),
+      () => parseSyncedServers([{ servers_json }]),
       /Invalid media server sync response/
     );
   }
 });
 
-test("preserves connection, library, flag and duplicate identity validation in both envelopes", () => {
+test("preserves connection, library, flag and duplicate identity validation", () => {
   const invalid = [
     { provider_id: "unknown" },
     { address: "https://user:password@server.test" },
@@ -64,14 +54,13 @@ test("preserves connection, library, flag and duplicate identity validation in b
     })),
     ...["enabled", "use_catalog_metadata", "import_watch_state"].map((key) => ({ [key]: "true" }))
   ];
-  for (const key of ["servers_json", "servers"]) {
-    for (const overrides of invalid) {
-      assert.throws(() => parseSyncedServers([{ [key]: [syncedServer(overrides)] }]));
-    }
-    assert.throws(() => parseSyncedServers([{ [key]: [null] }]));
-    assert.throws(
-      () => parseSyncedServers([{ [key]: [syncedServer(), syncedServer({ id: "duplicate" })] }]),
-      /Duplicate media server sync identity/
-    );
+  for (const overrides of invalid) {
+    assert.throws(() => parseSyncedServers([{ servers_json: [syncedServer(overrides)] }]));
   }
+  assert.throws(() => parseSyncedServers([{ servers_json: [null] }]));
+  assert.throws(
+    () =>
+      parseSyncedServers([{ servers_json: [syncedServer(), syncedServer({ id: "duplicate" })] }]),
+    /Duplicate media server sync identity/
+  );
 });
