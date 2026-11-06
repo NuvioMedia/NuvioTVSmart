@@ -64,26 +64,8 @@
   text-overflow: clip;
 }
 
-.legacy-webos .stream-route-shell {
-  width: 100%;
-  height: 100%;
-}
-
 .legacy-webos .stream-route-backdrop {
   transform: none !important;
-}
-
-.legacy-webos .stream-route-panel-shell {
-  opacity: 1 !important;
-  transform: none !important;
-  animation: none !important;
-  overflow: visible;
-}
-
-.legacy-webos .stream-route-list {
-  -webkit-overflow-scrolling: auto;
-  transform: none !important;
-  will-change: auto;
 }
 
 .legacy-webos .stream-route-card,
@@ -91,8 +73,10 @@
   transform: none !important;
 }
 
-/* webOS 6.x can mis-bound nested flex/vh layouts on LG TVs. Keep the stream
-   picker on absolute coordinates so the results list has a real viewport. */
+/* webOS 6 and older can mis-bound nested flex/vh layouts on LG TVs. Keep the
+   stream picker on absolute coordinates so the results list has a real
+   viewport, but use the same 40/60 columns, Android TV insets and typography
+   as the shared layout. Only positioning and scroll handling differ. */
 
 .legacy-webos .stream-route-shell {
   position: absolute;
@@ -115,59 +99,25 @@
 
 .legacy-webos .stream-route-left {
   position: absolute;
-  left: 56px;
-  top: 48px;
-  bottom: 48px;
-  width: 438px;
-  padding: 0 34px 0 0;
-}
-
-.legacy-webos .stream-route-left-inner {
-  width: 360px;
-  max-width: 360px;
-}
-
-.legacy-webos .stream-route-logo {
-  width: 360px;
-  max-width: 360px;
-  max-height: 128px;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 768px;
+  padding: 0 48px 0 96px;
+  padding-inline: 96px 48px;
 }
 
 .legacy-webos .stream-route-right {
   position: absolute;
-  left: 540px;
-  top: 48px;
-  right: 56px;
-  bottom: 48px;
+  left: 768px;
+  top: 96px;
+  right: 96px;
+  bottom: 96px;
   width: auto;
   max-width: none;
   height: auto;
+  padding: 0;
   overflow: hidden;
-}
-
-.legacy-webos .stream-route-chip-wrap {
-  position: relative;
-  height: 64px;
-  margin-bottom: 0;
-}
-
-.legacy-webos .stream-route-chip-track {
-  gap: 12px;
-  padding: 4px 6px;
-}
-
-.legacy-webos .stream-route-chip {
-  min-height: 52px;
-  padding: 0 26px;
-  font-size: 18px;
-}
-
-.legacy-webos .stream-route-resume-label {
-  height: 52px;
-  flex-basis: 52px;
-  margin: 0 0 12px 6px;
-  padding: 0 26px;
-  font-size: 18px;
 }
 
 .legacy-webos .stream-route-panel-shell {
@@ -176,14 +126,10 @@
   top: 0;
   right: 0;
   bottom: 0;
-  border-radius: 16px;
-  height: auto;
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
   overflow: hidden;
-  padding: 14px 14px 16px;
-}
-
-.legacy-webos .stream-route-panel-header {
-  padding: 0;
 }
 
 .legacy-webos .stream-route-panel {
@@ -200,10 +146,9 @@
   bottom: 0;
   height: auto;
   max-height: none;
-  overflow-y: auto;
-  padding: 4px 6px 8px;
-  scroll-padding-top: 4px;
-  scroll-padding-bottom: 8px;
+  -webkit-overflow-scrolling: auto;
+  transform: none !important;
+  will-change: auto;
 }
 
 .legacy-webos .stream-route-list.manual-scroll {
@@ -212,85 +157,6 @@
 
 .legacy-webos .stream-route-list.manual-scroll > * {
   transform: translateY(var(--stream-route-manual-scroll, 0));
-}
-
-.legacy-webos .stream-route-card-row {
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.legacy-webos .stream-route-card {
-  min-height: 0;
-  padding: 16px 20px;
-  border-radius: 14px;
-  gap: 18px;
-  align-items: flex-start;
-}
-
-.legacy-webos .stream-route-card-heading {
-  font-size: 22px;
-  line-height: 28px;
-}
-
-.legacy-webos .stream-route-card-quality {
-  margin-top: 5px;
-  font-size: 19px;
-  line-height: 24px;
-}
-
-.legacy-webos .stream-route-card-badges {
-  gap: 4px;
-  margin: 6px 0 5px;
-}
-
-.legacy-webos .stream-route-card-badges-lazy {
-  height: 26px;
-  min-height: 26px;
-}
-
-.legacy-webos .stream-route-stream-badge {
-  min-height: 26px;
-  padding: 0 8px;
-  border-radius: 6px;
-  font-size: 15px;
-}
-
-.legacy-webos .stream-route-stream-badge.image {
-  min-width: 42px;
-  max-width: 116px;
-}
-
-.legacy-webos .stream-route-stream-badge.image img {
-  max-height: 21px;
-  max-width: 106px;
-}
-
-.legacy-webos .stream-route-card-line {
-  margin-top: 3px;
-  font-size: 16px;
-  line-height: 20px;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-}
-
-.legacy-webos .stream-route-card-line.secondary {
-  margin-top: 2px;
-}
-
-.legacy-webos .stream-route-card-side {
-  width: 132px;
-  flex-basis: 132px;
-  gap: 8px;
-}
-
-.legacy-webos .stream-route-addon-badge {
-  width: 50px;
-  height: 50px;
-}
-
-.legacy-webos .stream-route-addon-name {
-  font-size: 14px;
-  line-height: 18px;
 }
 
 .legacy-tizen .stream-route-shell {
@@ -336,18 +202,9 @@
   opacity: 1 !important;
   transform: none !important;
   animation: none !important;
-  border-radius: 18px;
-  height: auto;
-  min-height: 0;
-  overflow: hidden;
-  -webkit-box-flex: 1;
 }
 
 .legacy-tizen .stream-route-list {
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
-  overflow-y: auto;
   -webkit-overflow-scrolling: auto;
   transform: none !important;
   will-change: auto;
