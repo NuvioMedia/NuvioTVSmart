@@ -171,18 +171,13 @@
   align-items: center;
   gap: 36px;
   text-align: left;
-  transform: translateZ(0) scale(1);
+  transform: translateZ(0);
   transform-origin: center center;
-  transition:
-    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modern-sidebar-profile.focused {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.4) !important;
-  transform: translateZ(0) scale(1.06);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .modern-sidebar-profile-avatar {
@@ -241,32 +236,25 @@
   transform: scale(1);
   transform-origin: center center;
   transition:
-    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
     background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
     color 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modern-sidebar-nav-item.selected {
-  background: var(--secondary-color);
-  color: var(--on-secondary);
+  background: rgb(var(--secondary-color-rgb) / 0.15);
+  color: var(--secondary-color);
 }
 
 .modern-sidebar-nav-item.focused {
-  background: var(--focus-bg);
-  border-color: var(--focus-color) !important;
+  background: rgba(255, 255, 255, 0.12);
   color: var(--text-color);
-  transform: scale(1.06);
+  transform: scale(1.1);
 }
 
 .modern-sidebar-nav-item.selected.focused {
-  background: var(--secondary-color);
-  color: var(--on-secondary);
-  border-color: var(--focus-color) !important;
-}
-
-.modern-sidebar-nav-item.selected.focused .modern-sidebar-nav-icon-circle {
-  background: var(--player-accent-gradient, var(--secondary-color));
+  background: rgb(var(--secondary-color-rgb) / 0.28);
+  color: var(--secondary-color);
 }
 
 .modern-sidebar-nav-icon-circle,
@@ -281,13 +269,8 @@
 }
 
 .modern-sidebar-nav-icon-circle {
-  background: var(--focus-bg);
+  background: transparent;
   padding: 12px;
-}
-
-.modern-sidebar-nav-item.selected .modern-sidebar-nav-icon-circle {
-  background: var(--player-accent-gradient, var(--secondary-color));
-  color: var(--on-secondary);
 }
 
 .modern-sidebar-nav-icon,
