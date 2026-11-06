@@ -273,11 +273,6 @@
   padding: 12px;
 }
 
-.modern-sidebar-nav-item.selected .modern-sidebar-nav-icon-circle {
-  background: var(--player-accent-gradient, var(--secondary-color));
-  color: var(--on-secondary);
-}
-
 .modern-sidebar-nav-icon,
 .modern-sidebar-pill-icon {
   width: 44px;

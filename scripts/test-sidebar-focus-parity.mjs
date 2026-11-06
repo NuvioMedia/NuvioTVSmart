@@ -41,6 +41,7 @@ assert.match(profileFocused, /rgba\(255,\s*255,\s*255,\s*0\.12\)/);
 assert.doesNotMatch(profileFocused, /scale\(/);
 assert.doesNotMatch(profileFocused, /border-color/);
 assert.match(iconCircle, /background:\s*transparent/);
+assert.doesNotMatch(modern, /\.modern-sidebar-nav-item\.selected \.modern-sidebar-nav-icon-circle/);
 assert.match(rule(legacy, ".home-nav-item"), /transform 180ms/);
 
 console.log(
