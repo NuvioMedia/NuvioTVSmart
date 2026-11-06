@@ -194,9 +194,7 @@ export function createMetaDetailsScreenMethods16() {
     },
     renderCommentCard(review, index) {
       const isSpoiler = Boolean(review.spoiler || review.containsInlineSpoilers);
-      const body = isSpoiler
-        ? t("detail_comments_spoiler_hidden", {}, "Spoiler review. Press OK to reveal.")
-        : review.comment;
+      const body = isSpoiler ? t("detail_comments_spoiler_hidden", {}, "Spoiler review. Press OK to reveal.") : review.comment;
       const chips = [
         review.review ? t("detail_comments_badge_review", {}, "Review") : "",
         isSpoiler ? t("detail_comments_badge_spoiler", {}, "Spoiler") : "",
@@ -264,9 +262,7 @@ export function createMetaDetailsScreenMethods16() {
       if (!overlay || !main || !review) return;
       const isSpoiler = Boolean(review.spoiler || review.containsInlineSpoilers);
       const hidden = isSpoiler && !overlay.revealed;
-      const bodyText = hidden
-        ? t("detail_comments_spoiler_hidden", {}, "Spoiler review. Press OK to reveal.")
-        : review.comment;
+      const bodyText = hidden ? t("detail_comments_spoiler_hidden", {}, "Spoiler review. Press OK to reveal.") : review.comment;
       const labels = [];
       if (this.commentsMode === "episode" && this.commentsEpisodeTarget) {
         labels.push(`S${this.commentsEpisodeTarget.season}E${this.commentsEpisodeTarget.episode}`);
@@ -285,10 +281,7 @@ export function createMetaDetailsScreenMethods16() {
       const date = formatCommentTimestamp(review.createdAt, review.updatedAt, I18n.getLocale());
       if (date) labels.push(date);
       const meta = labels
-        .map(
-          (label, index) =>
-            `${index ? '<span class="detail-comment-overlay-dot"></span>' : ""}<span>${escapeHtml(label)}</span>`
-        )
+        .map((label, index) => `${index ? '<span class="detail-comment-overlay-dot"></span>' : ""}<span>${escapeHtml(label)}</span>`)
         .join("");
       const username = String(review.authorUsername || "").trim();
       main.innerHTML = `
@@ -355,8 +348,7 @@ export function createMetaDetailsScreenMethods16() {
       if (target < 0) return;
       if (target >= this.commentsItems.length) {
         const from = overlay.index;
-        const canLoadMore =
-          delta > 0 && this.commentsPage > 0 && this.commentsPageCount > this.commentsPage;
+        const canLoadMore = delta > 0 && this.commentsPage > 0 && this.commentsPageCount > this.commentsPage;
         if (!canLoadMore || overlay.loading) return;
         overlay.loading = true;
         this.renderCommentOverlayContent();
