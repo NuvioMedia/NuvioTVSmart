@@ -268,6 +268,38 @@
     } catch (ignored) {}
   }
 
+  function canOfferTryAnyway(info, options) {
+    var minChrome = Number(options.minChrome || 0);
+    if (!minChrome) {
+      return true;
+    }
+    // The bundle is compiled for minChrome: older engines fail to parse it
+    // before the app starts, so there is nothing the bypass could launch.
+    return info.chromeMajor >= minChrome;
+  }
+
+  function bindBootButtonFocus(button) {
+    function paint(focused) {
+      button.style.background = focused ? "#ffffff" : "#242424";
+      button.style.color = focused ? "#121212" : "#ffffff";
+      button.style.borderColor = focused ? "#ffffff" : "#767676";
+      button.style.transform = focused ? "scale(1.1)" : "scale(1)";
+    }
+
+    // Matches the Android TV dialog button focus treatment.
+    button.style.transition =
+      "background 200ms cubic-bezier(0.4, 0, 0.2, 1), " +
+      "color 200ms cubic-bezier(0.4, 0, 0.2, 1), " +
+      "transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)";
+    paint(false);
+    button.onfocus = function onBootButtonFocus() {
+      paint(true);
+    };
+    button.onblur = function onBootButtonBlur() {
+      paint(false);
+    };
+  }
+
   function showUnsupportedDevice(info, options, messages, onTryAnyway) {
     var overlay;
     var card;
@@ -283,7 +315,8 @@
     var value;
     var actions;
     var close;
-    var tryAnyway;
+    var tryAnyway = null;
+    var allowTryAnyway = canOfferTryAnyway(info, options);
     var bypassStarted = false;
 
     if (!document.body) {
@@ -318,11 +351,12 @@
       "font-size:25px;line-height:1.45;color:#c9c9c9;margin:0 auto 30px;max-width:900px;";
     description.textContent = messages.unsupported_device_message;
 
-    warning = document.createElement("div");
-    warning.style.cssText =
-      "font-size:21px;line-height:1.45;color:#f0c674;margin:0 auto 30px;max-width:900px;";
-    warning.textContent = messages.unsupported_device_warning;
-
+    if (allowTryAnyway) {
+      warning = document.createElement("div");
+      warning.style.cssText =
+        "font-size:21px;line-height:1.45;color:#f0c674;margin:0 auto 30px;max-width:900px;";
+      warning.textContent = messages.unsupported_device_warning;
+    }
     details = document.createElement("div");
     details.style.cssText =
       "box-sizing:border-box;text-align:left;background:#181818;border:1px solid #343434;" +
@@ -357,8 +391,9 @@
     close.type = "button";
     close.textContent = messages.unsupported_device_close;
     close.style.cssText =
-      "min-width:230px;padding:17px 30px;border:2px solid #ffffff;border-radius:12px;" +
-      "background:#ffffff;color:#111111;font-size:23px;font-weight:700;";
+      "min-width:230px;padding:17px 30px;border:2px solid #767676;border-radius:12px;" +
+      "background:#242424;color:#ffffff;font-size:23px;font-weight:700;outline:none;";
+    bindBootButtonFocus(close);
     close.onclick = function closeUnsupportedApp() {
       exitUnsupportedApp(info.platform);
     };
@@ -376,12 +411,30 @@
       }
     };
 
-    tryAnyway = document.createElement("button");
-    tryAnyway.type = "button";
-    tryAnyway.textContent = messages.unsupported_device_try_anyway;
-    tryAnyway.style.cssText =
-      "min-width:300px;padding:17px 30px;border:2px solid #767676;border-radius:12px;" +
-      "background:#252525;color:#ffffff;font-size:23px;font-weight:700;";
+    if (allowTryAnyway) {
+      tryAnyway = document.createElement("button");
+      tryAnyway.type = "button";
+      tryAnyway.textContent = messages.unsupported_device_try_anyway;
+      tryAnyway.style.cssText =
+        "min-width:300px;padding:17px 30px;border:2px solid #767676;border-radius:12px;" +
+        "background:#242424;color:#ffffff;font-size:23px;font-weight:700;outline:none;";
+      bindBootButtonFocus(tryAnyway);
+
+      tryAnyway.onclick = startUnsupportedAppAnyway;
+      tryAnyway.onkeydown = function startUnsupportedAppAnywayWithRemote(event) {
+        if (handleUnsupportedActionNavigation(event, tryAnyway)) {
+          return;
+        }
+        var keyCode = Number(event && event.keyCode);
+        var key = String((event && event.key) || "");
+        if (key === "Enter" || key === "OK" || keyCode === 13) {
+          if (event && typeof event.preventDefault === "function") {
+            event.preventDefault();
+          }
+          startUnsupportedAppAnyway();
+        }
+      };
+    }
 
     function focusUnsupportedAction(button) {
       if (!button || typeof button.focus !== "function") {
@@ -470,32 +523,21 @@
       }
     }
 
-    tryAnyway.onclick = startUnsupportedAppAnyway;
-    tryAnyway.onkeydown = function startUnsupportedAppAnywayWithRemote(event) {
-      if (handleUnsupportedActionNavigation(event, tryAnyway)) {
-        return;
-      }
-      var keyCode = Number(event && event.keyCode);
-      var key = String((event && event.key) || "");
-      if (key === "Enter" || key === "OK" || keyCode === 13) {
-        if (event && typeof event.preventDefault === "function") {
-          event.preventDefault();
-        }
-        startUnsupportedAppAnyway();
-      }
-    };
-
     actions = document.createElement("div");
     actions.style.cssText =
-      "display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;";
+      "display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;";
 
     card.appendChild(logo);
     card.appendChild(title);
     card.appendChild(description);
-    card.appendChild(warning);
+    if (warning) {
+      card.appendChild(warning);
+    }
     card.appendChild(details);
     actions.appendChild(close);
-    actions.appendChild(tryAnyway);
+    if (tryAnyway) {
+      actions.appendChild(tryAnyway);
+    }
     card.appendChild(actions);
     overlay.appendChild(card);
     document.body.appendChild(overlay);
@@ -728,8 +770,9 @@
     retry.type = "button";
     retry.textContent = "Retry";
     retry.style.cssText =
-      "min-width:190px;padding:17px 30px;border:2px solid #ffffff;border-radius:12px;" +
-      "background:#ffffff;color:#111111;font-size:23px;font-weight:700;";
+      "min-width:190px;padding:17px 30px;border:2px solid #767676;border-radius:12px;" +
+      "background:#242424;color:#ffffff;font-size:23px;font-weight:700;outline:none;";
+    bindBootButtonFocus(retry);
     retry.onclick = function retryBoot() {
       window.location.reload();
     };
