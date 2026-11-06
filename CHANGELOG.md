@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 1.3.7
+
 ### Improvements & Fixes
 
 - Live playback now hides the progress bar, and hls.js retries playlist 5xx responses for about 15 seconds like Android TV instead of ending the stream, so short provider outages no longer stop a channel (#1253, #1262) (@WhiteGiso)
