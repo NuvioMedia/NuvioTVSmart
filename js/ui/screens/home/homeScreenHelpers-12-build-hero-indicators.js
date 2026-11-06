@@ -273,9 +273,6 @@ export function renderRowHeader(title, subtitle = "") {
 }
 
 export function resolveContinueWatchingBlurNextUp(layoutPrefs) {
-  if (Platform.isTizen()) {
-    return false;
-  }
   return Boolean(layoutPrefs?.blurContinueWatchingNextUp);
 }
 
