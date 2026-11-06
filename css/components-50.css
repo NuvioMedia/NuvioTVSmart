@@ -302,41 +302,34 @@
   transform: none !important;
 }
 
+/* Chromium 56 in Tizen 4 has no CSS grid, so keep the flex fallback but with
+   the same 40/60 split and 96px panel insets as the Android TV layout. The
+   previous fixed 560/1232 columns still assumed the old chips-outside-panel
+   geometry and, combined with the new .stream-route-right padding, shrank the
+   panel. */
 .legacy-tizen .stream-route-content {
   display: -webkit-box;
   display: flex;
-  padding: 56px 64px;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0;
 }
 
 .legacy-tizen .stream-route-left {
-  width: 560px;
-  flex: 0 0 560px;
-  padding-right: 44px;
-}
-
-.legacy-tizen .stream-route-left-inner {
-  width: 420px;
-  max-width: 420px;
-}
-
-.legacy-tizen .stream-route-logo {
-  width: 420px;
-  max-width: 420px;
-  max-height: 150px;
+  width: 40%;
+  flex: 0 0 40%;
+  padding: 0 48px 0 96px;
+  padding-inline: 96px 48px;
 }
 
 .legacy-tizen .stream-route-right {
-  width: 1232px;
-  flex: 0 0 1232px;
-  max-width: 1232px;
-  height: 968px;
+  width: 60%;
+  flex: 0 0 60%;
+  max-width: 60%;
   min-height: 0;
   overflow: hidden;
-}
-
-.legacy-tizen .stream-route-chip-wrap {
-  height: 78px;
-  margin-bottom: 20px;
 }
 
 .legacy-tizen .stream-route-panel-shell {
