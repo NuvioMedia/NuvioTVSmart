@@ -58,6 +58,32 @@ test("a transient empty catalog response is retried on the next request", async 
   assert.equal(stub.calls.length, 2);
 });
 
+test("the response cache keeps only the most recently used pages", async (t) => {
+  catalogRepository.clearCache();
+  const stub = stubCatalogResponse([
+    { id: "tt1", name: "One", type: "movie", poster: "https://example.test/1.jpg" }
+  ]);
+  t.after(() => stub.restore());
+
+  // Fill the cache, then keep touching the very first page so it stays hot.
+  const first = descriptor("page-0");
+  await catalogRepository.getCatalog(first);
+  for (let index = 1; index < 96; index += 1) {
+    await catalogRepository.getCatalog(descriptor(`page-${index}`));
+  }
+  assert.equal(catalogRepository.catalogCache.size, 96);
+  await catalogRepository.getCatalog(first);
+  assert.equal(stub.calls.length, 96, "the hot page is still served from the cache");
+
+  // One more distinct page evicts the least recently used one (page-1), not page-0.
+  await catalogRepository.getCatalog(descriptor("page-96"));
+  assert.equal(catalogRepository.catalogCache.size, 96);
+  await catalogRepository.getCatalog(first);
+  assert.equal(stub.calls.length, 97, "page-0 was kept");
+  await catalogRepository.getCatalog(descriptor("page-1"));
+  assert.equal(stub.calls.length, 98, "page-1 was evicted and fetched again");
+});
+
 test("a catalog page with items is still served from the response cache", async (t) => {
   catalogRepository.clearCache();
   const stub = stubCatalogResponse([
