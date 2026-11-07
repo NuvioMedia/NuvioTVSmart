@@ -27,7 +27,8 @@ export function createPlayerControllerMethods18() {
         forceEngine = null,
         streamIdentity = null,
         cloudSessionToken = null,
-        preserveTrackSelections = false
+        preserveTrackSelections = false,
+        forceLocalProxy = false
       } = {}
     ) {
       this.cancelProxyRedirectObservation?.();
@@ -137,8 +138,15 @@ export function createPlayerControllerMethods18() {
       const isAdaptiveSource = this.isLikelyHlsMimeType(sourceType) || this.isLikelyDashMimeType(sourceType);
       const canPlayDirectWithoutHeaders =
         playbackProxy === WebOsPlaybackProxy || (Platform.isTizen() && preferredEngine === this.getPlatformAvplayEngineName());
+      const forceTizenLocalProxy = Boolean(forceLocalProxy) && playbackProxy === TizenPlaybackProxy;
+      let routedThroughLocalProxy = false;
       let directResolution = null;
-      if (proxyRequired && !isAdaptiveSource && (headersNeedProxy ? canPlayDirectWithoutHeaders : isTizenAvPlayVod)) {
+      if (
+        !forceTizenLocalProxy &&
+        proxyRequired &&
+        !isAdaptiveSource &&
+        (headersNeedProxy ? canPlayDirectWithoutHeaders : isTizenAvPlayVod)
+      ) {
         const resolution = await resolveTizenDirectRedirect(requestedUrl, headersNeedProxy ? {} : requestHeaders);
         if (!this.isPlaybackRequestActive(playToken, requestedUrl)) {
           return;
@@ -165,7 +173,10 @@ export function createPlayerControllerMethods18() {
         this.currentPlaybackUrl = playbackUrl;
       } else if (playbackProxy) {
         const proxyResult = Platform.isTizen()
-          ? await playbackProxy.resolve(requestedUrl, requestHeaders, { playbackEngine: preferredEngine })
+          ? await playbackProxy.resolve(requestedUrl, requestHeaders, {
+              playbackEngine: preferredEngine,
+              forceProxy: forceTizenLocalProxy
+            })
           : await playbackProxy.resolve(requestedUrl, requestHeaders);
         if (!this.isPlaybackRequestActive(playToken, requestedUrl)) {
           return;
@@ -198,6 +209,7 @@ export function createPlayerControllerMethods18() {
         }
         playbackUrl = String(proxyResult?.url || requestedUrl).trim() || requestedUrl;
         if (proxyResult?.proxied) {
+          routedThroughLocalProxy = true;
           this.currentPlaybackUrl = playbackUrl;
           this.cancelProxyRedirectObservation = observeProxyRedirects(this, {
             requestedUrl,
@@ -301,6 +313,11 @@ export function createPlayerControllerMethods18() {
           ? "native-dash"
           : "native-file";
 
+      // Lets PlayerScreen retry a stuck direct AVPlay start through the local proxy.
+      this.lastTizenAvPlayRoute =
+        Platform.isTizen() && preferredEngine === this.getPlatformAvplayEngineName()
+          ? { url: requestedUrl, viaLocalProxy: routedThroughLocalProxy }
+          : null;
       if (preferredEngine === this.getPlatformAvplayEngineName()) {
         const avplayStarted = this.playWithAvPlay(playbackUrl, requestHeaders, sourceType, playToken);
         if (!avplayStarted) {

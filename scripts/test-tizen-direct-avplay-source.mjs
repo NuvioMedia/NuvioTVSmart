@@ -120,4 +120,18 @@ const RESOLVE = "https://addon.example/resolve/rd/abc/1/movie.mkv";
 fetchPlan = "redirect-forbidden";
 assert.equal(await playSource(RESOLVE), RESOLVE);
 
+// 7. A direct start is recorded as such so PlayerScreen can fall back...
+fetchPlan = "redirect";
+assert.equal(await playSource(CDN), CDN);
+assert.deepEqual(PlayerController.lastTizenAvPlayRoute, { url: CDN, viaLocalProxy: false });
+
+// 8. ...and the fallback routes even a header-less source through the local
+// proxy (servers with lowercase Content-Range stall AVPlay), without probing.
+avplayUrl = null;
+fetchCalls.length = 0;
+await PlayerController.play(CDN, { itemType: "movie", forceLocalProxy: true });
+assert.match(avplayUrl, /^http:\/\/127\.0\.0\.1:2710\/proxy\//);
+assert.equal(fetchCalls.length, 0);
+assert.deepEqual(PlayerController.lastTizenAvPlayRoute, { url: CDN, viaLocalProxy: true });
+
 console.log("tizen direct avplay source tests passed");

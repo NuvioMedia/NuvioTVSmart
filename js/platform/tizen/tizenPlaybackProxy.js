@@ -83,7 +83,10 @@ export const TizenPlaybackProxy = {
 
   async resolve(sourceUrl = "", headers = {}, options = {}) {
     const originalUrl = String(sourceUrl || "").trim();
-    if (!this.requiresProxy(originalUrl, headers, options)) {
+    // forceProxy: AVPlay could not start the source directly (e.g. a server
+    // that sends lowercase Content-Range); the proxy rewrites the headers.
+    const forced = options?.forceProxy === true && Boolean(parseHttpUrl(originalUrl)) && !isLocalProxyUrl(originalUrl);
+    if (!forced && !this.requiresProxy(originalUrl, headers, options)) {
       return { status: "not-required", url: originalUrl, proxied: false };
     }
 

@@ -268,7 +268,8 @@ export function createPlayerScreenMethods34() {
       const playbackContext = {
         ...this.buildPlaybackContext(sourceCandidate),
         forceEngine,
-        preserveTrackSelections: preserveWebOsTrackSelections
+        preserveTrackSelections: preserveWebOsTrackSelections,
+        forceLocalProxy: this.tizenLocalProxyRequiredUrl === normalizedStreamUrl
       };
       const startPlayback = (url, context, options) => {
         const playbackPromise = this.startPlayerControllerPlayback(url, context, options);
@@ -331,7 +332,14 @@ export function createPlayerScreenMethods34() {
           sourceCandidate
         });
         void playbackPromise.then(
-          () => loadTrackDataAfterPlayback(playbackUrl),
+          () => {
+            // The startup watchdog was armed before the route was known; a
+            // direct AVPlay start that can still fall back gets the short one.
+            if (this.activePlaybackUrl === playbackUrl && this.loadingVisible && this.canRetryTizenAvPlayThroughLocalProxy?.()) {
+              this.schedulePlaybackStallGuard();
+            }
+            loadTrackDataAfterPlayback(playbackUrl);
+          },
           () => loadTrackDataAfterPlayback(playbackUrl)
         );
       } else {

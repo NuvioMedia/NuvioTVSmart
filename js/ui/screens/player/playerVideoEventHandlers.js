@@ -215,6 +215,10 @@ export function createPlayerVideoEventHandlers(video, isTizenAvPlayPlayback) {
         return;
       }
 
+      if (!currentEngineFsState && this.retryTizenAvPlayThroughLocalProxy?.()) {
+        return;
+      }
+
       this.markPlaybackSourceFailed(this.activePlaybackUrl);
       const targetEngine =
         !terminalHlsHttpFailure && typeof PlayerController.getAlternativePlaybackEngine === "function"

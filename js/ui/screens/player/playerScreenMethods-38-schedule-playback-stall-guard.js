@@ -117,6 +117,10 @@ export function createPlayerScreenMethods38() {
           return;
         }
 
+        if (startup && this.retryTizenAvPlayThroughLocalProxy?.()) {
+          return;
+        }
+
         const currentPlaybackEngine = String(PlayerController.playbackEngine || "");
         const playbackEngineValidated = !startup && this.isPlaybackEngineValidated();
         let skipAutomaticPlaybackRecovery = false;

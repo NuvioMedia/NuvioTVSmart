@@ -1,6 +1,8 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
 
+const TIZEN_AVPLAY_DIRECT_STARTUP_STALL_TIMEOUT_MS = 20000;
+
 export function createPlayerScreenMethods37() {
   const {
     PlayerController,
@@ -128,6 +130,11 @@ export function createPlayerScreenMethods37() {
           // affected Tizen TVs. Bound only this startup fallback; keep hls.js,
           // AVPlay and post-first-frame buffering on their existing policies.
           return TIZEN_NATIVE_HLS_STARTUP_STALL_TIMEOUT_MS;
+        }
+        if (this.canRetryTizenAvPlayThroughLocalProxy?.()) {
+          // A healthy direct AVPlay start prepares in a few seconds; a stuck
+          // one falls back to the local proxy instead of waiting a minute.
+          return TIZEN_AVPLAY_DIRECT_STARTUP_STALL_TIMEOUT_MS;
         }
         if (Environment.isTizen() || Environment.isWebOS()) {
           return playbackEngine.endsWith("avplay") ? 60000 : 45000;

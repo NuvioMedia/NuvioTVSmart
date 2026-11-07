@@ -197,6 +197,47 @@ export function createPlayerScreenMethods36() {
       });
       return true;
     },
+    // Android's ExoPlayer plays any HTTP server; Samsung AVPlay stalls when a
+    // server (e.g. an add-on proxy) sends lowercase Content-Range and the MP4
+    // index is at the end. The local proxy rewrites the response headers, so
+    // a direct AVPlay start that gets stuck is retried through it once.
+    canRetryTizenAvPlayThroughLocalProxy() {
+      const url = String(this.activePlaybackUrl || "").trim();
+      const route = PlayerController.lastTizenAvPlayRoute;
+      return Boolean(
+        url &&
+        route?.url === url &&
+        !route.viaLocalProxy &&
+        /^https?:\/\//i.test(url) &&
+        !this.hasPresentedPlaybackFrame &&
+        !this.currentEngineFsStream &&
+        this.tizenLocalProxyRequiredUrl !== url
+      );
+    },
+    retryTizenAvPlayThroughLocalProxy() {
+      if (!this.canRetryTizenAvPlayThroughLocalProxy()) {
+        return false;
+      }
+      const retryUrl = String(this.activePlaybackUrl || "").trim();
+      this.tizenLocalProxyRequiredUrl = retryUrl;
+      this.lastPlaybackErrorAt = 0;
+      this.loadingVisible = true;
+      this.paused = false;
+      this.sourcesError = null;
+      this.updateLoadingVisibility();
+      console.warn("Tizen AVPlay could not start the source directly; retrying through the local proxy", {
+        url: retryUrl
+      });
+      void this.playStreamByUrl(retryUrl, {
+        preservePanel: true,
+        preservePlaybackState: true,
+        resetSilentAudioState: false,
+        preservePendingRestore: Boolean(this.pendingPlaybackRestore),
+        forceEngine: PlayerController.getPlatformAvplayEngineName(),
+        sourceCandidate: this.getStreamCandidateByUrl(retryUrl) || this.getCurrentStreamCandidate()
+      });
+      return true;
+    },
     scheduleTizenAvPlayConnectionErrorRetry() {
       this.cancelTizenAvPlayConnectionRetryBudgetReset();
       const retryUrl = String(this.activePlaybackUrl || "").trim();
