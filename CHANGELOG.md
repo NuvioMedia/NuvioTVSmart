@@ -4,6 +4,12 @@
 
 ### Improvements & Fixes
 
+- Added Collections on Smart TV: browse, create and edit collections and folders with the Android TV layout
+- Added the chapters panel for Matroska and MP4 playback, Android-style episode options with long-press, and HDR/Dolby Vision subtitle styling with matching control dimming
+- Added cross-provider episode mapping for Trakt, MDBList and add-on lists, including anime split-season numbering, so watched state, resume and scrobbles stay aligned
+- Plugin providers now start in most-played order and remember the provider used for a series
+- Aligned post-play, trailer Back behaviour and AutoSync outcome handling with Android TV
+- Updated runtime translations, including Bengali and Croatian
 - Aligned legacy webOS and Tizen stream layouts with Android TV (#1280)
 - Restored the Android TV stream panel size on Tizen (#1277)
 - Hid the unusable compatibility bypass and kept focus visible on older Tizen TVs (#1267)
