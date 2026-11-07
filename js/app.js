@@ -6,6 +6,7 @@ import { AmbientMode } from "./ui/ambient/ambientMode.js";
 /* global __NUVIO_APP_VERSION__ */
 
 import "./core/diagnostics/consoleDebugBuffer.js";
+import { markBootTiming } from "./core/diagnostics/bootTiming.js";
 import { detailWatchedEnrichmentService } from "./data/repository/detailWatchedEnrichmentService.js";
 import { NON_BACKSTACK_ROUTES, Router } from "./ui/navigation/router.js";
 import { FocusEngine } from "./ui/navigation/focusEngine.js";
@@ -59,6 +60,10 @@ LocalStore.remove("rotatedDpadMapping");
   }
 })();
 
+// All imported modules have been evaluated at this point: the gap from the
+// boot-guard mark to this one is the bundle fetch + parse + compile cost.
+markBootTiming("app-bundle-evaluated");
+
 const GUEST_QR_BYPASS_KEY = "skipAuthQrGate";
 const SIGNED_OUT_ALLOWED_ROUTES = new Set([
   "trakt",
@@ -98,6 +103,7 @@ function preloadMaterialIconFont() {
 }
 
 function markBootStage(stage) {
+  markBootTiming(stage);
   const guard = globalThis.NuvioBootGuard;
   if (guard && typeof guard.stage === "function") {
     guard.stage(stage);

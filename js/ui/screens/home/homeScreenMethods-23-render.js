@@ -1,6 +1,7 @@
 import { ensureHeroMdbListRatings } from "./homeHeroMdbListLoad.js";
 import * as internals from "./homeScreenContext.js";
 import { hasMountedHomeDom, updateHomeDom } from "./homeDomUpdate.js";
+import { hasMarkedFirstHomePaint, markFirstHomePaint } from "../../../core/diagnostics/bootTiming.js";
 
 export function createHomeScreenMethods23() {
   const {
@@ -309,6 +310,14 @@ export function createHomeScreenMethods23() {
           focusedNode: liveFocusedNode
         });
         this.renderedMarkup = nextMarkup;
+        if (!hasMarkedFirstHomePaint()) {
+          // Boot timing only: the first Home DOM commit is about to paint.
+          if (typeof globalThis.requestAnimationFrame === "function") {
+            globalThis.requestAnimationFrame(() => markFirstHomePaint());
+          } else {
+            setTimeout(() => markFirstHomePaint(), 0);
+          }
+        }
       }
       if (this.layoutMode === "grid") {
         normalizeHomeGridCatalogSections(this.container, {

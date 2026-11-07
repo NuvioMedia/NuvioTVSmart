@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./router.js";
+import { markBootTiming } from "../../core/diagnostics/bootTiming.js";
 
 export function createRouterMethods02() {
   const {
@@ -198,6 +199,9 @@ export function createRouterMethods02() {
       }
 
       if (bootGuard && typeof bootGuard.ready === "function") {
+        if (bootGuard.isActive?.() !== false) {
+          markBootTiming(`first-route:${routeName}`);
+        }
         bootGuard.ready();
       }
 
