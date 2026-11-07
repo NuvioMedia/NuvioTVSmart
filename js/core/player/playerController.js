@@ -110,6 +110,7 @@ export {
   WEBOS_MEDIA_TYPE_PROBE_TIMEOUT_MS,
   logEngineFsDebug,
   logTizenAvPlayDebug,
+  isTizenAvPlayDebugEnabled,
   logWebOsPlaybackDebug,
   isValidAvPlayAudioTrackSelectionState,
   isValidAvPlaySubtitleTrackSelectionState,
@@ -151,8 +152,12 @@ function logEngineFsDebug(...args) {
   }
 }
 
+function isTizenAvPlayDebugEnabled() {
+  return Boolean(globalThis.__NUVIO_DEBUG_TIZEN_AVPLAY__ || globalThis.__NUVIO_DEBUG_ENGINEFS__);
+}
+
 function logTizenAvPlayDebug(...args) {
-  if (globalThis.__NUVIO_DEBUG_TIZEN_AVPLAY__ || globalThis.__NUVIO_DEBUG_ENGINEFS__) {
+  if (isTizenAvPlayDebugEnabled()) {
     console.info(...args);
   }
 }

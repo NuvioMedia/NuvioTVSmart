@@ -2,7 +2,7 @@
 import * as internals from "./playerController.js";
 
 export function createPlayerControllerMethods09() {
-  const { Platform, logTizenAvPlayDebug } = internals;
+  const { Platform, logTizenAvPlayDebug, isTizenAvPlayDebugEnabled } = internals;
 
   return {
     playWithAvPlay(url, requestHeaders = {}, _sourceType = null, playToken = null) {
@@ -66,11 +66,15 @@ export function createPlayerControllerMethods09() {
             if (Number.isFinite(numericPercent)) {
               this.avplayBufferingProgress = Math.max(0, Math.min(100, numericPercent));
             }
-            logTizenAvPlayDebug("Tizen AVPlay buffering progress", {
-              percent: this.avplayBufferingProgress,
-              state: this.getAvPlayState(),
-              currentTimeMs: this.avplayCurrentTimeMs
-            });
+            // Fired per percent; getState() is a bridge call, so build the
+            // log object only when AVPlay diagnostics are on (issue #1208).
+            if (typeof isTizenAvPlayDebugEnabled !== "function" || isTizenAvPlayDebugEnabled()) {
+              logTizenAvPlayDebug("Tizen AVPlay buffering progress", {
+                percent: this.avplayBufferingProgress,
+                state: this.getAvPlayState(),
+                currentTimeMs: this.avplayCurrentTimeMs
+              });
+            }
           },
           onbufferingcomplete: () => {
             if (!this.isPlaybackRequestActive(playToken, url)) {
