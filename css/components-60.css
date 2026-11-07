@@ -355,6 +355,15 @@
   will-change: transform !important;
 }
 
+/* Modern hero backdrop: brightness() + saturate() (components-16) put the
+   ~1380x650 artwork on its own filtered render surface, re-filtered on every
+   frame of the 400 ms swap fade and whenever the rows scroll over it, so each
+   focus move that changes the hero costs a filtered full-size composite. The
+   grade is subtle; Tizen draws the artwork as delivered (#1250). */
+.legacy-tizen .home-screen-shell.home-layout-modern .home-hero-backdrop {
+  filter: none;
+}
+
 /* FIX: keep remote focus immediate on Samsung CU-series hardware. */
 .legacy-tizen .focusable,
 .legacy-tizen .series-episode-card,

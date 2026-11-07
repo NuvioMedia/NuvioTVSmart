@@ -49,7 +49,7 @@ for (const kept of [
   ".legacy-tizen .modern-sidebar-shell",
   ".legacy-tizen .modern-sidebar-panel",
   ".legacy-tizen .home-poster-skeleton-line",
-  ".legacy-tizen .player-progress-fill"
+  ".legacy-tizen .settings-workspace"
 ]) {
   assert.ok(legacyTizen.includes(kept), `${kept} stays on every Tizen`);
 }
@@ -67,5 +67,13 @@ assert.doesNotMatch(
   /contains("legacy-tizen")/,
   "Home immediate focus scroll must not read the legacy-tizen class"
 );
+
+// The modern hero backdrop filter is a per-frame compositor cost on every
+// Tizen, not a focus-motion rule, so it stays keyed on the platform class.
+const heroBackdropRule = css.match(
+  /\.legacy-tizen \.home-screen-shell\.home-layout-modern \.home-hero-backdrop \{([^}]*)\}/
+);
+assert.ok(heroBackdropRule, "legacy-tizen removes the modern hero backdrop filter");
+assert.match(heroBackdropRule[1], /filter:\s*none/);
 
 console.log("tizen home focus motion css ok");
