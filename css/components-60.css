@@ -310,6 +310,15 @@
   will-change: transform !important;
 }
 
+/* Playback progress bars: the width transitions re-run layout for 150-250 ms
+   after every UI tick, once a second for the whole film. Legacy Tizen draws
+   the new width directly (issue #1208). */
+.legacy-tizen .player-progress-fill,
+.legacy-tizen .player-progress-buffered,
+.legacy-tizen .player-seek-fill {
+  transition: none;
+}
+
 /* FIX: keep remote focus immediate on Samsung CU-series hardware. */
 .legacy-tizen .focusable,
 .legacy-tizen .series-episode-card,

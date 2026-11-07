@@ -378,6 +378,8 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.controlFocusIndex = 0;
   this.controlsHideTimer = null;
   this.tickTimer = null;
+  this.uiTickPendingTimer = null;
+  this.lastUiTickAt = 0;
   this.skipIntervalCheckTimer = null;
   this.skipIntervalsRequestToken = Number(this.skipIntervalsRequestToken || 0);
   this.videoListeners = [];

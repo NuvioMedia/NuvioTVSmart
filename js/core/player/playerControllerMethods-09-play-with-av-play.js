@@ -24,6 +24,7 @@ export function createPlayerControllerMethods09() {
       this.avplayReady = false;
       this.avplayEnded = false;
       this.avplayCurrentTimeMs = 0;
+      this.avplayTimelinePolledAt = 0;
       this.avplayDurationMs = 0;
       this.avplaySubtitleDiagnosticCallbackPendingAt = 0;
       this.lastPlaybackErrorCode = 0;

@@ -4,6 +4,16 @@ import { MediaServerScrobbleService } from "../../../data/mediaserver/mediaServe
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
 
+// Playback progress arrives from several sources at once (native timeupdate at
+// ~4 Hz, the AVPlay time callback plus its 1 s poll, the screen heartbeat and
+// progress events). Each used to run a full UI tick. Coalesce them to one tick
+// per interval; the heartbeat still guarantees a tick every second. Issue #1208.
+const UI_TICK_MIN_INTERVAL_MS = 250;
+
+function uiTickNow() {
+  return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
+}
+
 export function createPlayerScreenMethods32() {
   const {
     renderPlayerImageBadgeChip,
@@ -20,7 +30,34 @@ export function createPlayerScreenMethods32() {
   } = internals;
 
   return {
+    requestUiTick() {
+      const now = uiTickNow();
+      const elapsed = now - Number(this.lastUiTickAt || 0);
+      if (!this.lastUiTickAt || elapsed >= UI_TICK_MIN_INTERVAL_MS) {
+        this.updateUiTick();
+        return;
+      }
+      if (this.uiTickPendingTimer != null) {
+        return;
+      }
+      // Trailing edge: the newest position is never dropped, only delayed.
+      this.uiTickPendingTimer = setTimeout(
+        () => {
+          this.uiTickPendingTimer = null;
+          this.updateUiTick();
+        },
+        Math.max(0, UI_TICK_MIN_INTERVAL_MS - elapsed)
+      );
+    },
+    cancelPendingUiTick() {
+      if (this.uiTickPendingTimer != null) {
+        clearTimeout(this.uiTickPendingTimer);
+        this.uiTickPendingTimer = null;
+      }
+    },
     updateUiTick() {
+      this.lastUiTickAt = uiTickNow();
+      this.cancelPendingUiTick?.();
       if (this.playerRouteActive) MediaServerScrobbleService.update(this.buildScrobbleContext());
       if (this.isExternalFrameMode()) {
         return;

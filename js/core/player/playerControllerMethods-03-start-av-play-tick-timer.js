@@ -1,5 +1,34 @@
 import * as internals from "./playerController.js";
 
+// Track metadata is polled every second for the first 15 s of playback, then
+// every 5 s while a track selection is still pending, and otherwise only every
+// 30 s. getTotalTrackInfo()/getCurrentStreamInfo() plus the extra_info parsing
+// and two JSON fingerprints are not free on single-core Tizen (issue #1208).
+const AVPLAY_TRACK_POLL_STARTUP_TICKS = 15;
+const AVPLAY_TRACK_POLL_PENDING_EVERY_TICKS = 5;
+const AVPLAY_TRACK_POLL_IDLE_EVERY_TICKS = 30;
+// getCurrentTime()/getDuration() are synchronous bridge calls; one UI tick reads
+// the position many times. Reuse a poll that is younger than this.
+const AVPLAY_TIMELINE_POLL_REUSE_MS = 40;
+
+function hasPendingAvPlayTrackSelection(controller) {
+  const now = Date.now();
+  return (
+    Number(controller.pendingAvPlayAudioTrackIndex) >= 0 ||
+    Number(controller.pendingAvPlaySubtitleTrackIndex) >= 0 ||
+    now < Number(controller.desiredAvPlayAudioTrackUntil || 0) ||
+    now < Number(controller.desiredAvPlaySubtitleTrackUntil || 0)
+  );
+}
+
+export function shouldPollAvPlayTracks(controller, trackPollTicks) {
+  if (trackPollTicks <= AVPLAY_TRACK_POLL_STARTUP_TICKS) {
+    return true;
+  }
+  const every = hasPendingAvPlayTrackSelection(controller) ? AVPLAY_TRACK_POLL_PENDING_EVERY_TICKS : AVPLAY_TRACK_POLL_IDLE_EVERY_TICKS;
+  return trackPollTicks % every === 0;
+}
+
 export function createPlayerControllerMethods03() {
   const { logTizenAvPlayDebug } = internals;
   return {
@@ -12,7 +41,7 @@ export function createPlayerControllerMethods03() {
         }
         this.refreshAvPlayTimeline();
         trackPollTicks += 1;
-        if ((trackPollTicks <= 15 || trackPollTicks % 5 === 0) && ["PLAYING", "PAUSED"].includes(this.getAvPlayState())) {
+        if (shouldPollAvPlayTracks(this, trackPollTicks) && ["PLAYING", "PAUSED"].includes(this.getAvPlayState())) {
           const fingerprint = () =>
             JSON.stringify([
               this.avplayAudioTracks,
@@ -209,6 +238,11 @@ export function createPlayerControllerMethods03() {
       if (!avplay) {
         return;
       }
+      const now = Date.now();
+      if (now - Number(this.avplayTimelinePolledAt || 0) < AVPLAY_TIMELINE_POLL_REUSE_MS) {
+        return;
+      }
+      this.avplayTimelinePolledAt = now;
       try {
         const currentMs = Number(avplay.getCurrentTime?.() || 0);
         if (Number.isFinite(currentMs) && currentMs >= 0) {

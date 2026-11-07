@@ -62,6 +62,7 @@ export function createPlayerControllerMethods10() {
         this.emitVideoEvent("seeking", { playbackEngine: this.playbackEngine });
       }
       this.avplayCurrentTimeMs = normalizedTargetMs;
+      this.avplayTimelinePolledAt = 0;
       if (emitEvents) {
         this.emitVideoEvent("timeupdate", { playbackEngine: this.playbackEngine });
       }
