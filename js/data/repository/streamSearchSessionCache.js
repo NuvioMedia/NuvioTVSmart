@@ -9,6 +9,7 @@ function normalizeKey(key = {}) {
     videoId: String(key.videoId || ""),
     season: key.season == null ? null : Number(key.season),
     episode: key.episode == null ? null : Number(key.episode),
+    searchMode: String(key.searchMode || ""),
     sourceConfiguration: String(key.sourceConfiguration || "")
   };
 }
@@ -21,6 +22,7 @@ function keyString(key) {
     normalized.videoId,
     normalized.season,
     normalized.episode,
+    normalized.searchMode,
     normalized.sourceConfiguration
   ]);
 }

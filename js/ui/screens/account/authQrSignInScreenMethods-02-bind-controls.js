@@ -218,7 +218,7 @@ export function createAuthQrSignInScreenMethods02() {
         const remaining = expiration - Date.now();
         const expiryNode = this.container?.querySelector("#qr-expiry");
         if (expiryNode) {
-          expiryNode.innerText = I18n.t("auth.qr.expires", {
+          expiryNode.innerText = I18n.t("auth_qr_expires", {
             duration: formatDuration(remaining)
           });
         }

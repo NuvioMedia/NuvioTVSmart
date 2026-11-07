@@ -92,8 +92,8 @@ export function renderLayoutMarkup(model) {
                 !isModernLayout && model.layout.heroSectionEnabled
                   ? this.renderActionRow({
                       focusKey: "layout:heroCatalogs",
-                      title: t("layout_hero_catalog", {}, "Hero catalogs"),
-                      subtitle: t("layout_hero_catalog_sub", {}, "Choose catalogs used by the Hero section."),
+                      title: t("layout_hero_catalogs", {}, "Hero Catalogs"),
+                      subtitle: t("layout_hero_catalogs_sub", {}, "Select one or more catalogs for hero content."),
                       value: String(model.layout.heroCatalogKeys?.length || 0)
                     })
                   : ""
@@ -138,7 +138,7 @@ export function renderLayoutMarkup(model) {
               subtitle: t("settings.layout.heroSection.subtitle"),
               checked: Boolean(model.layout.heroSectionEnabled)
             })}
-            ${model.layout.heroSectionEnabled ? this.renderActionRow({ focusKey: "layout:heroCatalogs", title: t("layout_hero_catalog", {}, "Hero catalogs"), subtitle: t("layout_hero_catalog_sub", {}, "Choose catalogs used by the Hero section"), value: model.layout.heroCatalogKeys?.length ? String(model.layout.heroCatalogKeys.length) : t("common_all", {}, "All") }) : ""}
+            ${model.layout.heroSectionEnabled ? this.renderActionRow({ focusKey: "layout:heroCatalogs", title: t("layout_hero_catalogs", {}, "Hero Catalogs"), subtitle: t("layout_hero_catalogs_sub", {}, "Select one or more catalogs for hero content."), value: model.layout.heroCatalogKeys?.length ? String(model.layout.heroCatalogKeys.length) : t("common_all", {}, "All") }) : ""}
             `
                 : ""
             }
@@ -286,6 +286,16 @@ export function renderLayoutMarkup(model) {
               title: t("settings.layout.showTrailerButton.title"),
               subtitle: t("settings.layout.showTrailerButton.subtitle"),
               checked: Boolean(model.layout.detailPageTrailerButtonEnabled)
+            })}
+            ${this.renderToggleRow({
+              focusKey: "layout:detail:trailerBackground",
+              title: t("layout_trailer_play_in_background", {}, "Play in Background"),
+              subtitle: t(
+                "layout_trailer_play_in_background_sub",
+                {},
+                "Play the trailer in place of the backdrop while the page stays visible."
+              ),
+              checked: model.layout.trailerPlayInBackground === true
             })}
             ${this.renderToggleRow({
               focusKey: "layout:detail:preferExternalMeta",

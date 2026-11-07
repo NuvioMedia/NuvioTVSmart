@@ -12,8 +12,10 @@ const {
 } = await import("../js/core/player/subtitleLanguageAliases.js");
 const { normalizeTrackLanguageCode } =
   await import("../js/ui/screens/player/playerScreenHelpers-05-normalize-track-language-code.js");
-const { normalizeSubtitleLanguageKey } =
+const { normalizeSubtitleLanguageKey, subtitleLanguageLabel } =
   await import("../js/ui/screens/player/playerScreenHelpers-09-format-bytes.js");
+const { detectTrackLanguageVariant } =
+  await import("../js/ui/screens/player/playerScreenHelpers-07-detect-track-language-variant.js");
 const { decodeSubtitleBytes } = await import("../js/core/player/subtitleCharsetDetector.js");
 const { languageEmoji } =
   await import("../js/core/debrid/debridStreamPresentationHelpers-04-compare-key.js");
@@ -28,6 +30,16 @@ for (const input of ["spn", "SPN", " sp ", "esp", "ESP"]) {
   assert.equal(normalizeSubtitleLanguageKey(input), "es", input);
   assert.equal(languageFor(input.trim()), "ES", input);
 }
+for (const input of ["zhc", "ZHC", "zc", "yue", "Cantonese", "Chinese (Cantonese)"]) {
+  assert.equal(normalizeSubtitleLanguageKey(input), "zh-ca", input);
+}
+assert.equal(normalizeTrackLanguageCode("zhc"), "zh-ca");
+assert.equal(subtitleLanguageLabel("zh-ca"), "Chinese (Cantonese)");
+assert.equal(detectTrackLanguageVariant({ language: "zh-ca" }), "zh-ca");
+for (const input of ["cnr", "CNR", "mne", "me", "Montenegrin", "Serbian (Montenegro)"]) {
+  assert.equal(normalizeSubtitleLanguageKey(input), "sr-me", input);
+}
+assert.equal(detectTrackLanguageVariant({ language: "sr-me" }), "sr-me");
 for (const [input, expected] of [
   ["spl", "es-419"],
   ["es-419", "es-419"],

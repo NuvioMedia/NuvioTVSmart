@@ -22,6 +22,19 @@ export function createPlayerScreenMethods72() {
   return {
     onKeyUp(event) {
       const keyCode = Number(event?.keyCode || 0);
+      if (this.chaptersPanelVisible || this.episodeOptionsDialogVisible) {
+        return;
+      }
+      if (this.episodePanelVisible && this.episodePanelPendingSelect && isSelectKeyCode(keyCode)) {
+        const wasLongPress = this.episodePanelLongPressTriggered === true;
+        this.clearEpisodePanelLongPressTimer();
+        this.episodePanelPendingSelect = false;
+        this.episodePanelLongPressTriggered = false;
+        if (!wasLongPress) {
+          void this.playEpisodeFromPanel();
+        }
+        return;
+      }
       if (keyCode === 37 || keyCode === 39) {
         // Match Android TV: preview while holding a direction, seek on release.
         if (

@@ -289,7 +289,14 @@ export function createPlayerScreenMethods66() {
           this.renderEpisodePanel();
           return true;
         }
-        this.playEpisodeFromPanel();
+        // Android opens the episode options overlay on a long OK press and plays on
+        // release; the actual play is committed in onKeyUp.
+        if (!event?.repeat) {
+          this.episodePanelPendingSelect = true;
+          this.scheduleEpisodePanelLongPress();
+        } else if (this.episodePanelPendingSelect) {
+          this.triggerEpisodePanelLongPress();
+        }
         return true;
       }
 

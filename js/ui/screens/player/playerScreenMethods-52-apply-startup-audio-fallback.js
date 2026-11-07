@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { normalizeHdrBrightness } from "../../../core/player/hdrSubtitleStyle.js";
 
 export function createPlayerScreenMethods52() {
   const {
@@ -504,6 +505,15 @@ export function createPlayerScreenMethods52() {
           label: t("subtitle_style_bottom_offset", {}, "Bottom Offset"),
           value: formatSubtitleVerticalOffset(style.verticalOffset)
         },
+        ...(style.hdrStyleEnabled === true && this.isCurrentPlaybackHdr?.() === true
+          ? [
+              {
+                id: "hdrBrightness",
+                label: t("sub_hdr_brightness", {}, "HDR Brightness"),
+                value: `${normalizeHdrBrightness(style.hdrBrightness)}%`
+              }
+            ]
+          : []),
         { id: "reset", label: t("subtitle_style_defaults", {}, "Reset Defaults"), value: "" }
       ].map((item) => {
         const disabled = availability[item.id] === false;

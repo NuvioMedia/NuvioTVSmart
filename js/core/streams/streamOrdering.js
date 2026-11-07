@@ -147,6 +147,56 @@ export function orderStreamsByAddonOrder(
 }
 
 /**
+ * Mirror Android's StreamProviderGrouping: keep add-on groups in their incoming order, group
+ * each add-on's streams by plugin provider, sort those providers alphabetically, then flatten.
+ */
+export function groupStreamsByProvider(streams = []) {
+  const addonGroups = new Map();
+  (Array.isArray(streams) ? streams : []).filter(Boolean).forEach((stream) => {
+    const addonName = normalizedName(stream?.addonName);
+    const providerName = normalizedName(stream?.pluginSourceName) || addonName;
+    let providers = addonGroups.get(addonName);
+    if (!providers) {
+      providers = new Map();
+      addonGroups.set(addonName, providers);
+    }
+    if (!providers.has(providerName)) {
+      providers.set(providerName, []);
+    }
+    providers.get(providerName).push(stream);
+  });
+  const compareProviderNames = (left, right) => {
+    const a = String(left).toLowerCase();
+    const b = String(right).toLowerCase();
+    return a < b ? -1 : a > b ? 1 : 0;
+  };
+  return [...addonGroups.values()].flatMap((providers) =>
+    [...providers.entries()]
+      .sort(([left], [right]) => compareProviderNames(left, right))
+      .flatMap(([, items]) => items)
+  );
+}
+
+/**
+ * Label to show above a stream card: the plugin provider, only when it is not the add-on name
+ * and only at the boundary where it changes.
+ */
+export function streamProviderHeader(stream = {}, previous = null) {
+  const providerName = normalizedName(stream?.pluginSourceName);
+  if (!providerName || providerName === normalizedName(stream?.addonName)) {
+    return "";
+  }
+  if (
+    previous &&
+    normalizedName(previous?.addonName) === normalizedName(stream?.addonName) &&
+    normalizedName(previous?.pluginSourceName) === providerName
+  ) {
+    return "";
+  }
+  return providerName;
+}
+
+/**
  * Mirror Android's filter-row source names: sources with returned groups come
  * first in canonical group order, followed by configured sources with no
  * returned streams yet.

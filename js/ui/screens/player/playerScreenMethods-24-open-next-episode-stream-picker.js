@@ -7,6 +7,7 @@ export function createPlayerScreenMethods24() {
     PlayerController,
     PlayerSettingsStore,
     Environment,
+    resolveHdrSubtitleStyle,
     Router,
     getSubtitleVerticalOffsetVh,
     getSubtitleVerticalResidualOffsetVh,
@@ -269,6 +270,7 @@ export function createPlayerScreenMethods24() {
         return;
       }
       const style = this.subtitleStyleSettings || {};
+      const hdrStyle = resolveHdrSubtitleStyle(style, this.isCurrentPlaybackHdr?.() === true);
       const assRenderer = this.assSubtitleRenderer;
       if (assRenderer?.sourceBody && assRenderer.stripSdh !== Boolean(style.stripSdh)) {
         const selectionToken = this.subtitleSelectionToken;
@@ -297,9 +299,9 @@ export function createPlayerScreenMethods24() {
       const verticalOffsetVh = getSubtitleVerticalOffsetVh(style.verticalOffset);
       const residualOffsetVh = getSubtitleVerticalResidualOffsetVh(style.verticalOffset);
       const subtitleTextOpacity = normalizeSubtitleTextOpacity(style.textOpacity);
-      const subtitleTextColor = String(style.textColor || "#FFFFFF");
+      const subtitleTextColor = hdrStyle.textColor;
       const subtitleColor = subtitleTextColorWithOpacity(subtitleTextColor, subtitleTextOpacity);
-      const outlineColor = String(style.outlineColor || "#000000");
+      const outlineColor = hdrStyle.outlineColor;
       const subtitleFontWeight = style.bold ? "800" : Environment.isWebOS() ? "400" : "500";
       const boldShadow = style.bold
         ? `0.45px 0 0 ${subtitleColor}, -0.45px 0 0 ${subtitleColor}, 0 0.45px 0 ${subtitleColor}, 0 -0.45px 0 ${subtitleColor}`
@@ -329,7 +331,7 @@ export function createPlayerScreenMethods24() {
       // rgba color below.
       uiRoot.style.setProperty("--player-subtitle-text-color", subtitleTextColor);
       uiRoot.style.setProperty("--player-subtitle-text-opacity", String(subtitleTextOpacity / 100));
-      uiRoot.style.setProperty("--player-subtitle-background", String(style.backgroundColor || "#00000000"));
+      uiRoot.style.setProperty("--player-subtitle-background", hdrStyle.backgroundColor);
       uiRoot.style.setProperty("--player-subtitle-outline-color", outlineColor);
       uiRoot.style.setProperty("--player-subtitle-font-size", `${subtitleFontSize}%`);
       uiRoot.style.setProperty("--player-html-subtitle-font-size", htmlSubtitleFontSize);
@@ -342,7 +344,7 @@ export function createPlayerScreenMethods24() {
       uiRoot.style.setProperty("--player-subtitle-shadow", htmlSubtitleShadow);
       uiRoot.style.setProperty("--player-subtitle-offset", `${verticalOffsetVh.toFixed(2)}vh`);
       video.style.setProperty("--player-subtitle-color", subtitleColor);
-      video.style.setProperty("--player-subtitle-background", String(style.backgroundColor || "#00000000"));
+      video.style.setProperty("--player-subtitle-background", hdrStyle.backgroundColor);
       video.style.setProperty("--player-subtitle-outline-color", outlineColor);
       video.style.setProperty("--player-subtitle-font-size", `${subtitleFontSize}%`);
       video.style.setProperty("--player-subtitle-font-weight", subtitleFontWeight);

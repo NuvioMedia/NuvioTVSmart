@@ -20,6 +20,8 @@ export function createPlayerScreenMethods33() {
         MediaRewind: "rewind",
         MediaTrackNext: "next",
         MediaTrackPrevious: "previous",
+        ChannelUp: "chapterNext",
+        ChannelDown: "chapterPrevious",
         Play: "play",
         Pause: "pause"
       };
@@ -44,7 +46,9 @@ export function createPlayerScreenMethods33() {
         417: "fastForward",
         412: "rewind",
         176: "next",
-        177: "previous"
+        177: "previous",
+        427: "chapterNext",
+        428: "chapterPrevious"
       };
 
       return codeMap[keyCode] || null;
@@ -73,6 +77,16 @@ export function createPlayerScreenMethods33() {
         return;
       }
 
+      if (action === "next" || action === "chapterNext") {
+        this.skipPlayerChapter?.(true);
+        return;
+      }
+
+      if (action === "previous" || action === "chapterPrevious") {
+        this.skipPlayerChapter?.(false);
+        return;
+      }
+
       if (action === "fastForward") {
         this.beginSeekPreview(1, Boolean(event?.repeat));
         return;
@@ -82,7 +96,7 @@ export function createPlayerScreenMethods33() {
         this.beginSeekPreview(-1, Boolean(event?.repeat));
       }
     },
-    quickSeekBy(deltaSeconds) {
+    quickSeekBy(deltaSeconds, { showOverlay = true } = {}) {
       if (!this.isSeekBarAvailable()) {
         return false;
       }
@@ -97,12 +111,37 @@ export function createPlayerScreenMethods33() {
       } else {
         target = Math.max(0, target);
       }
+      if (!showOverlay) {
+        // External/media-session commands must not raise the seek overlay.
+        this.seekPreviewSeconds = null;
+        this.seekPreviewDirection = 0;
+        this.seekOverlayVisible = false;
+        this.seekPlaybackSeconds(target);
+        return true;
+      }
       this.seekPreviewSeconds = target;
       this.seekPreviewDirection = deltaSeconds < 0 ? -1 : 1;
       this.seekOverlayVisible = !this.controlsVisible;
       this.renderSeekOverlay();
       this.scheduleSeekPreviewCommit();
       return true;
+    },
+    seekMediaSessionTo(details = {}) {
+      if (typeof this.isSeekBarAvailable === "function" && !this.isSeekBarAvailable()) {
+        return false;
+      }
+      const time = Number(details?.seekTime);
+      if (!Number.isFinite(time) || time < 0) {
+        return false;
+      }
+      const duration = Number(this.getPlaybackDurationSeconds() || 0);
+      const target = duration > 0 ? clamp(time, 0, duration) : time;
+      this.seekPreviewSeconds = null;
+      this.seekPreviewDirection = 0;
+      this.seekOverlayVisible = false;
+      const result = this.seekPlaybackSeconds(target);
+      this.renderSeekOverlay?.();
+      return result !== false;
     },
     bindMediaSessionHandlers() {
       const mediaSession = globalThis.navigator?.mediaSession;
@@ -126,11 +165,14 @@ export function createPlayerScreenMethods33() {
       safeBind("stop", () => this.applyMediaAction("stop"));
       safeBind("seekforward", (details) => {
         const offset = Number(details?.seekOffset || 30);
-        this.quickSeekBy(Number.isFinite(offset) ? offset : 30);
+        this.quickSeekBy(Number.isFinite(offset) ? offset : 30, { showOverlay: false });
       });
       safeBind("seekbackward", (details) => {
         const offset = Number(details?.seekOffset || 30);
-        this.quickSeekBy(Number.isFinite(offset) ? -offset : -30);
+        this.quickSeekBy(Number.isFinite(offset) ? -offset : -30, { showOverlay: false });
+      });
+      safeBind("seekto", (details) => {
+        this.seekMediaSessionTo(details);
       });
 
       this.updateMediaSessionMetadata();

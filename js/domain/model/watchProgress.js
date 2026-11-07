@@ -57,11 +57,9 @@ export function isWatchProgressCompleted(progress = {}) {
 }
 
 export function isWatchProgressInProgress(progress = {}) {
-  const fraction = getWatchProgressFraction(progress);
-  return (
-    fraction >= WATCH_PROGRESS_STARTED_THRESHOLD &&
-    fraction < watchProgressCompletedThreshold(progress)
-  );
+  // No start threshold, same as Android and the mobile app: any saved progress
+  // that is not completed counts as in progress and can be resumed.
+  return !isWatchProgressCompleted(progress) && hasWatchProgressStarted(progress);
 }
 
 export function hasWatchProgressStarted(progress = {}) {

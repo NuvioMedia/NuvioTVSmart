@@ -1,4 +1,5 @@
 import { saveReusableStreamLink } from "../../../core/streams/streamLinkReuse.js";
+import { streamProviderHeader } from "../../../core/streams/streamOrdering.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./streamScreen.js";
 
@@ -195,10 +196,10 @@ export function createStreamScreenMethods08() {
       index,
       streamBadgesEnabled = true,
       badgeSettings = null,
-      { streamKey = index, virtualized = false, virtualRowGap = null, virtualLast = false } = {}
+      { streamKey = index, virtualized = false, virtualRowGap = null, virtualLast = false, previousStream = null } = {}
     ) {
       const headline = getStreamHeadline(stream);
-      const pluginSourceName = String(stream.pluginSourceName || "").trim();
+      const providerHeader = streamProviderHeader(stream, previousStream);
       const partyShared = Boolean(stream.partyShared);
       const partySource = !partyShared && Boolean(this.isPartySourceStream?.(stream));
       const lazyBadges = isPerformanceConstrainedRuntime() && hasStreamBadges(stream, streamBadgesEnabled, badgeSettings);
@@ -244,6 +245,7 @@ export function createStreamScreenMethods08() {
           : "";
       return `
           <div class="stream-route-card-row${partyShared ? " is-party-shared" : ""}" data-stream-key="${escapeHtml(String(streamKey))}" data-stream-row="${index}"${virtualRowStyle}>
+            ${providerHeader ? `<div class="stream-route-provider-label" dir="${contentTextDirection(providerHeader)}">${escapeHtml(providerHeader)}</div>` : ""}
             ${partyShared ? `<div class="stream-route-party-label">${escapeHtml(t("party_shared_by", [stream.partyHostName || ""], "Shared by %1$s"))}</div>` : ""}
             <article class="stream-route-card stream-route-card-action focusable${partyShared ? " is-party-marked" : ""}${this.isCardActionFocused(index, "play") ? " focused" : ""}"
                      data-action="playStream"
@@ -254,7 +256,6 @@ export function createStreamScreenMethods08() {
                 ${topBadges || ""}
                 <div class="stream-route-card-heading" dir="${contentTextDirection(headline)}">${escapeHtml(headline)}</div>
                 ${partySource ? `<div class="stream-route-party-source" dir="auto">${escapeHtml(t("party_source", {}, "Party's source"))}</div>` : ""}
-                ${pluginSourceName && pluginSourceName !== stream.addonName ? `<div class="stream-route-plugin-source" dir="${contentTextDirection(pluginSourceName)}">${escapeHtml(pluginSourceName)}</div>` : ""}
                 ${descriptionLines.map((line, lineIndex) => `<div class="stream-route-card-line${lineIndex > 0 ? " secondary" : ""}" dir="${contentTextDirection(line)}">${escapeHtml(line).replace(/([._-])(?=\S)/g, "$1<wbr>")}</div>`).join("")}
                 ${bottomBadges || ""}
               </div>

@@ -150,12 +150,12 @@
   text-align: end;
 }
 
-.stream-route-plugin-source {
-  margin-top: 8px;
+.stream-route-provider-label {
+  padding: 0 0 8px 28px;
   color: var(--text-secondary);
   font-size: 20px;
   line-height: 28px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 1px;
 }
 

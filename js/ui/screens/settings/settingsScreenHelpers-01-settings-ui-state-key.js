@@ -263,6 +263,7 @@ export const FONT_OPTIONS = [
 export const APP_LANGUAGE_NATIVE_LABELS = {
   ar: "Arabic",
   bg: "Bulgarian",
+  bn: "Bangla",
   bs: "Bosnian",
   cs: "Cestina",
   da: "Dansk",
@@ -274,6 +275,7 @@ export const APP_LANGUAGE_NATIVE_LABELS = {
   fr: "Francais",
   he: "Hebrew",
   hi: "Hindi",
+  hr: "Hrvatski",
   hu: "Magyar",
   id: "Bahasa Indonesia",
   it: "Italiano",

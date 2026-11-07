@@ -10,6 +10,7 @@ import {
 } from "../local/traktSettingsStore.js";
 import { TraktAuthStore } from "../local/traktAuthStore.js";
 import { TraktAuthService } from "./traktAuthService.js";
+import { TraktEpisodeMappingService } from "./traktEpisodeMappingService.js";
 import { SimklAuthStore } from "../local/simklAuthStore.js";
 import { MdbListAccount } from "./mdbListAccount.js";
 import { MdbListTracking } from "./mdbListTracking.js";
@@ -34,7 +35,6 @@ import { getSyncBackoffRemainingMs } from "../../core/sync/syncBackoffPolicy.js"
 import { registerSessionTeardownHandler } from "../../core/auth/sessionLifecycle.js";
 import {
   WATCH_PROGRESS_COMPLETED_THRESHOLD,
-  WATCH_PROGRESS_STARTED_THRESHOLD,
   getWatchProgressFraction,
   hasWatchProgressStarted,
   isWatchProgressCompleted,
@@ -43,7 +43,6 @@ import {
 } from "../../domain/model/watchProgress.js";
 
 const CW_DISPLAY_SNAPSHOT_KEY = "homeContinueWatchingDisplaySnapshot";
-const CW_PROGRESS_START_THRESHOLD = WATCH_PROGRESS_STARTED_THRESHOLD;
 const CW_PROGRESS_END_THRESHOLD = WATCH_PROGRESS_COMPLETED_THRESHOLD;
 // These bound a hung request so the fire-and-forget Continue Watching
 // reconciliation can't leak a never-resolving promise. They are NOT on the
@@ -488,11 +487,8 @@ function toProgressItemFromTraktHistory(historyItem) {
 function toProgressItemFromPlayback(playbackItem) {
   if (!playbackItem || playbackItem.progressPercent == null) return null;
   const progressFraction = playbackItem.progressPercent / 100;
-  if (
-    progressFraction < CW_PROGRESS_START_THRESHOLD ||
-    progressFraction >= CW_PROGRESS_END_THRESHOLD
-  )
-    return null;
+  // Any non-zero progress is in progress now (Android/mobile rule).
+  if (progressFraction <= 0 || progressFraction >= CW_PROGRESS_END_THRESHOLD) return null;
   const isEpisode = playbackItem.type === "episode";
   const pausedAtMs = playbackItem.pausedAt ? new Date(playbackItem.pausedAt).getTime() : Date.now();
   return {
@@ -694,10 +690,22 @@ async function fetchTraktProgressSnapshot() {
     } else {
       watchedShowSeedItems = [];
       watchedShows.forEach((show) => watchedShowSeedItems.push(...toWatchedShowSeedItems(show)));
+      // Trakt numbers some anime differently from the add-on. Continue Watching and
+      // next-up must use the add-on's episode numbers.
+      watchedShowSeedItems =
+        await TraktEpisodeMappingService.remapItemsToAddon(watchedShowSeedItems);
     }
+    const [historyItems, playbackItems] = await Promise.all([
+      TraktEpisodeMappingService.remapItemsToAddon(
+        history.map(toProgressItemFromTraktHistory).filter(Boolean)
+      ),
+      TraktEpisodeMappingService.remapItemsToAddon(
+        playbackState.map(toProgressItemFromPlayback).filter(Boolean)
+      )
+    ]);
     const snapshot = {
-      historyItems: history.map(toProgressItemFromTraktHistory).filter(Boolean),
-      playbackItems: playbackState.map(toProgressItemFromPlayback).filter(Boolean),
+      historyItems,
+      playbackItems,
       watchedShowSeedItems
     };
     traktProgressSnapshotCache = { profileId, accountKey, fetchedAt: Date.now(), snapshot };

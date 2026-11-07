@@ -361,6 +361,11 @@ export const SUBTITLE_OUTLINE_COLOR_OPTIONS = [
   { id: "#FF5C5C", label: "Red" }
 ];
 
+export const SUBTITLE_HDR_BRIGHTNESS_OPTIONS = Array.from({ length: 11 }, (_, index) => {
+  const value = index * 10;
+  return { id: value, label: `${value}%` };
+});
+
 export function normalizeSubtitleStyleHex(value, fallback) {
   const hex = String(value || "")
     .trim()

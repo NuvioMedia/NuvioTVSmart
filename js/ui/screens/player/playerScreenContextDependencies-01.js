@@ -102,6 +102,10 @@ import { DebridStreamPresentation } from "../../../core/debrid/directDebridStrea
 
 import { TrackingScrobbleService } from "../../../data/repository/trackingScrobbleService.js";
 
+import { recordDistinctPluginPlay } from "../../../core/player/pluginProviderPlayRecorder.js";
+
+import { resolveHdrSubtitleStyle } from "../../../core/player/hdrSubtitleStyle.js";
+
 import { WebOsEngineFsResolver } from "../../../core/p2p/webosEngineFsResolver.js";
 
 import { TizenStreamingServerResolver } from "../../../core/p2p/tizenStreamingServerResolver.js";
@@ -401,6 +405,8 @@ export {
   DirectDebridResolver,
   DebridStreamPresentation,
   TrackingScrobbleService,
+  recordDistinctPluginPlay,
+  resolveHdrSubtitleStyle,
   WebOsEngineFsResolver,
   TizenStreamingServerResolver,
   TizenEngineFsService,

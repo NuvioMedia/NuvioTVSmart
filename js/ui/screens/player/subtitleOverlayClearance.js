@@ -1,5 +1,18 @@
 import { getSubtitleVerticalOffsetVh } from "../../../core/player/subtitleVerticalOffset.js";
 
+// The controls overlay fades out over 200ms (components-30.css). Subtitle clearance has to
+// follow the fade, not the logical visibility flag, or subtitles jump while controls are still
+// on screen.
+export const CONTROLS_HIDE_TRANSITION_MS = 200;
+
+export function keepControlsClearance({
+  controlsVisible = false,
+  hideUntil = 0,
+  now = Date.now()
+} = {}) {
+  return Boolean(controlsVisible) || Number(now) < Number(hideUntil || 0);
+}
+
 // HTML bottom cues and capable ASS renderers receive selective placement.
 // Authored positions and opaque native subtitle planes retain their coordinates.
 export function syncHtmlSubtitleClearance(screen) {
@@ -26,7 +39,10 @@ export function syncHtmlSubtitleClearance(screen) {
   };
   include(
     refs.controlsBottom,
-    screen.controlsVisible && !refs.controlsOverlay?.classList.contains("modal-blocked")
+    keepControlsClearance({
+      controlsVisible: screen.controlsVisible,
+      hideUntil: screen.controlsHideUntil
+    }) && !refs.controlsOverlay?.classList.contains("modal-blocked")
   );
   include(refs.skipIntro, true);
   include(refs.nextEpisodeCard, true);

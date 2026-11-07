@@ -321,21 +321,18 @@ export function createStartupSyncServiceMethods02() {
 
       const addonUrlsBefore = JSON.stringify(addonRepository.getInstalledAddonUrls());
       const homeSurfaceResults = await Promise.all([
-        // Android pulls plugins and addons as independent surfaces. Keep a
-        // plugin-service/readiness failure from suppressing the addon snapshot.
-        runSurface("plugins", () => PluginSyncService.pull(activeProfileId)),
         runSurface("collections", () => CollectionSyncService.pull(activeProfileId)),
         runSurface("home catalog settings", () => HomeCatalogSettingsSyncService.pull(activeProfileId)),
         runSurface("addons", () => LibrarySyncService.pull()),
         runSurface("saved library", () => SavedLibrarySyncService.pull(activeProfileId))
       ]);
 
-      // Only these three surfaces provide Home catalog rows. The profile
-      // settings surface is checked separately against the exact settings the
-      // current Home render consumed; plugin settings and the saved-library
-      // list do not form catalog or Continue Watching rows.
-      const collectionsResult = homeSurfaceResults[1];
-      const homeCatalogSettingsResult = homeSurfaceResults[2];
+      // Only these two surfaces provide Home catalog rows. The profile settings
+      // surface is checked separately against the exact settings the current Home
+      // render consumed; the saved-library list does not form catalog or Continue
+      // Watching rows.
+      const collectionsResult = homeSurfaceResults[0];
+      const homeCatalogSettingsResult = homeSurfaceResults[1];
       this.markHomeInputsChanged(surfaceChangedHomeInputs(collectionsResult) || CollectionSyncService.getLastPullFailed?.() !== false);
       this.markHomeInputsChanged(
         surfaceChangedHomeInputs(homeCatalogSettingsResult) || HomeCatalogSettingsSyncService.getLastPullFailed?.() !== false
@@ -360,6 +357,11 @@ export function createStartupSyncServiceMethods02() {
         return WatchProgressSyncService.getLastPullChangedHomeInputs?.() === false ? false : true;
       });
       this.markHomeInputsChanged(surfaceChangedHomeInputs(watchProgressResult));
+      if (this.isCurrentRun(generation) && !isSyncBackoffActive()) {
+        // Android pulls plugins after addons and watch progress: every repository
+        // download would otherwise delay the Home ready state.
+        await runSurface("plugins", () => PluginSyncService.pull(activeProfileId));
+      }
       return this.isCurrentRun(generation) && !isSyncBackoffActive();
     },
     async requestWatchStateSyncNow() {

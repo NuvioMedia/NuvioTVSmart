@@ -5,6 +5,7 @@ const PROFILE_MAP_KEYS = new Set([
   "streamPreferences",
   "trackPreferences",
   "trackPreferenceSyncPayload",
+  "pluginProviderPlays",
   "subtitleDelayPreferences",
   "continueWatchingPreferences",
   "libraryPreferences",

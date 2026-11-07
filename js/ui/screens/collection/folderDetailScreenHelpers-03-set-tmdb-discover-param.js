@@ -118,6 +118,7 @@ export function mapTmdbListItem(item = {}, mediaType = "movie") {
       releaseDate: item.release_date || item.first_air_date || "",
       rating: typeof item.vote_average === "number" ? item.vote_average : null,
       imdbRating: typeof item.vote_average === "number" ? item.vote_average : null,
+      voteCount: typeof item.vote_count === "number" ? item.vote_count : null,
       tmdbId: String(item.id)
     },
     type
@@ -157,6 +158,27 @@ export function buildEnrichedTmdbItem(baseItem = {}, enriched = {}, settings = {
   );
 }
 
+function sortTmdbSourceItems(items = [], sortBy = "") {
+  const list = Array.isArray(items) ? [...items] : [];
+  if (sortBy === "vote_average.desc") {
+    return list.sort(
+      (left, right) =>
+        Number(right.imdbRating ?? -1) - Number(left.imdbRating ?? -1) ||
+        String(right.releaseInfo || "").localeCompare(String(left.releaseInfo || ""))
+    );
+  }
+  if (sortBy === "vote_count.desc") {
+    return list.sort(
+      (left, right) =>
+        Number(right.voteCount ?? -1) - Number(left.voteCount ?? -1) || Number(right.imdbRating ?? -1) - Number(left.imdbRating ?? -1)
+    );
+  }
+  if (sortBy === "primary_release_date.desc" || sortBy === "first_air_date.desc") {
+    return list.sort((left, right) => String(right.releaseInfo || "").localeCompare(String(left.releaseInfo || "")));
+  }
+  return list;
+}
+
 export async function fetchTmdbSourceItems(source = {}, page = 1) {
   const apiKey = getTmdbApiKey();
   if (!apiKey) {
@@ -171,7 +193,10 @@ export async function fetchTmdbSourceItems(source = {}, page = 1) {
       language
     });
     return {
-      items: items.map((item) => normalizeItem(item, "movie")).filter((item) => item.id),
+      items: sortTmdbSourceItems(
+        items.map((item) => normalizeItem(item, "movie")).filter((item) => item.id),
+        source.sortBy
+      ),
       hasMore: false,
       page: 1
     };
@@ -180,9 +205,12 @@ export async function fetchTmdbSourceItems(source = {}, page = 1) {
     const url = `${TMDB_API_URL}/list/${encodeURIComponent(String(source.tmdbId || ""))}?api_key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(language)}&page=${encodeURIComponent(String(page))}`;
     const { payload } = await fetchJson(url);
     return {
-      items: (Array.isArray(payload?.items) ? payload.items : [])
-        .map((item) => mapTmdbListItem(item, String(item?.media_type || mediaType)))
-        .filter(Boolean),
+      items: sortTmdbSourceItems(
+        (Array.isArray(payload?.items) ? payload.items : [])
+          .map((item) => mapTmdbListItem(item, String(item?.media_type || mediaType)))
+          .filter(Boolean),
+        source.sortBy
+      ),
       hasMore: Number(payload?.page || page) < Number(payload?.total_pages || page),
       page: Number(payload?.page || page)
     };
@@ -199,7 +227,10 @@ export async function fetchTmdbSourceItems(source = {}, page = 1) {
           ? payload.cast
           : [];
     return {
-      items: sourceItems.map((item) => mapTmdbListItem(item, String(item?.media_type || mediaType))).filter(Boolean),
+      items: sortTmdbSourceItems(
+        sourceItems.map((item) => mapTmdbListItem(item, String(item?.media_type || mediaType))).filter(Boolean),
+        source.sortBy
+      ),
       hasMore: false,
       page: 1
     };

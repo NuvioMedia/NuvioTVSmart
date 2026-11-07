@@ -1,8 +1,9 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
+import { shouldContinueTrailerInBackgroundOnBack } from "../../../core/detail/trailerBackPolicy.js";
 
 export function createMetaDetailsScreenMethods19() {
-  const { t, escapeHtml, buildInlineYoutubePlayerUrl } = internals;
+  const { t, escapeHtml, buildInlineYoutubePlayerUrl, LayoutPreferences, PlayerSettingsStore } = internals;
 
   return {
     toggleActiveTrailerPlayback() {
@@ -94,6 +95,67 @@ export function createMetaDetailsScreenMethods19() {
         return;
       }
       this.toggleActiveTrailerPlayback();
+    },
+    handOffTrailerToBackground() {
+      if (!this.isTrailerPlaying || !this.trailerSource || this.trailerPlaybackMode !== "manual") {
+        return false;
+      }
+      const settings = PlayerSettingsStore.get() || {};
+      if (
+        !shouldContinueTrailerInBackgroundOnBack({
+          isTrailerPlaying: this.isTrailerPlaying,
+          autoplayEnabled: settings.trailerAutoplay !== false,
+          playInBackground: LayoutPreferences.get().trailerPlayInBackground === true
+        })
+      ) {
+        return false;
+      }
+      // Keep the same media element: switching mode must not rebuild the trailer or
+      // it would restart from the beginning.
+      this.trailerPlaybackMode = "autoplay";
+      this.trailerHasAutoplayed = true;
+      if (this.trailerAutoplayTimer) {
+        clearTimeout(this.trailerAutoplayTimer);
+        this.trailerAutoplayTimer = null;
+      }
+      this.stopTrailerControlsTimer();
+      this.stopTrailerProgressTimer();
+      const shell = this.container?.querySelector(".series-detail-shell");
+      const layer = this.container?.querySelector(".detail-trailer-layer");
+      if (shell) {
+        shell.classList.remove("detail-trailer-manual");
+        shell.classList.add("detail-trailer-autoplay");
+      }
+      layer?.querySelector?.(".detail-trailer-controls-overlay")?.remove?.();
+      if (this.trailerUiRefs) {
+        this.trailerUiRefs.overlay = null;
+      }
+      this.trailerControlsVisible = false;
+      if (this.trailerSource.kind !== "video") {
+        // The proxy keeps playing; only the full-screen controls go away.
+        if (this.trailerProxyState?.paused) {
+          this.postTrailerProxyCommand("play");
+        }
+      } else {
+        const video = this.trailerUiRefs?.video;
+        if (video?.paused) {
+          const playAttempt = video.play?.();
+          if (playAttempt?.catch) {
+            playAttempt.catch(() => {});
+          }
+        }
+      }
+      const restore = this.trailerFocusRestore || {
+        selector: '.series-detail-actions [data-action="playDefault"]'
+      };
+      this.trailerFocusRestore = null;
+      const focus = () => this.focusDetailDescriptor(restore);
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(focus);
+      } else {
+        setTimeout(focus, 0);
+      }
+      return true;
     },
     syncTrailerDom() {
       const shell = this.container?.querySelector(".series-detail-shell");

@@ -92,7 +92,10 @@ export function createTmdbMetadataServiceMethods02() {
           poster: toImageUrl(item?.poster_path || null, "poster"),
           background: toImageUrl(item?.backdrop_path || null, "backdrop"),
           landscapePoster: toImageUrl(item?.backdrop_path || null, "backdrop"),
-          releaseInfo: String(item?.release_date || "").slice(0, 4) || ""
+          releaseInfo: String(item?.release_date || "").slice(0, 4) || "",
+          rating: typeof item?.vote_average === "number" ? item.vote_average : null,
+          imdbRating: typeof item?.vote_average === "number" ? item.vote_average : null,
+          voteCount: typeof item?.vote_count === "number" ? item.vote_count : null
         }))
         .filter((item) => item.id);
     },

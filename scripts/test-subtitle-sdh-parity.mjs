@@ -6,6 +6,7 @@ import {
   isSdhSpeakerLabel
 } from "../js/core/player/subtitleSdhFilter.js";
 import { resolveSubtitleStyleControlAvailability as availability } from "../js/core/player/subtitlePresentationCapabilities.js";
+import { resolveHdrSubtitleStyle } from "../js/core/player/hdrSubtitleStyle.js";
 import { createAssRenderer } from "../js/core/player/assRenderer.js";
 import { convertAssDialogueToVttCues } from "../js/core/player/assSubtitle.js";
 
@@ -346,6 +347,7 @@ const properties = { setProperty() {}, removeProperty() {} };
 const presentation = await methods("24", "createPlayerScreenMethods24", {
   PlayerController: { video: { style: properties } },
   Environment: { isWebOS: () => false, isTizen: () => false },
+  resolveHdrSubtitleStyle,
   getSubtitleVerticalOffsetVh: () => 0,
   getSubtitleVerticalResidualOffsetVh: () => 0,
   normalizeSubtitleTextOpacity: (value) => value ?? 100,

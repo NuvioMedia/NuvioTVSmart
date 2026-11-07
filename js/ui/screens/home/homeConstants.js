@@ -14,6 +14,8 @@ export const CW_RENDER_BATCH_ITEMS_CONSTRAINED = 18;
 export const CW_RENDER_BATCH_ITEMS_LEGACY_TV = 12;
 export const CW_RENDER_LOAD_AHEAD_ITEMS = 4;
 export const CW_DAYS_CAP = 60;
+// Legacy constant: Android and the mobile app no longer use a start threshold
+// (any saved, non-completed progress counts). Kept only for the existing re-exports.
 export const CW_PROGRESS_START_THRESHOLD = WATCH_PROGRESS_STARTED_THRESHOLD;
 export const CW_ENTER_DELAY_MS = 320;
 export const CW_HOLD_DELAY_MS = 650;

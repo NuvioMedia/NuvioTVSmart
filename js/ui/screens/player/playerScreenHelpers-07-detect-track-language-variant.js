@@ -238,7 +238,12 @@ export function detectTrackLanguageVariant(track = {}, language = getTrackLangua
   if (!normalizedLanguage) {
     return "";
   }
-  if (normalizedLanguage === "pt-br" || normalizedLanguage === "es-419") {
+  if (
+    normalizedLanguage === "pt-br" ||
+    normalizedLanguage === "es-419" ||
+    normalizedLanguage === "zh-ca" ||
+    normalizedLanguage === "sr-me"
+  ) {
     return normalizedLanguage;
   }
   const baseLanguage = normalizedLanguage.split("-")[0];

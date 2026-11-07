@@ -298,6 +298,7 @@ export function createPlayerScreenMethods62() {
     openSourcesPanel({ forceReload = false } = {}) {
       streamRepository.setLocalPluginSearchPaused(false);
       this.cancelSeekPreview({ commit: false });
+      this.closeChaptersPanel?.({ restoreFocus: false });
       this.sourcesPanelVisible = true;
       this.sourcesLastNavigationRepeatAt = 0;
       this.subtitleDialogVisible = false;

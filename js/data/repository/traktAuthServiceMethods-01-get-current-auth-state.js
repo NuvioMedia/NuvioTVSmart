@@ -341,6 +341,22 @@ export function createTraktAuthServiceMethods01() {
       if (!response.ok || !payload) return null;
 
       return normalizeWatchedProgress(payload);
+    },
+    /**
+     * Every episode Trakt knows for a show, used to translate between the add-on's and
+     * Trakt's numbering. Android requests the same `extended=episodes` seasons payload.
+     */
+    async fetchShowSeasons(showTraktId) {
+      const id = String(showTraktId || "").trim();
+      if (!id) return null;
+      const token = await this.getValidAccessToken();
+      if (!token) return null;
+
+      const { response, payload } = await requestJson(`/shows/${encodeURIComponent(id)}/seasons?extended=episodes`, {
+        authorization: `Bearer ${token}`
+      });
+      if (!response.ok || !Array.isArray(payload)) return null;
+      return payload;
     }
   };
 }

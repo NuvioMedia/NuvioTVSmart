@@ -485,11 +485,15 @@ const frameSource = await readFile(
   "utf8"
 );
 let frameStarts = 0;
+let framePluginPlays = 0;
 const frameMethods = new Function(
   "internals",
   frameSource.replace(/^import .*;\n/gm, "").replace("export function", "function") +
     "; return createPlayerScreenMethods30();"
-)({ TrackingScrobbleService: { isEnabled: () => true, start: () => frameStarts++ } });
+)({
+  TrackingScrobbleService: { isEnabled: () => true, start: () => frameStarts++ },
+  recordDistinctPluginPlay: () => framePluginPlays++
+});
 const frameScreen = {
   hasPresentedPlaybackFrame: false,
   currentEngineFsStream: {},
@@ -508,6 +512,7 @@ frameScreen.hasStartupPlaybackAdvanced = () => true;
 assert.equal(frameMethods.markPlaybackPresentedAfterAdvance.call(frameScreen, 1), true);
 assert.equal(frameMethods.markPlaybackPresentedAfterAdvance.call(frameScreen, 2), true);
 assert.equal(frameStarts, 1);
+assert.equal(framePluginPlays, 1);
 
 // Single pending start, immediate pause/stop, no duplicate stop, and captured-profile timers.
 const { MdbListScrobbleService: scrobbler } =

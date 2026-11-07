@@ -1,4 +1,5 @@
 import { PluginStore, getEffectivePluginProfileId } from "../../data/local/pluginStore.js";
+import { PluginProviderPlaysStore } from "../../data/local/pluginProviderPlaysStore.js";
 import { queueProfileSettingsCloudSync } from "../../data/local/profileScopedStore.js";
 import { PluginCodeStore } from "../../data/local/pluginCodeStore.js";
 import { ProfileManager } from "../profile/profileManager.js";
@@ -7,6 +8,8 @@ import { PluginExecutionFlight } from "./pluginExecutionFlight.js";
 import { PluginServiceClient } from "../../platform/pluginServiceClient.js";
 import { Platform } from "../../platform/index.js";
 import { getPluginCapabilitySnapshot } from "./pluginPolicy.js";
+import { pluginBingeGroup } from "../streams/pluginBingeGroup.js";
+import { planPluginRun, pluginProviderPlayStats } from "./pluginProviderPriority.js";
 import {
   canonicalizePluginUrl,
   androidJsScraperId,
@@ -315,6 +318,13 @@ export function resultToStream(result = {}, scraper = {}) {
   const name = `${displayNameBase}${String(displayNameBase).includes(qualityLabel) ? "" : ` - ${qualityLabel}`}`;
   const displayTitle = baseTitle || baseName || scraper.name;
   const resultHeaders = normalizePluginResultHeaders(result.headers);
+  const bingeGroup = pluginBingeGroup({
+    scraperId: scraper.id,
+    name: baseName,
+    title: baseTitle,
+    language: androidResultString(result.language),
+    quality
+  });
   return {
     title: displayTitle,
     name,
@@ -324,15 +334,16 @@ export function resultToStream(result = {}, scraper = {}) {
     qualityValue: parseQualityValue(quality),
     infoHash: androidResultString(result.infoHash),
     addonName: scraper.name,
+    pluginSourceName: scraper.name,
     addonLogo: null,
-    behaviorHints: resultHeaders
-      ? {
-          notWebReady: null,
-          bingeGroup: null,
-          countryWhitelist: null,
-          proxyHeaders: { request: resultHeaders, response: null }
-        }
-      : null,
+    behaviorHints: {
+      notWebReady: null,
+      // Android stamps every plugin stream so the next episode can continue the
+      // same provider variant even when the episode title changes.
+      bingeGroup: bingeGroup || null,
+      countryWhitelist: null,
+      ...(resultHeaders ? { proxyHeaders: { request: resultHeaders, response: null } } : {})
+    },
     subtitles: normalizePluginSubtitles(result.subtitles)
   };
 }
@@ -1992,7 +2003,9 @@ export const PluginManager = {
     season = null,
     episode = null,
     signal = null,
-    onGroup = null
+    onGroup = null,
+    priorityBingeGroup = null,
+    preferredPluginOnly = false
   } = {}) {
     if (!this.pluginsEnabled || signal?.aborted) return [];
     const capabilities = getPluginCapabilitySnapshot();
@@ -2044,19 +2057,47 @@ export const PluginManager = {
         });
       }
     };
-    await Promise.all(
-      eligible.map(async (scraper, index) => {
-        const repository = state.repositories.find((entry) => entry.id === scraper.repositoryId);
-        await delayWithSignal(index * 60, signal);
-        if (signal?.aborted || !repository) return;
-        const streams = await executeOne(scraper, repository, args, quota, signal);
-        const group = { scraper, repository, streams };
-        // Android's Flow emits groups in completion order. Keep that order for
-        // callers that consume the final list without the progressive callback.
-        completedGroups.push(group);
-        emitGroup(group);
-      })
-    );
+    const stats = pluginProviderPlayStats(PluginProviderPlaysStore.get());
+    const runPlan = planPluginRun(eligible, {
+      id: (scraper) => scraper.id,
+      priorityBingeGroup,
+      stats,
+      preferredOnly: preferredPluginOnly
+    });
+    const runScrapers = async (scrapers) => {
+      await Promise.all(
+        scrapers.map(async (scraper, index) => {
+          const repository = state.repositories.find((entry) => entry.id === scraper.repositoryId);
+          await delayWithSignal(index * 60, signal);
+          if (signal?.aborted || !repository) return;
+          const streams = await executeOne(scraper, repository, args, quota, signal);
+          const group = { scraper, repository, streams };
+          // Android's Flow emits groups in completion order. Keep that order for
+          // callers that consume the final list without the progressive callback.
+          completedGroups.push(group);
+          emitGroup(group);
+        })
+      );
+    };
+    let preferredReturnedStreams = false;
+    if (runPlan.preferred) {
+      const repository = state.repositories.find(
+        (entry) => entry.id === runPlan.preferred.repositoryId
+      );
+      if (repository) {
+        const streams = await executeOne(runPlan.preferred, repository, args, quota, signal);
+        if (signal?.aborted) return [];
+        if (Array.isArray(streams) && streams.length) {
+          const group = { scraper: runPlan.preferred, repository, streams };
+          completedGroups.push(group);
+          emitGroup(group);
+          preferredReturnedStreams = true;
+        }
+      }
+    }
+    if (!preferredReturnedStreams) {
+      await runScrapers(runPlan.others);
+    }
     if (signal?.aborted) return [];
 
     // Android's streaming path emits one complete result list per scraper and

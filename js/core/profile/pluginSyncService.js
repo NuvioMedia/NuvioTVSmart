@@ -22,6 +22,9 @@ const SYNC_OVERVIEW_RPC = "get_sync_overview";
 let lastPullStatus = "idle";
 let lastPullError = null;
 const pullInFlightByProfile = new Map();
+// A request that arrives while a pull is running asks for one more pull at the end,
+// like Android's pending rerun. It never queues more than one.
+const pendingPullReruns = new Set();
 const syncOperationByProfile = new Map();
 let pluginServiceReadyPromise = null;
 
@@ -482,7 +485,8 @@ export const PluginSyncService = {
       ...diagnosticState(PluginStore.get(targetProfileId))
     });
     if (activePull) {
-      logPluginSyncDiagnostic("pull joined existing request", { pullKey });
+      pendingPullReruns.add(pullKey);
+      logPluginSyncDiagnostic("pull joined existing request", { pullKey, rerunQueued: true });
       return activePull;
     }
 
@@ -705,6 +709,10 @@ export const PluginSyncService = {
     } finally {
       if (pullInFlightByProfile.get(pullKey) === requestPromise) {
         pullInFlightByProfile.delete(pullKey);
+      }
+      if (pendingPullReruns.delete(pullKey)) {
+        logPluginSyncDiagnostic("pull rerun queued", { pullKey });
+        void PluginSyncService.pull(requestedId);
       }
     }
   },

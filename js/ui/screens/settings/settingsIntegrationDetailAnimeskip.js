@@ -2,7 +2,7 @@
 import * as internals from "./settingsScreenContext.js";
 
 export function renderAnimeskipIntegrationDetail(model) {
-  const { AnimeSkipSettingsStore, t, maskValue, plannedSubtitle } = internals;
+  const { AnimeSkipSettingsStore, t, maskValue } = internals;
 
   this.actionMap.set("integration:animeskip:enabled", () => {
     AnimeSkipSettingsStore.set({ enabled: !AnimeSkipSettingsStore.get().enabled });
@@ -32,17 +32,15 @@ export function renderAnimeskipIntegrationDetail(model) {
           ${this.renderToggleRow({
             focusKey: "integration:animeskip:enabled",
             title: t("settings.integration.animeskip.enable.title"),
-            subtitle: plannedSubtitle(t("settings.integration.animeskip.enable.subtitle")),
-            checked: Boolean(model.animeSkip.enabled),
-            planned: true
+            subtitle: t("settings.integration.animeskip.enable.subtitle"),
+            checked: Boolean(model.animeSkip.enabled)
           })}
           ${this.renderActionRow({
             focusKey: "integration:animeskip:id",
             title: t("settings.integration.animeskip.clientId.title"),
-            subtitle: plannedSubtitle(t("settings.integration.animeskip.clientId.subtitle")),
+            subtitle: t("settings.integration.animeskip.clientId.subtitle"),
             value: maskValue(model.animeSkip.clientId, t("common.notSet")),
-            disabled: !model.animeSkip.enabled,
-            planned: true
+            disabled: !model.animeSkip.enabled
           })}
         </div>
       </div>

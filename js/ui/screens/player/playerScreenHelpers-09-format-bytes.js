@@ -415,6 +415,23 @@ export function subtitleLanguageLabel(languageKey) {
   }
   const locale = typeof I18n.getLocale === "function" ? I18n.getLocale() : undefined;
   const normalizedCode = normalizeTrackLanguageCode(languageKey);
+  // Cantonese is `zh-ca` on OpenSubtitles; Intl would read "CA" as Canada.
+  if (normalizedCode === "zh-ca") {
+    return `${t("common.chinese", {}, "Chinese")} (${t("common.cantonese", {}, "Cantonese")})`;
+  }
+  if (normalizedCode === "sr-me") {
+    try {
+      if (typeof Intl !== "undefined" && typeof Intl.DisplayNames === "function") {
+        const name = cleanDisplayText(new Intl.DisplayNames([locale], { type: "language" }).of("sr-ME"));
+        if (name) {
+          return `${name.charAt(0).toLocaleUpperCase(locale)}${name.slice(1)}`;
+        }
+      }
+    } catch (_) {
+      // Fall through to the stable English label.
+    }
+    return "Serbian (Montenegro)";
+  }
   if (normalizedCode === "pt-br" || normalizedCode === "es-419") {
     try {
       if (typeof Intl !== "undefined" && typeof Intl.DisplayNames === "function") {

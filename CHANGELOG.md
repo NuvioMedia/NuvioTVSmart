@@ -1,5 +1,16 @@
 ## Unreleased
 
+## 1.3.8
+
+### Improvements & Fixes
+
+- Aligned legacy webOS and Tizen stream layouts with Android TV (#1280)
+- Restored the Android TV stream panel size on Tizen (#1277)
+- Hid the unusable compatibility bypass and kept focus visible on older Tizen TVs (#1267)
+- Matched the canonical media server sync envelope and cloud server import (#1274)
+- Aligned Modern sidebar focus states and removed the extra icon circle with Android TV (#1268)
+- Restored Continue Watching artwork blur on Tizen (#1269)
+
 ## 1.3.7
 
 ### Improvements & Fixes

@@ -241,6 +241,7 @@ export function createPlayerScreenMethods65() {
         this.hideEpisodePanel();
         return;
       }
+      this.closeChaptersPanel?.({ restoreFocus: false });
       this.episodePanelVisible = true;
       this.episodePanelMode = "episodes";
       this.episodePanelStreamsError = "";

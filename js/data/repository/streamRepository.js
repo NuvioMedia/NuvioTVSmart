@@ -193,6 +193,9 @@ class StreamRepository {
       videoId: String(videoId || ""),
       season: options?.season ?? null,
       episode: options?.episode ?? null,
+      // The player's next-episode search runs plugins only, so it must not share a
+      // cached result with the full search used by the stream screen.
+      searchMode: options?.preferredPluginOnly === true ? "pluginOnly" : "",
       sourceConfiguration: buildStreamSourceConfiguration(installedAddons)
     };
     return this.streamSearchSessions.observe(requestKey, {
@@ -306,7 +309,8 @@ class StreamRepository {
       return presentedGroup;
     };
 
-    const addonTasks = installedAddons.map(async (addon) => {
+    const addonSourceAddons = options.preferredPluginOnly === true ? [] : installedAddons;
+    const addonTasks = addonSourceAddons.map(async (addon) => {
       try {
         // Match Android's stream capability filter: an addon is eligible only
         // when its stream resource supports the requested type and ID prefix.
@@ -613,6 +617,8 @@ class StreamRepository {
       season: pluginEpisode.season,
       episode: pluginEpisode.episode,
       signal: options?.signal || null,
+      priorityBingeGroup: options?.priorityBingeGroup || null,
+      preferredPluginOnly: options?.preferredPluginOnly === true,
       onGroup: (result) => options?.onPluginGroup?.(mapPluginStreamGroup(result))
     });
 

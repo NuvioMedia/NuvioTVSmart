@@ -50,6 +50,12 @@ export function createPlayerScreenMethods73() {
         this.postPlayPendingSelectAction = "";
         this.clearPostPlayFocusTimer();
         this.clearPostPlayLongPressTimer();
+        this.clearEpisodePanelLongPressTimer?.();
+        this.episodePanelPendingSelect = false;
+        this.episodePanelLongPressTriggered = false;
+        this.closeEpisodeOptionsDialog?.();
+        this.chaptersPanelVisible = false;
+        this.closeChaptersPanel?.({ restoreFocus: false });
         this.clearPostPlaySynopsisScrollAnimation();
         this.postPlayLongPressTriggered = false;
         this.cancelPostPlayPlayerSurfaceAnimation();

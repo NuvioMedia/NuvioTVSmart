@@ -46,6 +46,8 @@ import { isSyncBackoffActive } from "../sync/syncBackoffPolicy.js";
 
 import { normalizeSubtitleVerticalOffset } from "../player/subtitleVerticalOffset.js";
 
+import { normalizeHdrBrightness } from "../player/hdrSubtitleStyle.js";
+
 import { androidColorIntToSubtitleTextOpacity, normalizeSubtitleTextOpacity } from "../player/subtitleTextOpacity.js";
 
 import { isFastHorizontalNavigationEnabled } from "../../platform/sharedKeys.js";
@@ -108,6 +110,10 @@ export const player_settings = {
       subtitle_background_color: cssColorToAndroidColorInt(settings.subtitleStyle?.backgroundColor),
       subtitle_outline_enabled: settings.subtitleStyle?.outlineEnabled !== false,
       subtitle_outline_color: hexToAndroidColorInt(settings.subtitleStyle?.outlineColor, "#000000"),
+      subtitle_hdr_style_enabled: settings.subtitleStyle?.hdrStyleEnabled === true,
+      subtitle_hdr_text_color: hexToAndroidColorInt(settings.subtitleStyle?.hdrTextColor, "#ffffff"),
+      subtitle_hdr_brightness: normalizeHdrBrightness(settings.subtitleStyle?.hdrBrightness),
+      subtitle_hdr_dim_player_controls: settings.subtitleStyle?.hdrDimPlayerControls === true,
       loading_overlay_enabled: settings.loadingOverlayEnabled !== false,
       show_player_loading_status: settings.showPlayerLoadingStatus !== false,
       pause_overlay_enabled: settings.pauseOverlayEnabled !== false,
@@ -161,6 +167,8 @@ export const player_settings = {
       "subtitle_bold",
       "subtitle_use_forced_subtitles",
       "subtitle_outline_enabled",
+      "subtitle_hdr_style_enabled",
+      "subtitle_hdr_dim_player_controls",
       "skip_intro_enabled",
       "stream_auto_play_next_episode_enabled",
       "stream_auto_play_prefer_bingegroup_next_episode",
@@ -178,7 +186,14 @@ export const player_settings = {
         projected[key] = Boolean(raw[key]);
       }
     });
-    ["subtitle_size", "subtitle_text_color", "subtitle_background_color", "subtitle_outline_color"].forEach((key) => {
+    [
+      "subtitle_size",
+      "subtitle_text_color",
+      "subtitle_background_color",
+      "subtitle_outline_color",
+      "subtitle_hdr_text_color",
+      "subtitle_hdr_brightness"
+    ].forEach((key) => {
       if (numberOrNull(raw[key]) != null) {
         projected[key] = Math.trunc(Number(raw[key]));
       }
@@ -293,6 +308,18 @@ export const player_settings = {
     }
     if (numberOrNull(raw.subtitle_outline_color) != null) {
       subtitleStyle.outlineColor = androidColorIntToHex(raw.subtitle_outline_color, "#000000");
+    }
+    if (booleanOrNull(raw.subtitle_hdr_style_enabled) != null) {
+      subtitleStyle.hdrStyleEnabled = Boolean(raw.subtitle_hdr_style_enabled);
+    }
+    if (numberOrNull(raw.subtitle_hdr_text_color) != null) {
+      subtitleStyle.hdrTextColor = androidColorIntToHex(raw.subtitle_hdr_text_color, "#ffffff");
+    }
+    if (numberOrNull(raw.subtitle_hdr_brightness) != null) {
+      subtitleStyle.hdrBrightness = normalizeHdrBrightness(raw.subtitle_hdr_brightness);
+    }
+    if (booleanOrNull(raw.subtitle_hdr_dim_player_controls) != null) {
+      subtitleStyle.hdrDimPlayerControls = Boolean(raw.subtitle_hdr_dim_player_controls);
     }
     if (booleanOrNull(raw.skip_intro_enabled) != null) {
       partial.skipIntroEnabled = Boolean(raw.skip_intro_enabled);

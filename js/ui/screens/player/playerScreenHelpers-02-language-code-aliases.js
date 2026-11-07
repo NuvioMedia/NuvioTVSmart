@@ -306,6 +306,9 @@ export const LANGUAGE_CODE_ALIASES = {
   spl: "es-419",
   sqi: "sq",
   srp: "sr",
+  cnr: "sr-me",
+  mne: "sr-me",
+  me: "sr-me",
   swa: "sw",
   swe: "sv",
   tam: "ta",
@@ -320,6 +323,9 @@ export const LANGUAGE_CODE_ALIASES = {
   vie: "vi",
   wel: "cy",
   zho: "zh",
+  zhc: "zh-ca",
+  zc: "zh-ca",
+  yue: "zh-ca",
   zul: "zu"
 };
 
@@ -331,6 +337,8 @@ export const LANGUAGE_NAME_ALIASES = {
   indonesian: "id",
   "bahasa malaysia": "ms",
   "bahasa melayu": "ms",
+  cantonese: "zh-ca",
+  "chinese (cantonese)": "zh-ca",
   chinese: "zh",
   cinese: "zh",
   deutsch: "de",
@@ -347,6 +355,9 @@ export const LANGUAGE_NAME_ALIASES = {
   hungarian: "hu",
   italiano: "it",
   italian: "it",
+  montenegrin: "sr-me",
+  "serbian (montenegro)": "sr-me",
+  "serbian montenegro": "sr-me",
   giapponese: "ja",
   japanese: "ja",
   korean: "ko",

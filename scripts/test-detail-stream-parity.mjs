@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import { build } from "esbuild";
+import { streamProviderHeader } from "../js/core/streams/streamOrdering.js";
 
 const files = [
   [
@@ -113,6 +114,7 @@ const fixtures = {
   StreamBadgeSettingsStore: { snapshot: () => ({}) },
   isPerformanceConstrainedRuntime: () => false,
   contentTextDirection: () => "ltr",
+  streamProviderHeader,
   ScreenUtils: { indexFocusables() {} }
 };
 const context = vm.createContext({ fixtures, console });

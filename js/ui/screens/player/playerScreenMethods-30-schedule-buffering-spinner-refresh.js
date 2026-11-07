@@ -5,6 +5,7 @@ export function createPlayerScreenMethods30() {
   const {
     PlayerController,
     TrackingScrobbleService,
+    recordDistinctPluginPlay,
     canReleasePlayingNativeStartupAudioGate,
     Environment,
     STARTUP_PLAYBACK_ADVANCE_EPSILON_SECONDS,
@@ -119,6 +120,13 @@ export function createPlayerScreenMethods30() {
         return false;
       }
       this.hasPresentedPlaybackFrame = true;
+      const currentStream = this.getCurrentStreamCandidate?.() || null;
+      // Only a confirmed first frame counts as a plugin provider play, with the
+      // group+identity dedupe Android uses.
+      recordDistinctPluginPlay(
+        currentStream?.behaviorHints?.bingeGroup || currentStream?.raw?.behaviorHints?.bingeGroup || "",
+        currentStream?.infoHash || currentStream?.clientResolve?.infoHash || currentStream?.raw?.infoHash || this.activePlaybackUrl || ""
+      );
       // engineFs defers the playing handler until its first verified frame.
       if (this.currentEngineFsStream && TrackingScrobbleService.isEnabled()) TrackingScrobbleService.start(this.buildScrobbleContext());
       this.beginPlaybackEngineValidation();

@@ -172,7 +172,7 @@ export function matroskaSeekHeadPositions(bytes) {
   }
 }
 
-function requestHeaders(headers = {}) {
+export function requestHeaders(headers = {}) {
   const result = {};
   Object.entries(headers || {}).forEach(([name, value]) => {
     if (
@@ -186,7 +186,7 @@ function requestHeaders(headers = {}) {
   return result;
 }
 
-async function fetchRange(url, headers, start, length, signal) {
+export async function fetchRange(url, headers, start, length, signal) {
   let reader;
   try {
     const response = await fetch(url, {

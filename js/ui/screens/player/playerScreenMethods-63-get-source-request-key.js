@@ -17,7 +17,8 @@ export function createPlayerScreenMethods63() {
     renderPlayerSourceBadges,
     resolvePlayerSourceBadgePlacement,
     flattenStreamGroups,
-    mergeStreamItems
+    mergeStreamItems,
+    streamMergeKey
   } = internals;
 
   return {
@@ -181,6 +182,14 @@ export function createPlayerScreenMethods63() {
       const badgeSettings = StreamBadgeSettingsStore.snapshot();
       const showAddonLogo = badgeSettings.showAddonLogo === true;
       const badgePlacement = resolvePlayerSourceBadgePlacement(badgeSettings);
+      // Keep the focused source by key: a chunk that inserts a source at the top must not
+      // move the selection to another stream.
+      if (this.sourcesFocus?.zone === "list" && this.sourcesFocus.key) {
+        const keyedIndex = filtered.findIndex((stream) => streamMergeKey(stream) === this.sourcesFocus.key);
+        if (keyedIndex >= 0) {
+          this.sourcesFocus = { ...this.sourcesFocus, index: keyedIndex };
+        }
+      }
       this.ensureSourcesFocus(filters, filtered);
 
       const nextMarkup = `
@@ -215,10 +224,14 @@ export function createPlayerScreenMethods63() {
           </div>
 
           <div class="player-sources-list">
-            ${this.sourcesLoading ? `<div class="player-sources-empty">${escapeHtml(t("stream_finding_source", {}, "Finding stream source"))}</div>` : ""}
+            ${
+              this.sourcesLoading && !filtered.length
+                ? `<div class="player-sources-empty">${escapeHtml(t("stream_finding_source", {}, "Finding stream source"))}</div>`
+                : ""
+            }
             ${this.sourcesError ? `<div class="player-sources-empty">${escapeHtml(this.sourcesError)}</div>` : ""}
             ${
-              !this.sourcesLoading && !filtered.length
+              !this.sourcesLoading && !filtered.length && !this.sourcesError
                 ? `<div class="player-sources-empty">${escapeHtml(t("sources_no_streams", {}, "No streams found"))}</div>`
                 : filtered
                     .map((stream, index) => {
@@ -262,6 +275,11 @@ export function createPlayerScreenMethods63() {
                     })
                     .join("")
             }
+            ${
+              this.sourcesLoading && filtered.length
+                ? `<div class="player-sources-empty player-sources-loading-more">${escapeHtml(t("stream_finding_source", {}, "Finding stream source"))}</div>`
+                : ""
+            }
           </div>
         `;
 
@@ -288,6 +306,12 @@ export function createPlayerScreenMethods63() {
 
       const zone = String(this.sourcesFocus?.zone || "filter");
       const index = Number(this.sourcesFocus?.index || 0);
+      if (zone === "list") {
+        const focusedStream = this.getFilteredSources(this.getOrderedStreamCandidates())[index];
+        if (focusedStream) {
+          this.sourcesFocus.key = streamMergeKey(focusedStream);
+        }
+      }
       const focusedNode = panel.querySelector(`[data-sources-zone="${zone}"][data-sources-index="${index}"]`);
       // Source/filter data can change asynchronously while the panel is open.
       // If the live DOM no longer represents the state, retain the existing full

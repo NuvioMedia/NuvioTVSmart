@@ -68,6 +68,20 @@ export function createPlayerScreenMethods70() {
         return true;
       }
 
+      const chaptersNode = target.closest?.("[data-chapters-action], [data-chapters-index]");
+      if (chaptersNode && this.chaptersPanelVisible) {
+        if (String(chaptersNode.dataset.chaptersAction || "") === "close") {
+          this.closeChaptersPanel();
+          return true;
+        }
+        const chapterIndex = Number(chaptersNode.dataset.chaptersIndex);
+        if (Number.isFinite(chapterIndex)) {
+          this.chaptersFocusIndex = chapterIndex;
+          this.activateChaptersFocus();
+        }
+        return true;
+      }
+
       const subtitleStep = target.closest?.("[data-subtitle-style-action]");
       if (subtitleStep && this.subtitleDialogVisible) {
         const styleItems = this.getSubtitleStyleControls();
@@ -193,6 +207,10 @@ export function createPlayerScreenMethods70() {
       );
     },
     consumeBackRequest() {
+      if (this.chaptersPanelVisible) {
+        this.closeChaptersPanel();
+        return true;
+      }
       if (this.isStartupErrorVisible()) {
         if (this.navigateBackToStreamScreen()) {
           return true;

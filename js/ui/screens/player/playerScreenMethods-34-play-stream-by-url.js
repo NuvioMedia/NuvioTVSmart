@@ -242,6 +242,8 @@ export function createPlayerScreenMethods34() {
         this.stopSkipIntroCountdownAnimation?.();
         this.chapterSkipIntervalsLoaded = false;
         this.chapterSkipIntervalsRetryAt = 0;
+        this.playerChapters = [];
+        this.closeChaptersPanel?.({ restoreFocus: false });
         this.chaptersRequestToken = Number(this.chaptersRequestToken || 0) + 1;
         this.skipIntroApiIntervals = [];
         this.skipIntroChapterIntervals = [];

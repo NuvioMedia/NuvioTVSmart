@@ -490,3 +490,33 @@
 .player-controls-overlay.pause-overlay-active .player-progress-track {
   box-shadow: none;
 }
+
+/*
+ * HDR control dimming (Android HDR OSD dimming): only the player controls and the
+ * menus drawn over the video follow the HDR subtitle brightness. The video and the
+ * subtitle layers stay outside this filter.
+ */
+.player-hdr-dim #playerControlsOverlay,
+.player-hdr-dim #playerPauseOverlay,
+.player-hdr-dim #playerSubtitleDialog,
+.player-hdr-dim #playerSubtitleDelayOverlay,
+.player-hdr-dim #playerSubtitleTimingDialog,
+.player-hdr-dim #playerAudioDialog,
+.player-hdr-dim #playerSpeedDialog,
+.player-hdr-dim #playerSourcesPanel,
+.player-hdr-dim #episodeSidePanel,
+.player-hdr-dim #playerPartyPanel,
+.player-hdr-dim #playerSeekOverlay,
+.player-hdr-dim #playerNextEpisodeCard,
+.player-hdr-dim #playerAspectToast,
+.player-hdr-dim #playerSkipIntro,
+.player-hdr-dim #playerStartupErrorOverlay,
+.player-hdr-dim #playerTorrentOverlay,
+.player-hdr-dim #playerParentalGuide,
+.player-hdr-dim #playerModalBackdrop,
+.player-hdr-dim .player-stream-info-overlay,
+.player-hdr-dim .player-post-play-manual-dialog,
+.player-hdr-dim .player-post-play-synopsis-overlay,
+.player-hdr-dim .nuvio-dialog-backdrop {
+  filter: brightness(var(--player-controls-brightness, 1));
+}

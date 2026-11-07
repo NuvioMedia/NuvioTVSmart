@@ -215,6 +215,7 @@ export const PluginScreen = {
     this.setRowColumns(1, [0]);
     if (!this.model.isEssential) {
       this.setRowColumns(2, [0]);
+      this.setRowColumns(3, [0]);
     }
 
     this.actionMap.set("manage_from_phone", async () => {
@@ -222,6 +223,9 @@ export const PluginScreen = {
     });
     this.actionMap.set("reorder_home_catalogs", async () => {
       Router.navigate("catalogOrder");
+    });
+    this.actionMap.set("open_collections", async () => {
+      Router.navigate("collections");
     });
     this.actionMap.set("refresh_addons", async () => {
       await this.refreshAddons({ refreshCatalogs: true });
@@ -297,12 +301,33 @@ export const PluginScreen = {
                   <span class="addons-large-row-tail-group">
                     <span class="addons-large-row-tail material-icons" aria-hidden="true">chevron_right</span>
                   </span>
+                </div>
+                <div role="button"
+                     class="addons-large-row addons-large-row-centered addons-focusable"
+                     data-zone="content"
+                     data-row="2"
+                     data-col="0"
+                     data-action-id="open_collections"
+                     tabindex="-1">
+                  <span class="addons-large-row-icon material-icons" aria-hidden="true">folder_open</span>
+                  <span class="addons-large-row-copy">
+                    <strong>${escapeHtml(t("collections_card_title", "Collections"))}</strong>
+                    <small>${escapeHtml(
+                      t(
+                        "collections_card_subtitle",
+                        "Create custom collections and arrange your folders"
+                      )
+                    )}</small>
+                  </span>
+                  <span class="addons-large-row-tail-group">
+                    <span class="addons-large-row-tail material-icons" aria-hidden="true">chevron_right</span>
+                  </span>
                 </div>`
                 }
                 <div role="button"
                      class="addons-large-row addons-large-row-centered addons-focusable"
                      data-zone="content"
-                     data-row="${this.model.isEssential ? 1 : 2}"
+                     data-row="${this.model.isEssential ? 1 : 3}"
                      data-col="0"
                      data-action-id="refresh_addons"
                      tabindex="-1"

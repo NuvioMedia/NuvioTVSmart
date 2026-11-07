@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { HDR_BRIGHTNESS_STEP, normalizeHdrBrightness } from "../../../core/player/hdrSubtitleStyle.js";
 
 export function createPlayerScreenMethods53() {
   const {
@@ -74,6 +75,8 @@ export function createPlayerScreenMethods53() {
         style.verticalOffset = normalizeSubtitleVerticalOffset(
           Number(style.verticalOffset ?? SUBTITLE_VERTICAL_OFFSET_DEFAULT) + delta * SUBTITLE_VERTICAL_OFFSET_STEP
         );
+      } else if (controlId === "hdrBrightness") {
+        style.hdrBrightness = normalizeHdrBrightness(Number(style.hdrBrightness ?? 40) + delta * HDR_BRIGHTNESS_STEP);
       } else if (controlId === "reset") {
         const defaults = PlayerSettingsStore.getDefaults().subtitleStyle;
         this.subtitleDelayMs = 0;
@@ -87,7 +90,9 @@ export function createPlayerScreenMethods53() {
           outlineEnabled: defaults.outlineEnabled,
           outlineColor: defaults.outlineColor,
           verticalOffset: defaults.verticalOffset,
-          verticalOffsetContract: defaults.verticalOffsetContract
+          verticalOffsetContract: defaults.verticalOffsetContract,
+          hdrTextColor: defaults.hdrTextColor,
+          hdrBrightness: defaults.hdrBrightness
         };
       }
       if ((controlId === "delay" || controlId === "resetDelay" || controlId === "reset") && this.isAssAddonSubtitleActive()) {

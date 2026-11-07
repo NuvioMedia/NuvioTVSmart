@@ -1,4 +1,5 @@
 import { TraktAuthService, requestJson } from "./traktAuthService.js";
+import { TraktEpisodeMappingService } from "./traktEpisodeMappingService.js";
 
 const START_DEBOUNCE_MS = 15000;
 const MAX_CONSECUTIVE_FAILURES = 3;
@@ -106,7 +107,33 @@ async function sendScrobbleRequest(action, context) {
       return;
     }
 
-    const body = buildScrobblePayload(context);
+    // The stream screen and player know the add-on's episode numbers; Trakt needs its own.
+    let scrobbleContext = context;
+    if (
+      context.contentType === "series" &&
+      context.seasonNumber != null &&
+      context.episodeNumber != null
+    ) {
+      const mapped = await TraktEpisodeMappingService.resolveAddonToTrakt({
+        contentId: context.contentId,
+        contentType: "series",
+        videoId: context.videoId || null,
+        season: context.seasonNumber,
+        episode: context.episodeNumber,
+        title: context.episodeTitle || null,
+        traktId: context.traktId || null,
+        imdbId: context.imdbId || null
+      }).catch(() => null);
+      if (mapped) {
+        scrobbleContext = {
+          ...context,
+          seasonNumber: mapped.season,
+          episodeNumber: mapped.episode
+        };
+      }
+    }
+
+    const body = buildScrobblePayload(scrobbleContext);
     const { response } = await requestJson(`/scrobble/${action}`, {
       method: "POST",
       body,

@@ -25,6 +25,8 @@ export function createPlayerScreenMethods32() {
       if (this.isExternalFrameMode()) {
         return;
       }
+      this.syncHdrPresentation?.();
+      this.syncChaptersPanelHighlight?.();
       this.syncStartupGateAndParentalGuide?.();
       if (
         PlayerSettingsStore.get().skipIntroEnabled &&

@@ -11,6 +11,8 @@ const APP_SHELL = `
     <div id="catalogSeeAll" class="screen"></div>
     <div id="tmdbEntityBrowse" class="screen"></div>
     <div id="folderDetail" class="screen"></div>
+    <div id="collections" class="screen"></div>
+    <div id="collectionEditor" class="screen"></div>
     <div id="library" class="screen"></div>
     <div id="search" class="screen"></div>
     <div id="discover" class="screen"></div>

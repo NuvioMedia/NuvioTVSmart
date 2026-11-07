@@ -75,6 +75,18 @@ export function createHomeScreenMethods09() {
       this.pruneContinueWatchingItem(normalized);
       return true;
     },
+    async markContinueWatchingItemWatched(item) {
+      const normalized = normalizeContinueWatchingItem(item);
+      if (!normalized?.contentId) {
+        return false;
+      }
+      if (this.isContinueWatchingItemWatched(normalized)) {
+        // Already watched: the menu action only has to drop the row.
+        this.pruneContinueWatchingItem(normalized);
+        return true;
+      }
+      return this.toggleContinueWatchingWatched(normalized);
+    },
     async removeContinueWatchingItem(item) {
       const normalized = normalizeContinueWatchingItem(item);
       if (!normalized?.contentId) {
@@ -119,7 +131,11 @@ export function createHomeScreenMethods09() {
       if (option.action === "details") {
         return this.openContinueWatchingDetails(item);
       }
-      if (option.action === "remove") {
+      if (option.action === "markWatched") {
+        if (!(await this.markContinueWatchingItemWatched(item))) {
+          return false;
+        }
+      } else if (option.action === "remove") {
         await this.removeContinueWatchingItem(item);
       } else {
         return false;

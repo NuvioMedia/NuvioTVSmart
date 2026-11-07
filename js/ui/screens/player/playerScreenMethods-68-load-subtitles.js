@@ -212,6 +212,11 @@ export function createPlayerScreenMethods68() {
         return;
       }
 
+      if (action === "chapters") {
+        this.toggleChaptersPanel();
+        return;
+      }
+
       if (action === "party") {
         this.togglePartyPanel();
         return;

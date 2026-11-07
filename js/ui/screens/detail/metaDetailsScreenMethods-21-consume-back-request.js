@@ -49,6 +49,11 @@ export function createMetaDetailsScreenMethods21() {
         return true;
       }
       if (this.isTrailerPlaying) {
+        // Android hands a full-screen trailer back to the page as a background
+        // trailer on Back when "Play in Background" is enabled.
+        if (this.handOffTrailerToBackground?.() === true) {
+          return true;
+        }
         this.stopTrailerPlayback();
         return true;
       }

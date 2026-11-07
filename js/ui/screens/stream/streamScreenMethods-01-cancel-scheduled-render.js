@@ -165,7 +165,8 @@ export function createStreamScreenMethods01() {
             streamKey: model.keys[index],
             virtualized: true,
             virtualRowGap: model.rowGap,
-            virtualLast: index === streams.length - 1
+            virtualLast: index === streams.length - 1,
+            previousStream: streams[index - 1] || null
           })
         );
       }
@@ -290,7 +291,8 @@ export function createStreamScreenMethods01() {
           streamKey: model.keys[index],
           virtualized: true,
           virtualRowGap: model.rowGap,
-          virtualLast: index === streams.length - 1
+          virtualLast: index === streams.length - 1,
+          previousStream: streams[index - 1] || null
         });
       }).join("");
       const topSpacer = track.querySelector('[data-stream-virtual-spacer="top"]');

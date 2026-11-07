@@ -1,5 +1,5 @@
 import { MdbListAccount } from "./mdbListAccount.js";
-import { MdbListTracking, mdbMutationTarget } from "./mdbListTracking.js";
+import { MdbListTracking } from "./mdbListTracking.js";
 import { registerSessionTeardownHandler } from "../../core/auth/sessionLifecycle.js";
 
 let timer = null,
@@ -20,7 +20,9 @@ function contextKey(context) {
 async function send(action, context, captured) {
   try {
     MdbListAccount.check(captured.scope);
-    if (failures >= 3 || !mdbMutationTarget(context, MdbListTracking.getSnapshot())) return;
+    if (failures >= 3) return;
+    // MdbListTracking.scrobble translates the add-on's episode numbers to TMDB's
+    // before deciding whether the show is tracked.
     await MdbListTracking.scrobble(captured.scope, action, context);
     if (session === captured) failures = 0;
   } catch (error) {

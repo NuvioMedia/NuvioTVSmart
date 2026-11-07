@@ -21,6 +21,7 @@ import {
   mdbTrackingPages
 } from "./mdbListTrackingCodec.js";
 import { normalizeMdbSnapshot, projectMdbTracking } from "./mdbListTrackingProjection.js";
+import { MdbListEpisodeMappingService } from "./mdbListEpisodeMappingService.js";
 
 const PLAYBACK_KEY = "mdbListTrackingPlayback";
 const KEY = "mdbListTracking",
@@ -392,7 +393,7 @@ export const MdbListTracking = {
     MdbListAccount.check(scope);
     await this.refresh();
     MdbListAccount.check(scope);
-    return projection(this.getSnapshot());
+    return remappedProjection(this.getSnapshot());
   },
   isHidden(contentId, season = null) {
     const snapshot = this.getSnapshot();
@@ -403,8 +404,32 @@ export const MdbListTracking = {
     if (!Number.isFinite(context.progressPercent) || !["start", "pause", "stop"].includes(action))
       return;
     return serialize(scope, async () => {
+      let targetContext = context;
+      if (
+        String(context.contentType || "").toLowerCase() === "series" &&
+        context.seasonNumber != null &&
+        context.episodeNumber != null
+      ) {
+        // The player knows the add-on's numbering; MDBList reads and writes TMDB's.
+        const mapped = await MdbListEpisodeMappingService.resolveToTmdb({
+          contentId: context.contentId,
+          ids: { tmdb: context.tmdbId, imdb: context.imdbId, tvdb: context.tvdbId },
+          tmdbShowId: context.tmdbId,
+          season: context.seasonNumber,
+          episode: context.episodeNumber,
+          videoId: context.videoId || null,
+          title: context.episodeTitle || null
+        }).catch(() => null);
+        if (mapped) {
+          targetContext = {
+            ...context,
+            seasonNumber: mapped.season,
+            episodeNumber: mapped.episode
+          };
+        }
+      }
       let snapshot = read(scope),
-        target = mdbMutationTarget(context, snapshot);
+        target = mdbMutationTarget(targetContext, snapshot);
       if (!target) return;
       try {
         const { payload, headers } = await MdbListAccount.api(scope, `/scrobble/${action}`, {
@@ -500,7 +525,11 @@ export const MdbListTracking = {
     return serialize(scope, async () => {
       const initial = read(scope),
         unique = new Map();
-      for (const item of items) {
+      // Local marks are in the add-on's numbering; MDBList stores TMDB's.
+      const mappedItems = await MdbListEpisodeMappingService.remapItemsToMdbList(items).catch(
+        () => items
+      );
+      for (const item of mappedItems) {
         const target = mdbMutationTarget(item, initial, remove);
         if (target)
           unique.set(
@@ -578,6 +607,27 @@ function projection(snapshot) {
   if (cachedProjection?.snapshot !== snapshot)
     cachedProjection = { snapshot, value: projectMdbTracking(normalizeMdbSnapshot(snapshot)) };
   return cachedProjection.value;
+}
+
+// MDBList stores episodes in TMDB numbering. Continue Watching and next-up must use the
+// add-on's numbering, so the projected progress is translated once per snapshot.
+const remappedProjectionCache = new WeakMap();
+
+function remappedProjection(snapshot) {
+  const value = projection(snapshot);
+  const cached = remappedProjectionCache.get(value);
+  if (cached) {
+    return cached;
+  }
+  const request = (async () => {
+    const [playbackItems, watchedShowSeedItems] = await Promise.all([
+      MdbListEpisodeMappingService.remapItemsToAddon(value.playbackItems),
+      MdbListEpisodeMappingService.remapItemsToAddon(value.watchedShowSeedItems)
+    ]);
+    return { ...value, playbackItems, watchedShowSeedItems };
+  })().catch(() => value);
+  remappedProjectionCache.set(value, request);
+  return request;
 }
 
 async function refreshResult(task, strict) {

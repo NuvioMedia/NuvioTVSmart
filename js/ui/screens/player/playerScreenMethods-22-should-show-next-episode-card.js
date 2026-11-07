@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { scraperIdFromPluginBingeGroup } from "../../../core/streams/pluginBingeGroup.js";
 
 export function createPlayerScreenMethods22() {
   const {
@@ -165,7 +166,10 @@ export function createPlayerScreenMethods22() {
       }
       void this.getPlayableStreamsForVideo(nextEpisode.videoId, itemType, {
         season: nextEpisode.season,
-        episode: nextEpisode.episode
+        episode: nextEpisode.episode,
+        // Match the search the player will run when the episode actually starts.
+        priorityBingeGroup: this.getCurrentStreamBingeGroup(),
+        preferredPluginOnly: Boolean(scraperIdFromPluginBingeGroup(this.getCurrentStreamBingeGroup()))
       })
         .then(() => this.renderNextEpisodeCard())
         .catch((error) => console.warn("Next episode stream prefetch failed", error));

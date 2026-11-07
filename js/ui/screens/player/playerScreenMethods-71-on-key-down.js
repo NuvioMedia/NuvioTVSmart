@@ -1,4 +1,5 @@
 import { isStreamInfoKey } from "./streamInfoOverlay.js";
+import { shouldExitPostPlayOnLongBack } from "../../../core/player/postPlayBackPolicy.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
 
@@ -7,6 +8,9 @@ export function createPlayerScreenMethods71() {
 
   return {
     async onKeyDown(event) {
+      if (this.episodeOptionsDialogVisible) {
+        return;
+      }
       const keyCode = Number(event?.keyCode || 0);
       const isBackKey = isBackEvent(event);
       if (this.isStartupErrorVisible()) {
@@ -32,10 +36,36 @@ export function createPlayerScreenMethods71() {
         this.showStreamInfo();
         return;
       }
+      if (this.chaptersPanelVisible) {
+        if (this.handleChaptersPanelKey(event)) {
+          return;
+        }
+        if (!isBackKey) {
+          event?.preventDefault?.();
+          event?.stopPropagation?.();
+          return;
+        }
+      }
       if (isBackKey) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
         event?.stopImmediatePropagation?.();
+        if (
+          shouldExitPostPlayOnLongBack({
+            postPlayVisible: this.isPostPlayVisible?.() === true,
+            isBack: true,
+            repeat: Boolean(event?.repeat),
+            modalOpen: Boolean(this.postPlayManualDialogVisible || this.postPlaySynopsisVisible)
+          })
+        ) {
+          this.postPlayNaturalEndPending = false;
+          this.postPlayPlaybackEnded = false;
+          this.postPlayRecommendationController?.stop?.();
+          if (!this.navigateBackToStreamScreen()) {
+            Router.back();
+          }
+          return;
+        }
         this.consumeBackRequest();
         return;
       }

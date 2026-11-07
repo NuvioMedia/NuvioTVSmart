@@ -19,6 +19,7 @@ export function renderPlaybackSubtitleBody(model) {
     renderModeLabel
   } = internals;
   const autoSyncEnabled = Boolean(model.player.subtitleStyle?.autoSyncEnabled);
+  const hdrStyleEnabled = model.player.subtitleStyle?.hdrStyleEnabled === true;
   const autoSyncToleranceMs = Math.trunc(Number(model.player.subtitleStyle?.autoSyncToleranceMs || 0));
   const autoSyncToleranceValue =
     autoSyncToleranceMs > 0
@@ -156,6 +157,48 @@ export function renderPlaybackSubtitleBody(model) {
                       normalizeSubtitleStyleHex(model.player.subtitleStyle?.outlineColor, "#000000")
                     )
                   })
+                : ""
+            }
+            ${this.renderToggleRow({
+              focusKey: "playback:subtitleHdrStyle",
+              title: t("sub_hdr_style", {}, "Separate HDR / Dolby Vision style"),
+              subtitle: t(
+                "sub_hdr_style_sub",
+                {},
+                "Use a different text color and a dimmer brightness for subtitles on HDR and Dolby Vision video"
+              ),
+              checked: hdrStyleEnabled
+            })}
+            ${
+              hdrStyleEnabled
+                ? `
+                  ${this.renderActionRow({
+                    focusKey: "playback:subtitleHdrTextColor",
+                    title: t("sub_hdr_text_color", {}, "HDR Text Color"),
+                    subtitle: t("settings.playback.subtitleTextColor.subtitle", {}, "Color of the subtitle text."),
+                    value: labelForOptionId(
+                      SUBTITLE_TEXT_COLOR_OPTIONS,
+                      normalizeSubtitleStyleHex(model.player.subtitleStyle?.hdrTextColor, "#FFFFFF"),
+                      normalizeSubtitleStyleHex(model.player.subtitleStyle?.hdrTextColor, "#FFFFFF")
+                    )
+                  })}
+                  ${this.renderActionRow({
+                    focusKey: "playback:subtitleHdrBrightness",
+                    title: t("sub_hdr_brightness", {}, "HDR Brightness"),
+                    subtitle: t("sub_hdr_brightness_sub", {}, "Brightness of subtitles and menus on HDR video"),
+                    value: `${Math.round(Number(model.player.subtitleStyle?.hdrBrightness ?? 40) || 0)}%`
+                  })}
+                  ${this.renderToggleRow({
+                    focusKey: "playback:subtitleHdrDimPlayerControls",
+                    title: t("sub_hdr_dim_player_controls", {}, "Dim player controls on HDR"),
+                    subtitle: t(
+                      "sub_hdr_dim_player_controls_sub",
+                      {},
+                      "Apply the HDR brightness to the player controls and menus shown over HDR and Dolby Vision video"
+                    ),
+                    checked: model.player.subtitleStyle?.hdrDimPlayerControls === true
+                  })}
+                `
                 : ""
             }
             ${this.renderActionRow({

@@ -135,6 +135,7 @@ export function flattenStreams(streamResult) {
         addonBaseUrl: stream.addonBaseUrl || group.addonBaseUrl || null,
         addonName: stream.addonName || groupName,
         addonLogo: stream.addonLogo || group.addonLogo || null,
+        pluginSourceName: stream.pluginSourceName || stream.raw?.pluginSourceName || group.pluginSourceName || null,
         sourceProviderId:
           stream.sourceProviderId ||
           group.sourceProviderId ||

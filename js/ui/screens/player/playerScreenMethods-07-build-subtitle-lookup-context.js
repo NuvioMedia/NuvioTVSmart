@@ -2,6 +2,7 @@ import { resolveStreamFilename } from "./streamFilename.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
 import { fetchMatroskaChapters, isMatroskaSource } from "../../../data/repository/matroskaChapters.js";
+import { fetchMp4Chapters, isMp4Source } from "../../../data/repository/mp4Chapters.js";
 import { chapterSkipIntervals, mergeSkipIntervals } from "../../../core/player/chapterSkipIntervals.js";
 
 export function createPlayerScreenMethods07() {
@@ -327,7 +328,9 @@ export function createPlayerScreenMethods07() {
         return { chapters: [], ready: false };
       }
       const streamCandidate = this.getCurrentStreamCandidate();
-      if (!isMatroskaSource(playbackUrl, streamCandidate)) {
+      const matroska = isMatroskaSource(playbackUrl, streamCandidate);
+      const mp4 = matroska ? false : isMp4Source(playbackUrl, streamCandidate);
+      if (!matroska && !mp4) {
         return { chapters: [], ready: true };
       }
       if (!this.hasPresentedPlaybackFrame || Number(this.getPlaybackDurationSeconds?.() || 0) <= 0) {
@@ -341,7 +344,9 @@ export function createPlayerScreenMethods07() {
       this.chaptersFetchInFlight = true;
       let chapters = [];
       try {
-        chapters = await fetchMatroskaChapters(playbackUrl, this.getCurrentStreamRequestHeaders(streamCandidate));
+        chapters = matroska
+          ? await fetchMatroskaChapters(playbackUrl, this.getCurrentStreamRequestHeaders(streamCandidate))
+          : await fetchMp4Chapters(playbackUrl, this.getCurrentStreamRequestHeaders(streamCandidate));
       } finally {
         this.chaptersFetchInFlight = false;
       }
@@ -388,7 +393,10 @@ export function createPlayerScreenMethods07() {
       };
       const apiPromise = hasIdentity
         ? (isSeries
-            ? skipIntroRepository.getSkipIntervals(identity.imdbId, identity.season, identity.episode)
+            ? skipIntroRepository.getSkipIntervals(identity.imdbId, identity.season, identity.episode, {
+                contentId: this.params?.itemId,
+                videoId: this.params?.videoId
+              })
             : skipIntroRepository.getMovieSkipIntervals({
                 imdbId: identity.imdbId,
                 tmdbId: identity.tmdbId,
@@ -410,6 +418,8 @@ export function createPlayerScreenMethods07() {
         if (ready) {
           this.chapterSkipIntervalsLoaded = true;
         }
+        // Keep the raw chapter list for the player's chapters panel.
+        this.applyPlayerChapters?.(chapters);
         if (!chapters.length) {
           return;
         }
@@ -436,6 +446,9 @@ export function createPlayerScreenMethods07() {
       if (!chapters.length) {
         return;
       }
+      // The retry path is the normal one: chapters become readable only after the
+      // first frames, so the panel list must be published here too.
+      this.applyPlayerChapters?.(chapters);
       const durationMs = Math.round(Number(this.getPlaybackDurationSeconds() || 0) * 1000);
       const chapterIntervals = chapterSkipIntervals(chapters, durationMs);
       if (!chapterIntervals.length) {

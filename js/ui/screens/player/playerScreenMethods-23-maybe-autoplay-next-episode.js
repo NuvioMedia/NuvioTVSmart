@@ -1,4 +1,5 @@
 import { buildNextFilename } from "../../../core/streams/filenameEpisodeMatcher.js";
+import { scraperIdFromPluginBingeGroup } from "../../../core/streams/pluginBingeGroup.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
 
@@ -95,7 +96,9 @@ export function createPlayerScreenMethods23() {
         return [];
       }
       const forceRefresh = options.forceRefresh === true;
-      const cacheKey = this.getStreamCacheKey(normalizedVideoId, normalizedType, options.season, options.episode);
+      const cacheKey =
+        this.getStreamCacheKey(normalizedVideoId, normalizedType, options.season, options.episode) +
+        (options.preferredPluginOnly === true ? "|pluginOnly" : "");
       const cache = this.streamCandidatesByVideoId || (this.streamCandidatesByVideoId = new Map());
       if (!forceRefresh && cache.has(cacheKey)) {
         const cached = cache.get(cacheKey);
@@ -127,6 +130,10 @@ export function createPlayerScreenMethods23() {
           season: options.season ?? null,
           episode: options.episode ?? null,
           forceRefresh,
+          // Continuing a plugin series keeps the playing provider first and tries
+          // only it until it returns nothing.
+          priorityBingeGroup: options.priorityBingeGroup || null,
+          preferredPluginOnly: options.preferredPluginOnly === true,
           onChunk: (chunkResult) => {
             const chunkItems = flattenStreamGroups(chunkResult);
             if (!chunkItems.length) {
@@ -293,6 +300,8 @@ export function createPlayerScreenMethods23() {
       void this.getPlayableStreamsForVideo(nextEpisode.videoId, itemType, {
         season: nextEpisode.season,
         episode: nextEpisode.episode,
+        priorityBingeGroup: this.getCurrentStreamBingeGroup(),
+        preferredPluginOnly: Boolean(scraperIdFromPluginBingeGroup(this.getCurrentStreamBingeGroup())),
         onChunk
       })
         .then(async (streams) => {

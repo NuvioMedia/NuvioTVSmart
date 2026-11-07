@@ -347,20 +347,15 @@ export function isCompletedForContinueWatching(item = {}) {
 }
 
 export function isInProgressForContinueWatching(item = {}) {
-  const fraction = progressFractionForContinueWatching(item);
-  return fraction >= CW_PROGRESS_START_THRESHOLD && fraction < watchProgressCompletedThreshold(item);
-}
-
-export function shouldTreatAsInProgressForContinueWatching(item = {}) {
-  if (isInProgressForContinueWatching(item)) {
-    return true;
-  }
   if (isCompletedForContinueWatching(item)) {
     return false;
   }
-  const hasStartedPlayback = Number(item.positionMs || 0) > 0 || Number(item.progressPercent || 0) > 0;
-  const source = String(item.source || "").toLowerCase();
-  return hasStartedPlayback && source !== "trakt_history" && source !== "trakt_show_progress";
+  // Android/mobile rule: any saved progress counts, with no 2% start threshold.
+  return Number(item.positionMs || 0) > 0 || Number(item.progressPercent || 0) > 0;
+}
+
+export function shouldTreatAsInProgressForContinueWatching(item = {}) {
+  return isInProgressForContinueWatching(item);
 }
 
 export function episodeKey(season, episode) {

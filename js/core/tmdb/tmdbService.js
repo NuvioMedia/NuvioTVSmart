@@ -11,6 +11,10 @@ const imdbToTmdbCache = new Map();
 const imdbToTmdbInFlight = new Map();
 const tmdbToImdbCache = new Map();
 const tmdbToImdbInFlight = new Map();
+const tvSeasonsCache = new Map();
+const tvSeasonsInFlight = new Map();
+const TV_SEASONS_CACHE_TTL_MS = 30 * 60 * 1000;
+const TV_SEASONS_CACHE_LIMIT = 100;
 
 export async function fetchTmdbJson(
   url,
@@ -104,6 +108,43 @@ function lookupKey(id, type) {
   return `${String(id || "")
     .trim()
     .toLowerCase()}::${getContentType(type)}`;
+}
+
+function readTvSeasonsCache(key) {
+  const entry = tvSeasonsCache.get(key);
+  if (!entry) {
+    return null;
+  }
+  if (entry.expiresAt <= Date.now()) {
+    tvSeasonsCache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function loadTvSeasonsCache(key, loader) {
+  const pending = tvSeasonsInFlight.get(key);
+  if (pending) {
+    return pending;
+  }
+  const request = Promise.resolve()
+    .then(loader)
+    .then((value) => {
+      if (value != null) {
+        if (tvSeasonsCache.size >= TV_SEASONS_CACHE_LIMIT) {
+          tvSeasonsCache.delete(tvSeasonsCache.keys().next().value);
+        }
+        tvSeasonsCache.set(key, { value, expiresAt: Date.now() + TV_SEASONS_CACHE_TTL_MS });
+      }
+      return value;
+    })
+    .finally(() => {
+      if (tvSeasonsInFlight.get(key) === request) {
+        tvSeasonsInFlight.delete(key);
+      }
+    });
+  tvSeasonsInFlight.set(key, request);
+  return request;
 }
 
 export const TmdbService = {
@@ -203,8 +244,77 @@ export const TmdbService = {
     }
   },
 
+  /**
+   * Season numbers with their episode counts for a TV show, used to decide whether the
+   * add-on and TMDB number the same episodes the same way.
+   */
+  async tvSeasonCounts(tmdbId, { signal = null } = {}) {
+    const id = String(tmdbId || "").trim();
+    const apiKey = String(TMDB_API_KEY || "").trim();
+    if (!apiKey || !/^\d+$/.test(id)) {
+      return null;
+    }
+    const cacheKey = `counts:${id}`;
+    const cached = readTvSeasonsCache(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    return loadTvSeasonsCache(cacheKey, async () => {
+      const url = `${TMDB_BASE_URL}/tv/${encodeURIComponent(id)}?api_key=${encodeURIComponent(apiKey)}&language=en-US`;
+      const data = await fetchTmdbJson(url, { signal });
+      if (!data) {
+        return null;
+      }
+      return (Array.isArray(data?.seasons) ? data.seasons : [])
+        .map((season) => ({
+          season: Number(season?.season_number),
+          episodeCount: Number(season?.episode_count)
+        }))
+        .filter(
+          (entry) =>
+            Number.isInteger(entry.season) &&
+            entry.season > 0 &&
+            Number.isInteger(entry.episodeCount) &&
+            entry.episodeCount > 0
+        )
+        .sort((left, right) => left.season - right.season);
+    });
+  },
+
+  /** TMDB's episodes for one season, with titles, for title-then-position remapping. */
+  async tvSeasonEpisodes(tmdbId, seasonNumber, { signal = null } = {}) {
+    const id = String(tmdbId || "").trim();
+    const season = Number(seasonNumber);
+    const apiKey = String(TMDB_API_KEY || "").trim();
+    if (!apiKey || !/^\d+$/.test(id) || !Number.isInteger(season) || season <= 0) {
+      return null;
+    }
+    const cacheKey = `season:${id}:${season}`;
+    const cached = readTvSeasonsCache(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    return loadTvSeasonsCache(cacheKey, async () => {
+      const url = `${TMDB_BASE_URL}/tv/${encodeURIComponent(id)}/season/${encodeURIComponent(String(season))}?api_key=${encodeURIComponent(apiKey)}&language=en-US`;
+      const data = await fetchTmdbJson(url, { signal });
+      if (!data) {
+        return null;
+      }
+      return (Array.isArray(data?.episodes) ? data.episodes : [])
+        .map((episode) => ({
+          season,
+          episode: Number(episode?.episode_number),
+          title: String(episode?.name || "").trim() || null
+        }))
+        .filter((entry) => Number.isInteger(entry.episode) && entry.episode > 0)
+        .sort((left, right) => left.episode - right.episode);
+    });
+  },
+
   clearCache() {
     imdbToTmdbCache.clear();
     tmdbToImdbCache.clear();
+    tvSeasonsCache.clear();
+    tvSeasonsInFlight.clear();
   }
 };

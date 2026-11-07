@@ -98,11 +98,23 @@ export function createStreamScreenMethods09() {
           body += this.renderLoadingCards(1);
         }
       } else if (stableStreamList) {
-        body = allStreams.map((stream, index) => this.renderStreamCard(stream, index, streamBadgesEnabled, badgeSettings)).join("");
+        body = allStreams
+          .map((stream, index) =>
+            this.renderStreamCard(stream, index, streamBadgesEnabled, badgeSettings, {
+              previousStream: allStreams[index - 1] || null
+            })
+          )
+          .join("");
         body += this.renderStableStreamLoadingRow();
         body += this.renderStableStreamEmptyState();
       } else if (filtered.length) {
-        body = filtered.map((stream, index) => this.renderStreamCard(stream, index, streamBadgesEnabled, badgeSettings)).join("");
+        body = filtered
+          .map((stream, index) =>
+            this.renderStreamCard(stream, index, streamBadgesEnabled, badgeSettings, {
+              previousStream: filtered[index - 1] || null
+            })
+          )
+          .join("");
         if (hasPendingForFilter) {
           body += this.renderLoadingCards(1);
         }

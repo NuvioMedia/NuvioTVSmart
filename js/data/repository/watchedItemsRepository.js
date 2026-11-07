@@ -15,6 +15,7 @@ import { MdbListAccount } from "./mdbListAccount.js";
 import { MdbListTracking, mdbMutationTarget } from "./mdbListTracking.js";
 import { SimklSyncService } from "./simklSyncService.js";
 import { TraktAuthService, requestJson as traktRequestJson } from "./traktAuthService.js";
+import { TraktEpisodeMappingService } from "./traktEpisodeMappingService.js";
 import { watchedItemIdentityValues, watchedItemsShareIdentity } from "./watchedIdentity.js";
 import { getSyncBackoffRemainingMs } from "../../core/sync/syncBackoffPolicy.js";
 import { registerSessionTeardownHandler } from "../../core/auth/sessionLifecycle.js";
@@ -145,7 +146,11 @@ function mergeTraktHistoryBodies(bodies = []) {
 
 async function writeTraktHistoryBatch(items = [], remove = false) {
   const bodies = [];
-  (Array.isArray(items) ? items : []).forEach((item) => {
+  // Episode marks are stored in the add-on's numbering; Trakt expects its own.
+  const mappedItems = await TraktEpisodeMappingService.remapItemsToTrakt(items).catch(() =>
+    Array.isArray(items) ? items : []
+  );
+  (Array.isArray(mappedItems) ? mappedItems : []).forEach((item) => {
     try {
       bodies.push(traktHistoryBody(item));
     } catch (error) {

@@ -1,6 +1,7 @@
 import { StreamBadgeSettingsStore } from "../../../data/local/streamBadgeSettingsStore.js";
 import { matchPlayerBadges } from "../../../core/streams/streamBadgeRules.js";
 import { formatAudioCodecName, getAuthoritativeAudioCodecValue } from "../../../core/player/audioTrackCodecMetadata.js";
+import { isHdrMediaInfo } from "../../../core/player/hdrSubtitleStyle.js";
 import { resolveStreamFilename } from "./streamFilename.js";
 
 export function playbackMatchText(info = {}, languages = []) {
@@ -149,6 +150,25 @@ export function readPlaybackMediaInfo(controller) {
 }
 
 const states = new WeakMap();
+
+/** Whether the playing video is HDR/Dolby Vision, from the decoder first and the source name after. */
+export function readPlaybackHdrState(screen, controller) {
+  try {
+    const info = readPlaybackMediaInfo(controller);
+    const stream = screen?.getCurrentStreamCandidate?.() || null;
+    const metadata = [
+      resolveStreamFilename(stream, screen?.initialFilenameStreamCandidate, screen?.params?.filename),
+      stream?.raw?.name || stream?.label
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+    const hdr = Array.isArray(info.hdr) && info.hdr.length ? info.hdr : metadataDynamicRange(info.videoCodec, metadata);
+    return isHdrMediaInfo({ videoCodec: info.videoCodec, hdr });
+  } catch (_) {
+    return false;
+  }
+}
+
 export function syncPlayerPlaybackBadges(screen, controller, renderChip, languageLabel) {
   const node = screen.uiRefs?.playbackBadges;
   if (!node) return;
