@@ -7,6 +7,7 @@
 const MARK_PREFIX = "nuvio:boot:";
 const marks = [];
 let firstHomePaintMarked = false;
+const firstHomePaintListeners = new Set();
 
 function nowMs() {
   const perf = globalThis.performance;
@@ -36,10 +37,36 @@ export function markFirstHomePaint() {
   }
   firstHomePaintMarked = true;
   markBootTiming("home-first-paint");
+  const listeners = Array.from(firstHomePaintListeners);
+  firstHomePaintListeners.clear();
+  for (const listener of listeners) {
+    try {
+      listener();
+    } catch (error) {
+      console.warn("First Home paint listener failed", error);
+    }
+  }
 }
 
 export function hasMarkedFirstHomePaint() {
   return firstHomePaintMarked;
+}
+
+// Startup work that is not needed for the first Home paint subscribes here
+// (see js/runtime/startupScheduler.js). A listener added after the paint
+// runs immediately.
+export function onFirstHomePaint(listener) {
+  if (typeof listener !== "function") {
+    return () => {};
+  }
+  if (firstHomePaintMarked) {
+    listener();
+    return () => {};
+  }
+  firstHomePaintListeners.add(listener);
+  return () => {
+    firstHomePaintListeners.delete(listener);
+  };
 }
 
 // boot-guard.js records when it started, before core-js and the app bundle
@@ -70,4 +97,5 @@ export function formatBootTimingSummary() {
 export function resetBootTimingsForTests() {
   marks.length = 0;
   firstHomePaintMarked = false;
+  firstHomePaintListeners.clear();
 }

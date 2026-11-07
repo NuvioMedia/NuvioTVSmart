@@ -24,6 +24,7 @@ import { renderAppShell } from "./bootstrap/renderAppShell.js";
 import { renderAddonRemotePage } from "./bootstrap/renderAddonRemotePage.js";
 import { preloadStreamBadgeImages } from "./ui/screens/stream/streamScreen.js";
 import { warmStreamingLibs } from "./runtime/loadStreamingLibs.js";
+import { runAfterFirstHomePaint } from "./runtime/startupScheduler.js";
 import { Platform } from "./platform/index.js";
 import { TizenCapabilities } from "./platform/tizen/tizenCapabilities.js";
 import { PluginServiceClient } from "./platform/pluginServiceClient.js";
@@ -388,19 +389,29 @@ async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
     await I18n.init();
     const memberAccess = MemberAccessRepository.getCachedAccess();
     ThemeManager.apply({ enforceAccess: true, access: memberAccess });
-    void MemberAccessRepository.getAccess().catch((error) => {
-      console.warn("Profile member access refresh failed", error);
-    });
     I18n.apply();
-    void preloadStreamBadgeImages().catch((error) => {
-      console.warn("Stream badge image prerender failed", error);
+    // Neither the member access refresh nor the badge prerender is needed for
+    // the first Home paint; on a single-core TV they competed with the catalog
+    // rows for the main thread and the network.
+    runAfterFirstHomePaint(() => {
+      void MemberAccessRepository.getAccess().catch((error) => {
+        console.warn("Profile member access refresh failed", error);
+      });
+      void preloadStreamBadgeImages().catch((error) => {
+        console.warn("Stream badge image prerender failed", error);
+      });
     });
   }
   const experienceRoute = activeProfile ? await resolveExperienceRoute(activeProfile.id) : "home";
-  void StartupSyncService.requestSyncNow({
-    notifyPullCompleted: ["home", "plugins"].includes(experienceRoute)
-  }).catch((error) => {
-    console.warn("Profile background sync failed", error);
+  // The startup sync fans out to about ten remote surfaces. Home paints from
+  // its local cache first and refreshes when the pull completes, so starting
+  // the pull after that paint keeps the first screen responsive.
+  runAfterFirstHomePaint(() => {
+    void StartupSyncService.requestSyncNow({
+      notifyPullCompleted: ["home", "plugins"].includes(experienceRoute)
+    }).catch((error) => {
+      console.warn("Profile background sync failed", error);
+    });
   });
   const storedResumeRoute =
     restoreWebOsRoute && typeof Router.consumeWebOsResumeRoute === "function"
@@ -833,7 +844,8 @@ async function bootstrapApp() {
 
   markBootStage("Checking authentication");
   await AuthManager.bootstrap();
-  installPartyEffects();
+  // Party toasts and the party availability request can wait for Home.
+  runAfterFirstHomePaint(() => installPartyEffects());
 }
 
 async function bootstrapAddonRemoteMode() {
