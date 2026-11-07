@@ -91,6 +91,56 @@ function watchedEpisodeKeys(show = {}) {
   return keys;
 }
 
+/**
+ * Builds watched (season, episode) sets from the merged watched-items projection
+ * used by MDBList, Simkl and Nuvio Sync, so they get the same fully-watched
+ * series badges as Trakt. Specials stay out of the comparison like Android.
+ */
+function buildWatchedEpisodeIndex(watchedItems = []) {
+  const byIdentity = new Map();
+  (Array.isArray(watchedItems) ? watchedItems : []).forEach((item) => {
+    const seasonNumber = Number(item?.season);
+    const episodeNumber = Number(item?.episode);
+    if (!(seasonNumber > 0) || !(episodeNumber > 0)) {
+      return;
+    }
+    const contentKey = String(item?.contentId || item?.id || "").trim();
+    if (!contentKey) {
+      return;
+    }
+    const key = `${seasonNumber}:${episodeNumber}`;
+    watchedItemIdentityValues(item).forEach((identity) => {
+      const normalized = identityKey(identity);
+      if (!normalized) {
+        return;
+      }
+      const groups = byIdentity.get(normalized) || new Map();
+      const keys = groups.get(contentKey) || new Set();
+      keys.add(key);
+      groups.set(contentKey, keys);
+      byIdentity.set(normalized, groups);
+    });
+  });
+  return byIdentity;
+}
+
+function matchingWatchedEpisodeKeys(item, byIdentity) {
+  const keys = new Set();
+  watchedItemIdentityValues(item).forEach((identity) => {
+    const groups = byIdentity.get(identityKey(identity));
+    if (!groups) {
+      return;
+    }
+    // Same ambiguity rule as the Trakt show index: a shared IMDB identity can
+    // cover separate provider entries, so only merge it on a strong catalog ID.
+    if (groups.size > 1 && !isStrongIdentity(identity)) {
+      return;
+    }
+    groups.forEach((groupKeys) => groupKeys.forEach((key) => keys.add(key)));
+  });
+  return keys;
+}
+
 function metaIdCandidates(item = {}) {
   const ids = [];
   watchedItemIdentityValues(item).forEach((value) => {
@@ -152,16 +202,14 @@ function buildSyntheticSeriesMarker(item, remoteShows = []) {
 /**
  * Projects provider watched episodes into the root watched markers consumed by
  * Home/Library badges. A series is marked only after the same released-main-
- * episode comparison used by the local reconciliation path succeeds.
+ * episode comparison used by the local reconciliation path succeeds. The same
+ * projection runs for every watch-progress source, as Android does.
  */
 class WatchedTitleStateRepository {
   async getTitleWatchedItems(items = [], { baseWatchedItems = null, limit = 2000 } = {}) {
     const base = Array.isArray(baseWatchedItems)
       ? baseWatchedItems
       : await watchedItemsRepository.getAll(limit).catch(() => []);
-    if (!shouldUseTrakt()) {
-      return base;
-    }
 
     const catalogSeries = [];
     const seenCatalogKeys = new Set();
@@ -184,23 +232,33 @@ class WatchedTitleStateRepository {
       return base;
     }
 
-    const remoteShows = await watchedItemsRepository.getRemoteTraktWatchedShows().catch(() => []);
-    if (!remoteShows.length) {
-      return base;
+    const useTrakt = shouldUseTrakt();
+    let remoteIndex = null;
+    let watchedEpisodeIndex = null;
+    if (useTrakt) {
+      const remoteShows = await watchedItemsRepository.getRemoteTraktWatchedShows().catch(() => []);
+      if (!remoteShows.length) {
+        return base;
+      }
+      remoteIndex = buildRemoteShowIndex(remoteShows);
+    } else {
+      watchedEpisodeIndex = buildWatchedEpisodeIndex(base);
+      if (!watchedEpisodeIndex.size) {
+        return base;
+      }
     }
-    const remoteIndex = buildRemoteShowIndex(remoteShows);
+
     const evaluations = await mapWithConcurrency(
       catalogSeries,
       META_CONCURRENCY,
       async (catalogItem) => {
-        const matches = matchingRemoteShows(catalogItem, remoteIndex);
-        if (!matches.length) {
+        const matches = useTrakt ? matchingRemoteShows(catalogItem, remoteIndex) : [];
+        if (useTrakt && !matches.length) {
           return { catalogItem, state: "unknown" };
         }
-        const remoteWatched = new Set();
-        matches.forEach((show) =>
-          watchedEpisodeKeys(show).forEach((key) => remoteWatched.add(key))
-        );
+        const remoteWatched = useTrakt
+          ? new Set(matches.flatMap((show) => Array.from(watchedEpisodeKeys(show))))
+          : matchingWatchedEpisodeKeys(catalogItem, watchedEpisodeIndex);
         // Android does not validate or clear a badge when the watched-episode
         // map has no episode entry at all. Preserve the existing state for an
         // incomplete/empty provider projection instead of treating it as a
@@ -236,7 +294,7 @@ class WatchedTitleStateRepository {
       .map((evaluation) =>
         buildSyntheticSeriesMarker(
           evaluation.catalogItem,
-          matchingRemoteShows(evaluation.catalogItem, remoteIndex)
+          useTrakt ? matchingRemoteShows(evaluation.catalogItem, remoteIndex) : []
         )
       );
 
