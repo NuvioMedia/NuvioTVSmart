@@ -315,16 +315,20 @@ export function createHomeScreenMethods03() {
         // the existing vertical and constrained-runtime throttles.
         return 48;
       }
-      if (!Platform.isBrowser()) {
-        return direction === "up" || direction === "down"
+      const baseThrottleMs =
+        direction === "up" || direction === "down"
           ? MODERN_HOME_CONSTANTS.verticalKeyRepeatThrottleMs
           : MODERN_HOME_CONSTANTS.keyRepeatThrottleMs;
-      }
+      // Legacy / constrained TV back-off must run before the generic
+      // non-browser return, otherwise it is unreachable on Tizen and webOS.
       if (this.isLegacyTvRuntime()) {
-        return Math.max(MODERN_HOME_CONSTANTS.keyRepeatThrottleMs, 120);
+        return Math.max(baseThrottleMs, 120);
       }
       if (this.isPerformanceConstrained()) {
-        return Math.max(MODERN_HOME_CONSTANTS.keyRepeatThrottleMs, 100);
+        return Math.max(baseThrottleMs, 100);
+      }
+      if (!Platform.isBrowser()) {
+        return baseThrottleMs;
       }
       return MODERN_HOME_CONSTANTS.keyRepeatThrottleMs;
     }
