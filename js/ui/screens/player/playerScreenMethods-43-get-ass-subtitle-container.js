@@ -137,6 +137,8 @@ export function createPlayerScreenMethods43() {
         clearTimeout(this.htmlSubtitleRenderTimer);
         this.htmlSubtitleRenderTimer = null;
       }
+      this.htmlSubtitleRenderLoopActive = false;
+      this.htmlSubtitleCueIndex = null;
       if (this.avPlaySubtitleOverlayTimer) {
         clearTimeout(this.avPlaySubtitleOverlayTimer);
         this.avPlaySubtitleOverlayTimer = null;

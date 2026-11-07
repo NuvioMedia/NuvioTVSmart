@@ -82,6 +82,8 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.htmlSubtitleCues = [];
   this.htmlSubtitleRenderFrame = null;
   this.htmlSubtitleRenderTimer = null;
+  this.htmlSubtitleRenderLoopActive = false;
+  this.htmlSubtitleCueIndex = null;
   this.avPlaySubtitleOverlayTimer = null;
   this.htmlSubtitleActiveCueKey = "";
   this.htmlSubtitleSelectedId = null;
