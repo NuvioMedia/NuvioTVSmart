@@ -1,8 +1,57 @@
 // js/core/qr/qrCodeGenerator.js
 /* global qrcode */
 
+// The qrcode-generator library used to be a startup script on every launch.
+// Only the QR sign-in, plugin and phone-config screens need it, so it is now
+// loaded on first use. A package may still ship it as a startup script (webOS
+// does); in that case the global already exists and nothing is fetched.
+const QR_LIBRARY_SRC = "assets/libs/qrcode-generator.js";
+let qrLibraryLoading = null;
+
+function hasQrLibrary() {
+  return typeof globalThis.qrcode === "function";
+}
+
+export function ensureQrCodeLibrary() {
+  if (hasQrLibrary()) {
+    return Promise.resolve();
+  }
+  if (qrLibraryLoading) {
+    return qrLibraryLoading;
+  }
+  qrLibraryLoading = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = QR_LIBRARY_SRC;
+    script.onload = () => {
+      if (hasQrLibrary()) {
+        resolve();
+      } else {
+        reject(new Error("QR code library loaded without exposing qrcode()"));
+      }
+    };
+    script.onerror = () => {
+      script.remove();
+      reject(new Error(`QR code library failed to load: ${QR_LIBRARY_SRC}`));
+    };
+    (document.head || document.documentElement).appendChild(script);
+  }).finally(() => {
+    qrLibraryLoading = null;
+  });
+  return qrLibraryLoading;
+}
+
 export const QrCodeGenerator = {
   generate(canvas, content, size = 512) {
+    if (!hasQrLibrary()) {
+      // Render as soon as the library arrives. Callers do not await this;
+      // the canvas simply fills in a moment later than it would have.
+      return ensureQrCodeLibrary()
+        .then(() => this.generate(canvas, content, size))
+        .catch((error) => {
+          console.warn("QR code rendering skipped", error);
+        });
+    }
     const qr = qrcode(0, "M");
     qr.addData(content);
     qr.make();
@@ -40,6 +89,7 @@ export const QrCodeGenerator = {
     }
 
     ctx.restore();
+    return Promise.resolve();
   },
 
   roundRect(ctx, x, y, width, height, radius) {
