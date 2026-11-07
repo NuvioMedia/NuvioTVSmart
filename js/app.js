@@ -572,6 +572,12 @@ function setupPluginServiceLifecycle() {
     return;
   }
 
+  // The service only serves plugins, so its watchdog probe is skipped while
+  // the player route owns the single TV core.
+  PluginServiceClient.configureLifecycleMonitor({
+    pauseProbeWhen: () => Router.getCurrent() === "player"
+  });
+
   const checkWhenForegrounded = () => {
     if (document.visibilityState === "hidden" || document.webkitHidden === true) {
       return;
@@ -614,15 +620,12 @@ async function bootstrapApp() {
   if (shouldDisableTizenPluginSupport()) {
     markBootStage("PluginService disabled on Tizen below 6.0");
   } else {
-    markBootStage("Starting optional PluginService");
-    // The WRT bridge has already been loaded by index.html. Platform.init() is
-    // therefore the first stable point at which the service can be started.
-    // PluginService is optional: keep its watchdog/recovery loop active, but
-    // never make the application shell wait for its initial /health response.
-    void PluginServiceClient.startLifecycleMonitor().catch(() => {
-      // Health diagnostics and the lifecycle watchdog own the retry/reporting
-      // path. A failed optional service must not fail application bootstrap.
-    });
+    // PluginService is optional and only serves installed plugins. It used to
+    // be launched here, which spawned the Node process during Home render on
+    // every Tizen 6+ TV and probed it every 10 s for the whole session.
+    // PluginServiceClient now starts it, and its watchdog, the first time
+    // plugin code needs the service.
+    markBootStage("PluginService starts on first plugin use");
   }
   applyPerformanceMode();
   markBootStage("Loading language resources");
