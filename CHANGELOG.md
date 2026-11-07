@@ -1,5 +1,13 @@
 ## Unreleased
 
+## 1.3.9
+
+### Improvements & Fixes
+
+- Fixed Nuvio TV not starting on older Samsung TVs (Tizen 5.0 / Chromium 63) after 1.3.8
+- Streams that need add-on headers (such as AnimeWorld) now play on Samsung TVs: the local proxy sends response headers in the form AVPlay expects, so it can seek to the end of non-faststart MP4 files instead of stalling
+- The local playback proxy is now only a fallback on Tizen and webOS: sources that play without the add-on headers open directly from the CDN
+
 ## 1.3.8
 
 ### Improvements & Fixes

@@ -1,5 +1,5 @@
-// Tizen AVPlay: play addon redirect sources directly instead of through the
-// local EngineFS proxy when no request headers need forwarding.
+// Tizen AVPlay: play addon sources directly instead of through the local
+// EngineFS proxy whenever they work without it.
 //
 // Field trace (Tizen 6.0): open(url(127.0.0.1:2710)) -> prepareAsync OK ->
 // seekTo ERR PLAYER_ERROR_INVALID_STATE. Stremio opens the CDN URL directly
@@ -94,13 +94,22 @@ assert.match(await playSource(AIO), /^http:\/\/127\.0\.0\.1:2710\/proxy\//);
 fetchPlan = "forbidden";
 assert.match(await playSource(AIO), /^http:\/\/127\.0\.0\.1:2710\/proxy\//);
 
-// 4. Headers AVPlay cannot send itself still require the proxy; no probe.
+// 4. Headers AVPlay cannot send itself (Referer, Authorization, ...): the proxy
+// is only a fallback. A header-less probe that returns media plays directly...
 fetchPlan = "redirect";
+assert.equal(await playSource(AIO, { Referer: "https://site.example/" }), CDN);
+assert.equal(fetchCalls.length, 1, "one header-less probe");
+assert.equal(
+  fetchCalls[0].init.headers.Referer,
+  undefined,
+  "probe never forwards the addon headers"
+);
+// ...while a CDN that refuses requests without the headers keeps the proxy.
+fetchPlan = "redirect-forbidden";
 assert.match(
   await playSource(AIO, { Authorization: "Bearer x" }),
   /^http:\/\/127\.0\.0\.1:2710\/proxy\//
 );
-assert.equal(fetchCalls.length, 0);
 
 // 5. Non-AIOStreams redirect endpoint (e.g. debrid resolve link) -> direct CDN.
 fetchPlan = "redirect";

@@ -66,5 +66,13 @@ module.exports = function patchPlaybackProxy(source) {
       "var responseHeaders=makeHeaders(result.headers,proxyResHeaders);"
     ].join("")
   );
+  // Samsung AVPlay matches response header names case-sensitively: with the
+  // lowercase names node-fetch produces it misses Content-Range, treats the
+  // MP4 as unseekable and reads it linearly instead of jumping to a trailing
+  // moov box. Send canonical casing (Content-Range, Content-Length, ...).
+  replaceOnce(
+    "res.writeHead(result.status,responseHeaders)",
+    'res.writeHead(result.status,Object.keys(responseHeaders).reduce(function(out,key){out[String(key).replace(/(^|-)([a-z])/g,function(_,dash,letter){return dash+letter.toUpperCase()})]=responseHeaders[key];return out},{}))'
+  );
   return source + "\n/* NUVIO_FIX_PROXY */\n";
 };

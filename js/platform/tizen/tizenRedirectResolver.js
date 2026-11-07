@@ -42,6 +42,15 @@ function isAdaptiveManifestUrl(parsed) {
   return /\.(m3u8|mpd)$/i.test(parsed.pathname || "");
 }
 
+// A header-less probe only proves the source plays without the addon headers
+// when the server actually returned media (not a 200 HTML/challenge page).
+export function isDirectMediaProbeResponse(details = {}) {
+  const status = Number(details?.status || 0);
+  const contentType = String(details?.contentType || "").toLowerCase();
+  if (status === 206) return true;
+  return status === 200 && /^(video|audio)\/|^application\/(octet-stream|mp4)/.test(contentType);
+}
+
 export function describeSourceHost(value = "") {
   const parsed = parseHttpUrl(value);
   return parsed ? parsed.host : null;

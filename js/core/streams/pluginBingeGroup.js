@@ -4,7 +4,29 @@
 
 export const PLUGIN_BINGE_GROUP_PREFIX = "local-plugin-";
 const PLUGIN_BINGE_GROUP_SEPARATOR = "|";
-const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
+// Unicode property escapes are a SyntaxError on Chromium < 64 (Tizen 5.0) and
+// esbuild cannot lower them, so build them at runtime with a fallback.
+function unicodeRegExp(source, fallback) {
+  try {
+    return new RegExp(source, "u");
+  } catch (_) {
+    return fallback;
+  }
+}
+// Fallback: cased letters (Latin, Greek, Cyrillic, ...) plus common uncased scripts.
+const FALLBACK_LETTER = {
+  test: (value) => {
+    const text = String(value || "");
+    return (
+      text.toLowerCase() !== text.toUpperCase() ||
+      /[\u0590-\u06ff\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(text)
+    );
+  }
+};
+const LETTER = unicodeRegExp("\\p{L}", FALLBACK_LETTER);
+const LETTER_OR_DIGIT = unicodeRegExp("[\\p{L}\\p{N}]", {
+  test: (value) => /[0-9]/.test(value) || FALLBACK_LETTER.test(value)
+});
 const RESOLUTION_HEIGHTS = new Set([360, 480, 540, 576, 720, 800, 900, 1080, 1440, 2160, 4320]);
 
 export function canonicalizePluginToken(token) {
@@ -189,7 +211,7 @@ export function indexOfPluginBingeMatch(targetGroup, candidateGroups = []) {
     if (!matched.length) {
       return;
     }
-    const wordHits = matched.filter((token) => /\p{L}/u.test(token)).length;
+    const wordHits = matched.filter((token) => LETTER.test(token)).length;
     if (
       !best ||
       wordHits > best.wordHits ||
