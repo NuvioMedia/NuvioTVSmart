@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./router.js";
-import { markBootTiming } from "../../core/diagnostics/bootTiming.js";
 
 export function createRouterMethods02() {
   const {
@@ -11,6 +10,7 @@ export function createRouterMethods02() {
     ROUTER_PERF_DEBUG,
     routerPerfNow,
     logRouterPerf,
+    markBootTiming,
     NON_BACKSTACK_ROUTES,
     openPendingLaunchDeepLink,
     WEBOS_RESUME_ROUTE_KEY,
@@ -200,7 +200,8 @@ export function createRouterMethods02() {
 
       if (bootGuard && typeof bootGuard.ready === "function") {
         if (bootGuard.isActive?.() !== false) {
-          markBootTiming(`first-route:${routeName}`);
+          // Test fixtures build `internals` by hand and may omit the timing hook.
+          markBootTiming?.(`first-route:${routeName}`);
         }
         bootGuard.ready();
       }
