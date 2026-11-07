@@ -1,4 +1,37 @@
+import { Platform } from "../../platform/index.js";
+
 const TMDB_IMAGE_HOST_PATTERN = /^(?:https?:)?\/\/image\.tmdb\.org\//i;
+
+// Match Android TV: Home and library poster cards use w500 sources.
+const TMDB_CARD_POSTER_SIZE = "w500";
+// Tizen 4/5.0 and webOS 5 and older lack OffscreenCanvas, so tvPosterRescaler
+// cannot downscale card posters off the main thread there and every Home
+// poster decodes at its source size. w342 still covers the 300x450 focused
+// card at 1080p and is the next TMDB poster size below w500.
+const TMDB_LEGACY_TV_CARD_POSTER_SIZE = "w342";
+
+let cachedCardPosterSize = null;
+
+function tvLacksPosterRescaler() {
+  const isTv = Boolean(Platform.isTizen?.() || Platform.isWebOS?.());
+  return isTv && typeof OffscreenCanvas === "undefined";
+}
+
+/**
+ * TMDB size used for poster-shaped Home/library cards. Computed once per run.
+ */
+export function preferredTmdbCardPosterSize() {
+  if (cachedCardPosterSize === null) {
+    cachedCardPosterSize = tvLacksPosterRescaler()
+      ? TMDB_LEGACY_TV_CARD_POSTER_SIZE
+      : TMDB_CARD_POSTER_SIZE;
+  }
+  return cachedCardPosterSize;
+}
+
+export function resetPreferredTmdbCardPosterSizeForTests() {
+  cachedCardPosterSize = null;
+}
 
 /**
  * Keep Home artwork within the source sizes used by Android TV.
@@ -17,5 +50,10 @@ export function normalizeTmdbPosterUrl(value) {
   if (!normalized || !TMDB_IMAGE_HOST_PATTERN.test(normalized)) {
     return normalized;
   }
-  return normalized.replace(/(\/t\/p\/)original\//i, "$1w500/");
+  const size = preferredTmdbCardPosterSize();
+  // Addon catalogs (TMDB addon, AIOMetadata, ...) send w500 posters directly;
+  // only a TV without the rescaler trades those down as well.
+  const oversized =
+    size === TMDB_CARD_POSTER_SIZE ? /(\/t\/p\/)original\//i : /(\/t\/p\/)(?:original|w500)\//i;
+  return normalized.replace(oversized, `$1${size}/`);
 }

@@ -1,3 +1,4 @@
+import { preferredTmdbCardPosterSize } from "../../core/tmdb/tmdbImageUrl.js";
 import { mdbListNextPage } from "./mdbListLibraryCodec.js";
 
 export function invalidMdbTracking() {
@@ -90,7 +91,7 @@ export function mdbMedia(value) {
     ids: mdbIds(row),
     title: row.title || row.name || null,
     year: row.year ?? null,
-    poster: image(row.poster, "w500"),
+    poster: image(row.poster, preferredTmdbCardPosterSize()),
     background: image(row.backdrop || row.background, "w1280"),
     runtime: positiveId(row.runtime) <= 2147483647 ? positiveId(row.runtime) || 0 : 0
   };

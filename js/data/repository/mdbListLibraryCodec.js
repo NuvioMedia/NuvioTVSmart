@@ -1,3 +1,5 @@
+import { preferredTmdbCardPosterSize } from "../../core/tmdb/tmdbImageUrl.js";
+
 function invalid() {
   throw Object.assign(new Error("mdblist_invalid_response"), { code: "mdblist_invalid_response" });
 }
@@ -139,7 +141,7 @@ export function decodeMdbListItems(payload) {
         type,
         ids,
         name: row.title || row.name || id,
-        poster: image(row.poster, "w500"),
+        poster: image(row.poster, preferredTmdbCardPosterSize()),
         background: image(row.backdrop || row.background, "w1280"),
         description: row.description || row.overview || "",
         genres: [
