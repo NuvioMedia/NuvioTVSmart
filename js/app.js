@@ -64,6 +64,39 @@ LocalStore.remove("rotatedDpadMapping");
 // boot-guard mark to this one is the bundle fetch + parse + compile cost.
 markBootTiming("app-bundle-evaluated");
 
+// Web fonts used to be `@import`ed at the top of the stylesheet, which made
+// first paint wait for fonts.googleapis.com (DNS + TLS, or a long failure on
+// offline TVs). Load the same stylesheets from here instead: the CSSOM no
+// longer blocks on them, the fonts still swap in once available, and the
+// Material Icons ligature names stay hidden until that font is ready.
+const REMOTE_FONT_STYLESHEETS = Object.freeze({
+  text: "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap",
+  icons: "https://fonts.googleapis.com/icon?family=Material+Icons"
+});
+
+function loadRemoteStylesheet(href) {
+  return new Promise((resolve) => {
+    try {
+      const head = document.head || document.documentElement;
+      if (!head) {
+        resolve(false);
+        return;
+      }
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.onload = () => resolve(true);
+      link.onerror = () => resolve(false);
+      head.appendChild(link);
+    } catch (_) {
+      resolve(false);
+    }
+  });
+}
+
+const materialIconsStylesheetLoaded = loadRemoteStylesheet(REMOTE_FONT_STYLESHEETS.icons);
+void loadRemoteStylesheet(REMOTE_FONT_STYLESHEETS.text);
+
 const GUEST_QR_BYPASS_KEY = "skipAuthQrGate";
 const SIGNED_OUT_ALLOWED_ROUTES = new Set([
   "trakt",
@@ -87,19 +120,22 @@ function preloadMaterialIconFont() {
   const root = document.documentElement;
   const markReady = () => root.classList.add("material-icons-ready");
   const timer = setTimeout(markReady, 3000);
-  try {
-    Promise.resolve(document.fonts?.load?.('24px "Material Icons"', "home"))
-      .then((faces) => {
-        if (Array.isArray(faces) && faces.length) {
-          clearTimeout(timer);
-          markReady();
-        }
-      })
-      .catch(() => {});
-  } catch (_) {
-    clearTimeout(timer);
-    markReady();
-  }
+  // The icon stylesheet is injected asynchronously (see REMOTE_FONT_STYLESHEETS);
+  // the @font-face only exists once it has loaded, so wait for that first.
+  materialIconsStylesheetLoaded
+    .then((loaded) => {
+      if (!loaded) {
+        return null;
+      }
+      return document.fonts?.load?.('24px "Material Icons"', "home");
+    })
+    .then((faces) => {
+      if (Array.isArray(faces) && faces.length) {
+        clearTimeout(timer);
+        markReady();
+      }
+    })
+    .catch(() => {});
 }
 
 function markBootStage(stage) {
