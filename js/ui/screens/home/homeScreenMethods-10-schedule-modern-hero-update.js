@@ -1,9 +1,33 @@
 import * as internals from "./homeScreenContext.js";
 
+// Tizen fast path: the hero commit waits until the D-pad has been idle for
+// this long (the same window shouldDeferHomeRenderForInput uses for
+// background renders), re-checking at the poll interval.
+const HERO_COMMIT_INPUT_IDLE_MS = 800;
+const HERO_COMMIT_INPUT_IDLE_POLL_MS = 120;
+
 export function createHomeScreenMethods10() {
   const { MODERN_HOME_CONSTANTS, getTvRuntimePerformanceProfile, shouldEnrichModernHero, preloadHeroAssets, buildHeroIdentity } = internals;
 
   return {
+    // On Tizen, committing the hero for every card passed at a steady browsing
+    // pace costs a backdrop decode and swap, a logo swap, several innerHTML
+    // rewrites and then the enrichment fetches with a second apply, all landing
+    // in the window where the next press arrives. Hold the commit while the
+    // D-pad is active; the hero follows focus once the user pauses (#1250).
+    // The backdrop preload still runs on the normal delay, so the swap is
+    // decoded ahead of time.
+    isHomeInputActiveForHeroCommit() {
+      try {
+        const tizenFastPath =
+          (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) ||
+          globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+          globalThis?.document?.documentElement?.classList?.contains("legacy-tizen");
+        return Boolean(tizenFastPath) && Date.now() - Number(this.lastHomeInputAt || 0) < HERO_COMMIT_INPUT_IDLE_MS;
+      } catch (_) {
+        return false;
+      }
+    },
     scheduleModernHeroUpdate(node, { deferUntilVerticalSettle = false, immediate = false } = {}) {
       if (this.layoutMode !== "modern") {
         return;
@@ -64,6 +88,10 @@ export function createHomeScreenMethods10() {
       const commitHeroWhenSettled = () => {
         if (deferUntilVerticalSettle && this.isModernVerticalScrollActive()) {
           this.heroFocusDelayTimer = setTimeout(commitHeroWhenSettled, MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs);
+          return;
+        }
+        if (!immediate && this.isHomeInputActiveForHeroCommit()) {
+          this.heroFocusDelayTimer = setTimeout(commitHeroWhenSettled, HERO_COMMIT_INPUT_IDLE_POLL_MS);
           return;
         }
         this.heroFocusDelayTimer = null;
