@@ -28,7 +28,7 @@ function setup({ platform = "browser", constrained = false, legacyTizen = false 
     ["homeScreenMethods-17-end-modern-vertical-fast-scroll.js", "createHomeScreenMethods17"]
   ]) {
     const source = readFileSync(new URL(`../js/ui/screens/home/${file}`, import.meta.url), "utf8")
-      .replace(/^import .*;\n/m, "")
+      .replace(/^import .*;\r?\n/m, "")
       .replace("export function", "function");
     Object.assign(screen, vm.runInContext(`${source}\n${factory}()`, context));
   }

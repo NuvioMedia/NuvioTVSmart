@@ -100,7 +100,7 @@ async function methods(number, name, internals = {}) {
     "stripSubtitleSdh",
     "syncHtmlSubtitleClearance",
     '"use strict";\n' +
-      source.replace(/^import .*;\n/gm, "").replace(/export function/g, "function") +
+      source.replace(/^import .*;\r?\n/gm, "").replace(/export function/g, "function") +
       `; return ${name}();`
   )(internals, strip, () => {});
 }

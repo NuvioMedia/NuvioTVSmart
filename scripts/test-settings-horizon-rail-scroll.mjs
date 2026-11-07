@@ -10,7 +10,7 @@ const source = readFileSync(
   ),
   "utf8"
 )
-  .replace(/^import[\s\S]*?;\n/gm, "")
+  .replace(/^import[\s\S]*?;\r?\n/gm, "")
   .replace(/^export /gm, "");
 
 function railFixture({ horizontal, scrollLeft = 0, scrollTop = 0, itemStart }) {

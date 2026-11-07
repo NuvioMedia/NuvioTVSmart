@@ -48,7 +48,7 @@ function setup({ platform = "browser", constrained = false, bodyConstrained = fa
   );
   function load(file, factory) {
     const source = readFileSync(new URL(`../js/ui/screens/search/${file}`, import.meta.url), "utf8")
-      .replace(/^import .*;\n/gm, "")
+      .replace(/^import .*;\r?\n/gm, "")
       .replace("export function", "function");
     return vm.runInContext(`${source}\n${factory}()`, context);
   }
