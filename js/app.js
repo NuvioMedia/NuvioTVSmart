@@ -293,18 +293,70 @@ function isAddonRemoteMode() {
   }
 }
 
+// How long startup routing waits for the profile-lock RPC when the cached
+// lock state says the active profile has no PIN. The RPC otherwise runs with
+// the 60 s default request timeout, so a slow TV network held the whole start
+// on it even for a single PIN-less profile.
+const PROFILE_LOCK_STATE_WAIT_MS = 2500;
+
+function hasProfilePin(pinStates, profileId) {
+  return Boolean(pinStates?.[String(profileId)] || pinStates?.[Number(profileId)]);
+}
+
+function raceWithTimeout(promise, timeoutMs) {
+  let timer = null;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(undefined), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+// The bounded wait above may route into the app before the server answers.
+// If the answer then reports a PIN on the active profile, open the picker so
+// the PIN is still required, exactly as an immediate answer would have.
+function enforceLateProfileLock(lockStatePull, profileId) {
+  void lockStatePull
+    .then((pinStates) => {
+      if (!hasProfilePin(pinStates, profileId)) return;
+      if (String(ProfileManager.getActiveProfileId()) !== String(profileId)) return;
+      if (Router.getCurrent() === "profileSelection") return;
+      console.warn("Profile lock state arrived after routing; opening the profile picker");
+      void Router.navigate(
+        "profileSelection",
+        { skipInitialProfileSync: true, profilePinEnabled: pinStates },
+        { replaceHistory: true, skipStackPush: true }
+      );
+    })
+    .catch(() => {});
+}
+
 async function shouldShowProfileSelection() {
-  const [profiles, pinStates] = await Promise.all([
-    ProfileManager.getProfiles(),
-    ProfileSyncService.pullProfileLockStates()
-  ]);
+  const profiles = await ProfileManager.getProfiles();
   const activeProfileId = ProfileManager.getActiveProfileId();
-  const activeProfileHasPin = Boolean(
-    pinStates?.[String(activeProfileId)] || pinStates?.[Number(activeProfileId)]
-  );
+  const cachedPinStates = ProfileSyncService.getCachedProfileLockStates();
+  const lockStatePull = ProfileSyncService.pullProfileLockStates();
+  // A profile the cache knows to be PIN-protected, or a TV the server has
+  // never answered, waits for the live state as before. Otherwise the pull is
+  // bounded so the network cannot delay Home; a late PIN answer is enforced by
+  // enforceLateProfileLock.
+  const waitForLiveState =
+    cachedPinStates === null || hasProfilePin(cachedPinStates, activeProfileId);
+  let pinStates;
+  let liveStateKnown = true;
+  if (waitForLiveState) {
+    pinStates = await lockStatePull;
+  } else {
+    pinStates = await raceWithTimeout(lockStatePull, PROFILE_LOCK_STATE_WAIT_MS);
+    if (pinStates === undefined) {
+      liveStateKnown = false;
+      pinStates = cachedPinStates;
+      enforceLateProfileLock(lockStatePull, activeProfileId);
+    }
+  }
+  const activeProfileHasPin = hasProfilePin(pinStates, activeProfileId);
 
   if (hasSelectedProfileThisSession) {
-    return { show: false, pinStates };
+    return { show: false, pinStates, liveStateKnown };
   }
 
   // Remember last profile: when enabled and the last used profile has no PIN,
@@ -315,10 +367,10 @@ async function shouldShowProfileSelection() {
     ProfileManager.hasEverSelectedProfile() &&
     !activeProfileHasPin
   ) {
-    return { show: false, pinStates };
+    return { show: false, pinStates, liveStateKnown };
   }
 
-  return { show: profiles.length > 1 || activeProfileHasPin, pinStates };
+  return { show: profiles.length > 1 || activeProfileHasPin, pinStates, liveStateKnown };
 }
 
 async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
@@ -380,10 +432,14 @@ async function routeAfterAuthentication() {
   const profileRoute = await shouldShowProfileSelection();
   loginTrace("authenticated route profile decision", { show: profileRoute.show === true });
   if (profileRoute.show) {
-    await Router.navigate("profileSelection", {
-      skipInitialProfileSync: true,
-      profilePinEnabled: profileRoute.pinStates
-    });
+    // Without a live answer the picker runs its own profile/lock refresh so
+    // PIN badges and PIN prompts never rely on the cached state.
+    await Router.navigate(
+      "profileSelection",
+      profileRoute.liveStateKnown
+        ? { skipInitialProfileSync: true, profilePinEnabled: profileRoute.pinStates }
+        : {}
+    );
     return;
   }
 
@@ -711,6 +767,7 @@ async function bootstrapApp() {
       StartupSyncService.stop();
       ProviderCredentialSyncService.cancelForegroundPull();
       void MediaServerSyncService.stop();
+      ProfileSyncService.clearCachedProfileLockStates();
       hasSelectedProfileThisSession = false;
       const shouldBypassQr = Boolean(LocalStore.get(GUEST_QR_BYPASS_KEY, false));
       if (isSignedOutRouteAllowed()) {
