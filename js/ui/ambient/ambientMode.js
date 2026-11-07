@@ -1,4 +1,5 @@
 import { isAmbientTrailerPlaying } from "./ambientPlaybackPolicy.js";
+import { focusWithoutScroll } from "../navigation/focusWithoutScroll.js";
 import { WebOSPlayerExtensions } from "../../platform/webos/webosPlayerExtensions.js";
 import { TizenScreenSaver } from "../../platform/tizen/tizenScreenSaver.js";
 import { Platform } from "../../platform/index.js";
@@ -361,11 +362,7 @@ export const AmbientMode = {
       this.previousFocus !== document.body &&
       this.previousFocus !== document.documentElement
     ) {
-      try {
-        this.previousFocus.focus({ preventScroll: true });
-      } catch (_) {
-        this.previousFocus.focus();
-      }
+      focusWithoutScroll(this.previousFocus);
     } else if (canRestoreFocus) {
       this.previousScreen?.applyFocus?.();
     }

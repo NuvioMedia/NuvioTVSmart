@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 export function createPlayerScreenMethods04() {
   const {
@@ -265,11 +266,7 @@ export function createPlayerScreenMethods04() {
       actions.forEach((entry) => {
         entry.classList.toggle("focused", entry === node);
       });
-      try {
-        node.focus({ preventScroll: true });
-      } catch (_) {
-        node.focus?.();
-      }
+      focusWithoutScroll(node);
       return true;
     },
     clearPostPlayFocusTimer() {

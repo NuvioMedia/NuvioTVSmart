@@ -1,6 +1,7 @@
 // Watch party in the player, mirroring Android PlayerRuntimeControllerParty.kt,
 // the party parts of PlayerScreen.kt and ui/screens/party/PartyPanel.kt.
 import { PlayerController } from "../../../core/player/playerController.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { PartyRepository } from "../../../core/party/partyRepository.js";
 import {
   OwnSeekType,
@@ -905,11 +906,7 @@ export function createPlayerPartyMethods() {
       if (!preferred) return;
       preferred.classList.add("focused");
       this.partyPanelFocusKey = preferred.dataset.focusKey || "";
-      try {
-        preferred.focus({ preventScroll: true });
-      } catch (_) {
-        preferred.focus?.();
-      }
+      focusWithoutScroll(preferred);
       // Like Android's panel list, only the panel's own list scrolls. scrollIntoView
       // would also scroll the overflow-hidden player root while the panel slides in
       // from off-screen, leaving the whole player UI shifted left.

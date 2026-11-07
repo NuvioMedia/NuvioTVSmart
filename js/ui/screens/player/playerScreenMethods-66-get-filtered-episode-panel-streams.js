@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 export function createPlayerScreenMethods66() {
   const { streamRepository, isSelectKeyCode, t, clamp, normalizeItemType, streamMergeKey } = internals;
@@ -346,12 +347,7 @@ export function createPlayerScreenMethods66() {
       const focusedFilter = panel.querySelector(".player-episode-stream-filter.focused");
       scrollHorizontallyWithin(panel.querySelector(".player-episode-stream-filters"), focusedFilter);
 
-      try {
-        const focused = panel.querySelector(".focused");
-        focused?.focus?.({ preventScroll: true });
-      } catch (_) {
-        // Some TV WebKit builds reject programmatic focus during DOM replacement.
-      }
+      focusWithoutScroll(panel.querySelector(".focused"));
     }
   };
 }

@@ -1,3 +1,5 @@
+import { focusWithoutScroll } from "./focusWithoutScroll.js";
+
 export const ScreenUtils = {
   // Micro-fade for fast-path TVs: returns the full enter class on capable
   // hardware, a cheap opacity-only fade class on fast-path TVs, or "" when
@@ -61,26 +63,14 @@ export const ScreenUtils = {
     if (modalOpen) {
       const existingFocused = container?.querySelector?.(".focusable.focused") || null;
       if (existingFocused instanceof HTMLElement && container?.contains(existingFocused)) {
-        try {
-          existingFocused.focus({ preventScroll: true });
-        } catch (_) {
-          try {
-            existingFocused.focus();
-          } catch (_) {}
-        }
+        focusWithoutScroll(existingFocused);
         return existingFocused;
       }
       return null;
     }
     const existingFocused = container?.querySelector?.(".focusable.focused") || null;
     if (existingFocused instanceof HTMLElement && container?.contains(existingFocused)) {
-      try {
-        existingFocused.focus({ preventScroll: true });
-      } catch (_) {
-        try {
-          existingFocused.focus();
-        } catch (_) {}
-      }
+      focusWithoutScroll(existingFocused);
       return existingFocused;
     }
     const first = container?.querySelector(selector);
@@ -109,11 +99,7 @@ export const ScreenUtils = {
 
     current.classList.remove("focused");
     list[nextIndex].classList.add("focused");
-    try {
-      list[nextIndex].focus({ preventScroll: true });
-    } catch (_) {
-      list[nextIndex].focus();
-    }
+    focusWithoutScroll(list[nextIndex]);
   },
 
   moveFocusDirectional(container, direction, selector = ".focusable") {
@@ -135,11 +121,7 @@ export const ScreenUtils = {
     if (!current.classList.contains("focused")) {
       list.forEach((node) => node.classList.remove("focused"));
       current.classList.add("focused");
-      try {
-        current.focus({ preventScroll: true });
-      } catch (_) {
-        current.focus();
-      }
+      focusWithoutScroll(current);
       return;
     }
 
@@ -235,11 +217,7 @@ export const ScreenUtils = {
 
     current.classList.remove("focused");
     target.classList.add("focused");
-    try {
-      target.focus({ preventScroll: true });
-    } catch (_) {
-      target.focus();
-    }
+    focusWithoutScroll(target);
   },
 
   handleDpadNavigation(event, container, selector = ".focusable") {

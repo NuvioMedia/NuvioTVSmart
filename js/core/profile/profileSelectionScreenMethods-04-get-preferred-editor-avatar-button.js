@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./profileSelectionScreen.js";
+import { focusWithoutScroll } from "../../ui/navigation/focusWithoutScroll.js";
 
 export function createProfileSelectionScreenMethods04() {
   const {
@@ -193,11 +194,7 @@ export function createProfileSelectionScreenMethods04() {
       }
 
       event?.preventDefault?.();
-      try {
-        cards[nextIndex].focus({ preventScroll: true });
-      } catch (_) {
-        cards[nextIndex].focus();
-      }
+      focusWithoutScroll(cards[nextIndex]);
       return true;
     },
     updateBackground(colorHex) {

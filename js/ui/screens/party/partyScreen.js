@@ -2,6 +2,7 @@
 // join with a code (keypad + preview), the "You're in" moment, and the
 // party overview with members, host settings and actions.
 import { ScreenUtils } from "../../navigation/screen.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { Router } from "../../navigation/routerState.js";
 import { PartyRepository } from "../../../core/party/partyRepository.js";
 import {
@@ -280,11 +281,7 @@ export const PartyScreen = {
     if (!target) return;
     target.classList.add("focused");
     this.focusKey = target.dataset.focusKey || "";
-    try {
-      target.focus({ preventScroll: true });
-    } catch (_) {
-      target.focus?.();
-    }
+    focusWithoutScroll(target);
     target.scrollIntoView?.({ block: "nearest" });
   },
 

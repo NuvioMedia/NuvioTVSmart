@@ -1,4 +1,5 @@
 import { customPosterForItem, posterFallbackAttributes } from "../../../core/poster/customPoster.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 import { watchedItemsRepository } from "../../../data/repository/watchedItemsRepository.js";
@@ -89,7 +90,7 @@ export function createMetaDetailsScreenMethods16() {
         onDismiss: close
       });
       this.synopsisDialog.mount(document.body);
-      text.focus({ preventScroll: true });
+      focusWithoutScroll(text);
     },
     renderCommentsSection() {
       if (this.commentsLoading) {
@@ -253,7 +254,7 @@ export function createMetaDetailsScreenMethods16() {
         onDismiss: () => this.closeCommentOverlay()
       }).mount(document.body);
       this.renderCommentOverlayContent();
-      content.focus({ preventScroll: true });
+      focusWithoutScroll(content);
     },
     renderCommentOverlayContent() {
       const overlay = this.commentOverlay;

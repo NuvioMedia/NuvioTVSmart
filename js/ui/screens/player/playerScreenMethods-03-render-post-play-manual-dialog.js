@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 export function createPlayerScreenMethods03() {
   const { POST_PLAY_IN_APP_TRAILER_PLAYBACK_ENABLED, t, escapeHtml, escapeAttribute } = internals;
@@ -61,11 +62,7 @@ export function createPlayerScreenMethods03() {
         if (!this.postPlaySynopsisVisible || !content.isConnected) {
           return;
         }
-        try {
-          content.focus({ preventScroll: true });
-        } catch (_) {
-          content.focus?.();
-        }
+        focusWithoutScroll(content);
       };
       if (typeof requestAnimationFrame === "function") {
         requestAnimationFrame(() => requestAnimationFrame(focus));

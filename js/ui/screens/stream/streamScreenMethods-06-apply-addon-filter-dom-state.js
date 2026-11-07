@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./streamScreen.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { startStreamBadgeMarquee, stopStreamBadgeMarquee } from "./streamBadgeMarquee.js";
 
 export function createStreamScreenMethods06() {
@@ -175,11 +176,7 @@ export function createStreamScreenMethods06() {
       target.classList.add("focused");
       this.focusedElement = target;
       startStreamBadgeMarquee(target.closest(".stream-route-card-row"));
-      try {
-        target.focus({ preventScroll: true });
-      } catch (_) {
-        target.focus();
-      }
+      focusWithoutScroll(target);
 
       const chipTrack = target.closest(".stream-route-chip-track");
       if (chipTrack) {

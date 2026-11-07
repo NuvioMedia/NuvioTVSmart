@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 export function createMetaDetailsScreenMethods22() {
   const { DETAIL_TAB_FOCUS_TARGET, DETAIL_ROW_FOCUS_TARGET, ScreenUtils, isSeriesDetailMeta } = internals;
@@ -288,7 +289,7 @@ export function createMetaDetailsScreenMethods22() {
         if (node !== target) node.classList.remove("focused");
       });
       target.classList.add("focused");
-      target.focus({ preventScroll: true });
+      focusWithoutScroll(target);
       this.rememberEpisodeFocus(target, list);
       this.rememberRailFocus(target, list);
       const horizontalTrack = target.closest(

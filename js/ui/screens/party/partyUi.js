@@ -1,6 +1,7 @@
 // Shared watch party markup, mirroring Android ui/screens/party/PartyUi.kt,
 // PartyCode.kt and PartyDetails.kt.
 import { I18n } from "../../../i18n/index.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { NuvioDialog } from "../../components/nuvioDialog.js";
 import {
   PARTY_CODE_LENGTH,
@@ -445,11 +446,7 @@ export function moveListFocus(container, delta) {
   if (!target || target === current) return current;
   current?.classList.remove("focused");
   target.classList.add("focused");
-  try {
-    target.focus({ preventScroll: true });
-  } catch (_) {
-    target.focus?.();
-  }
+  focusWithoutScroll(target);
   target.scrollIntoView?.({ block: "nearest" });
   return target;
 }

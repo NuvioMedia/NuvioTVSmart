@@ -1,4 +1,5 @@
 import { registerMdbListAccountActions } from "./settingsMdbListAccount.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { MdbListAccount } from "../../../data/repository/mdbListAccount.js";
 /* eslint-disable no-unused-vars */
 import { ScreenUtils } from "../../navigation/screen.js";
@@ -31,14 +32,7 @@ function t(key, params = {}, fallback = key) {
 }
 
 function focusNode(node) {
-  if (!node || typeof node.focus !== "function") {
-    return;
-  }
-  try {
-    node.focus({ preventScroll: true });
-  } catch (_) {
-    node.focus();
-  }
+  focusWithoutScroll(node);
 }
 
 function captureTraktScrollState(container) {
