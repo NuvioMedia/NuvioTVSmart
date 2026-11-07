@@ -209,7 +209,9 @@ export function createHomeScreenMethods28() {
         useEpisodeThumbnails: this.layoutPrefs?.useEpisodeThumbnailsInCw !== false,
         blurNextUp: resolveContinueWatchingBlurNextUp(this.layoutPrefs),
         cardStyle: this.layoutPrefs?.continueWatchingCardStyle || "card",
-        rowKey
+        rowKey,
+        // One preference read per appended batch, not one per card.
+        posterSettings: LayoutPreferences.get()
       };
       const markup = nextItems.map((item, index) => renderContinueWatchingCard(item, startIndex + index, cardOptions)).join("");
       if (!markup) {

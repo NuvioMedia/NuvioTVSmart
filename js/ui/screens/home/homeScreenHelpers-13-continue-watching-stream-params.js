@@ -241,10 +241,14 @@ export function renderLegacyCatalogRowsMarkup(rows = [], options = {}) {
     expandFocusedPoster = false,
     rowItemLimit = HOME_MAX_ITEMS_PER_ROW_DEFAULT,
     gridMaxDisplayItems = HOME_GRID_SAFE_MAX_COLUMNS * HOME_GRID_DEFAULT_ROW_COUNT,
-    watchedTitleIds = null
+    watchedTitleIds = null,
+    posterSettings = null
   } = options;
   const catalogSeeAllMap = new Map();
   const sectionsMarkup = [];
+  // One preference read per render pass: get() clones the profile store and
+  // rewrites the root card-depth variables, which is far too much per card.
+  const cardSettings = posterSettings || LayoutPreferences.get();
 
   rows.forEach((rowData, rowIndex) => {
     const isCollectionRow = rowData?.rowKind === "collection";
@@ -302,7 +306,8 @@ export function renderLegacyCatalogRowsMarkup(rows = [], options = {}) {
           expandFocusedPoster && focusedRowKey === rowKey && focusedItemIndex === itemIndex,
           false,
           deferRowImages,
-          watchedTitleIds
+          watchedTitleIds,
+          cardSettings
         )
       )
       .join("");
