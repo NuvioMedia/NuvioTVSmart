@@ -22,8 +22,6 @@ function buildNormalizedEvent(event) {
     shiftKey: Boolean(event?.shiftKey),
     metaKey: Boolean(event?.metaKey),
     repeat: Boolean(event?.repeat),
-    // When the key was pressed, for screens that gate repeats by press spacing.
-    timeStamp: keyEventTime(event),
     defaultPrevented: Boolean(event?.defaultPrevented),
     keyCode: normalizedCode,
     which: normalizedCode,

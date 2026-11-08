@@ -58,12 +58,7 @@ export function createHomeScreenMethods19() {
       }
 
       if (inputMeta.repeat) {
-        // Measure the repeat gap from when the key was pressed, not from when a
-        // busy main thread got to the event: two presses handled back to back
-        // after one long frame would otherwise look like a single fast repeat
-        // and the second one would be dropped (#1250).
-        const eventTime = Number(event?.timeStamp);
-        const now = Number.isFinite(eventTime) && eventTime > 0 ? eventTime : Date.now();
+        const now = Date.now();
         const repeatThrottleMs = this.getDirectionalRepeatThrottleMs(direction);
         const repeatTimes = this.lastDirectionalKeyAtByDirection || (this.lastDirectionalKeyAtByDirection = {});
         const lastDirectionalKeyAt = Number(repeatTimes[direction] || 0);
