@@ -1,4 +1,5 @@
 import { I18n } from "../../../i18n/index.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import {
   getConsoleDebugEvents,
   subscribeToConsoleDebugEvents
@@ -40,14 +41,7 @@ function isTizenSubtitleDiagnosticsEnabled() {
 }
 
 function focusNode(node) {
-  if (!node || typeof node.focus !== "function") {
-    return;
-  }
-  try {
-    node.focus({ preventScroll: true });
-  } catch (_) {
-    node.focus();
-  }
+  focusWithoutScroll(node);
 }
 
 function scrollIndicatorMarkup() {

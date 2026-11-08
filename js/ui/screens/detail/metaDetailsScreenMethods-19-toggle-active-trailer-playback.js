@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 import { shouldContinueTrailerInBackgroundOnBack } from "../../../core/detail/trailerBackPolicy.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 export function createMetaDetailsScreenMethods19() {
   const { t, escapeHtml, buildInlineYoutubePlayerUrl, LayoutPreferences, PlayerSettingsStore } = internals;
@@ -231,7 +232,7 @@ export function createMetaDetailsScreenMethods19() {
           `;
         this.cacheTrailerRefs();
         if (this.trailerPlaybackMode === "manual") {
-          this.trailerUiRefs?.overlay?.focus?.({ preventScroll: true });
+          focusWithoutScroll(this.trailerUiRefs?.overlay);
           this.startTrailerProgressTimer();
         }
         this.initYoutubeTrailerPlayer();
@@ -247,7 +248,7 @@ export function createMetaDetailsScreenMethods19() {
         `;
       this.cacheTrailerRefs();
       if (this.trailerPlaybackMode === "manual") {
-        this.trailerUiRefs?.overlay?.focus?.({ preventScroll: true });
+        focusWithoutScroll(this.trailerUiRefs?.overlay);
       }
       this.applyTrailerVideoSubtitleState(this.trailerUiRefs?.video || null);
       this.bindTrailerVideoEvents(this.trailerUiRefs?.video || null);

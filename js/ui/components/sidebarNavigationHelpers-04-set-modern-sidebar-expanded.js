@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 
 import { Router } from "../navigation/routerState.js";
+import { focusWithoutScroll } from "../navigation/focusWithoutScroll.js";
 
 import { ProfileManager } from "../../core/profile/profileManager.js";
 
@@ -122,12 +123,5 @@ export function setModernSidebarExpanded(container, expanded) {
 }
 
 export function focusWithoutAutoScroll(node) {
-  if (!node || typeof node.focus !== "function") {
-    return;
-  }
-  try {
-    node.focus({ preventScroll: true });
-  } catch (_) {
-    node.focus();
-  }
+  focusWithoutScroll(node);
 }

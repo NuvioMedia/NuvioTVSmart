@@ -1,4 +1,5 @@
 import { Router } from "../../navigation/routerState.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { QrLoginService } from "../../../core/auth/qrLoginService.js";
 import { LocalStore } from "../../../core/storage/localStore.js";
 import { SessionStore } from "../../../core/storage/sessionStore.js";
@@ -93,11 +94,7 @@ function focusNode(node) {
     }
   });
   node.classList.add("focused");
-  try {
-    node.focus({ preventScroll: true });
-  } catch (_) {
-    node.focus?.();
-  }
+  focusWithoutScroll(node);
 }
 
 function formatDuration(millis) {

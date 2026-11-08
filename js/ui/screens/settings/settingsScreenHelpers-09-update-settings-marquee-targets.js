@@ -1,4 +1,5 @@
 import { Router } from "../../navigation/routerState.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 import { ScreenUtils } from "../../navigation/screen.js";
 
@@ -320,15 +321,7 @@ export function updateSettingsRailIndicatorsSoon(rail) {
 }
 
 export function focusSettingsNode(node) {
-  if (!node || typeof node.focus !== "function") {
-    return;
-  }
-
-  try {
-    node.focus({ preventScroll: true });
-  } catch (_) {
-    node.focus();
-  }
+  focusWithoutScroll(node);
 }
 
 export function isScrollContainerAtBoundary(node, direction) {

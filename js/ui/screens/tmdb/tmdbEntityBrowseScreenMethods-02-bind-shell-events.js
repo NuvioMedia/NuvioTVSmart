@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./tmdbEntityBrowseScreen.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 export function createTmdbEntityBrowseScreenMethods02() {
   const { Router, TmdbMetadataService, TmdbSettingsStore, POSTER_HOLD_DELAY_MS, normalizeEntityKind, normalizeEntityId, getDirection } =
@@ -149,11 +150,7 @@ export function createTmdbEntityBrowseScreenMethods02() {
         }
       });
       node.classList.add("focused");
-      try {
-        node.focus({ preventScroll: true });
-      } catch (_) {
-        node.focus();
-      }
+      focusWithoutScroll(node);
       this.rememberFocusedCard(node);
       this.syncFocusedCardScroll(node, { instant });
       const rail = (this.data?.rails || []).find((entry) => String(entry?.key || "") === String(node.dataset.railKey || ""));

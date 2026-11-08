@@ -43,6 +43,8 @@
  *   dialog.destroy();              // animated exit then removes from DOM
  */
 
+import { focusWithoutScroll } from "../navigation/focusWithoutScroll.js";
+
 export class NuvioDialog {
   constructor({
     title,
@@ -257,7 +259,7 @@ export class NuvioDialog {
     this._buttonEls.forEach((el, idx) => {
       el.classList.toggle("focused", idx === clamped);
     });
-    this._buttonEls[clamped]?.focus({ preventScroll: true });
+    focusWithoutScroll(this._buttonEls[clamped]);
   }
 
   _onKey(e) {

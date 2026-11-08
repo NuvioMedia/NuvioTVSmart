@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { segmentCategory } from "../../../core/player/skipIntervalRules.js";
 
 export function createPlayerScreenMethods08() {
@@ -270,15 +271,7 @@ export function createPlayerScreenMethods08() {
         activeElement.blur();
       }
       if (document.activeElement !== target && typeof target.focus === "function") {
-        try {
-          target.focus({ preventScroll: true });
-        } catch (_) {
-          try {
-            target.focus();
-          } catch (_) {
-            // Some TV runtimes can reject focus during DOM churn.
-          }
-        }
+        focusWithoutScroll(target);
       }
     },
     focusSkipIntroButton() {

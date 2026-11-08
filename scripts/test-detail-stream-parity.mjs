@@ -99,6 +99,7 @@ const fixtures = {
     return {};
   },
   LocalStore: { get: (_key, fallback) => fallback },
+  focusWithoutScroll: (node) => node?.focus?.(),
   normalizeDetailImdbRatingsVisibility: (value) => value,
   normalizeHomeImdbRatingsVisibility: (value) => value,
   t: (key, args = []) => key + (args.length ? ":" + args[0] : ""),

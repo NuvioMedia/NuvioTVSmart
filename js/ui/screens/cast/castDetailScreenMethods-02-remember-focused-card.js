@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./castDetailScreen.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 export function createCastDetailScreenMethods02() {
   const { Router, ScreenUtils, posterItemFromNode, PosterOptionsDialogController, POSTER_HOLD_DELAY_MS, isBackEvent, getDirection } =
@@ -32,11 +33,7 @@ export function createCastDetailScreenMethods02() {
         }
       });
       node.classList.add("focused");
-      try {
-        node.focus({ preventScroll: true });
-      } catch (_) {
-        node.focus();
-      }
+      focusWithoutScroll(node);
       this.rememberFocusedCard(node);
       this.syncFocusedCardScroll({ instant });
       return true;
@@ -248,7 +245,7 @@ export function createCastDetailScreenMethods02() {
               if (current !== target) current.classList.remove("focused");
             });
             target.classList.add("focused");
-            target.focus?.({ preventScroll: true });
+            focusWithoutScroll(target);
             this.rememberFocusedCard(target);
             this.syncFocusedCardScroll({ instant: true });
           }

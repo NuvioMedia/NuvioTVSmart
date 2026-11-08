@@ -1,4 +1,5 @@
 import { ScreenUtils } from "../../navigation/screen.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { Router } from "../../navigation/routerState.js";
 import { Platform } from "../../../platform/index.js";
 import { I18n } from "../../../i18n/index.js";
@@ -160,12 +161,7 @@ function contributorSupportLink(login) {
 }
 
 function focusNode(node) {
-  if (!node || typeof node.focus !== "function") return;
-  try {
-    node.focus({ preventScroll: true });
-  } catch (_) {
-    node.focus();
-  }
+  focusWithoutScroll(node);
 }
 
 function visibleFocusableNodes(container) {

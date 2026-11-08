@@ -1,4 +1,5 @@
 import { createTrackingSettingsMethods } from "../settings/trackingSettingsMethods.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 import { ScreenUtils } from "../../navigation/screen.js";
 import { Router } from "../../navigation/routerState.js";
 import { Platform } from "../../../platform/index.js";
@@ -34,14 +35,7 @@ function t(key, params = {}, fallback = key) {
 }
 
 function focusNode(node) {
-  if (!node || typeof node.focus !== "function") {
-    return;
-  }
-  try {
-    node.focus({ preventScroll: true });
-  } catch (_) {
-    node.focus();
-  }
+  focusWithoutScroll(node);
 }
 
 function captureTraktScrollState(container) {
