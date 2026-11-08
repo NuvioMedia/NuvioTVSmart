@@ -17,10 +17,25 @@ const ORIGINAL_BACKDROP = "https://image.tmdb.org/t/p/original/backdrop.jpg";
 const METAHUB_POSTER = "https://images.metahub.space/poster/small/tt0001/img";
 const ADDON_W500_LOOKALIKE = "https://cdn.example.org/t/p/w500/poster.jpg";
 
-function withRuntime({ platform = null, offscreenCanvas = false } = {}, run) {
+function withRuntime(
+  {
+    platform = null,
+    offscreenCanvas = false,
+    viewportWidth = 1920,
+    screenWidth = 1920,
+    devicePixelRatio = 1
+  } = {},
+  run
+) {
   const previousOverride = globalThis.__NUVIO_PLATFORM__;
   const hadOffscreenCanvas = Object.prototype.hasOwnProperty.call(globalThis, "OffscreenCanvas");
   const previousOffscreenCanvas = globalThis.OffscreenCanvas;
+  const hadScreen = Object.prototype.hasOwnProperty.call(globalThis, "screen");
+  const previousScreen = globalThis.screen;
+  const hadInnerWidth = Object.prototype.hasOwnProperty.call(globalThis, "innerWidth");
+  const previousInnerWidth = globalThis.innerWidth;
+  const hadDevicePixelRatio = Object.prototype.hasOwnProperty.call(globalThis, "devicePixelRatio");
+  const previousDevicePixelRatio = globalThis.devicePixelRatio;
   try {
     if (platform) {
       globalThis.__NUVIO_PLATFORM__ = platform;
@@ -32,6 +47,9 @@ function withRuntime({ platform = null, offscreenCanvas = false } = {}, run) {
     } else {
       delete globalThis.OffscreenCanvas;
     }
+    globalThis.innerWidth = viewportWidth;
+    globalThis.screen = { width: screenWidth };
+    globalThis.devicePixelRatio = devicePixelRatio;
     Platform.current = null;
     resetPreferredTmdbCardPosterSizeForTests();
     return run();
@@ -45,6 +63,21 @@ function withRuntime({ platform = null, offscreenCanvas = false } = {}, run) {
       globalThis.OffscreenCanvas = previousOffscreenCanvas;
     } else {
       delete globalThis.OffscreenCanvas;
+    }
+    if (hadScreen) {
+      globalThis.screen = previousScreen;
+    } else {
+      delete globalThis.screen;
+    }
+    if (hadInnerWidth) {
+      globalThis.innerWidth = previousInnerWidth;
+    } else {
+      delete globalThis.innerWidth;
+    }
+    if (hadDevicePixelRatio) {
+      globalThis.devicePixelRatio = previousDevicePixelRatio;
+    } else {
+      delete globalThis.devicePixelRatio;
     }
     Platform.current = null;
     resetPreferredTmdbCardPosterSizeForTests();
@@ -100,6 +133,24 @@ for (const platform of ["tizen", "webos"]) {
       assert.equal(libraryItem.poster, "https://image.tmdb.org/t/p/w342/p.jpg");
       assert.equal(libraryItem.background, "https://image.tmdb.org/t/p/w1280/b.jpg");
     });
+  });
+
+  test(`${platform} without OffscreenCanvas on a 4K panel keeps w500 card posters`, () => {
+    // A 4K panel that lays the app out at 1920 CSS px paints the card at two
+    // device pixels per CSS pixel, so w342 would be upscaled. Android TV keeps
+    // w500 here too.
+    withRuntime(
+      { platform, offscreenCanvas: false, screenWidth: 3840, devicePixelRatio: 2 },
+      () => {
+        assert.equal(preferredTmdbCardPosterSize(), "w500");
+        assert.equal(normalizeTmdbPosterUrl(ORIGINAL_POSTER), W500_POSTER);
+        assert.equal(normalizeTmdbPosterUrl(W500_POSTER), W500_POSTER);
+        assert.equal(
+          mdbMedia({ ids: { imdb: "tt0001" }, poster: "/p.jpg" }).poster,
+          "https://image.tmdb.org/t/p/w500/p.jpg"
+        );
+      }
+    );
   });
 
   test(`${platform} with OffscreenCanvas keeps w500 card posters`, () => {

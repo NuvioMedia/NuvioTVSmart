@@ -3,10 +3,10 @@ import {
   rescaleHomeArtwork,
   releaseHomeArtwork,
   shouldRescaleHomeArtwork,
-  getHomeArtworkPixelRatio,
   getHomeArtworkObjectFit,
   isRescalableArtworkFit
 } from "../../images/tvPosterRescaler.js";
+import { getTvArtworkPixelRatio } from "../../../platform/tvRuntimePerformance.js";
 
 export function createHomeScreenMethods24() {
   const imageRequests = new WeakMap();
@@ -332,7 +332,7 @@ export function createHomeScreenMethods24() {
       // already 1920 wide, so trusting it decodes four times the pixels the
       // panel can show. Derive the ratio from the screen instead, which stays
       // correct on a real 4K device where the app still lays out at 1920.
-      const ratio = getHomeArtworkPixelRatio();
+      const ratio = getTvArtworkPixelRatio();
       const width = Math.round(rect.width * ratio);
       const height = Math.round(rect.height * ratio);
       if (!(width > 0) || !(height > 0)) {

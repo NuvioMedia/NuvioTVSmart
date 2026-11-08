@@ -168,6 +168,22 @@ export function resetTvRuntimePerformanceProfile() {
   cachedProfile = null;
 }
 
+/**
+ * Device pixels per CSS pixel for the panel actually being painted.
+ *
+ * webOS reports devicePixelRatio 2 on 1080p sets whose CSS viewport is already
+ * 1920 wide, so the reported value would quadruple every decode for no visible
+ * gain. Comparing the screen to the viewport gives 1 there and still gives 2 on
+ * a 4K panel that lays the app out at 1920.
+ */
+export function getTvArtworkPixelRatio() {
+  const viewportWidth = Number(globalThis.innerWidth) || 0;
+  const screenWidth = Number(globalThis.screen?.width) || 0;
+  const measured = viewportWidth > 0 && screenWidth > 0 ? screenWidth / viewportWidth : 1;
+  const reported = Number(globalThis.devicePixelRatio) || 1;
+  return Math.min(Math.max(Math.min(measured, reported), 1), 2);
+}
+
 // Android keeps the current hero scene alive while the next artwork is being
 // prepared, then crossfades the settled scene. On constrained TV runtimes
 // (including unidentified ones, which fail closed to constrained) and on all

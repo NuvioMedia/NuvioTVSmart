@@ -1,12 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  computeSourceRect,
-  getHomeArtworkPixelRatio,
-  isJpegHeader,
-  isRescalableArtworkFit
-} from "./tvPosterRescaler.js";
+import { computeSourceRect, isJpegHeader, isRescalableArtworkFit } from "./tvPosterRescaler.js";
+import { getTvArtworkPixelRatio } from "../../platform/tvRuntimePerformance.js";
 
 // Every existing crop case is a cover crop; fill has its own cases below.
 const computeCoverRect = (nw, nh, bw, bh) => computeSourceRect(nw, nh, bw, bh, "cover");
@@ -19,7 +15,7 @@ function withScreen({ innerWidth, screenWidth, devicePixelRatio }) {
   };
   Object.assign(globalThis, { innerWidth, screen: { width: screenWidth }, devicePixelRatio });
   try {
-    return getHomeArtworkPixelRatio();
+    return getTvArtworkPixelRatio();
   } finally {
     Object.assign(globalThis, previous);
   }

@@ -44,7 +44,7 @@ function buildHome({ rescale = null, tv = true, route = "home", constants = {} }
     rescaleHomeArtwork: rescale?.rescale || (() => Promise.resolve(null)),
     releaseHomeArtwork: rescale?.release || (() => {}),
     shouldRescaleHomeArtwork: rescale?.enabled || (() => false),
-    getHomeArtworkPixelRatio: () => 1,
+    getTvArtworkPixelRatio: () => 1,
     getHomeArtworkObjectFit: rescale?.fit || (() => "cover"),
     isRescalableArtworkFit: (fit) => fit === "cover" || fit === "fill"
   });
