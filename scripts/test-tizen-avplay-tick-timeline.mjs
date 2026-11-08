@@ -4,9 +4,9 @@ import { test } from "node:test";
 import vm from "node:vm";
 
 // The AVPlay tick timer polls getTotalTrackInfo()/getCurrentStreamInfo() with
-// two JSON fingerprints. These tests pin the poll cadence (every second for
-// 15 s, then every 5 s only while a selection is pending, otherwise every 30 s)
-// and the short reuse window for getCurrentTime()/getDuration().
+// two JSON fingerprints every second for 15 s, then every 5 s: AVPlay publishes
+// late audio tracks asynchronously (issue #990), so the cadence must not be
+// stretched. getCurrentTime()/getDuration() are reused for 40 ms instead.
 
 async function loadControllerMethods03(clock) {
   const source = await readFile(
@@ -33,7 +33,7 @@ async function loadControllerMethods03(clock) {
   });
   vm.runInContext(
     source.replace(/^import .*$/gm, "").replace(/^export /gm, "") +
-      "\nthis.exports = { shouldPollAvPlayTracks, createPlayerControllerMethods03 };",
+      "\nthis.exports = { createPlayerControllerMethods03 };",
     context
   );
   return { ...context.exports, intervals };
@@ -73,39 +73,7 @@ function createController(methods, overrides = {}) {
   return controller;
 }
 
-test("shouldPollAvPlayTracks: every tick for 15 s, then every 30 s when nothing is pending", async () => {
-  const clock = { now: 100_000 };
-  const { shouldPollAvPlayTracks } = await loadControllerMethods03(clock);
-  const controller = createController({});
-  for (let tick = 1; tick <= 15; tick += 1) {
-    assert.equal(
-      shouldPollAvPlayTracks(controller, tick),
-      true,
-      `tick ${tick} polls during startup`
-    );
-  }
-  const polled = [];
-  for (let tick = 16; tick <= 90; tick += 1) {
-    if (shouldPollAvPlayTracks(controller, tick)) polled.push(tick);
-  }
-  assert.deepEqual(polled, [30, 60, 90]);
-});
-
-test("shouldPollAvPlayTracks: a pending or desired selection keeps the 5 s cadence", async () => {
-  const clock = { now: 100_000 };
-  const { shouldPollAvPlayTracks } = await loadControllerMethods03(clock);
-  const pendingAudio = createController({}, { pendingAvPlayAudioTrackIndex: 2 });
-  assert.equal(shouldPollAvPlayTracks(pendingAudio, 20), true);
-  assert.equal(shouldPollAvPlayTracks(pendingAudio, 21), false);
-  const pendingSubtitle = createController({}, { pendingAvPlaySubtitleTrackIndex: 0 });
-  assert.equal(shouldPollAvPlayTracks(pendingSubtitle, 25), true);
-  const desired = createController({}, { desiredAvPlayAudioTrackUntil: clock.now + 3_000 });
-  assert.equal(shouldPollAvPlayTracks(desired, 20), true, "desired window still open");
-  clock.now += 3_001;
-  assert.equal(shouldPollAvPlayTracks(desired, 20), false, "desired window expired");
-});
-
-test("the tick timer emits timeupdate every second but syncs tracks on the backed-off cadence", async () => {
+test("the tick timer polls tracks every second for 15 s, then every 5 s", async () => {
   const clock = { now: 50_000 };
   const { createPlayerControllerMethods03, intervals } = await loadControllerMethods03(clock);
   const controller = createController(createPlayerControllerMethods03());
@@ -118,7 +86,7 @@ test("the tick timer emits timeupdate every second but syncs tracks on the backe
   }
   assert.equal(controller.timelineRefreshes, 60, "position refresh runs every tick");
   assert.equal(controller.events.filter((name) => name === "timeupdate").length, 60);
-  assert.equal(controller.trackSyncs, 15 + 2, "15 startup polls plus ticks 30 and 60");
+  assert.equal(controller.trackSyncs, 15 + 9, "15 startup polls plus ticks 20,25,...,60");
   assert.equal(
     controller.events.includes("avplaytrackschanged"),
     false,
@@ -126,7 +94,7 @@ test("the tick timer emits timeupdate every second but syncs tracks on the backe
   );
 });
 
-test("the tick timer reports a track change found by a backed-off poll", async () => {
+test("the tick timer reports a late track found by the 5 s poll", async () => {
   const clock = { now: 50_000 };
   const { createPlayerControllerMethods03, intervals } = await loadControllerMethods03(clock);
   const controller = createController(createPlayerControllerMethods03(), {
@@ -142,7 +110,7 @@ test("the tick timer reports a track change found by a backed-off poll", async (
     clock.now += 1000;
     intervals[0].callback();
   }
-  assert.equal(controller.trackSyncs, 16);
+  assert.equal(controller.trackSyncs, 18, "ticks 1-15 and 20,25,30");
   assert.equal(controller.events.filter((name) => name === "avplaytrackschanged").length, 1);
 });
 
