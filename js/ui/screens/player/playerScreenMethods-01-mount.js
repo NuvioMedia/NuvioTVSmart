@@ -272,7 +272,7 @@ export function createPlayerScreenMethods01() {
       if (!this.isExternalFrameMode()) {
         this.loadSubtitles();
         this.syncTrackState();
-        this.tickTimer = setInterval(() => this.updateUiTick(), 1000);
+        this.tickTimer = setInterval(() => this.requestUiTick(), 1000);
         this.startSkipIntervalCheckTimer();
         this.endedHandler = () => {
           if (PlayerController.isLivePlaybackItemType?.()) {

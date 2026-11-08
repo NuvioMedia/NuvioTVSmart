@@ -1,10 +1,7 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
-import {
-  AUTO_SYNC_TOLERANCE_OPTIONS_MS,
-  buildAutoSyncReferenceTimeline,
-  findAutoSyncTimeline
-} from "../../../core/player/subtitleAutoSyncEngine.js";
+import { AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../../core/player/subtitleAutoSyncEngine.js";
+import { alignSubtitleAutoSyncAsync } from "../../../core/player/subtitleAutoSyncWorkerClient.js";
 import { retimeAutoSyncSubtitleText } from "../../../core/player/subtitleAutoSyncRetimer.js";
 import { isConfirmedAutoSyncNoFit } from "../../../core/player/autosyncOutcome.js";
 
@@ -13,6 +10,17 @@ const AUTO_SYNC_TOAST_MS = 2200;
 function normalizeToleranceMs(value) {
   const tolerance = Math.trunc(Number(value));
   return AUTO_SYNC_TOLERANCE_OPTIONS_MS.includes(tolerance) ? tolerance : 0;
+}
+
+// Only the timing fields cross the worker boundary; cue markup stays here.
+function toAutoSyncTargetCue(cue) {
+  return {
+    start: cue?.start,
+    end: cue?.end,
+    startTimeMs: cue?.startTimeMs,
+    endTimeMs: cue?.endTimeMs,
+    text: cue?.text
+  };
 }
 
 export function createPlayerScreenMethods74() {
@@ -260,7 +268,15 @@ export function createPlayerScreenMethods74() {
             return;
           }
           evaluatedReferences += 1;
-          const candidate = findAutoSyncTimeline(buildAutoSyncReferenceTimeline(reference.cues), targetCues);
+          // The alignment runs in a Web Worker when the runtime has one, so a
+          // long scan does not freeze playback on single-core TVs (issue #1208).
+          const candidate = await alignSubtitleAutoSyncAsync({
+            referenceCues: reference.cues,
+            targetCues: targetCues.map(toAutoSyncTargetCue)
+          });
+          if (!isStillRelevant()) {
+            return;
+          }
           if (!candidate?.confident) {
             // A real but ambiguous comparison confirms a no-fit; a null result
             // (too few cues, implausible transform) proves nothing.

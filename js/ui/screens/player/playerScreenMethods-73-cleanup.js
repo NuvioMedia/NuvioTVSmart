@@ -163,6 +163,8 @@ export function createPlayerScreenMethods73() {
           clearInterval(this.tickTimer);
           this.tickTimer = null;
         }
+        this.cancelPendingUiTick?.();
+        this.lastUiTickAt = 0;
 
         this.stopSkipIntervalCheckTimer();
 

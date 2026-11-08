@@ -9,6 +9,10 @@ import { resolveSubtitleStyleControlAvailability as availability } from "../js/c
 import { resolveHdrSubtitleStyle } from "../js/core/player/hdrSubtitleStyle.js";
 import { createAssRenderer } from "../js/core/player/assRenderer.js";
 import { convertAssDialogueToVttCues } from "../js/core/player/assSubtitle.js";
+import {
+  buildHtmlSubtitleCueIndex,
+  findActiveHtmlSubtitleCues
+} from "../js/ui/screens/player/htmlSubtitleCueIndex.js";
 
 // Android SubtitleSdhFilterTest cases, plus the same bracket/parenthesis rules.
 for (const text of [
@@ -99,10 +103,12 @@ async function methods(number, name, internals = {}) {
     "internals",
     "stripSubtitleSdh",
     "syncHtmlSubtitleClearance",
+    "buildHtmlSubtitleCueIndex",
+    "findActiveHtmlSubtitleCues",
     '"use strict";\n' +
-      source.replace(/^import .*;\n/gm, "").replace(/export function/g, "function") +
+      source.replace(/^import .*;\r?\n/gm, "").replace(/export function/g, "function") +
       `; return ${name}();`
-  )(internals, strip, () => {});
+  )(internals, strip, () => {}, buildHtmlSubtitleCueIndex, findActiveHtmlSubtitleCues);
 }
 // Native TextTrack cues are reversible, retain their original timing and basic markup.
 const snapshotMethods = await methods("25", "createPlayerScreenMethods25");

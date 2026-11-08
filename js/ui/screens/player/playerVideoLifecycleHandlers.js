@@ -192,6 +192,15 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
     this.schedulePauseOverlay();
   };
 
+  // High-frequency sources coalesce; one-shot lifecycle events keep the direct tick.
+  const requestCoalescedUiTick = () => {
+    if (typeof this.requestUiTick === "function") {
+      this.requestUiTick();
+    } else {
+      this.updateUiTick();
+    }
+  };
+
   const onTimeUpdate = () => {
     if (this.isStartupErrorVisible()) {
       return;
@@ -219,11 +228,11 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
     this.refreshWebOsEmbeddedHtmlSubtitleOverlayIfNeeded();
     this.renderHtmlSubtitleOverlayAtCurrentTime();
     this.updateMediaSessionPositionState();
-    this.updateUiTick();
+    requestCoalescedUiTick();
   };
 
   const onProgress = () => {
-    this.updateUiTick();
+    requestCoalescedUiTick();
   };
 
   const onLoadedMetadata = () => {
@@ -308,6 +317,9 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
     this.markPlaybackProgress();
     this.renderWebOsEmbeddedTextSubtitleAtCurrentTime();
     this.renderBitmapSubtitleAtCurrentTime({ force: true });
+    // The overlay no longer polls every 120 ms, so a seek must render it here
+    // instead of waiting for the next timeupdate or idle wake-up.
+    this.renderHtmlSubtitleOverlayAtCurrentTime();
     this.updateMediaSessionPositionState();
     this.updateUiTick();
   };

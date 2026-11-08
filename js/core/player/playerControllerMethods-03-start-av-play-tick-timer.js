@@ -1,5 +1,9 @@
 import * as internals from "./playerController.js";
 
+// getCurrentTime()/getDuration() are synchronous bridge calls; one UI tick reads
+// the position many times. Reuse a poll that is younger than this.
+const AVPLAY_TIMELINE_POLL_REUSE_MS = 40;
+
 export function createPlayerControllerMethods03() {
   const { logTizenAvPlayDebug } = internals;
   return {
@@ -209,6 +213,11 @@ export function createPlayerControllerMethods03() {
       if (!avplay) {
         return;
       }
+      const now = Date.now();
+      if (now - Number(this.avplayTimelinePolledAt || 0) < AVPLAY_TIMELINE_POLL_REUSE_MS) {
+        return;
+      }
+      this.avplayTimelinePolledAt = now;
       try {
         const currentMs = Number(avplay.getCurrentTime?.() || 0);
         if (Number.isFinite(currentMs) && currentMs >= 0) {

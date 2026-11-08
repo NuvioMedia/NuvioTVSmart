@@ -82,6 +82,8 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.htmlSubtitleCues = [];
   this.htmlSubtitleRenderFrame = null;
   this.htmlSubtitleRenderTimer = null;
+  this.htmlSubtitleRenderLoopActive = false;
+  this.htmlSubtitleCueIndex = null;
   this.avPlaySubtitleOverlayTimer = null;
   this.htmlSubtitleActiveCueKey = "";
   this.htmlSubtitleSelectedId = null;
@@ -378,6 +380,8 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.controlFocusIndex = 0;
   this.controlsHideTimer = null;
   this.tickTimer = null;
+  this.uiTickPendingTimer = null;
+  this.lastUiTickAt = 0;
   this.skipIntervalCheckTimer = null;
   this.skipIntervalsRequestToken = Number(this.skipIntervalsRequestToken || 0);
   this.videoListeners = [];

@@ -129,10 +129,12 @@ export function createPlayerScreenMethods09() {
         if (this.isExternalFrameMode()) {
           return;
         }
-        if (!PlayerSettingsStore.get().skipIntroEnabled) {
+        // Most titles have no intervals; check that before the settings read so
+        // this 250 ms timer does not parse storage four times a second for nothing.
+        if (!Array.isArray(this.skipIntervals) || !this.skipIntervals.length) {
           return;
         }
-        if (!Array.isArray(this.skipIntervals) || !this.skipIntervals.length) {
+        if (!PlayerSettingsStore.get().skipIntroEnabled) {
           return;
         }
         this.updateActiveSkipInterval(this.getPlaybackCurrentSeconds());

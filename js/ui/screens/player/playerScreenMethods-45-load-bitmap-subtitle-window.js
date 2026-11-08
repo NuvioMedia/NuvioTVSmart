@@ -1,6 +1,7 @@
 import { stripSubtitleSdh } from "../../../core/player/subtitleSdhFilter.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { buildHtmlSubtitleCueIndex, findActiveHtmlSubtitleCues } from "./htmlSubtitleCueIndex.js";
 
 export function createPlayerScreenMethods45() {
   const {
@@ -309,8 +310,16 @@ export function createPlayerScreenMethods45() {
       const currentTime = Number(this.getPlaybackCurrentSeconds() || 0);
       const delaySeconds = Number(this.subtitleDelayMs || 0) / 1000;
       const subtitleTime = currentTime - delaySeconds;
-      const activeCues = this.htmlSubtitleCues.filter((cue) => subtitleTime >= cue.start && subtitleTime < cue.end);
+      // The index is rebuilt whenever a new cue array is assigned; cue arrays
+      // are replaced, never mutated in place, by every subtitle loader.
+      if (!this.htmlSubtitleCueIndex || this.htmlSubtitleCueIndex.cues !== this.htmlSubtitleCues) {
+        this.htmlSubtitleCueIndex = buildHtmlSubtitleCueIndex(this.htmlSubtitleCues);
+      }
+      const { activeCues, nextBoundarySeconds } = findActiveHtmlSubtitleCues(this.htmlSubtitleCueIndex, subtitleTime);
       this.renderHtmlSubtitleOverlayCue(activeCues);
+      // Re-arm the overlay timer from the newest position (timeupdate, seek,
+      // delay change) so it wakes at the next cue boundary, not on a fixed poll.
+      this.planHtmlSubtitleOverlayRender?.(nextBoundarySeconds - subtitleTime);
       return true;
     }
   };
