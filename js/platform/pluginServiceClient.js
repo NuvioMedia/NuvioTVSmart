@@ -28,6 +28,9 @@ let lifecycleConsecutiveFailures = 0;
 let lifecycleRecoveryNotBefore = 0;
 let lifecycleRecoveryBackoffMs = WATCHDOG_RECOVERY_BACKOFF_INITIAL_MS;
 let lastHealthDiagnostic = "";
+// Set by the app shell: while it returns true (for example during playback)
+// the watchdog skips its periodic probe so the player keeps the main thread.
+let lifecycleMonitorPauseWhen = null;
 export const PLUGIN_PROTOCOL_VERSION = 1;
 
 function serviceForPlatform() {
@@ -290,9 +293,51 @@ async function directBrowserFetch(request) {
   }
 }
 
+function runLifecycleWatchdogTick(generation) {
+  if (generation !== lifecycleMonitorGeneration || lifecycleMonitorProbePromise) {
+    return;
+  }
+  try {
+    if (typeof lifecycleMonitorPauseWhen === "function" && lifecycleMonitorPauseWhen()) {
+      return;
+    }
+  } catch (_) {
+    // A failing predicate must not stop supervision.
+  }
+  lifecycleMonitorProbePromise = runLifecycleCheck(generation).finally(() => {
+    lifecycleMonitorProbePromise = null;
+  });
+}
+
+// The watchdog used to start at application boot, which launched the Node
+// service during Home render on every Tizen 6+ TV and then probed it every
+// 10 s for the whole session even when no plugin was installed. It now starts
+// the first time plugin code needs the service: the readiness barrier or a
+// plugin fetch.
+function ensureLifecycleMonitorRunning() {
+  if (!Platform.isTizen() || !areTizenPluginsSupported() || lifecycleMonitorTimer) {
+    return false;
+  }
+  resetLifecycleRecoveryState();
+  const generation = lifecycleMonitorGeneration;
+  lifecycleMonitorTimer = setInterval(
+    () => runLifecycleWatchdogTick(generation),
+    SERVICE_WATCHDOG_INTERVAL_MS
+  );
+  return true;
+}
+
 export const PluginServiceClient = {
   getService() {
     return serviceForPlatform();
+  },
+
+  configureLifecycleMonitor({ pauseProbeWhen = null } = {}) {
+    lifecycleMonitorPauseWhen = typeof pauseProbeWhen === "function" ? pauseProbeWhen : null;
+  },
+
+  isLifecycleMonitorRunning() {
+    return Boolean(lifecycleMonitorTimer);
   },
 
   async health({ force = false } = {}) {
@@ -338,6 +383,7 @@ export const PluginServiceClient = {
     if (!areTizenPluginsSupported()) {
       return unsupportedTizenPluginResult();
     }
+    ensureLifecycleMonitorRunning();
     const health = await this.health({ force });
     return assertCompatibleHealth(health);
   },
@@ -353,20 +399,11 @@ export const PluginServiceClient = {
       return Promise.resolve({ status: "running" });
     }
     if (!lifecycleMonitorStartPromise) {
-      resetLifecycleRecoveryState();
-      const generation = lifecycleMonitorGeneration;
-      const runWatchdog = () => {
-        if (generation !== lifecycleMonitorGeneration || lifecycleMonitorProbePromise) {
-          return;
-        }
-        lifecycleMonitorProbePromise = runLifecycleCheck(generation).finally(() => {
-          lifecycleMonitorProbePromise = null;
-        });
-      };
       // Start supervising before the first health check. If a cold TV boot
       // misses the initial startup window, later ticks must still retry while
       // the UI continues booting independently.
-      lifecycleMonitorTimer = setInterval(runWatchdog, SERVICE_WATCHDOG_INTERVAL_MS);
+      ensureLifecycleMonitorRunning();
+      const generation = lifecycleMonitorGeneration;
       lifecycleMonitorStartPromise = (async () => {
         // The platform start call is only an acknowledgement. The initial
         // health check is intentionally asynchronous for the optional service;
@@ -387,6 +424,11 @@ export const PluginServiceClient = {
   checkLifecycleNow() {
     if (!Platform.isTizen() || !areTizenPluginsSupported()) {
       return Promise.resolve({ status: "skipped" });
+    }
+    if (!lifecycleMonitorTimer) {
+      // Nothing has used the service in this session. A foreground check would
+      // otherwise count probe misses and launch it after two of them.
+      return Promise.resolve({ status: "idle" });
     }
     if (!lifecycleMonitorProbePromise) {
       const generation = lifecycleMonitorGeneration;
@@ -413,6 +455,7 @@ export const PluginServiceClient = {
       if (!areTizenPluginsSupported()) {
         throw new Error(TIZEN_PLUGIN_UNSUPPORTED_DETAIL);
       }
+      ensureLifecycleMonitorRunning();
       if (Platform.isBrowser()) {
         if (globalThis.__NUVIO_ALLOW_BROWSER_PLUGIN_RUNTIME__ !== true)
           throw new Error("Plugin execution is TV-only");
