@@ -6,7 +6,7 @@ import { renderPlaybackSubtitleBody } from "./settingsScreenPlaybackMarkup-04-su
 import { renderPlaybackP2pBody } from "./settingsScreenPlaybackMarkup-05-p2p.js";
 
 export function renderPlaybackSectionMarkup(model) {
-  const { TorrentSettingsStore, Platform, TizenCapabilities, SECTION_META, t } = internals;
+  const { TorrentSettingsStore, P2pCacheService, Platform, TizenCapabilities, SECTION_META, t } = internals;
   const expanded = this.expandedSections.playback;
   const torrentSettings = model.torrent || TorrentSettingsStore.get();
   const tizenP2pUnsupported = TizenCapabilities.isP2pUnsupported();
@@ -19,7 +19,11 @@ export function renderPlaybackSectionMarkup(model) {
   const p2pBody = renderPlaybackP2pBody.call(this, model, {
     torrentSettings,
     tizenP2pUnsupported,
-    p2pUnavailableSubtitle
+    p2pUnavailableSubtitle,
+    p2pCacheSupported: P2pCacheService.supportsCacheControls(),
+    p2pCacheClearing: Boolean(this.p2pCacheClearing),
+    p2pCacheClearedBytes: this.p2pCacheClearedBytes ?? null,
+    p2pCacheState: this.p2pCacheState || null
   });
   return `
           ${this.renderSectionHeader(SECTION_META.find((item) => item.id === "playback"))}

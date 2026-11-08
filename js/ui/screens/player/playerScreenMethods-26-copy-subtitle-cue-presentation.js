@@ -240,6 +240,7 @@ export function createPlayerScreenMethods26() {
         this.subtitleDelayOverlayVisible ||
         this.audioDialogVisible ||
         this.sourcesPanelVisible ||
+        this.chaptersPanelVisible ||
         this.episodePanelVisible ||
         this.speedDialogVisible;
       modalBackdrop.classList.toggle("hidden", !hasModal);

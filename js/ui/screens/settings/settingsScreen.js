@@ -16,6 +16,8 @@ import { createSettingsScreenMethods12 } from "./settingsScreenMethods-12-render
 import { createSettingsScreenMethods13 } from "./settingsScreenMethods-13-apply-focus.js";
 import { createSettingsScreenMethods14 } from "./settingsScreenMethods-14-activate-focused.js";
 import { createSettingsScreenMethods15 } from "./settingsScreenMethods-15-cleanup.js";
+import { createSettingsScreenMethods16 } from "./settingsScreenMethods-16-p2p-cache.js";
+import { createSettingsScreenMethods17 } from "./settingsScreenMethods-17-network-tests.js";
 
 export * from "./settingsScreenContext.js";
 export const SettingsScreen = {
@@ -35,5 +37,7 @@ export const SettingsScreen = {
   ...createSettingsScreenMethods13(),
   ...createSettingsScreenMethods14(),
   ...createSettingsScreenMethods15(),
+  ...createSettingsScreenMethods16(),
+  ...createSettingsScreenMethods17(),
   ...createTrackingSettingsMethods()
 };

@@ -16,6 +16,7 @@ import { getTvRuntimePerformanceProfile } from "../../platform/tvRuntimePerforma
 import { PluginStore } from "../../data/local/pluginStore.js";
 import { PluginCodeStore } from "../../data/local/pluginCodeStore.js";
 import { PluginRuntime } from "../player/pluginRuntime.js";
+import { ProfileSettingsCopyService } from "./profileSettingsCopyService.js";
 
 import { createProfileSelectionScreenMethods01 } from "./profileSelectionScreenMethods-01-mount.js";
 import { createProfileSelectionScreenMethods02 } from "./profileSelectionScreenMethods-02-render-editor-overlay.js";
@@ -25,6 +26,7 @@ import { createProfileSelectionScreenMethods05 } from "./profileSelectionScreenM
 import { createProfileSelectionScreenMethods06 } from "./profileSelectionScreenMethods-06-submit-completed-pin.js";
 import { createProfileSelectionScreenMethods07 } from "./profileSelectionScreenMethods-07-activate-focused-node.js";
 import { createProfileSelectionScreenMethods08 } from "./profileSelectionScreenMethods-08-cleanup.js";
+import { createProfileSelectionScreenMethods09 } from "./profileSelectionScreenMethods-09-copy-settings.js";
 
 export {
   Router,
@@ -46,6 +48,7 @@ export {
   PluginStore,
   PluginCodeStore,
   PluginRuntime,
+  ProfileSettingsCopyService,
   PINNED_AVATAR_CATEGORIES,
   DEFAULT_PROFILE_COLOR,
   PROFILE_HOLD_DELAY_MS,
@@ -403,5 +406,6 @@ export const ProfileSelectionScreen = {
   ...createProfileSelectionScreenMethods05(),
   ...createProfileSelectionScreenMethods06(),
   ...createProfileSelectionScreenMethods07(),
-  ...createProfileSelectionScreenMethods08()
+  ...createProfileSelectionScreenMethods08(),
+  ...createProfileSelectionScreenMethods09()
 };

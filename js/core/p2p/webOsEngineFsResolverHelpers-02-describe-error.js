@@ -2,7 +2,7 @@ import { Platform } from "../../platform/index.js";
 
 import { isWebOsCompanionServiceAvailable, requestWebOsCompanionService } from "../../platform/webos/webosCompanionService.js";
 
-import { TorrentSettingsStore } from "../../data/local/torrentSettingsStore.js";
+import { TorrentSettingsStore, getTorrentProfilePeerLimits } from "../../data/local/torrentSettingsStore.js";
 
 import { normalizeBaseUrl, withTimeout, ENGINEFS_CREATE_TIMEOUT_MS } from "./webOsEngineFsResolverHelpers-01-enginefs-create-timeout-ms.js";
 
@@ -53,14 +53,19 @@ export function buildNuvioPeerSearchSources(infoHash, trackerSources = []) {
 
 export function buildDirectCreateBody({ infoHash, trackerSources = [], hasExplicitFileIdx = false, guessFileIdx = null } = {}) {
   const sources = buildNuvioPeerSearchSources(infoHash, trackerSources);
+  const peerLimits = getTorrentProfilePeerLimits(TorrentSettingsStore.get().torrentProfile);
   const body = {
     torrent: { infoHash }
   };
   if (sources.length) {
     body.peerSearch = {
       sources,
-      min: 40,
-      max: 200
+      ...peerLimits
+    };
+  } else if (peerLimits.min !== 40 || peerLimits.max !== 200) {
+    body.peerSearch = {
+      sources: [`dht:${infoHash}`],
+      ...peerLimits
     };
   }
   body.guessFileIdx = hasExplicitFileIdx ? false : guessFileIdx || {};

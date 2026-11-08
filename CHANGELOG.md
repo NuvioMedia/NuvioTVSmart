@@ -1,7 +1,14 @@
-## Unreleased
+## 1.3.10
 
 ### Improvements & Fixes
 
+- Long Home hero descriptions can now auto-scroll instead of being cut off: 3-second delay, Android's speed, end pause, return and edge fades, with the setting synced per profile and available on Modern, Classic and Grid
+- Added Copy Settings to profiles, both while creating one and from the profile options: TV settings and, optionally, missing API keys are copied without touching existing credentials, OAuth, history or library
+- Classic and Grid hero descriptions now use Android's four-line box, matching Modern
+- Stream badges in the player now follow Android TV exactly: "Show in player" stays disabled until a badge pack is imported, and the player pack row only appears when it is active, labelled "Same as stream badges" by default
+- P2P settings now include Android's Torrent profile preset and torrent cache controls: size (off, 2, 5 or 10 GB), live cache usage and one-tap clearing of inactive torrent data
+- Advanced now includes Android's network diagnostics: latency and fast.com download speed test, plus a throughput test against the host of the last played stream
+- Cached torrent data is kept only for inactive streams when cleared, so playback already running is not interrupted
 - webOS torrent playback no longer fails on the first attempt while the companion service and its local runtime are still starting; playback now waits for them like Android TV (#1302) (@WhiteGiso)
 
 ## 1.3.9

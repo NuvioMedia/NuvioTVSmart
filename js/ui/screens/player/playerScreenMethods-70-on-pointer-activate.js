@@ -195,6 +195,7 @@ export function createPlayerScreenMethods70() {
         (!this.controlsVisible && this.isNextEpisodeCardVisible()) ||
         this.partyPanelVisible ||
         this.sourcesPanelVisible ||
+        this.chaptersPanelVisible ||
         this.subtitleTimingDialogVisible ||
         this.subtitleDelayOverlayVisible ||
         this.subtitleDialogVisible ||

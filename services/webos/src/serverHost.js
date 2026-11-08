@@ -44,6 +44,7 @@ function patchWebOsMediaRuntimeCode(code, filename) {
   }
 
   source = require("../../tizen/runtime/proxy-redirect-report-patch.cjs")(source);
+  source = require("../../tizen/runtime/enginefs-cache-routes-patch.cjs")(source);
   source = patchWebOsPlaybackTransport(source);
 
   // The vendored proxy always passes an https.Agent to node-fetch. node-fetch

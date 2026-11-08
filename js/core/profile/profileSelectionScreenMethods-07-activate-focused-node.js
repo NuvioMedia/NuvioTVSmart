@@ -31,6 +31,10 @@ export function createProfileSelectionScreenMethods07() {
         await this.submitEditor();
         return;
       }
+      if (action === "select-copy-source") {
+        this.openProfileCopySourceDialog(null);
+        return;
+      }
       if (action === "select-editor-tab" && this.editorState) {
         const editorTab = String(node.dataset.editorTab || "avatar");
         if (editorTab !== "background" || this.hasProfileBackgroundAccess) {

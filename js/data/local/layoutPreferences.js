@@ -22,6 +22,7 @@ const DEFAULTS = {
   homeLayout: "modern",
   continueWatchingCardStyle: "card",
   heroSectionEnabled: true,
+  heroDescriptionAutoScrollEnabled: false,
   discoverLocation: "in_search",
   heroCatalogKeys: [],
   posterLabelsEnabled: true,
@@ -120,6 +121,7 @@ function normalizeLayoutPreferences(value = {}) {
       )
     ],
     modernLandscapePostersEnabled: Boolean(merged.modernLandscapePostersEnabled),
+    heroDescriptionAutoScrollEnabled: Boolean(merged.heroDescriptionAutoScrollEnabled),
     alwaysShowLandscapeClearlogo: Boolean(merged.alwaysShowLandscapeClearlogo),
     modernHeroFullScreenBackdropEnabled: Boolean(merged.modernHeroFullScreenBackdropEnabled),
     focusedPosterBackdropExpandEnabled: Boolean(merged.focusedPosterBackdropExpandEnabled),

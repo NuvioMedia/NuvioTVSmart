@@ -56,7 +56,9 @@ export function createProfileSelectionScreenMethods05() {
         selectedBackgroundUrl: null,
         category: "all",
         editorTab: "avatar",
-        focusedAvatarName: null
+        focusedAvatarName: null,
+        copySourceProfileId: null,
+        copyProviderCredentials: false
       };
       this.pendingFocusKey = "editor:name";
       this.render();
@@ -138,6 +140,19 @@ export function createProfileSelectionScreenMethods05() {
                   this._optionsDialog = null;
                   const p = this.getProfileById(profile.id);
                   if (p) this.openPinOverlay("verify-remove", p);
+                }
+              }
+            ]
+          : []),
+        ...(this.getVisibleProfiles().length > 1
+          ? [
+              {
+                label: t("profile_copy_settings_label", {}, "Copy Settings"),
+                key: "copy-settings",
+                onAction: () => {
+                  this._optionsDialog?.destroy();
+                  this._optionsDialog = null;
+                  this.openProfileCopySourceDialog(this.getProfileById(profile.id));
                 }
               }
             ]

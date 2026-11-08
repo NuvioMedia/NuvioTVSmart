@@ -659,18 +659,18 @@ export function createHomeScreenMethods04() {
     },
     startHeroRotation() {
       this.stopHeroRotation();
-      if (this.layoutMode === "modern" || this.isPerformanceConstrained()) {
+      if (this.layoutMode === "modern" || this.isPerformanceConstrained() || this.heroDescriptionScrollHolding) {
         return;
       }
       if (!Array.isArray(this.heroCandidates) || this.heroCandidates.length <= 1) {
         return;
       }
       this.heroRotateTimeout = setTimeout(() => {
-        if (!this.container?.querySelector(".home-hero-card.focusable.focused")) {
+        if (!this.heroDescriptionScrollHolding && !this.container?.querySelector(".home-hero-card.focusable.focused")) {
           this.rotateHero(1);
         }
         this.heroRotateTimer = setInterval(() => {
-          if (!this.container?.querySelector(".home-hero-card.focusable.focused")) {
+          if (!this.heroDescriptionScrollHolding && !this.container?.querySelector(".home-hero-card.focusable.focused")) {
             this.rotateHero(1);
           }
         }, HERO_ROTATE_INTERVAL_MS);

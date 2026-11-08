@@ -460,12 +460,12 @@
 }
 
 .player-chapters-list {
-  margin-top: 12px;
+  margin-top: 32px; /* ATV 16dp -> 32px */
+  padding: 8px 0; /* ATV 4dp -> 8px */
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
-  padding-right: 4px;
 }
 
 .player-chapters-list::-webkit-scrollbar {
@@ -476,12 +476,12 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
+  gap: 24px; /* ATV 12dp -> 24px */
+  padding: 24px 28px; /* ATV 12/14dp -> 24/28px */
+  margin-bottom: 16px; /* ATV 8dp -> 16px */
   border: 1px solid transparent;
-  border-radius: 12px;
-  background: var(--player-background-elevated);
+  border-radius: 32px; /* ATV radius.xl 16dp -> 32px */
+  background: var(--player-background-card);
   color: var(--player-text-primary);
   text-align: left;
   box-sizing: border-box;
@@ -492,20 +492,22 @@
   background: var(--player-focus-background);
 }
 
-.player-chapter-item.is-current {
-  border-color: rgba(30, 136, 229, 0.65);
+.player-chapter-item.is-current .player-chapter-title {
+  color: var(--player-secondary);
 }
 
 .player-chapter-number {
   flex: 0 0 auto;
-  width: 28px;
-  font-size: 18px;
+  width: 56px; /* ATV 28dp -> 56px */
+  font-size: 28px;
   font-weight: 700;
+  line-height: 1.2;
   color: var(--player-text-secondary);
   text-align: center;
 }
 
 .player-chapter-item.is-current .player-chapter-number {
+  font-size: 40px; /* ATV PlayArrow 20dp -> 40px */
   color: var(--player-secondary);
 }
 
@@ -514,35 +516,35 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px; /* ATV 4dp -> 8px */
 }
 
 .player-chapter-title {
-  font-size: 18px;
+  font-size: 32px; /* ATV titleMedium 16sp -> 32px */
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.5; /* ATV titleMedium 24sp -> 48px */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .player-chapter-progress-track {
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  height: 8px; /* ATV 4dp -> 8px */
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
   overflow: hidden;
 }
 
 .player-chapter-progress-fill {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--player-secondary);
 }
 
 .player-chapter-time {
   flex: 0 0 auto;
-  font-size: 14px;
-  color: var(--player-text-tertiary);
+  font-size: 28px; /* ATV bodyMedium 14sp -> 28px */
+  color: var(--player-text-secondary);
   font-variant-numeric: tabular-nums;
 }

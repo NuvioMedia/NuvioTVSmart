@@ -8,6 +8,9 @@ export function registerPlaybackActionsPart02(model) {
     PlayerSettingsStore,
     SUBTITLE_VERTICAL_OFFSET_DEFAULT,
     TorrentSettingsStore,
+    TORRENT_CACHE_SIZES,
+    TORRENT_PROFILES,
+    P2pCacheService,
     TizenCapabilities,
     PREFERRED_SUBTITLE_LANGUAGE_OPTIONS,
     PREFERRED_PLAYBACK_LANGUAGE_OPTIONS,
@@ -303,6 +306,48 @@ export function registerPlaybackActionsPart02(model) {
     }
     TorrentSettingsStore.setHideTorrentStats(!TorrentSettingsStore.get().hideTorrentStats);
   });
+  this.actionMap.set("playback:torrentProfile", () => {
+    if (TizenCapabilities.isP2pUnsupported()) {
+      return;
+    }
+    const current = String(TorrentSettingsStore.get().torrentProfile || "BALANCED");
+    this.openOptionDialog({
+      title: t("settings_p2p_profile_title", {}, "Torrent profile"),
+      options: TORRENT_PROFILES.map((profile) => ({
+        id: profile,
+        label: t(`settings_p2p_profile_${profile.toLowerCase()}`, {}, profile),
+        description: t(`settings_p2p_profile_${profile.toLowerCase()}_description`, {}, "")
+      })),
+      selectedId: current,
+      returnFocusKey: "playback:torrentProfile",
+      onSelect: (option) => TorrentSettingsStore.setTorrentProfile(option.id)
+    });
+  });
+  this.actionMap.set("playback:torrentCacheSize", () => {
+    if (TizenCapabilities.isP2pUnsupported()) {
+      return;
+    }
+    const current = String(TorrentSettingsStore.get().torrentCacheSize || "GB_2");
+    this.openOptionDialog({
+      title: t("settings_p2p_cache_size_title", {}, "Torrent cache size"),
+      subtitle: t("settings_p2p_cache_size_description", {}, "Downloaded torrent data kept on this device for faster replays"),
+      options: Object.keys(TORRENT_CACHE_SIZES).map((size) => ({
+        id: size,
+        label: t(size === "NONE" ? "settings_p2p_cache_none" : `settings_p2p_cache_${size.replace("GB_", "")}_gb`, {}, size)
+      })),
+      selectedId: current,
+      returnFocusKey: "playback:torrentCacheSize",
+      onSelect: (option) => {
+        TorrentSettingsStore.setTorrentCacheSize(option.id);
+        if (P2pCacheService.supportsCacheControls()) {
+          void P2pCacheService.setCacheSize(TORRENT_CACHE_SIZES[option.id]).catch((error) => {
+            console.warn("Could not apply torrent cache size", error);
+          });
+        }
+      }
+    });
+  });
+  this.actionMap.set("playback:clearTorrentCache", () => this.clearP2pCache());
 
   if (model.experience?.mode === "ESSENTIAL") {
     const torrentSettings = model.torrent || TorrentSettingsStore.get();

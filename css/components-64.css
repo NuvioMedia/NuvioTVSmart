@@ -1,0 +1,49 @@
+.home-hero-description.hero-description-autoscroll {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  max-height: none;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.home-hero-description.hero-description-autoscroll .hero-description-track {
+  display: block;
+  will-change: transform;
+}
+
+.profile-editor-copy-source-value {
+  margin-left: 8px;
+  opacity: 0.78;
+  font-weight: 500;
+}
+
+.nuvio-dialog-actions.profile-copy-settings-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+.profile-copy-settings-actions .nuvio-dialog-button {
+  width: 100%;
+}
+
+/* Android's Classic/Grid hero description uses four lines, not two. */
+.home-screen-shell.home-layout-classic .home-hero-description,
+.home-screen-shell.home-layout-grid .home-hero-description {
+  max-height: calc(1.55em * 4);
+}
+
+/* Read-only diagnostic rows in Advanced → Network tests. */
+.settings-action-row.settings-info-row {
+  cursor: default;
+  background: var(--bg-elevated);
+  border-color: var(--border-color);
+}
+
+.settings-action-row.settings-info-row .settings-row-value {
+  font-weight: 600;
+}

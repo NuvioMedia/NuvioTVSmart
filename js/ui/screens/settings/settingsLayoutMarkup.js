@@ -142,6 +142,16 @@ export function renderLayoutMarkup(model) {
             `
                 : ""
             }
+            ${this.renderToggleRow({
+              focusKey: "layout:heroDescriptionAutoScroll",
+              title: t("layout_hero_description_auto_scroll", {}, "Auto-scroll Descriptions"),
+              subtitle: t(
+                "layout_hero_description_auto_scroll_sub",
+                {},
+                "Slowly scroll long descriptions on the Home screen instead of cutting them off."
+              ),
+              checked: Boolean(model.layout.heroDescriptionAutoScrollEnabled)
+            })}
             ${this.renderActionRow({
               focusKey: "layout:searchDiscover",
               title: t("layout_discover_location_action", {}, "Discover location"),

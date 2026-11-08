@@ -43,9 +43,15 @@ export function registerLayoutActions(model) {
   this.actionMap.set("layout:heroSection", () => {
     LayoutPreferences.set({ heroSectionEnabled: !LayoutPreferences.get().heroSectionEnabled });
   });
+  this.actionMap.set("layout:heroDescriptionAutoScroll", () => {
+    LayoutPreferences.set({
+      heroDescriptionAutoScrollEnabled: !LayoutPreferences.get().heroDescriptionAutoScrollEnabled
+    });
+  });
   this.actionMap.set("layout:heroCatalogs", () => {
     const catalogSettings = model.homeCatalog || HomeCatalogStore.get();
     const options = (catalogSettings.order || [])
+      .filter((key, index, array) => array.indexOf(key) === index)
       .filter((key) => !catalogSettings.disabled?.includes(key))
       .map((key) => ({
         id: key,

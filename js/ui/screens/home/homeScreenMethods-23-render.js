@@ -319,6 +319,7 @@ export function createHomeScreenMethods23() {
           }
         }
       }
+      this.applyHeroDescriptionAutoScroll?.();
       if (this.layoutMode === "grid") {
         normalizeHomeGridCatalogSections(this.container, {
           maxDisplayItems: gridMaxDisplayItems,

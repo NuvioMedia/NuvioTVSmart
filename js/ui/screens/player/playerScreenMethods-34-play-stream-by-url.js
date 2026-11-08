@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { LastPlaybackStore } from "../../../data/local/lastPlaybackStore.js";
 
 export function createPlayerScreenMethods34() {
   const {
@@ -271,6 +272,10 @@ export function createPlayerScreenMethods34() {
         preserveTrackSelections: preserveWebOsTrackSelections,
         forceLocalProxy: this.tizenLocalProxyRequiredUrl === normalizedStreamUrl
       };
+      LastPlaybackStore.remember({
+        url: /^https?:\/\//i.test(normalizedStreamUrl) ? normalizedStreamUrl : String(nextEngineFsState?.playbackUrl || ""),
+        headers: playbackContext.requestHeaders
+      });
       const startPlayback = (url, context, options) => {
         const playbackPromise = this.startPlayerControllerPlayback(url, context, options);
         const pendingRestore = this.pendingWebOsAddonSubtitleRestore;

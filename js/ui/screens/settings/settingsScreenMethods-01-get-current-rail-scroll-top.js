@@ -219,6 +219,9 @@ export function createSettingsScreenMethods01() {
       this.ensureExpandedState(sectionId);
       this.expandedSections[sectionId][groupId] = !this.expandedSections[sectionId][groupId];
       this.persistUiState();
+      if (sectionId === "playback" && groupId === "p2p" && this.expandedSections[sectionId][groupId]) {
+        void this.refreshP2pCacheState({ render: true });
+      }
     },
     registerAction(focusKey, action) {
       this.actionMap.set(focusKey, action);

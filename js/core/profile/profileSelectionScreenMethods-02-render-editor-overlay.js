@@ -23,6 +23,10 @@ export function createProfileSelectionScreenMethods02() {
           : null);
       const hasBackgroundTab = Boolean(this.hasProfileBackgroundAccess);
       const editorTab = hasBackgroundTab && this.editorState.editorTab === "background" ? "background" : "avatar";
+      const copySourceProfile = this.getProfileById(this.editorState.copySourceProfileId);
+      const copySourceLabel = copySourceProfile
+        ? String(copySourceProfile.name || `Profile ${copySourceProfile.id}`)
+        : t("profile_copy_settings_start_fresh", {}, "Start fresh");
       const previewBackgroundUrl = this.getEditorBackgroundPreviewUrl();
       const overlayHeading =
         this.editorState.mode === "edit"
@@ -105,6 +109,19 @@ export function createProfileSelectionScreenMethods02() {
                            data-focus-key="editor:name"
                            tabindex="0"/>
                   </label>
+
+                  ${
+                    this.editorState.mode === "create" && this.getVisibleProfiles().length > 0
+                      ? `<button class="profile-overlay-button profile-overlay-focusable"
+                          type="button"
+                          data-action="select-copy-source"
+                          data-focus-key="editor:copy-source"
+                          tabindex="0">
+                    <span>${escapeHtml(t("profile_copy_settings_from", {}, "Copy settings from"))}</span>
+                    <span class="profile-editor-copy-source-value">${escapeHtml(copySourceLabel)}</span>
+                  </button>`
+                      : ""
+                  }
 
                   <button class="profile-overlay-button profile-overlay-button-primary profile-overlay-focusable"
                           type="button"

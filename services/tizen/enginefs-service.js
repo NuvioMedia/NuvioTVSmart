@@ -29,6 +29,7 @@ function patchTizenMediaRuntimeCode(code, filename) {
   if (!/media-http\.cjs$/i.test(String(filename || ""))) {
     return source;
   }
+  source = require("./runtime/enginefs-cache-routes-patch.cjs")(source);
 
   // The router decodes the path and then the query options. Child URLs need
   // the same two encoding layers as the original app-side URL. At this point

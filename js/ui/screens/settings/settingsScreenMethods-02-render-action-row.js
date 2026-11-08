@@ -55,6 +55,21 @@ export function createSettingsScreenMethods02() {
           </button>
         `;
     },
+    renderInformationRow({ title, subtitle = "", value = "" }) {
+      return `
+          <div class="settings-action-row settings-info-row">
+            <span class="settings-row-copy">
+              <span class="settings-row-title">${escapeHtml(title)}</span>
+              ${subtitle ? `<span class="settings-row-subtitle">${escapeHtml(subtitle)}</span>` : ""}
+            </span>
+            ${
+              value
+                ? `<span class="settings-row-tail"><bdi class="settings-row-value" dir="${isContentRtl(String(value)) ? "rtl" : "ltr"}">${escapeHtml(value)}</bdi></span>`
+                : ""
+            }
+          </div>
+        `;
+    },
     renderToggleRow({ focusKey, title, subtitle = "", checked = false, disabled = false, planned = false }) {
       const inert = disabled || planned;
       return `

@@ -1,5 +1,6 @@
 import { ensureHeroMdbListRatings } from "./homeHeroMdbListLoad.js";
 import { registerHomeDomNodes } from "./homeDomUpdate.js";
+import { createHeroDescriptionAutoScroller } from "./heroDescriptionAutoScroll.js";
 import * as internals from "./homeScreenContext.js";
 
 export function createHomeScreenMethods05() {
@@ -166,6 +167,23 @@ export function createHomeScreenMethods05() {
         )
       );
       void ensureHeroMdbListRatings.call(this);
+      this.applyHeroDescriptionAutoScroll();
+    },
+    applyHeroDescriptionAutoScroll() {
+      const node = this.container?.querySelector(".home-hero-card .home-hero-description");
+      if (!node) {
+        this.heroDescriptionAutoScroller?.stop();
+        return;
+      }
+      if (!this.heroDescriptionAutoScroller) {
+        this.heroDescriptionAutoScroller = createHeroDescriptionAutoScroller({
+          isPaused: () => this.isTrailerPlaying?.() === true || this.pauseOverlayVisible === true,
+          onHoldChange: (holding) => {
+            this.heroDescriptionScrollHolding = Boolean(holding);
+          }
+        });
+      }
+      this.heroDescriptionAutoScroller.apply(node, Boolean(this.layoutPrefs?.heroDescriptionAutoScrollEnabled));
     },
     setSidebarExpanded(expanded) {
       const nextExpanded = Boolean(expanded);

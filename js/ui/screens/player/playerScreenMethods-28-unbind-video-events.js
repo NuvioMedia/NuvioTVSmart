@@ -65,7 +65,7 @@ export function createPlayerScreenMethods28() {
       if (Array.isArray(this.playerChapters) && this.playerChapters.length > 1 && this.isLivePlayback?.() !== true) {
         base.push({
           action: "chapters",
-          label: "≡",
+          icon: "assets/icons/ic_player_chapters.svg",
           title: t("player_chapters", {}, "Chapters")
         });
       }
@@ -295,6 +295,7 @@ export function createPlayerScreenMethods28() {
         this.subtitleDelayOverlayVisible ||
         this.audioDialogVisible ||
         this.sourcesPanelVisible ||
+        this.chaptersPanelVisible ||
         this.episodePanelVisible ||
         this.speedDialogVisible ||
         Boolean(this.partyPanelVisible)

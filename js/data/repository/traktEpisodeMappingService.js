@@ -268,7 +268,8 @@ export const TraktEpisodeMappingService = {
       requestedVideoId: videoId,
       requestedTitle: title,
       addonEpisodes: addon,
-      providerEpisodes
+      providerEpisodes,
+      preferSameNumberOverIndex: true
     });
     if (mapped) {
       cacheSet(addonToTraktCache, key, mapped);

@@ -13,7 +13,7 @@ function formatChapterTime(ms = 0) {
 }
 
 export function createPlayerScreenMethods76() {
-  const { escapeHtml, contentTextDirection, t, clamp, isSelectKeyCode } = internals;
+  const { escapeHtml, contentTextDirection, t, clamp, isSelectKeyCode, isBackEvent } = internals;
 
   return {
     normalizePlayerChapters(chapters = []) {
@@ -109,12 +109,12 @@ export function createPlayerScreenMethods76() {
       this.renderSubtitleDialog?.();
       this.renderAudioDialog?.();
       this.renderSpeedDialog?.();
-      this.updateModalBackdrop?.();
       const positionMs = Math.round(Number(this.getPlaybackCurrentSeconds?.() || 0) * 1000);
       this.chaptersPanelVisible = true;
       this.chaptersFocusIndex = this.chapterIndexAt(positionMs);
       this.setControlsVisible?.(true, { focus: false });
       this.resetControlsAutoHide?.();
+      this.updateModalBackdrop?.();
       this.renderChaptersPanel();
       return true;
     },
@@ -129,6 +129,7 @@ export function createPlayerScreenMethods76() {
         panel.classList.add("hidden");
         panel.innerHTML = "";
       }
+      this.updateModalBackdrop?.();
       if (restoreFocus) {
         this.controlFocusZone = "buttons";
         this.controlFocusIndex = Number(this.controlFocusIndex || 0);
@@ -257,6 +258,12 @@ export function createPlayerScreenMethods76() {
     handleChaptersPanelKey(event) {
       if (!this.chaptersPanelVisible) {
         return false;
+      }
+      if (isBackEvent?.(event)) {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        this.closeChaptersPanel();
+        return true;
       }
       const keyCode = Number(event?.keyCode || 0);
       const isSelect = isSelectKeyCode(keyCode) || keyCode === 66;

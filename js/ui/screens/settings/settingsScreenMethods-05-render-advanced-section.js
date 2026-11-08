@@ -71,6 +71,12 @@ export function createSettingsScreenMethods05() {
         LocalStore.remove(CW_DISPLAY_SNAPSHOT_KEY);
         this.advancedCacheCleared = true;
       });
+      this.actionMap.set("advanced:networkSpeedTest", () => {
+        this.startNetworkSpeedTest();
+      });
+      this.actionMap.set("advanced:streamSpeedTest", () => {
+        this.startStreamSpeedTest();
+      });
 
       if (isEssential) {
         return `
@@ -148,6 +154,115 @@ export function createSettingsScreenMethods05() {
                 icon: null,
                 disabled: Boolean(this.advancedCacheCleared)
               })}
+            </div>
+          </div>
+          ${this.renderNetworkTestsSection()}
+        `;
+    },
+    renderNetworkTestsSection() {
+      const networkRunning = this.isNetworkSpeedTestRunning();
+      const streamRunning = this.isStreamSpeedTestRunning();
+      const streamHost = this.streamSpeedTestServerHost();
+      const hasStream = Boolean(streamHost);
+      const networkPhaseLabel =
+        this.networkSpeedTestState === "latency"
+          ? t("network_testing_latency", {}, "Measuring latency")
+          : t("network_testing_download", {}, "Measuring download speed");
+      const streamPhaseLabel = (() => {
+        switch (this.streamSpeedTestState) {
+          case "BASELINE":
+            return t("stream_test_btn_measuring_baseline", {}, "Measuring Baseline...");
+          case "PARALLEL_1":
+            return t("stream_test_btn_measuring_parallel1", {}, "Measuring Parallel (1MB)...");
+          case "PARALLEL_4":
+            return t("stream_test_btn_measuring_parallel4", {}, "Measuring Parallel (4MB)...");
+          case "PARALLEL_8":
+            return t("stream_test_btn_measuring_parallel8", {}, "Measuring Parallel (8MB)...");
+          case "PARALLEL_16":
+            return t("stream_test_btn_measuring_parallel16", {}, "Measuring Parallel (16MB)...");
+          default:
+            return t("stream_test_btn_running", {}, "Running...");
+        }
+      })();
+      const networkValue = networkRunning ? networkPhaseLabel : "";
+      const streamValue = streamRunning ? streamPhaseLabel : "";
+      const hasNetworkResults = this.networkSpeedTestState === "done" || this.networkSpeedTestState === "error";
+      const hasStreamResults = this.streamSpeedTestState === "done" || this.streamSpeedTestState === "error";
+      const networkError =
+        this.networkSpeedTestState === "error"
+          ? t("network_error_prefix", [this.networkSpeedTestError || ""], `Error: ${this.networkSpeedTestError || ""}`)
+          : "";
+      const streamError =
+        this.streamSpeedTestState === "error"
+          ? this.streamSpeedTestError === "no-stream"
+            ? t("stream_test_no_stream", {}, "No playback recorded. Play a video to run diagnostic tests on its host.")
+            : t(
+                "stream_test_error_connection",
+                {},
+                "Connection failed. The last played stream link may have expired or is unreachable. Please play the video again and retry."
+              )
+          : "";
+      return `
+          <div class="settings-group-heading">
+            <div class="settings-group-title">${escapeHtml(t("advanced_section_network_tests", {}, "Network tests"))}</div>
+          </div>
+          <div class="settings-group-card">
+            <div class="settings-stack">
+              ${this.renderActionRow({
+                focusKey: "advanced:networkSpeedTest",
+                title: networkRunning
+                  ? t("network_speed_test_running", {}, "Running Speed Test")
+                  : t("network_speed_test_run", {}, "Run Speed Test"),
+                subtitle: t("network_speed_test_subtitle", {}, "Measure download speed and latency"),
+                value: networkValue,
+                disabled: networkRunning
+              })}
+              ${
+                hasNetworkResults
+                  ? this.renderInformationRow({
+                      title: t("network_latency_label", {}, "Latency"),
+                      value: Number.isFinite(Number(this.networkLatencyMs)) ? `${Math.round(Number(this.networkLatencyMs))} ms` : ""
+                    })
+                  : ""
+              }
+              ${
+                this.networkSpeedTestState === "done"
+                  ? this.renderInformationRow({
+                      title: t("network_download_label", {}, "Download"),
+                      subtitle: t("network_powered_by_fast", {}, "Powered by fast.com"),
+                      value: Number.isFinite(Number(this.networkDownloadMbps)) ? `${Number(this.networkDownloadMbps).toFixed(1)} Mbps` : ""
+                    })
+                  : ""
+              }
+              ${networkError ? this.renderInformationRow({ title: networkError }) : ""}
+              ${this.renderActionRow({
+                focusKey: "advanced:streamSpeedTest",
+                title: streamRunning
+                  ? t("stream_test_btn_running", {}, "Running...")
+                  : t("stream_test_card_title", {}, "Run Last Played Stream Speed Test"),
+                subtitle: hasStream
+                  ? t("stream_test_server_label", [streamHost], `Server: ${streamHost}`)
+                  : t("stream_test_no_stream", {}, "No playback recorded. Play a video to run diagnostic tests on its host."),
+                value: streamValue,
+                disabled: !hasStream || streamRunning
+              })}
+              ${
+                this.streamSpeedTestState === "done"
+                  ? [
+                      this.renderInformationRow({
+                        title: t("stream_test_label_baseline", {}, "Standard Single Connection (Baseline)"),
+                        value: this.formatNetworkMbps(this.streamSpeedTestBaselineMbps)
+                      }),
+                      ...[1, 4, 8, 16].map((connections) =>
+                        this.renderInformationRow({
+                          title: t(`stream_test_label_parallel${connections}`, {}, `Parallel Connect (${connections} MB Chunks)`),
+                          value: this.formatNetworkMbps(this.streamSpeedTestParallel?.[connections])
+                        })
+                      )
+                    ].join("")
+                  : ""
+              }
+              ${streamError ? this.renderInformationRow({ title: streamError }) : ""}
             </div>
           </div>
         `;

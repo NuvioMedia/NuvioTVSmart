@@ -1,6 +1,10 @@
 import { Platform } from "../../platform/index.js";
 import { TizenEngineFsService } from "../../platform/tizen/tizenEngineFsService.js";
 import { TizenCapabilities } from "../../platform/tizen/tizenCapabilities.js";
+import {
+  TorrentSettingsStore,
+  getTorrentProfilePeerLimits
+} from "../../data/local/torrentSettingsStore.js";
 
 import { createTizenStreamingServerResolverMethods01 } from "./tizenStreamingServerResolverMethods-01-can-resolve-stream.js";
 
@@ -303,13 +307,11 @@ async function createTorrent(
   const body = {
     torrent: { infoHash }
   };
-  if (Array.isArray(trackerSources) && trackerSources.length) {
-    body.peerSearch = {
-      sources: buildPeerSearchSources(infoHash, trackerSources),
-      min: 40,
-      max: 200
-    };
-  }
+  const peerLimits = getTorrentProfilePeerLimits(TorrentSettingsStore.get().torrentProfile);
+  body.peerSearch = {
+    sources: buildPeerSearchSources(infoHash, trackerSources),
+    ...peerLimits
+  };
   if (Number.isFinite(fileIdx) && fileIdx >= 0) {
     body.guessFileIdx = false;
   } else {

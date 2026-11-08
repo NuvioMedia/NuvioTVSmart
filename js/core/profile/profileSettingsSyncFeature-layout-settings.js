@@ -108,6 +108,7 @@ export const layout_settings = {
       always_show_landscape_clearlogo: Boolean(layout.alwaysShowLandscapeClearlogo),
       modern_hero_full_screen_backdrop: Boolean(layout.modernHeroFullScreenBackdropEnabled),
       hero_section_enabled: Boolean(layout.heroSectionEnabled),
+      hero_description_auto_scroll_enabled: Boolean(layout.heroDescriptionAutoScrollEnabled),
       discover_location: normalizeDiscoverLocationForAndroid(layout.discoverLocation),
       hero_catalog_keys: Array.isArray(layout.heroCatalogKeys) ? layout.heroCatalogKeys : [],
       poster_labels_enabled: Boolean(layout.posterLabelsEnabled),
@@ -168,6 +169,7 @@ export const layout_settings = {
       "always_show_landscape_clearlogo",
       "modern_hero_full_screen_backdrop",
       "hero_section_enabled",
+      "hero_description_auto_scroll_enabled",
       "poster_labels_enabled",
       "catalog_addon_name_enabled",
       "catalog_type_suffix_enabled",
@@ -268,6 +270,9 @@ export const layout_settings = {
     }
     if (booleanOrNull(raw.hero_section_enabled) != null) {
       partial.heroSectionEnabled = Boolean(raw.hero_section_enabled);
+    }
+    if (booleanOrNull(raw.hero_description_auto_scroll_enabled) != null) {
+      partial.heroDescriptionAutoScrollEnabled = Boolean(raw.hero_description_auto_scroll_enabled);
     }
     if (stringOrNull(raw.discover_location)) {
       partial.discoverLocation = normalizeDiscoverLocationForWeb(raw.discover_location);

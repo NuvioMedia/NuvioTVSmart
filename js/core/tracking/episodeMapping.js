@@ -127,7 +127,8 @@ export function remapEpisodeBetweenLists({
   requestedVideoId = null,
   requestedTitle = null,
   sourceEpisodes = [],
-  targetEpisodes = []
+  targetEpisodes = [],
+  preferSameNumberOverIndex = false
 } = {}) {
   const source = sortEpisodes(sourceEpisodes.filter(Boolean));
   const target = sortEpisodes(targetEpisodes.filter(Boolean));
@@ -156,6 +157,19 @@ export function remapEpisodeBetweenLists({
     }
   }
 
+  // Whole-show indexing shifts every later episode when an earlier season's count
+  // differs. A write keeps the number when the target has that exact episode.
+  if (preferSameNumberOverIndex) {
+    const sameNumber = target.find(
+      (entry) =>
+        entry.season === currentSourceEpisode.season &&
+        entry.episode === currentSourceEpisode.episode
+    );
+    if (sameNumber) {
+      return sameNumber;
+    }
+  }
+
   const sourceIndex = source.indexOf(currentSourceEpisode);
   return sourceIndex >= 0 && sourceIndex < target.length ? target[sourceIndex] : null;
 }
@@ -167,7 +181,8 @@ export function remapEpisodeByTitleOrIndex({
   requestedVideoId = null,
   requestedTitle = null,
   addonEpisodes = [],
-  providerEpisodes = []
+  providerEpisodes = [],
+  preferSameNumberOverIndex = false
 } = {}) {
   return remapEpisodeBetweenLists({
     requestedSeason,
@@ -175,7 +190,8 @@ export function remapEpisodeByTitleOrIndex({
     requestedVideoId,
     requestedTitle,
     sourceEpisodes: addonEpisodes,
-    targetEpisodes: providerEpisodes
+    targetEpisodes: providerEpisodes,
+    preferSameNumberOverIndex
   });
 }
 
