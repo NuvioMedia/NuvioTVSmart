@@ -161,7 +161,8 @@ export function renderModernHomeLayout({
               itemLimit: continueWatchingRenderLimit,
               useEpisodeThumbnails: useEpisodeThumbnailsInCw,
               blurNextUp: blurContinueWatchingNextUp,
-              cardStyle: continueWatchingCardStyle
+              cardStyle: continueWatchingCardStyle,
+              posterSettings
             })}
             ${renderContinueWatchingSection(upcomingItems, {
               rowKey: "upcoming_section",
@@ -171,7 +172,8 @@ export function renderModernHomeLayout({
               itemLimit: upcomingItems.length,
               useEpisodeThumbnails: useEpisodeThumbnailsInCw,
               blurNextUp: blurContinueWatchingNextUp,
-              cardStyle: continueWatchingCardStyle
+              cardStyle: continueWatchingCardStyle,
+              posterSettings
             })}
             <div class="home-modern-catalogs">
               ${sectionsMarkup.join("")}

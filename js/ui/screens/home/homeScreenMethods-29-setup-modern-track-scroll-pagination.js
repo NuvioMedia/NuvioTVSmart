@@ -2,8 +2,15 @@ import * as internals from "./homeScreenContext.js";
 import { registerHomeDomNodes } from "./homeDomUpdate.js";
 
 export function createHomeScreenMethods29() {
-  const { Router, catalogRepository, buildModernRowKey, MODERN_HOME_CONSTANTS, HOME_MAX_ITEMS_PER_ROW_DEFAULT, createPosterCardMarkup } =
-    internals;
+  const {
+    Router,
+    LayoutPreferences,
+    catalogRepository,
+    buildModernRowKey,
+    MODERN_HOME_CONSTANTS,
+    HOME_MAX_ITEMS_PER_ROW_DEFAULT,
+    createPosterCardMarkup
+  } = internals;
 
   return {
     setupModernTrackScrollPagination() {
@@ -71,6 +78,8 @@ export function createHomeScreenMethods29() {
             if (!itemsToAppend.length || !track.isConnected || this._trackScrollHandlers?.get(track) !== handler) {
               return false;
             }
+            // Read the poster preferences once per appended chunk, not per card.
+            const posterSettings = LayoutPreferences.get();
             const newMarkup = itemsToAppend
               .map((item, i) =>
                 createPosterCardMarkup(
@@ -84,7 +93,8 @@ export function createHomeScreenMethods29() {
                   false,
                   preferLandscape,
                   true,
-                  this.watchedTitleIds
+                  this.watchedTitleIds,
+                  posterSettings
                 )
               )
               .join("");

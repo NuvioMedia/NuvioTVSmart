@@ -278,7 +278,9 @@ export function resolveContinueWatchingBlurNextUp(layoutPrefs) {
 
 export function renderContinueWatchingCard(item, index, options = {}) {
   const originalItem = normalizeContinueWatchingItem(item);
-  const normalized = customPosterForItem(originalItem, "continue_watching");
+  // Row renderers pass the preferences they already read; a lone card still
+  // falls back to a fresh read so direct callers keep their behaviour.
+  const normalized = customPosterForItem(originalItem, "continue_watching", "poster", options?.posterSettings || LayoutPreferences.get());
   const subtitle = normalized.episodeTitle || "";
   const isNextUp = Boolean(normalized?.isNextUp);
   const hasAired = normalized?.hasAired !== false;
@@ -396,13 +398,16 @@ export function renderContinueWatchingSection(items = [], options = {}) {
   const loadingCount = Math.max(1, Math.min(10, Number(options?.loadingCount || items.length || 3)));
   const itemLimit = Math.max(1, Number(options?.itemLimit || items.length || 1));
   const cardStyle = ["card", "wide", "poster"].includes(String(options?.cardStyle || "card")) ? String(options.cardStyle) : "card";
+  const renderedItems = getContinueWatchingRenderItems(items, itemLimit);
+  // One preference read for the whole section instead of one per card.
+  const posterSettings = options?.posterSettings || (renderedItems.length ? LayoutPreferences.get() : null);
   const cardOptions = {
     useEpisodeThumbnails: options?.useEpisodeThumbnails,
     blurNextUp: options?.blurNextUp,
     cardStyle,
-    rowKey
+    rowKey,
+    posterSettings
   };
-  const renderedItems = getContinueWatchingRenderItems(items, itemLimit);
   return `
     <section class="home-row home-row-continue home-row-continue-${cardStyle}"${rowKey ? ` data-row-key="${escapeAttribute(rowKey)}"` : ""}>
       <div class="home-row-head">
