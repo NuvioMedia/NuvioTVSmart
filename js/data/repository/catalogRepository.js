@@ -4,10 +4,35 @@ import { selectCatalogEntries } from "../../core/util/catalogEntryMapper.js";
 import { CatalogApi } from "../remote/api/catalogApi.js";
 import { addonRepository } from "./addonRepository.js";
 
+// Each cached page holds up to a hundred mapped metas. Browsing Discover and
+// paginating rows used to grow the map for the life of the app; keep the most
+// recently used pages only (issue #1250).
+const MAX_CACHED_CATALOG_PAGES = 96;
+
 class CatalogRepository {
   constructor() {
     this.catalogCache = new Map();
     this.cacheGeneration = 0;
+  }
+
+  readCachedCatalog(cacheKey) {
+    const cached = this.catalogCache.get(cacheKey);
+    if (cached === undefined) {
+      return undefined;
+    }
+    // Re-insert so Map iteration order doubles as least-recently-used order.
+    this.catalogCache.delete(cacheKey);
+    this.catalogCache.set(cacheKey, cached);
+    return cached;
+  }
+
+  writeCachedCatalog(cacheKey, row) {
+    this.catalogCache.delete(cacheKey);
+    this.catalogCache.set(cacheKey, row);
+    while (this.catalogCache.size > MAX_CACHED_CATALOG_PAGES) {
+      const oldestKey = this.catalogCache.keys().next().value;
+      this.catalogCache.delete(oldestKey);
+    }
   }
 
   async getCatalog({
@@ -44,7 +69,7 @@ class CatalogRepository {
       supportsSkip
     });
 
-    const cached = this.catalogCache.get(cacheKey);
+    const cached = this.readCachedCatalog(cacheKey);
     if (cached) {
       return {
         status: "success",
@@ -93,7 +118,7 @@ class CatalogRepository {
         // it out of the response cache so the next Home request retries it,
         // matching Android, which has no catalog-response cache.
         if (cacheGeneration === this.cacheGeneration && items.length) {
-          this.catalogCache.set(cacheKey, row);
+          this.writeCachedCatalog(cacheKey, row);
         }
         return row;
       })
