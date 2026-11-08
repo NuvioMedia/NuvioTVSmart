@@ -2,6 +2,13 @@ html.no-css-grid.no-flex-gap .player-subtitle-overlay-grid > * + * {
   margin-left: 28px;
 }
 
+/* The rail headings above the subtitle menu need the two-row grid added in
+   components-36; on the old flex fallback the rails keep their previous
+   single-row layout. */
+html.no-css-grid .player-subtitle-rail-heading {
+  display: none;
+}
+
 html.no-css-grid .player-subtitle-delay-actions,
 html.no-css-grid .player-subtitle-timing-panel-wait,
 html.no-css-grid .player-subtitle-timing-cue-list {

@@ -290,6 +290,9 @@ export function createPlayerScreenMethods58() {
           <div class="player-dialog-title">${escapeHtml(t("subtitle_dialog_title", {}, "Subtitles"))}</div>
           ${supportNotice ? `<div class="player-dialog-support-message" role="status">${escapeHtml(supportNotice)}</div>` : ""}
           <div class="player-subtitle-overlay-grid">
+            <div class="player-subtitle-rail-heading player-subtitle-language-heading">${escapeHtml(t("subtitle_tab_languages", {}, "Languages"))}</div>
+            ${showOptionsRail ? `<div class="player-subtitle-rail-heading player-subtitle-options-heading">${escapeHtml(t("subtitle_dialog_title", {}, "Subtitles"))}</div>` : ""}
+            ${showOptionsRail ? `<div class="player-subtitle-rail-heading player-subtitle-style-heading">${escapeHtml(t("subtitle_style_title", {}, "Subtitle Style"))}</div>` : ""}
             <div class="player-subtitle-rail player-subtitle-language-rail">
               ${languages
                 .map(
