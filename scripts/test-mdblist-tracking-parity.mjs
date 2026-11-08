@@ -439,7 +439,7 @@ const cleanupSource = await readFile(
 const cleanupEvents = [];
 const cleanupMethods = new Function(
   "internals",
-  cleanupSource.replace(/^import .*;\n/gm, "").replace("export function", "function") +
+  cleanupSource.replace(/^import .*;\r?\n/gm, "").replace("export function", "function") +
     "; return createPlayerScreenMethods73();"
 )({
   TrackingScrobbleService: {
@@ -488,7 +488,7 @@ let frameStarts = 0;
 let framePluginPlays = 0;
 const frameMethods = new Function(
   "internals",
-  frameSource.replace(/^import .*;\n/gm, "").replace("export function", "function") +
+  frameSource.replace(/^import .*;\r?\n/gm, "").replace("export function", "function") +
     "; return createPlayerScreenMethods30();"
 )({
   TrackingScrobbleService: { isEnabled: () => true, start: () => frameStarts++ },

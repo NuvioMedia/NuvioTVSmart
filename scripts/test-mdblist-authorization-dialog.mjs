@@ -49,7 +49,7 @@ for (const file of ["settingsScreenMethods-02-render-action-row.js", "settingsMd
     new URL(`../js/ui/screens/settings/${file}`, import.meta.url),
     "utf8"
   );
-  vm.runInContext(source.replace(/^import .*;\n/gm, "").replace(/export /g, ""), context);
+  vm.runInContext(source.replace(/^import .*;\r?\n/gm, "").replace(/export /g, ""), context);
 }
 vm.runInContext(
   "var internals = fixtures; var { MdbListTracking, MdbListAccount, ProfileManager, QrCodeGenerator, t, escapeHtml, escapeAttribute } = fixtures;",

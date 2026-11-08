@@ -7,7 +7,7 @@ const source = readFileSync(
   new URL("../js/data/remote/supabase/avatarRepository.js", import.meta.url),
   "utf8"
 )
-  .replace(/^import .*;\n/gm, "")
+  .replace(/^import .*;\r?\n/gm, "")
   .replace(/export /g, "");
 
 function repository({
