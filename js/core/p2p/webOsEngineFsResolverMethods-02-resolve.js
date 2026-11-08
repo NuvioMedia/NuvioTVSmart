@@ -15,7 +15,6 @@ export function createWebOsEngineFsResolverMethods02() {
     normalizeBaseUrl,
     isLocalHostUrl,
     buildPlaybackUrl,
-    withTimeout,
     describeError,
     buildNuvioPeerSearchSources,
     requestEngineFsCreateDirect,
@@ -60,11 +59,14 @@ export function createWebOsEngineFsResolverMethods02() {
         let statusPayload = {};
         let statusError = "";
         try {
-          const statusResult = await withTimeout(
-            requestWebOsCompanionService({ method: "status", parameters: {}, timeoutMs: 5000 }),
-            5000,
-            "webOS companion status request timed out"
-          );
+          // The first torrent playback also cold-starts the companion service and
+          // its local media runtime, so allow the full service-start window here.
+          const statusResult = await requestWebOsCompanionService({
+            method: "status",
+            parameters: {},
+            timeoutMs: 30000,
+            retryOnFailure: false
+          });
           statusPayload = statusResult?.payload || {};
         } catch (error) {
           statusPayload = {};
