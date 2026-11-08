@@ -317,6 +317,9 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
     this.markPlaybackProgress();
     this.renderWebOsEmbeddedTextSubtitleAtCurrentTime();
     this.renderBitmapSubtitleAtCurrentTime({ force: true });
+    // The overlay no longer polls every 120 ms, so a seek must render it here
+    // instead of waiting for the next timeupdate or idle wake-up.
+    this.renderHtmlSubtitleOverlayAtCurrentTime();
     this.updateMediaSessionPositionState();
     this.updateUiTick();
   };
