@@ -364,8 +364,11 @@
   filter: none;
 }
 
-/* FIX: keep remote focus immediate on Samsung CU-series hardware. */
-.legacy-tizen .focusable,
+/* FIX: keep remote focus immediate on Samsung CU-series hardware. Home
+   content cards are excluded: their transitions are frozen by the
+   performance-constrained rules above, so a 2022+ Tizen keeps the same
+   Android motion as webOS instead of losing it to the platform class. */
+.legacy-tizen .focusable:not(.home-content-card),
 .legacy-tizen .series-episode-card,
 .legacy-tizen .detail-morelike-card,
 .legacy-tizen .movie-cast-card,

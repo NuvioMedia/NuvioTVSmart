@@ -44,6 +44,14 @@ for (const target of homeMotionTargets) {
   );
 }
 
+// The CU-series catch-all must not swallow the Home card transitions that the
+// constrained rules above already freeze: otherwise modern Tizen keeps the
+// instant expansion and diverges from Android TV.
+assert.ok(
+  legacyTizen.includes(".legacy-tizen .focusable:not(.home-content-card)"),
+  "the legacy-tizen instant-focus catch-all excludes Home content cards"
+);
+
 // The layout, blur and decorative fallbacks stay on every Tizen.
 for (const kept of [
   ".legacy-tizen .modern-sidebar-shell",
