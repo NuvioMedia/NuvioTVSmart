@@ -1,5 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
-@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+/* Web fonts (DM Sans, Inter, Open Sans, Material Icons) are loaded from
+   js/app.js as non-blocking stylesheets so first paint on TV does not wait
+   for fonts.googleapis.com. */
 
 :root {
   --bg-color: #0d0d0d;

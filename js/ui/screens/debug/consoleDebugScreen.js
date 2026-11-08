@@ -3,6 +3,7 @@ import {
   getConsoleDebugEvents,
   subscribeToConsoleDebugEvents
 } from "../../../core/diagnostics/consoleDebugBuffer.js";
+import { formatBootTimingSummary } from "../../../core/diagnostics/bootTiming.js";
 import { Platform } from "../../../platform/index.js";
 import { PluginServiceClient } from "../../../platform/pluginServiceClient.js";
 import { Router } from "../../navigation/routerState.js";
@@ -166,6 +167,11 @@ export const ConsoleDebugScreen = {
           <div class="debug-console-heading">
             <h1>${escapeHtml(t("about_debug_console_title", {}, "Console debug"))}</h1>
             <p>${escapeHtml(t("debug_console_subtitle", {}, "Last warnings and errors captured from this app session"))}</p>
+            ${
+              formatBootTimingSummary()
+                ? `<p class="debug-console-boot-timing">${escapeHtml(`Boot timing: ${formatBootTimingSummary()}`)}</p>`
+                : ""
+            }
             ${
               Platform.isTizen()
                 ? `<button class="debug-console-capture focusable" data-focus-key="diagnostics" data-action="toggle-tizen-diagnostics" aria-pressed="${isTizenSubtitleDiagnosticsEnabled() ? "true" : "false"}">

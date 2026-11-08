@@ -6,6 +6,7 @@ import { AmbientMode } from "./ui/ambient/ambientMode.js";
 /* global __NUVIO_APP_VERSION__ */
 
 import "./core/diagnostics/consoleDebugBuffer.js";
+import { markBootTiming } from "./core/diagnostics/bootTiming.js";
 import { detailWatchedEnrichmentService } from "./data/repository/detailWatchedEnrichmentService.js";
 import { NON_BACKSTACK_ROUTES, Router } from "./ui/navigation/router.js";
 import { FocusEngine } from "./ui/navigation/focusEngine.js";
@@ -23,6 +24,7 @@ import { renderAppShell } from "./bootstrap/renderAppShell.js";
 import { renderAddonRemotePage } from "./bootstrap/renderAddonRemotePage.js";
 import { preloadStreamBadgeImages } from "./ui/screens/stream/streamScreen.js";
 import { warmStreamingLibs } from "./runtime/loadStreamingLibs.js";
+import { runAfterFirstHomePaint } from "./runtime/startupScheduler.js";
 import { Platform } from "./platform/index.js";
 import { TizenCapabilities } from "./platform/tizen/tizenCapabilities.js";
 import { PluginServiceClient } from "./platform/pluginServiceClient.js";
@@ -59,6 +61,43 @@ LocalStore.remove("rotatedDpadMapping");
   }
 })();
 
+// All imported modules have been evaluated at this point: the gap from the
+// boot-guard mark to this one is the bundle fetch + parse + compile cost.
+markBootTiming("app-bundle-evaluated");
+
+// Web fonts used to be `@import`ed at the top of the stylesheet, which made
+// first paint wait for fonts.googleapis.com (DNS + TLS, or a long failure on
+// offline TVs). Load the same stylesheets from here instead: the CSSOM no
+// longer blocks on them, the fonts still swap in once available, and the
+// Material Icons ligature names stay hidden until that font is ready.
+const REMOTE_FONT_STYLESHEETS = Object.freeze({
+  text: "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap",
+  icons: "https://fonts.googleapis.com/icon?family=Material+Icons"
+});
+
+function loadRemoteStylesheet(href) {
+  return new Promise((resolve) => {
+    try {
+      const head = document.head || document.documentElement;
+      if (!head) {
+        resolve(false);
+        return;
+      }
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.onload = () => resolve(true);
+      link.onerror = () => resolve(false);
+      head.appendChild(link);
+    } catch (_) {
+      resolve(false);
+    }
+  });
+}
+
+const materialIconsStylesheetLoaded = loadRemoteStylesheet(REMOTE_FONT_STYLESHEETS.icons);
+void loadRemoteStylesheet(REMOTE_FONT_STYLESHEETS.text);
+
 const GUEST_QR_BYPASS_KEY = "skipAuthQrGate";
 const SIGNED_OUT_ALLOWED_ROUTES = new Set([
   "trakt",
@@ -82,22 +121,26 @@ function preloadMaterialIconFont() {
   const root = document.documentElement;
   const markReady = () => root.classList.add("material-icons-ready");
   const timer = setTimeout(markReady, 3000);
-  try {
-    Promise.resolve(document.fonts?.load?.('24px "Material Icons"', "home"))
-      .then((faces) => {
-        if (Array.isArray(faces) && faces.length) {
-          clearTimeout(timer);
-          markReady();
-        }
-      })
-      .catch(() => {});
-  } catch (_) {
-    clearTimeout(timer);
-    markReady();
-  }
+  // The icon stylesheet is injected asynchronously (see REMOTE_FONT_STYLESHEETS);
+  // the @font-face only exists once it has loaded, so wait for that first.
+  materialIconsStylesheetLoaded
+    .then((loaded) => {
+      if (!loaded) {
+        return null;
+      }
+      return document.fonts?.load?.('24px "Material Icons"', "home");
+    })
+    .then((faces) => {
+      if (Array.isArray(faces) && faces.length) {
+        clearTimeout(timer);
+        markReady();
+      }
+    })
+    .catch(() => {});
 }
 
 function markBootStage(stage) {
+  markBootTiming(stage);
   const guard = globalThis.NuvioBootGuard;
   if (guard && typeof guard.stage === "function") {
     guard.stage(stage);
@@ -251,18 +294,70 @@ function isAddonRemoteMode() {
   }
 }
 
+// How long startup routing waits for the profile-lock RPC when the cached
+// lock state says the active profile has no PIN. The RPC otherwise runs with
+// the 60 s default request timeout, so a slow TV network held the whole start
+// on it even for a single PIN-less profile.
+const PROFILE_LOCK_STATE_WAIT_MS = 2500;
+
+function hasProfilePin(pinStates, profileId) {
+  return Boolean(pinStates?.[String(profileId)] || pinStates?.[Number(profileId)]);
+}
+
+function raceWithTimeout(promise, timeoutMs) {
+  let timer = null;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(undefined), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+// The bounded wait above may route into the app before the server answers.
+// If the answer then reports a PIN on the active profile, open the picker so
+// the PIN is still required, exactly as an immediate answer would have.
+function enforceLateProfileLock(lockStatePull, profileId) {
+  void lockStatePull
+    .then((pinStates) => {
+      if (!hasProfilePin(pinStates, profileId)) return;
+      if (String(ProfileManager.getActiveProfileId()) !== String(profileId)) return;
+      if (Router.getCurrent() === "profileSelection") return;
+      console.warn("Profile lock state arrived after routing; opening the profile picker");
+      void Router.navigate(
+        "profileSelection",
+        { skipInitialProfileSync: true, profilePinEnabled: pinStates },
+        { replaceHistory: true, skipStackPush: true }
+      );
+    })
+    .catch(() => {});
+}
+
 async function shouldShowProfileSelection() {
-  const [profiles, pinStates] = await Promise.all([
-    ProfileManager.getProfiles(),
-    ProfileSyncService.pullProfileLockStates()
-  ]);
+  const profiles = await ProfileManager.getProfiles();
   const activeProfileId = ProfileManager.getActiveProfileId();
-  const activeProfileHasPin = Boolean(
-    pinStates?.[String(activeProfileId)] || pinStates?.[Number(activeProfileId)]
-  );
+  const cachedPinStates = ProfileSyncService.getCachedProfileLockStates();
+  const lockStatePull = ProfileSyncService.pullProfileLockStates();
+  // A profile the cache knows to be PIN-protected, or a TV the server has
+  // never answered, waits for the live state as before. Otherwise the pull is
+  // bounded so the network cannot delay Home; a late PIN answer is enforced by
+  // enforceLateProfileLock.
+  const waitForLiveState =
+    cachedPinStates === null || hasProfilePin(cachedPinStates, activeProfileId);
+  let pinStates;
+  let liveStateKnown = true;
+  if (waitForLiveState) {
+    pinStates = await lockStatePull;
+  } else {
+    pinStates = await raceWithTimeout(lockStatePull, PROFILE_LOCK_STATE_WAIT_MS);
+    if (pinStates === undefined) {
+      liveStateKnown = false;
+      pinStates = cachedPinStates;
+      enforceLateProfileLock(lockStatePull, activeProfileId);
+    }
+  }
+  const activeProfileHasPin = hasProfilePin(pinStates, activeProfileId);
 
   if (hasSelectedProfileThisSession) {
-    return { show: false, pinStates };
+    return { show: false, pinStates, liveStateKnown };
   }
 
   // Remember last profile: when enabled and the last used profile has no PIN,
@@ -273,10 +368,10 @@ async function shouldShowProfileSelection() {
     ProfileManager.hasEverSelectedProfile() &&
     !activeProfileHasPin
   ) {
-    return { show: false, pinStates };
+    return { show: false, pinStates, liveStateKnown };
   }
 
-  return { show: profiles.length > 1 || activeProfileHasPin, pinStates };
+  return { show: profiles.length > 1 || activeProfileHasPin, pinStates, liveStateKnown };
 }
 
 async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
@@ -294,19 +389,29 @@ async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
     await I18n.init();
     const memberAccess = MemberAccessRepository.getCachedAccess();
     ThemeManager.apply({ enforceAccess: true, access: memberAccess });
-    void MemberAccessRepository.getAccess().catch((error) => {
-      console.warn("Profile member access refresh failed", error);
-    });
     I18n.apply();
-    void preloadStreamBadgeImages().catch((error) => {
-      console.warn("Stream badge image prerender failed", error);
+    // Neither the member access refresh nor the badge prerender is needed for
+    // the first Home paint; on a single-core TV they competed with the catalog
+    // rows for the main thread and the network.
+    runAfterFirstHomePaint(() => {
+      void MemberAccessRepository.getAccess().catch((error) => {
+        console.warn("Profile member access refresh failed", error);
+      });
+      void preloadStreamBadgeImages().catch((error) => {
+        console.warn("Stream badge image prerender failed", error);
+      });
     });
   }
   const experienceRoute = activeProfile ? await resolveExperienceRoute(activeProfile.id) : "home";
-  void StartupSyncService.requestSyncNow({
-    notifyPullCompleted: ["home", "plugins"].includes(experienceRoute)
-  }).catch((error) => {
-    console.warn("Profile background sync failed", error);
+  // The startup sync fans out to about ten remote surfaces. Home paints from
+  // its local cache first and refreshes when the pull completes, so starting
+  // the pull after that paint keeps the first screen responsive.
+  runAfterFirstHomePaint(() => {
+    void StartupSyncService.requestSyncNow({
+      notifyPullCompleted: ["home", "plugins"].includes(experienceRoute)
+    }).catch((error) => {
+      console.warn("Profile background sync failed", error);
+    });
   });
   const storedResumeRoute =
     restoreWebOsRoute && typeof Router.consumeWebOsResumeRoute === "function"
@@ -338,10 +443,14 @@ async function routeAfterAuthentication() {
   const profileRoute = await shouldShowProfileSelection();
   loginTrace("authenticated route profile decision", { show: profileRoute.show === true });
   if (profileRoute.show) {
-    await Router.navigate("profileSelection", {
-      skipInitialProfileSync: true,
-      profilePinEnabled: profileRoute.pinStates
-    });
+    // Without a live answer the picker runs its own profile/lock refresh so
+    // PIN badges and PIN prompts never rely on the cached state.
+    await Router.navigate(
+      "profileSelection",
+      profileRoute.liveStateKnown
+        ? { skipInitialProfileSync: true, profilePinEnabled: profileRoute.pinStates }
+        : {}
+    );
     return;
   }
 
@@ -672,6 +781,7 @@ async function bootstrapApp() {
       StartupSyncService.stop();
       ProviderCredentialSyncService.cancelForegroundPull();
       void MediaServerSyncService.stop();
+      ProfileSyncService.clearCachedProfileLockStates();
       hasSelectedProfileThisSession = false;
       const shouldBypassQr = Boolean(LocalStore.get(GUEST_QR_BYPASS_KEY, false));
       if (isSignedOutRouteAllowed()) {
@@ -737,7 +847,8 @@ async function bootstrapApp() {
 
   markBootStage("Checking authentication");
   await AuthManager.bootstrap();
-  installPartyEffects();
+  // Party toasts and the party availability request can wait for Home.
+  runAfterFirstHomePaint(() => installPartyEffects());
 }
 
 async function bootstrapAddonRemoteMode() {

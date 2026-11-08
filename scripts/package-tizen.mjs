@@ -182,7 +182,9 @@ ${pluginServiceBridge}  <link rel="stylesheet" href="css/bundle.css" />
 </head>
 <body>
   <script src="boot-guard.js"></script>
-  <script src="core-js.bundle.js" onerror="window.NuvioBootGuard &amp;&amp; window.NuvioBootGuard.scriptFailed(this.src)"></script>
+  <!-- Deferred like main.js: keeps document order (core-js runs before main.js
+       loads the app bundle) without parser-blocking first paint on single-core TVs. -->
+  <script defer src="core-js.bundle.js" onerror="window.NuvioBootGuard &amp;&amp; window.NuvioBootGuard.scriptFailed(this.src)"></script>
   <script defer src="main.js" onerror="window.NuvioBootGuard &amp;&amp; window.NuvioBootGuard.scriptFailed(this.src)"></script>
 </body>
 </html>
@@ -244,7 +246,7 @@ function loadScript(src) {
 
 function startNuvioApp() {
   loadScript("nuvio.env.js");
-  loadScript("assets/libs/qrcode-generator.js");
+  // assets/libs/qrcode-generator.js is loaded on demand by the QR screens.
   loadScript("app.bundle.js");
 }
 

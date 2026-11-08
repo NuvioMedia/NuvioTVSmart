@@ -1,4 +1,5 @@
 import { AuthManager } from "../auth/authManager.js";
+import { LocalStore } from "../storage/localStore.js";
 import { SessionStore } from "../storage/sessionStore.js";
 import { isSyncBackoffActive } from "../sync/syncBackoffPolicy.js";
 import { MAX_PROFILES, ProfileManager } from "./profileManager.js";
@@ -14,6 +15,29 @@ const CLEAR_PROFILE_PIN_RPC = "clear_profile_pin";
 const VERIFY_PROFILE_PIN_RPC = "verify_profile_pin";
 const DELETE_PROFILE_DATA_RPC = "sync_delete_profile_data";
 const PROFILE_PULL_MIN_INTERVAL_MS = 10_000;
+// Last lock states the server reported, keyed by profile index. Startup
+// routing consults it so a slow network does not hold Home on the lock RPC
+// for a profile that had no PIN the last time the server answered.
+const PROFILE_LOCK_STATE_CACHE_KEY = "profileLockStateCache";
+
+function readCachedProfileLockStates() {
+  const cached = LocalStore.get(PROFILE_LOCK_STATE_CACHE_KEY, null);
+  return cached && typeof cached === "object" && !Array.isArray(cached) ? cached : null;
+}
+
+function updateCachedProfileLockState(profileId, enabled) {
+  const profileIndex = Number(profileId);
+  const cached = readCachedProfileLockStates();
+  // A single PIN change must not create a partial cache on a TV the server
+  // has never answered; startup keeps waiting for the live state there.
+  if (!cached || !Number.isFinite(profileIndex) || profileIndex <= 0) {
+    return;
+  }
+  LocalStore.set(PROFILE_LOCK_STATE_CACHE_KEY, {
+    ...cached,
+    [String(Math.trunc(profileIndex))]: Boolean(enabled)
+  });
+}
 
 let lastPullStatus = "idle";
 let lastPullError = null;
@@ -323,7 +347,7 @@ export const ProfileSyncService = {
         return {};
       }
       const rows = await SupabaseApi.rpc(PULL_LOCKS_RPC, {}, true);
-      return (Array.isArray(rows) ? rows : []).reduce((accumulator, row) => {
+      const lockStates = (Array.isArray(rows) ? rows : []).reduce((accumulator, row) => {
         const profileIndex = Number(row?.profile_index ?? row?.profileIndex ?? row?.id ?? 0);
         if (Number.isFinite(profileIndex) && profileIndex > 0) {
           accumulator[String(Math.trunc(profileIndex))] = Boolean(
@@ -332,10 +356,25 @@ export const ProfileSyncService = {
         }
         return accumulator;
       }, {});
+      // Only a server answer updates the cache; the empty results above for
+      // backoff, signed-out and failures must not erase known PINs.
+      LocalStore.set(PROFILE_LOCK_STATE_CACHE_KEY, lockStates);
+      return lockStates;
     } catch (error) {
       console.warn("Profile lock state pull failed", error);
       return {};
     }
+  },
+
+  // null until the server has answered at least once on this TV.
+  getCachedProfileLockStates() {
+    return readCachedProfileLockStates();
+  },
+
+  // Called on sign-out so another account's lock states never shorten the
+  // startup wait for the next one.
+  clearCachedProfileLockStates() {
+    LocalStore.remove(PROFILE_LOCK_STATE_CACHE_KEY);
   },
 
   async setProfilePin(profileId, pin, currentPin = null) {
@@ -351,6 +390,7 @@ export const ProfileSyncService = {
         params.p_current_pin = String(currentPin).trim();
       }
       await SupabaseApi.rpc(SET_PROFILE_PIN_RPC, params, true);
+      updateCachedProfileLockState(profileId, true);
       return true;
     } catch (error) {
       console.warn("Set profile PIN failed", error);
@@ -370,6 +410,7 @@ export const ProfileSyncService = {
         params.p_current_pin = String(currentPin).trim();
       }
       await SupabaseApi.rpc(CLEAR_PROFILE_PIN_RPC, params, true);
+      updateCachedProfileLockState(profileId, false);
       return true;
     } catch (error) {
       console.warn("Clear profile PIN failed", error);

@@ -10,6 +10,7 @@ export function createRouterMethods02() {
     ROUTER_PERF_DEBUG,
     routerPerfNow,
     logRouterPerf,
+    markBootTiming,
     NON_BACKSTACK_ROUTES,
     openPendingLaunchDeepLink,
     WEBOS_RESUME_ROUTE_KEY,
@@ -198,6 +199,10 @@ export function createRouterMethods02() {
       }
 
       if (bootGuard && typeof bootGuard.ready === "function") {
+        if (bootGuard.isActive?.() !== false) {
+          // Test fixtures build `internals` by hand and may omit the timing hook.
+          markBootTiming?.(`first-route:${routeName}`);
+        }
         bootGuard.ready();
       }
 

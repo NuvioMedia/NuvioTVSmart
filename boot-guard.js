@@ -64,6 +64,12 @@
   ];
   var active = true;
   var lastStage = "Loading startup files";
+  // Time since navigation start when this guard ran, before core-js and the
+  // app bundle were fetched and evaluated. The app reads it for boot timing.
+  var startedAt =
+    window.performance && typeof window.performance.now === "function"
+      ? window.performance.now()
+      : 0;
 
   function text(value) {
     if (value === undefined || value === null || value === "") {
@@ -811,6 +817,8 @@
   }
 
   var guard = {
+    startedAt: startedAt,
+
     stage: function stage(name) {
       if (active && name) {
         lastStage = String(name);
