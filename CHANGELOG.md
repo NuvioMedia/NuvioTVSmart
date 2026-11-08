@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Improvements & Fixes
+
+- webOS torrent playback no longer fails on the first attempt while the companion service and its local runtime are still starting; playback now waits for them like Android TV (#1302) (@WhiteGiso)
+
 ## 1.3.9
 
 ### Improvements & Fixes
