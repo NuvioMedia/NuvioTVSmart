@@ -51,6 +51,11 @@ export const tizenAdapter = {
     if (!tvInputDevice) {
       return;
     }
+    // The packaged main.js already registered these (plus Back/Return) before
+    // the bundle loaded; each registerKey is a synchronous WRT bridge call.
+    if (globalThis.__NUVIO_TIZEN_MEDIA_KEYS_REGISTERED__ === true) {
+      return;
+    }
 
     const mediaKeys = [
       "Info",
