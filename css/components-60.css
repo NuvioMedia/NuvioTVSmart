@@ -3,8 +3,12 @@
    compositors — old Chromium (software raster) and modern engines on
    mid-range panels alike. Constrained runtimes set performance-constrained
    on <html>/<body> (see js/app.js applyPerformanceMode); .legacy-tizen is
-   set for every Tizen TV (see tizenAdapter). Make those menus instant and
-   keep only a cheap outline for focus. */
+   set for every Tizen TV (see js/app.js). Make those menus instant.
+
+   Home focus motion (card scale, poster expansion, camera tween) is gated
+   on performance-constrained only: every Samsung set carries legacy-tizen
+   as a layout fallback, and a 2022+ Tizen composites transform and opacity
+   as well as webOS does, so it keeps the Android TV motion (#1250). */
 
 .performance-constrained .nuvio-route-slide-enter,
 .performance-constrained .home-route-content-enter,
@@ -79,7 +83,9 @@
 }
 
 /* Focus feedback: keep a 2px outline, drop scale + blurred shadows.
-   Scale forces a repaint of the whole poster image on Chromium 56-69. */
+   Scale forces a repaint of the whole poster image on Chromium 56-69.
+   Home cards are constrained-only (see the header); sidebar and stream
+   route focus stay instant on every Tizen. */
 .performance-constrained .home-content-card.focused,
 .performance-constrained .home-continue-card.focused,
 .performance-constrained .home-poster-card.focused .home-poster-frame,
@@ -87,14 +93,30 @@
 .performance-constrained .modern-sidebar-profile.focused,
 .performance-constrained .home-nav-item.focused,
 .performance-constrained .stream-route-card.focused,
-.legacy-tizen .home-content-card.focused,
-.legacy-tizen .home-continue-card.focused,
-.legacy-tizen .home-poster-card.focused .home-poster-frame,
 .legacy-tizen .modern-sidebar-nav-item.focused,
 .legacy-tizen .modern-sidebar-profile.focused,
 .legacy-tizen .stream-route-card.focused {
   transform: none !important;
   box-shadow: 0 0 0 2px var(--secondary-color) !important;
+  will-change: auto !important;
+}
+
+/* Classic/grid poster focus (components-49) scales with translateZ(0) at
+   4-class specificity, which outranks the kill above and promotes a layer
+   per focus step. Poster cards carry both home-content-card and
+   home-poster-card, so match 5 classes to win on constrained runtimes. */
+.performance-constrained .home-screen-shell.home-layout-classic .home-poster-card.home-content-card,
+.performance-constrained .home-screen-shell.home-layout-grid .home-poster-card.home-content-card {
+  transition: none !important;
+}
+
+.performance-constrained
+  .home-screen-shell.home-layout-classic
+  .home-poster-card.home-content-card.focused,
+.performance-constrained
+  .home-screen-shell.home-layout-grid
+  .home-poster-card.home-content-card.focused {
+  transform: none !important;
   will-change: auto !important;
 }
 
@@ -104,9 +126,24 @@
 .performance-constrained .settings-layout-preview-modern-row,
 .performance-constrained .settings-layout-preview-grid-canvas,
 .performance-constrained .settings-layout-preview-classic-row.is-featured,
-.legacy-tizen .stream-route-skeleton-line {
+.legacy-tizen .stream-route-skeleton-line,
+.legacy-tizen .settings-layout-preview-modern-row,
+.legacy-tizen .settings-layout-preview-grid-canvas,
+.legacy-tizen .settings-layout-preview-classic-row.is-featured {
   animation: none !important;
   opacity: 0.7 !important;
+}
+
+/* Home loading shimmer (components-15) pulses opacity 0.5-0.92 forever on
+   every Continue Watching / poster / hero skeleton. Freeze it; without the
+   animation the skeleton sits at its own full opacity, so it stays visible. */
+.legacy-tizen .home-continue-media-loading,
+.legacy-tizen .home-continue-skeleton-line,
+.legacy-tizen .home-poster-card-loading .home-poster-frame::before,
+.legacy-tizen .home-poster-skeleton-line,
+.legacy-tizen .home-hero-backdrop-loading,
+.legacy-tizen .home-modern-skeleton-block {
+  animation: none !important;
 }
 
 /* Full-viewport settings surface: width/margin animation reflows the entire
@@ -124,8 +161,16 @@
   animation: none !important;
 }
 
-/* Modern poster expansion animates layout properties per focus step. */
-.legacy-tizen .home-screen-shell.home-layout-modern .home-poster-card {
+/* Modern poster expansion animates layout properties per focus step. The
+   frame height (components-18) and landscape gradient height (components-17)
+   transitions reflow the expanding card as well, so freeze them too on
+   constrained runtimes; modern Tizen keeps the 180 ms expansion like webOS. */
+.performance-constrained .home-screen-shell.home-layout-modern .home-poster-card,
+.performance-constrained .home-screen-shell.home-layout-modern .home-poster-frame,
+.performance-constrained
+  .home-screen-shell.home-layout-modern
+  .home-poster-card.is-landscape
+  .home-poster-expanded-gradient {
   transition: none !important;
 }
 
@@ -310,8 +355,20 @@
   will-change: transform !important;
 }
 
-/* FIX: keep remote focus immediate on Samsung CU-series hardware. */
-.legacy-tizen .focusable,
+/* Modern hero backdrop: brightness() + saturate() (components-16) put the
+   ~1380x650 artwork on its own filtered render surface, re-filtered on every
+   frame of the 400 ms swap fade and whenever the rows scroll over it, so each
+   focus move that changes the hero costs a filtered full-size composite. The
+   grade is subtle; Tizen draws the artwork as delivered (#1250). */
+.legacy-tizen .home-screen-shell.home-layout-modern .home-hero-backdrop {
+  filter: none;
+}
+
+/* FIX: keep remote focus immediate on Samsung CU-series hardware. Home
+   content cards are excluded: their transitions are frozen by the
+   performance-constrained rules above, so a 2022+ Tizen keeps the same
+   Android motion as webOS instead of losing it to the platform class. */
+.legacy-tizen .focusable:not(.home-content-card),
 .legacy-tizen .series-episode-card,
 .legacy-tizen .detail-morelike-card,
 .legacy-tizen .movie-cast-card,
