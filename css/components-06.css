@@ -417,3 +417,39 @@ img.placeholder {
 .nuvio-loading-indicator-arc {
   animation: nuvioLoadingIndicatorArc 2000ms linear infinite;
 }
+
+/* The arc above animates stroke-dash data on the main thread, so it freezes
+   while Home mounts. A pre-rendered strip of the same Android frames scrolls
+   with a transform, which the compositor keeps moving through that task. */
+.home-loading-spinner.has-loader-sprite {
+  overflow: hidden;
+}
+
+.home-loading-spinner.has-loader-sprite .nuvio-loading-indicator-svg {
+  opacity: 0;
+}
+
+/* The strip is 120 frames wide and the 96px box clips it, so translating it
+   swaps frames without moving the loader itself. */
+.home-loading-spinner.has-loader-sprite::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(96px * 120);
+  height: 96px;
+  background-image: var(--loader-sprite);
+  background-repeat: no-repeat;
+  background-size: calc(96px * 120) 96px;
+  animation: homeLoadingSprite 2000ms steps(120) infinite;
+  will-change: transform;
+}
+
+@keyframes homeLoadingSprite {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-96px * 120));
+  }
+}
