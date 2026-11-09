@@ -358,7 +358,11 @@
 }
 
 .profile-logo {
-  width: 380px;
+  /* Android sizes the wordmark by height only (contentScale Fit), so the box
+     must hug the 1085x344 asset instead of reserving extra horizontal space.
+     The ratio also reserves the width before the image decodes. */
+  width: auto;
+  aspect-ratio: 1085 / 344;
   height: 88px;
   display: block;
   object-fit: contain;
@@ -424,9 +428,13 @@
   margin: 0;
 }
 
+/* Android MemberBrandWordmark ratios relative to the 44dp logo height:
+   suffix gap 0.14, font size 132/344, vertical offset -12/344. At the
+   webOS 2x scale that logo height is 88px. */
 .profile-brand-lockup .member-brand-suffix {
-  font-size: 32px;
-  transform: translateY(-3px);
+  margin-left: calc(88px * 0.14);
+  font-size: calc(88px * 132 / 344);
+  transform: translateY(calc(88px * -12 / 344));
 }
 
 .profile-title {
