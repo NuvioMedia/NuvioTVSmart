@@ -306,7 +306,7 @@ const { createPlayerScreenMethods44 } =
 const { localMediaEmbeddedSubtitleRepository } =
   await import("../js/data/repository/localMediaEmbeddedSubtitleRepository.js");
 
-test("Tizen reselects the AVPlay track natively when the extractor is unavailable", async () => {
+test("Tizen keeps AVPlay subtitle callbacks armed when the extractor is unavailable", async () => {
   const previousGetWindow = localMediaEmbeddedSubtitleRepository.getWindow;
   const previousSetTrack = PlayerController.setAvPlaySubtitleTrack;
   const previousApplyMode = PlayerController.applyAvPlaySubtitleRenderMode;
@@ -352,7 +352,9 @@ test("Tizen reselects the AVPlay track natively when the extractor is unavailabl
     });
     const applied = await context.loadWebOsEmbeddedTextSubtitleWindow(10);
     assert.equal(applied, false);
-    assert.deepEqual(calls, [{ trackIndex: 3, options: { renderMode: "native" } }]);
+    assert.deepEqual(calls, [{ trackIndex: 3, options: { renderMode: "html" } }]);
+    assert.equal(context.webOsEmbeddedTextSubtitleFallbackUnavailable, true);
+    assert.equal(context.webOsEmbeddedTextSubtitleUsingHtml, false);
   } finally {
     localMediaEmbeddedSubtitleRepository.getWindow = previousGetWindow;
     PlayerController.setAvPlaySubtitleTrack = previousSetTrack;

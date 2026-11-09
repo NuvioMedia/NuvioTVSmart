@@ -231,11 +231,17 @@ export function createPlayerScreenMethods44() {
         if (requestToken === this.webOsEmbeddedTextSubtitleLoadToken && this.webOsEmbeddedTextSubtitleTrack === track) {
           this.webOsEmbeddedTextSubtitleLastErrorAt = Date.now();
           const isRangeUnavailable = error?.code === "RANGE_UNAVAILABLE";
+          const isTizenFallbackTrack = Environment.isTizen() && isTizenEmbeddedTextSubtitleFallbackTrack(track);
+          const isTizenSubRipFallback = isTizenFallbackTrack && isTizenSubRipEmbeddedSubtitleTrack(track);
           const hasExistingWebOsRenderer =
             Environment.isWebOS() &&
             !windowRequestCompleted &&
             (this.webOsEmbeddedTextSubtitleUsingAss || this.webOsEmbeddedTextSubtitleUsingHtml);
           const transientFailureCount = hasExistingWebOsRenderer ? Number(this.webOsEmbeddedTextSubtitleWindowFailureCount || 0) + 1 : 0;
+          // A Tizen first window has no renderer to preserve, so count these
+          // failures too; otherwise a missing local service would be retried
+          // for the whole playback, spending the full start timeout each time.
+          const tizenFailureCount = isTizenFallbackTrack ? Number(this.webOsEmbeddedTextSubtitleWindowFailureCount || 0) + 1 : 0;
           const playbackTime = Number(this.getPlaybackCurrentSeconds?.());
           const subtitleDelaySeconds = Number(this.subtitleDelayMs || 0) / 1000;
           const currentSubtitleTime = Math.max(
@@ -255,9 +261,16 @@ export function createPlayerScreenMethods44() {
           });
           if (hasExistingWebOsRenderer) {
             this.webOsEmbeddedTextSubtitleWindowFailureCount = transientFailureCount;
+          } else if (isTizenFallbackTrack) {
+            this.webOsEmbeddedTextSubtitleWindowFailureCount = tizenFailureCount;
           }
+          const preferAvPlayHtmlCallbacks = isTizenSubRipFallback && !this.webOsEmbeddedTextSubtitleUsingHtml;
           if (
             isRangeUnavailable ||
+            preferAvPlayHtmlCallbacks ||
+            (isTizenFallbackTrack &&
+              !this.webOsEmbeddedTextSubtitleUsingHtml &&
+              tizenFailureCount >= WEBOS_EMBEDDED_TEXT_SUBTITLE_MAX_TRANSIENT_FAILURES) ||
             (transientFailureCount >= WEBOS_EMBEDDED_TEXT_SUBTITLE_MAX_TRANSIENT_FAILURES && !preserveExistingWebOsRenderer)
           ) {
             this.webOsEmbeddedTextSubtitleFallbackUnavailable = true;
@@ -281,22 +294,21 @@ export function createPlayerScreenMethods44() {
             this.markEmbeddedTextSubtitleUnsupported(track);
           }
           if (isTizenEmbeddedTextSubtitleFallbackTrack(track)) {
-            // Keep playback alive when the optional extractor is unavailable on
-            // a supported firmware; AVPlay can still render natively on devices
-            // that implement the selected text codec despite the documented gap.
-            // Only re-arm the native track when this track never produced an
-            // HTML window; an active overlay must not be replaced by a late
-            // window failure. Reselecting while muted and unmuting matches the
-            // sequence some TVs need to draw the native track.
+            // Samsung AVPlay does not draw embedded SubRip on Tizen, but it
+            // still delivers onsubtitlechange for the track. When the extractor
+            // cannot start (for example the packaged service is unavailable),
+            // keep that callback overlay armed instead of switching to a
+            // native renderer that would draw nothing and stop the callbacks.
             const nativeTrackIndex = Number(this.selectedSubtitleTrackIndex);
+            const renderMode = preferAvPlayHtmlCallbacks ? "html" : "native";
             if (
               !this.webOsEmbeddedTextSubtitleUsingHtml &&
               nativeTrackIndex >= 0 &&
               typeof PlayerController.setAvPlaySubtitleTrack === "function"
             ) {
-              PlayerController.setAvPlaySubtitleTrack(nativeTrackIndex, { renderMode: "native" });
+              PlayerController.setAvPlaySubtitleTrack(nativeTrackIndex, { renderMode });
             } else {
-              PlayerController.applyAvPlaySubtitleRenderMode?.("native");
+              PlayerController.applyAvPlaySubtitleRenderMode?.(renderMode);
             }
           }
         }
