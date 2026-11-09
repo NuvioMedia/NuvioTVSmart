@@ -2,11 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  artworkResizeTarget,
   artworkWorkerCount,
   computeSourceRect,
   isArtworkTooLarge,
   isJpegHeader,
-  isRescalableArtworkFit
+  isRescalableArtworkFit,
+  jpegDimensions
 } from "./tvPosterRescaler.js";
 import { getTvArtworkPixelRatio } from "../../platform/tvRuntimePerformance.js";
 
@@ -151,4 +153,53 @@ test("a 1 GB TV keeps one artwork worker", () => {
   assert.equal(artworkWorkerCount(4, 2), 3);
   assert.equal(artworkWorkerCount(8, undefined), 3);
   assert.equal(artworkWorkerCount(1, undefined), 1);
+});
+
+function jpegWithDimensions(width, height) {
+  const app0 = [0xff, 0xe0, 0x00, 0x10, ...new Array(14).fill(0)];
+  const sof = [
+    0xff,
+    0xc0,
+    0x00,
+    0x11,
+    0x08,
+    (height >> 8) & 0xff,
+    height & 0xff,
+    (width >> 8) & 0xff,
+    width & 0xff,
+    0x03,
+    0x01,
+    0x22,
+    0x00,
+    0x02,
+    0x11,
+    0x01,
+    0x03,
+    0x11,
+    0x01
+  ];
+  return new Uint8Array([0xff, 0xd8, ...app0, ...sof]);
+}
+
+test("a bounded source size is read from the JPEG header", () => {
+  assert.deepEqual(jpegDimensions(jpegWithDimensions(1920, 1080)), {
+    width: 1920,
+    height: 1080
+  });
+  assert.deepEqual(jpegDimensions(jpegWithDimensions(500, 750)), {
+    width: 500,
+    height: 750
+  });
+  assert.equal(jpegDimensions(null), null);
+  assert.equal(jpegDimensions(new Uint8Array([0xff, 0xd8, 0xff])), null);
+  assert.equal(jpegDimensions(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), null);
+});
+
+test("only an oversized JPEG asks for a clamped decode", () => {
+  assert.deepEqual(artworkResizeTarget(1920, 1080), { width: 1280 });
+  assert.deepEqual(artworkResizeTarget(1000, 1500), { height: 1280 });
+  assert.deepEqual(artworkResizeTarget(3000, 3000), { width: 1280 });
+  assert.equal(artworkResizeTarget(1280, 720), null);
+  assert.equal(artworkResizeTarget(640, 480), null);
+  assert.equal(artworkResizeTarget(0, 0), null);
 });

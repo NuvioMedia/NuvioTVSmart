@@ -71,13 +71,48 @@ test("a successful response clears the entry", () => {
   assert.equal(isTmdbRequestBlocked(BASE, now + 3), false);
 });
 
-test("an entry expires after 24 hours", () => {
+test("a first miss blocks for one hour only", () => {
   reset();
   const now = 4_000_000;
-  const day = 24 * 60 * 60 * 1000;
+  const hour = 60 * 60 * 1000;
   noteTmdbRequestResult(BASE, { status: 404 }, now);
+  assert.equal(isTmdbRequestBlocked(BASE, now + hour - 1), true);
+  assert.equal(isTmdbRequestBlocked(BASE, now + hour + 1), false);
+});
+
+test("a repeated miss doubles the window up to the one-day cap", () => {
+  reset();
+  const hour = 60 * 60 * 1000;
+  const day = 24 * hour;
+  let now = 5_000_000;
+
+  noteTmdbRequestResult(BASE, { status: 404 }, now);
+  assert.equal(isTmdbRequestBlocked(BASE, now + 2 * hour), false, "first window is one hour");
+
+  now += hour + 1;
+  noteTmdbRequestResult(BASE, { status: 404 }, now);
+  assert.equal(isTmdbRequestBlocked(BASE, now + 2 * hour - 1), true, "second window is two hours");
+  assert.equal(isTmdbRequestBlocked(BASE, now + 2 * hour + 1), false);
+
+  // Four more misses: 4h, 8h, 16h, then the 24h cap.
+  for (let index = 0; index < 4; index += 1) {
+    now += hour;
+    noteTmdbRequestResult(BASE, { status: 404 }, now);
+  }
   assert.equal(isTmdbRequestBlocked(BASE, now + day - 1), true);
   assert.equal(isTmdbRequestBlocked(BASE, now + day + 1), false);
+});
+
+test("a success resets the strike count", () => {
+  reset();
+  const hour = 60 * 60 * 1000;
+  let now = 6_000_000;
+  noteTmdbRequestResult(BASE, { status: 404 }, now);
+  noteTmdbRequestResult(BASE, { status: 200 }, now + 1);
+  now += 2;
+  noteTmdbRequestResult(BASE, { status: 404 }, now);
+  assert.equal(isTmdbRequestBlocked(BASE, now + hour - 1), true);
+  assert.equal(isTmdbRequestBlocked(BASE, now + hour + 1), false, "the window must start over");
 });
 
 test("connection failures back the host off and double, a response resets it", () => {

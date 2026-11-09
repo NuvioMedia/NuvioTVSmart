@@ -1,11 +1,17 @@
 // Negative cache for TMDB metadata, ported from the native legacy client
-// (negcache.c). A 404/400/410 on api.themoviedb.org is remembered for 24h so
-// reopening a title does not ask again for an endpoint that is known empty.
-// Connection failures back the host off (30s doubling to 10 minutes); the
-// first real response clears it. Only the TMDB API host is eligible, and only
-// a hash of the URL with api_key removed is stored, never the key or the URL.
+// (negcache.c). A 404/400/410 on api.themoviedb.org is remembered so reopening
+// a title does not ask again for an endpoint that is known empty. The first
+// miss blocks for 1h only; if the same request fails again after that the
+// window doubles up to 24h. A transient 404 therefore costs an hour, while a
+// persistently missing endpoint still stops being requested. Connection
+// failures back the host off (30s doubling to 10 minutes); the first real
+// response clears it. Only the TMDB API host is eligible, and only a hash of
+// the URL with api_key removed is stored, never the key or the URL.
 
-const NEGATIVE_TTL_MS = 24 * 60 * 60 * 1000;
+const NEGATIVE_TTL_BASE_MS = 60 * 60 * 1000;
+const NEGATIVE_TTL_MAX_MS = 24 * 60 * 60 * 1000;
+const NEGATIVE_MAX_STRIKES = 6;
+const NEGATIVE_KEEP_MS = 7 * 24 * 60 * 60 * 1000;
 const HOST_BACKOFF_BASE_MS = 30 * 1000;
 const HOST_BACKOFF_MAX_MS = 10 * 60 * 1000;
 const STORAGE_KEY = "nuvio_tmdb_negative_v1";
@@ -61,16 +67,28 @@ function ensureLoaded(now) {
   try {
     const parsed = JSON.parse(store.getItem(STORAGE_KEY) || "{}");
     if (parsed && typeof parsed === "object") {
-      Object.entries(parsed).forEach(([key, expiresAt]) => {
-        if (Number(expiresAt) > now) entries.set(key, Number(expiresAt));
+      Object.entries(parsed).forEach(([key, value]) => {
+        if (typeof value === "number") {
+          // Older shape: a bare expiry. Keep it with a single strike.
+          if (value > now) entries.set(key, { expiresAt: value, strikes: 1, lastAt: now });
+          return;
+        }
+        if (!value || typeof value !== "object") return;
+        const lastAt = Number(value.lastAt || value.expiresAt || 0);
+        if (lastAt <= now - NEGATIVE_KEEP_MS) return;
+        entries.set(key, {
+          expiresAt: Number(value.expiresAt || 0),
+          strikes: Math.max(1, Math.min(NEGATIVE_MAX_STRIKES, Number(value.strikes || 1))),
+          lastAt
+        });
       });
     }
   } catch (_) {}
 }
 
 function prune(now) {
-  entries.forEach((expiresAt, key) => {
-    if (expiresAt <= now) entries.delete(key);
+  entries.forEach((entry, key) => {
+    if (!(entry.lastAt > now - NEGATIVE_KEEP_MS)) entries.delete(key);
   });
   while (entries.size > MAX_ENTRIES) {
     const oldest = entries.keys().next().value;
@@ -102,14 +120,10 @@ export function isTmdbRequestBlocked(url, now = Date.now()) {
   const request = requestKey(url);
   if (!request) return false;
   ensureLoaded(now);
-  const key = stableHash(request);
-  const expiresAt = entries.get(key);
-  if (!expiresAt) return false;
-  if (expiresAt <= now) {
-    entries.delete(key);
-    return false;
-  }
-  return true;
+  const entry = entries.get(stableHash(request));
+  // An expired entry is kept (without blocking) so a repeated miss can
+  // escalate the next window instead of starting from one hour again.
+  return Boolean(entry && entry.expiresAt > now);
 }
 
 /** True while the TMDB host is backing off after connection failures. */
@@ -135,11 +149,14 @@ export function noteTmdbRequestResult(
   if (NEGATIVE_STATUSES.has(numericStatus)) {
     // A real response proves the host is reachable, even when it is empty.
     hostFailures.delete(ELIGIBLE_HOST);
-    if (!entries.has(key)) {
-      entries.set(key, now + NEGATIVE_TTL_MS);
-      prune(now);
-      scheduleSave();
-    }
+    const previous = entries.get(key);
+    const strikes = Math.min(NEGATIVE_MAX_STRIKES, Math.max(1, Number(previous?.strikes || 0) + 1));
+    const ttl = Math.min(NEGATIVE_TTL_MAX_MS, NEGATIVE_TTL_BASE_MS * 2 ** (strikes - 1));
+    // Reinsert so the Map order is "last updated", which prune uses.
+    entries.delete(key);
+    entries.set(key, { expiresAt: now + ttl, strikes, lastAt: now });
+    prune(now);
+    scheduleSave();
   } else if (numericStatus > 0) {
     // Any real response proves the host is reachable, including a 5xx.
     hostFailures.delete(ELIGIBLE_HOST);

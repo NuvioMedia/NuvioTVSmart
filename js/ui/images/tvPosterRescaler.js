@@ -79,10 +79,58 @@ export function isArtworkTooLarge(bytes) {
   return Boolean(bytes) && Number(bytes.byteLength || 0) > 8388608;
 }
 
+/**
+ * JPEG SOF dimensions straight from the header, before any decode. A 4000px
+ * addon original would decode to tens of MiB even when the card paints at
+ * 300px, so the worker uses these numbers to ask createImageBitmap for a
+ * bounded source.
+ */
+export function jpegDimensions(bytes) {
+  if (!bytes || bytes.length < 10 || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
+    return null;
+  }
+  let offset = 2;
+  while (offset + 9 <= bytes.length) {
+    if (bytes[offset] !== 0xff) return null;
+    const marker = bytes[offset + 1];
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+      offset += 2;
+      continue;
+    }
+    if (marker === 0xda) return null;
+    const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+    if (length < 2 || offset + 2 + length > bytes.length) return null;
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      const height = (bytes[offset + 5] << 8) | bytes[offset + 6];
+      const width = (bytes[offset + 7] << 8) | bytes[offset + 8];
+      return width > 0 && height > 0 ? { width, height } : null;
+    }
+    offset += 2 + length;
+  }
+  return null;
+}
+
+/**
+ * The one dimension to clamp for createImageBitmap, or null when the source is
+ * already small enough. Supplying only one side keeps the source aspect ratio,
+ * which the crop below depends on.
+ */
+export function artworkResizeTarget(width, height, maxDimension = 1280) {
+  const w = Number(width) || 0;
+  const h = Number(height) || 0;
+  const max = Number(maxDimension) || 0;
+  if (!(w > 0) || !(h > 0) || !(max > 0)) return null;
+  if (w >= h && w > max) return { width: max };
+  if (h > w && h > max) return { height: max };
+  return null;
+}
+
 const WORKER_SOURCE = `
 const sourceRect = ${computeSourceRect.toString()};
 const isJpeg = ${isJpegHeader.toString()};
 const isTooLarge = ${isArtworkTooLarge.toString()};
+const jpegSize = ${jpegDimensions.toString()};
+const resizeTarget = ${artworkResizeTarget.toString()};
 
 self.onmessage = async (event) => {
   const { id, url, width, height, fit } = event.data || {};
@@ -103,11 +151,17 @@ self.onmessage = async (event) => {
     if (isTooLarge(bytes)) {
       throw new Error("too large");
     }
-    if (!isJpeg(new Uint8Array(bytes, 0, Math.min(3, bytes.byteLength)))) {
+    const view = new Uint8Array(bytes);
+    if (!isJpeg(view)) {
       // Could carry transparency or animation. Leave it to the <img> tag.
       throw new Error("not jpeg");
     }
-    full = await createImageBitmap(new Blob([bytes]));
+    const dimensions = jpegSize(view);
+    const resize = dimensions ? resizeTarget(dimensions.width, dimensions.height, 1280) : null;
+    full = await createImageBitmap(
+      new Blob([bytes]),
+      resize ? { ...resize, resizeQuality: "low" } : undefined
+    );
     if (full.width <= width && full.height <= height) {
       // Already no larger than the card. Re-encoding would only lose quality.
       throw new Error("already small");
