@@ -1,23 +1,11 @@
 import * as internals from "./homeScreenContext.js";
 import { resetHomeArtworkRescaler } from "../../images/tvPosterRescaler.js";
 
-const HOME_ARTWORK_RELEASE_DELAY_MS = 800;
-
 export function createHomeScreenMethods30() {
-  const { ScreenUtils, Platform, getTvRuntimePerformanceProfile } = internals;
+  const { ScreenUtils, Platform } = internals;
 
   return {
-    cancelDeferredHomeArtworkRelease() {
-      if (this.homeArtworkReleaseTimer) {
-        clearTimeout(this.homeArtworkReleaseTimer);
-        this.homeArtworkReleaseTimer = null;
-      }
-    },
     cleanup() {
-      // Release Home artwork just after the next screen has painted: done in
-      // the route keydown it delayed every exit by ~50 ms, and a quick return
-      // to Home now cancels it and keeps the posters (see mount).
-      this.cancelDeferredHomeArtworkRelease();
       if (this.homeLazyImageEvictTimer) {
         clearTimeout(this.homeLazyImageEvictTimer);
         this.homeLazyImageEvictTimer = null;
@@ -26,18 +14,6 @@ export function createHomeScreenMethods30() {
         clearTimeout(this.homeLazyImageEvictMaxTimer);
         this.homeLazyImageEvictMaxTimer = null;
       }
-      this.homeArtworkReleaseTimer = setTimeout(() => {
-        this.homeArtworkReleaseTimer = null;
-        // Hand every poster back to its original url before the rescaler is
-        // torn down. TV runtimes keep this DOM in the document, so revoking a
-        // blob url a card still points at would break it on the way back.
-        if (getTvRuntimePerformanceProfile().isTvRuntime) {
-          this.releaseAllHomeLazyImages();
-        }
-        // Drop the rescale workers and every blob url they produced. Leaving
-        // them alive would keep the artwork of a screen nobody is looking at.
-        resetHomeArtworkRescaler();
-      }, HOME_ARTWORK_RELEASE_DELAY_MS);
       this.heroMdbListRequest = null;
       if (this.unsubscribeStartupSyncPullCompleted) {
         this.unsubscribeStartupSyncPullCompleted();
@@ -154,6 +130,13 @@ export function createHomeScreenMethods30() {
         // Keep the DOM cached, but remove it from the compositor completely. Some
         // TV runtimes can still present composited descendants after visibility and
         // transform changes, which lets the old Home bleed through a new route.
+        //
+        // The retained cards keep their artwork, exactly like the Android back
+        // stack keeps its Coil memory cache: stripping every src and revoking the
+        // blob urls here would force a full re-fetch and decode of every visible
+        // poster on the way back, and a single missed re-hydration left those
+        // cards permanently blank. The bounded eviction still releases the rows
+        // that leave the artwork window, so memory stays where it was.
         this.container.style.position = "absolute";
         this.container.style.top = "0";
         this.container.style.right = "0";
@@ -165,6 +148,10 @@ export function createHomeScreenMethods30() {
         this.container.classList.add("home-dom-preserved");
         this.homeDomPreserved = true;
       } else {
+        // Without a retained DOM the cards are about to be discarded: hand the
+        // painted urls back, then drop the workers and every blob they produced.
+        this.releaseAllHomeLazyImages();
+        resetHomeArtworkRescaler();
         this.homeDomPreserved = false;
         this.container.classList.remove("home-dom-preserved");
         this.container.style.removeProperty("position");

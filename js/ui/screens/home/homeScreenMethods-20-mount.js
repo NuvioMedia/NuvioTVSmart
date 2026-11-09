@@ -31,8 +31,6 @@ export function createHomeScreenMethods20() {
       const mountStart = HOME_PERF_DEBUG ? homePerfNow() : 0;
       const isBackNavigation = Boolean(navigationContext?.isBackNavigation);
       this.container = document.getElementById("home");
-      // Returning before the deferred release ran keeps the loaded artwork.
-      this.cancelDeferredHomeArtworkRelease();
       this.hasUserInteractedSinceHomePaint = false;
       const restoredRouteFocusState =
         navigationContext?.isBackNavigation && navigationContext?.restoredState?.layoutMode ? navigationContext.restoredState : null;
