@@ -3,6 +3,7 @@ import { clearAccountLocalData, hasAccountLocalData } from "./accountLocalDataRe
 import { SessionStore } from "../storage/sessionStore.js";
 import { fetchSupabaseAuth } from "./supabaseAuthFetch.js";
 import { PluginCodeStore } from "../../data/local/pluginCodeStore.js";
+import { HomeCatalogSnapshotStore } from "../../data/local/homeCatalogSnapshotStore.js";
 import { ServerConfigurationStore } from "../../data/local/serverConfigurationStore.js";
 import {
   notifySessionTeardownHandlers,
@@ -344,6 +345,16 @@ class AuthManagerClass {
       }
     }
 
+    let homeCatalogDataCleared = true;
+    if (shouldClearAccountData) {
+      try {
+        homeCatalogDataCleared = (await HomeCatalogSnapshotStore.clearAll()) !== false;
+      } catch (error) {
+        homeCatalogDataCleared = false;
+        console.warn("Home catalog cache reset failed during session teardown", error);
+      }
+    }
+
     // A completed teardown starts a fresh request generation. Requests begun
     // before the switch remain cancelled, while the next auth/QR attempt can
     // use a live signal without waiting for a page reload.
@@ -368,6 +379,7 @@ class AuthManagerClass {
       sessionRequestsDrained &&
       accountDataCleared &&
       pluginDataCleared &&
+      homeCatalogDataCleared &&
       accountDataVerified &&
       !SessionStore.accessToken &&
       !SessionStore.refreshToken &&

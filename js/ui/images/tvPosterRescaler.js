@@ -126,6 +126,7 @@ function cacheLimit() {
 }
 
 let pool = null;
+let genericPool = null;
 let supported = null;
 
 function isSupported() {
@@ -301,32 +302,37 @@ function trimCache(state) {
   }
 }
 
-function getPool() {
-  if (pool === undefined) {
+function getPoolFor(kind) {
+  const current = kind === "generic" ? genericPool : pool;
+  if (current === undefined) {
     return null;
   }
-  if (pool === null) {
-    pool = createPool();
-    if (!pool) {
-      pool = undefined;
+  if (current === null) {
+    const created = createPool();
+    if (!created) {
+      if (kind === "generic") genericPool = undefined;
+      else pool = undefined;
       return null;
     }
+    if (kind === "generic") genericPool = created;
+    else pool = created;
+    return created;
   }
-  return pool;
+  return current;
 }
 
-/**
- * Resolve a card-sized object url for `url`, or null when the original should
- * be used as-is. Never rejects: every failure path falls back to the original.
- */
-export function rescaleHomeArtwork(url, { width, height, fit, priority = 2, isStale = null } = {}) {
+function getPool() {
+  return getPoolFor("home");
+}
+
+function getGenericPool() {
+  return getPoolFor("generic");
+}
+
+function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale = null } = {}) {
   // Check the request before touching the pool, so artwork that can never be
   // rescaled does not spin up workers on its way to the fallback.
-  if (!url || !(width > 0) || !(height > 0) || !isRescalableArtworkFit(fit)) {
-    return Promise.resolve(null);
-  }
-  const state = getPool();
-  if (!state) {
+  if (!state || !url || !(width > 0) || !(height > 0) || !isRescalableArtworkFit(fit)) {
     return Promise.resolve(null);
   }
   // The fit belongs in the key: the same artwork in the same box is cropped
@@ -390,9 +396,28 @@ export function rescaleHomeArtwork(url, { width, height, fit, priority = 2, isSt
   return job.promise;
 }
 
-/** Mark a rescaled url as no longer painted so its slot can be reclaimed. */
-export function releaseHomeArtwork(objectUrl) {
-  const state = pool;
+/**
+ * Resolve a card-sized object url for `url`, or null when the original should
+ * be used as-is. Never rejects: every failure path falls back to the original.
+ */
+function shouldQueueRescale(url, { width, height, fit } = {}) {
+  return Boolean(url && width > 0 && height > 0 && isRescalableArtworkFit(fit));
+}
+
+export function rescaleHomeArtwork(url, options) {
+  // Refuse before creating a pool: an unsupported fit must not spin up a
+  // worker just to discover it cannot be drawn.
+  if (!shouldQueueRescale(url, options)) return Promise.resolve(null);
+  return rescaleWithPool(getPool(), url, options);
+}
+
+/** Same contract as rescaleHomeArtwork, with its own pool for non-Home screens. */
+export function rescaleArtwork(url, options) {
+  if (!shouldQueueRescale(url, options)) return Promise.resolve(null);
+  return rescaleWithPool(getGenericPool(), url, options);
+}
+
+function releaseFromPool(state, objectUrl) {
   if (!state || !objectUrl || !String(objectUrl).startsWith("blob:")) {
     return;
   }
@@ -404,21 +429,17 @@ export function releaseHomeArtwork(objectUrl) {
   }
 }
 
-/**
- * Drop every worker and cached url. Used when the home screen unmounts.
- *
- * Callers are waiting on promises that only a worker reply can settle, so
- * tearing the workers down has to settle them too, or the home screen leaves
- * behind a promise per queued poster that can never resolve. They settle to
- * null, which is the same answer a failed rescale gives, so each caller falls
- * back to the original url instead of acting on artwork from a dead pool.
- *
- * The caller is responsible for taking rescaled urls off any element that is
- * still in the document before calling this; the urls are revoked here.
- */
-export function resetHomeArtworkRescaler() {
-  const state = pool;
-  pool = null;
+/** Mark a rescaled url as no longer painted so its slot can be reclaimed. */
+export function releaseHomeArtwork(objectUrl) {
+  releaseFromPool(pool, objectUrl);
+}
+
+/** Mark a non-Home rescaled url as no longer painted. */
+export function releaseArtwork(objectUrl) {
+  releaseFromPool(genericPool, objectUrl);
+}
+
+function resetPool(state) {
   if (!state) {
     return;
   }
@@ -442,4 +463,29 @@ export function resetHomeArtworkRescaler() {
   state.workers.length = 0;
   state.idle.length = 0;
   state.queue.length = 0;
+}
+
+/**
+ * Drop every Home worker and cached url. Used when the home screen unmounts.
+ *
+ * Callers are waiting on promises that only a worker reply can settle, so
+ * tearing the workers down has to settle them too, or the home screen leaves
+ * behind a promise per queued poster that can never resolve. They settle to
+ * null, which is the same answer a failed rescale gives, so each caller falls
+ * back to the original url instead of acting on artwork from a dead pool.
+ *
+ * The caller is responsible for taking rescaled urls off any element that is
+ * still in the document before calling this; the urls are revoked here.
+ */
+export function resetHomeArtworkRescaler() {
+  const state = pool;
+  pool = null;
+  resetPool(state);
+}
+
+/** Drop the non-Home pool and its cached urls. */
+export function resetArtworkRescaler() {
+  const state = genericPool;
+  genericPool = null;
+  resetPool(state);
 }

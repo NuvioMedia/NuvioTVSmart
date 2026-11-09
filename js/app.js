@@ -2,6 +2,8 @@ import "./ui/components/serverWatchedNotice.js";
 import { MediaServerSyncService } from "./core/profile/mediaServerSyncService.js";
 import { installCustomPosterFallback } from "./core/poster/customPoster.js";
 import { installWebOsImgurImageFallback } from "./core/media/imageProxy.js";
+import { startTvArtworkLazyLoader } from "./ui/images/tvArtworkLazyLoader.js";
+import { installFrameBudgetSampler } from "./core/diagnostics/frameBudget.js";
 import { AmbientMode } from "./ui/ambient/ambientMode.js";
 /* global __NUVIO_APP_VERSION__ */
 
@@ -737,6 +739,8 @@ async function bootstrapApp() {
     markBootStage("PluginService starts on first plugin use");
   }
   applyPerformanceMode();
+  startTvArtworkLazyLoader();
+  installFrameBudgetSampler();
   markBootStage("Loading language resources");
   await I18n.init();
 
@@ -765,7 +769,9 @@ async function bootstrapApp() {
   if (!getTvRuntimePerformanceProfile().isPerformanceConstrained) {
     warmStreamingLibs({ delayMs: 1400 });
   }
-  void checkForAppUpdateOnStartup();
+  runAfterFirstHomePaint(() => {
+    void checkForAppUpdateOnStartup();
+  });
 
   markBootStage("Restoring session");
   DeviceSessionRegistration.start();

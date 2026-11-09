@@ -1,5 +1,37 @@
 import * as internals from "./homeScreenContext.js";
 import { startHomeContinueWatchingLoad } from "./homeContinueWatchingLoad.js";
+import { HomeCatalogSnapshotStore, buildHomeCatalogSnapshotKey } from "../../../data/local/homeCatalogSnapshotStore.js";
+
+const SNAPSHOT_READ_TIMEOUT_MS = 500;
+const SNAPSHOT_WRITE_INTERVAL_MS = 60 * 1000;
+
+function readSnapshotWithTimeout(options) {
+  let timeoutId = null;
+  const timeout = new Promise((resolve) => {
+    timeoutId = setTimeout(() => resolve(null), SNAPSHOT_READ_TIMEOUT_MS);
+  });
+  return Promise.race([HomeCatalogSnapshotStore.read(options).catch(() => null), timeout]).then(
+    (value) => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      return value;
+    },
+    () => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      return null;
+    }
+  );
+}
+
+function persistHomeCatalogSnapshot(screen, token, { force = false } = {}) {
+  const key = screen?.homeCatalogSnapshotKey;
+  if (!key || token !== screen.homeLoadToken) return;
+  const now = Date.now();
+  if (!force && now - Number(screen.lastHomeCatalogSnapshotWriteAt || 0) < SNAPSHOT_WRITE_INTERVAL_MS) {
+    return;
+  }
+  screen.lastHomeCatalogSnapshotWriteAt = now;
+  void HomeCatalogSnapshotStore.write({ key, rows: screen.rows }).catch(() => {});
+}
 
 export function createHomeScreenMethods21() {
   const {
@@ -166,6 +198,12 @@ export function createHomeScreenMethods21() {
         uniqueCatalogDescriptors.map((catalog) => buildCatalogOrderKey(catalog.addonId, catalog.type, catalog.catalogId))
       );
       const routeInputSignature = this.buildHomeRouteInputSignature(addons);
+      const homeCatalogSnapshotKey = buildHomeCatalogSnapshotKey({
+        profileId: ProfileManager.getActiveProfileId(),
+        addonDescriptors: uniqueCatalogDescriptors,
+        homeCatalogPrefs: HomeCatalogStore.get()
+      });
+      this.homeCatalogSnapshotKey = homeCatalogSnapshotKey;
 
       const initialCatalogLoad = this.getInitialCatalogLoadCount();
       const initialDescriptors = uniqueCatalogDescriptors.slice(0, initialCatalogLoad);
@@ -185,7 +223,11 @@ export function createHomeScreenMethods21() {
             return;
           }
           progressiveInitialRows.set(row.homeCatalogKey, row);
-          this.rows = this.sortAndFilterRows(Array.from(progressiveInitialRows.values()), this.collections);
+          // Merge with anything already on screen (a disk snapshot or a
+          // previous row) instead of replacing it with the first network row.
+          const combinedByKey = new Map((this.rows || []).map((entry) => [entry.homeCatalogKey, entry]));
+          progressiveInitialRows.forEach((entry, key) => combinedByKey.set(key, entry));
+          this.rows = this.sortAndFilterRows(Array.from(combinedByKey.values()), this.collections);
           this.heroCandidates = uniqueById(this.collectHeroCandidates(this.rows));
           if (!this.heroItem) {
             this.heroItem = this.pickInitialHero();
@@ -196,6 +238,25 @@ export function createHomeScreenMethods21() {
           this.maybeStartPendingHomeBackgroundRefresh();
         }
       });
+      if (!background && !this.hasLoadedOnce) {
+        // Read the last successful catalog in parallel with the network. If
+        // the addons answer first, the progressive rows above already won and
+        // this snapshot is ignored; if the disk answers first, Home paints
+        // while the same network refresh continues.
+        const cachedRows = await Promise.race([
+          readSnapshotWithTimeout({ key: homeCatalogSnapshotKey }),
+          initialRowsPromise.then(() => null).catch(() => null)
+        ]);
+        if (cachedRows?.length && token === this.homeLoadToken && Router.getCurrent() === "home" && !this.hasLoadedOnce) {
+          this.loadedProfileId = String(ProfileManager.getActiveProfileId() || "");
+          this.rows = this.sortAndFilterRows(cachedRows, this.collections);
+          this.heroCandidates = uniqueById(this.collectHeroCandidates(this.rows));
+          this.heroItem = this.pickInitialHero();
+          this.releaseInitialHomeLoading();
+          this.hasLoadedOnce = true;
+          this.render();
+        }
+      }
       // Start the visible rows first. Overlap one deferred batch only on a
       // foreground load where the runtime can afford the extra requests.
       // Keep the actual promises: the repository caches completed results only,
@@ -241,6 +302,7 @@ export function createHomeScreenMethods21() {
         background
       });
       this.rows = this.sortAndFilterRows(nextInitialRows, this.collections);
+      persistHomeCatalogSnapshot(this, token);
       if (preserveContinueWatching) {
         this.continueWatchingLoading = false;
       } else if (
@@ -348,6 +410,7 @@ export function createHomeScreenMethods21() {
               this.heroItem = this.pickInitialHero();
             }
             void this.refreshWatchedTitleState({ token });
+            persistHomeCatalogSnapshot(this, token, { force: true });
             this.requestBackgroundRender();
             this.retryPendingCatalogRows();
           })

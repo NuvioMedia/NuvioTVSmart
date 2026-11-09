@@ -140,12 +140,14 @@ export function createFolderDetailScreenMethods02() {
       target.classList.add("focused");
       target.focus();
       if (String(target.dataset.action || "") === "openDetail") {
+        const posterNode = target.querySelector(".seeall-card-poster-image");
+        const posterSrc = target.dataset.posterSrc || posterNode?.dataset.artworkSrc || posterNode?.getAttribute("src") || "";
         const item = normalizeItem({
           id: target.dataset.itemId || "",
           type: target.dataset.itemType || "movie",
           name: target.dataset.itemTitle || "Untitled",
-          poster: target.querySelector(".seeall-card-poster-image")?.getAttribute("src") || "",
-          background: target.dataset.backdropSrc || target.querySelector(".seeall-card-poster-image")?.getAttribute("src") || "",
+          poster: posterSrc,
+          background: target.dataset.backdropSrc || posterSrc,
           logo: target.dataset.logoSrc || "",
           releaseInfo: target.dataset.releaseInfo || "",
           description: target.dataset.description || ""

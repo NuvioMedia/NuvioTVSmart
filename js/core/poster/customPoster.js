@@ -1,5 +1,6 @@
 import { LayoutPreferences } from "../../data/local/layoutPreferences.js";
 import { CUSTOM_POSTER_SCREENS } from "./customPosterScreens.js";
+import { normalizeTmdbBackdropUrl, normalizeTmdbPosterUrl } from "../tmdb/tmdbImageUrl.js";
 export { CUSTOM_POSTER_SCREENS } from "./customPosterScreens.js";
 const prepared = new Map();
 export function extractPosterIds(id, imdbId = null) {
@@ -126,6 +127,19 @@ export function customPosterForItem(
   shape = "poster",
   settings = LayoutPreferences.get()
 ) {
+  if (!item) return item;
+  // Keep every screen on the same TMDB source sizes as Home. The helper is
+  // idempotent and leaves non-TMDB artwork byte-for-byte unchanged, so a
+  // custom poster or an addon poster is never rewritten here.
+  const normalizedItem = {
+    ...item,
+    poster: normalizeTmdbPosterUrl(item.poster),
+    backdrop: normalizeTmdbBackdropUrl(item.backdrop),
+    background: normalizeTmdbBackdropUrl(item.background),
+    landscapePoster: normalizeTmdbBackdropUrl(item.landscapePoster),
+    episodeThumbnail: normalizeTmdbBackdropUrl(item.episodeThumbnail)
+  };
+  item = normalizedItem;
   const pattern = settings.customPosterUrlPattern;
   if (!item || !pattern || !settings.customPosterEnabledScreens?.includes(screen)) return item;
   const supportsShape = prepare(pattern).decoded.includes("{shape}");
@@ -148,7 +162,8 @@ export function customPosterForItem(
 export function posterFallbackAttributes(item, landscape = false) {
   const raw = landscape ? item?.rawLandscapePosterUrl : item?.rawPosterUrl;
   if (!raw) return "";
-  const escaped = String(raw)
+  const normalized = landscape ? normalizeTmdbBackdropUrl(raw) : normalizeTmdbPosterUrl(raw);
+  const escaped = String(normalized)
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
