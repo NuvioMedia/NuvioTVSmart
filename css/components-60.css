@@ -263,13 +263,9 @@
   line-clamp: 5 !important;
 }
 
-/* Static dim instead of per-pixel software blur on unwatched thumbs. */
-.performance-constrained .series-episode-image.is-blurred,
-.legacy-tizen .series-episode-image.is-blurred {
-  filter: none !important;
-  transform: none !important;
-  opacity: 0.5 !important;
-}
+/* Unwatched-episode thumbs keep the shared blur(12px) on Tizen, exactly like
+   Android TV and the Continue Watching next-up card: the filter is static and
+   opt-in, so the old static-dim fallback is not needed. */
 
 /* ---- Tizen micro-motion (all Samsung): transform/opacity only, <=160ms.
    TV compositors handle these without dropping frames; layout props, blur
