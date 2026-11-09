@@ -2080,8 +2080,8 @@
     <string name="supporters_empty">Không tìm thấy người tài trợ nào.</string>
     <string name="supporters_error_title">Không thể tải danh sách người tài trợ</string>
     <string name="supporters_no_message">Không có tin nhắn đã chia sẻ.</string>
-    <string name="supporters_level_supporter">Người tài trợ</string>
-    <string name="supporters_level_supporter_plus">Người tài trợ cao cấp</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Đã tài trợ Nuvio từ %1$s</string>
     <string name="supporters_since_unknown">Tự hào tài trợ Nuvio</string>
     <string name="supporters_open_donations">Mở trang quyên góp</string>
@@ -2096,8 +2096,8 @@
     <string name="supporter_membership_you_are">Bạn là một</string>
     <string name="supporter_membership_thank_you">Cảm ơn.</string>
     <string name="supporter_membership_supporter_since">Người tài trợ từ %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Người tài trợ</string>
-    <string name="supporter_membership_tier_supporter_plus">Người tài trợ cao cấp</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon đã được kết nối</string>
     <string name="supporter_membership_connected_description">Không tìm thấy gói Nuvio đang hoạt động nào trên tài khoản Patreon này. Vui lòng xem các tùy chọn hiện có hoặc làm mới sau khi thay đổi gói thành viên Patreon.</string>
     <string name="supporter_membership_scan_support">Quét để xem gói thành viên</string>

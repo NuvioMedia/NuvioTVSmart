@@ -1869,8 +1869,8 @@
     <string name="action_apply">लागू करें</string>
     <string name="sub_opacity">अपारदर्शिता</string>
     <string name="sponsors_tab">प्रायोजक</string>
-    <string name="supporters_level_supporter">समर्थक</string>
-    <string name="supporters_level_supporter_plus">समर्थक+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">%1$s का Nuvio से समर्थन</string>
     <string name="supporters_since_unknown">Nuvio का गर्व से समर्थन</string>
     <string name="supporter_membership_title">Nuvio समर्थक सदस्यता</string>
@@ -1884,8 +1884,8 @@
     <string name="supporter_membership_you_are">आप एक</string>
     <string name="supporter_membership_thank_you">धन्यवाद।</string>
     <string name="supporter_membership_supporter_since">%1$s से समर्थक।</string>
-    <string name="supporter_membership_tier_supporter">समर्थक</string>
-    <string name="supporter_membership_tier_supporter_plus">समर्थक प्लस</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon जुड़ा हुआ है</string>
     <string name="supporter_membership_connected_description">इस Patreon खाते पर कोई सक्रिय Nuvio स्तर नहीं मिला। उपलब्ध विकल्प देखें या अपनी Patreon सदस्यता बदलने के बाद पुनः ताज़ा करें।</string>
     <string name="supporter_membership_scan_support">सदस्यता देखने के लिए स्कैन करें</string>

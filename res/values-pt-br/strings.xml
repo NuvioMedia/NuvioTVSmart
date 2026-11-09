@@ -3032,8 +3032,8 @@
     <string name="custom_theme_save">Salvar tema</string>
     <string name="custom_theme_preview">PRÉVIA</string>
     <string name="custom_theme_preview_ring">Item em foco</string>
-    <string name="supporters_level_supporter">Apoiador</string>
-    <string name="supporters_level_supporter_plus">Apoiador+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Apoiando o Nuvio desde %1$s</string>
     <string name="supporters_since_unknown">Apoiando o Nuvio com orgulho</string>
     <string name="supporter_membership_title">Assinatura de Apoio do Nuvio</string>
@@ -3047,8 +3047,8 @@
     <string name="supporter_membership_you_are">Você é um(a)</string>
     <string name="supporter_membership_thank_you">Muito obrigado.</string>
     <string name="supporter_membership_supporter_since">Apoiador(a) desde %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Apoiador</string>
-    <string name="supporter_membership_tier_supporter_plus">Apoiador Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon conectado</string>
     <string name="supporter_membership_connected_description">Nenhum nível ativo do Nuvio foi encontrado nesta conta do Patreon. Veja as opções disponíveis ou atualize após alterar sua assinatura no Patreon.</string>
     <string name="supporter_membership_scan_support">Escaneie para ver a assinatura</string>

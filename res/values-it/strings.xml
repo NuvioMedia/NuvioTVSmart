@@ -347,8 +347,8 @@
     <string name="supporters_empty">Nessun sostenitore trovato per ora.</string>
     <string name="supporters_error_title">Impossibile caricare i sostenitori</string>
     <string name="supporters_no_message">Nessun messaggio condiviso.</string>
-    <string name="supporters_level_supporter">Sostenitore</string>
-    <string name="supporters_level_supporter_plus">Sostenitore+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Supporti Nuvio dal %1$s</string>
     <string name="supporters_since_unknown">Grazie per supportare Nuvio</string>
     <string name="supporters_open_donations">Apri pagina di supporto</string>
@@ -2936,8 +2936,8 @@
     <string name="supporter_membership_you_are">Sei</string>
     <string name="supporter_membership_thank_you">Grazie.</string>
     <string name="supporter_membership_supporter_since">Supporter dal %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Sostenitore</string>
-    <string name="supporter_membership_tier_supporter_plus">Sostenitore Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon è connesso</string>
     <string name="supporter_membership_connected_description">Nessun livello Nuvio attivo trovato su questo account Patreon. Visualizza le opzioni disponibili o aggiorna dopo aver modificato la tua iscrizione Patreon.</string>
     <string name="supporter_membership_scan_support">Scansiona per visualizzare l\'iscrizione</string>

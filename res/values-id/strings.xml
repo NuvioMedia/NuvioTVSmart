@@ -2611,7 +2611,7 @@
     <string name="settings_content_discovery_addons_subtitle">Kelola add-ons, urutan katalog, dan koleksi</string>
     <string name="settings_content_discovery_plugins_subtitle">Kelola repositori dan penyedia siaran</string>
     <string name="advanced_section_dv_diagnostics">Diagnostik DV</string>
-    <string name="supporters_level_supporter">Pendukung</string>
+    <string name="supporters_level_supporter">Supporter</string>
     <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Mendukung Nuvio sejak %1$s</string>
     <string name="supporters_since_unknown">Dengan bangga mendukung Nuvio</string>
@@ -2626,7 +2626,7 @@
     <string name="supporter_membership_you_are">Anda adalah seorang</string>
     <string name="supporter_membership_thank_you">Terima kasih.</string>
     <string name="supporter_membership_supporter_since">Pengguna setia sejak %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Pendukung</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
     <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon sudah terhubung</string>
     <string name="supporter_membership_connected_description">Tidak ditemukan tingkatan Nuvio yang aktif pada akun Patreon ini. Lihat opsi yang tersedia atau segarkan halaman setelah mengubah keanggotaan Patreon Anda.</string>

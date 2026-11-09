@@ -2927,8 +2927,8 @@
     <string name="custom_theme_preview">ΠΡΟΕΠΙΣΚΟΠΗΣΗ</string>
     <string name="custom_theme_preview_ring">Εστιασμένο στοιχείο</string>
     <string name="advanced_section_dv_diagnostics">Διαγνωστικά DV</string>
-    <string name="supporters_level_supporter">Υποστηρικτής</string>
-    <string name="supporters_level_supporter_plus">Υποστηρικτής+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Υποστηρίζει το Nuvio από %1$s</string>
     <string name="supporters_since_unknown">Υποστηρίζει με υπερηφάνεια το Nuvio</string>
     <string name="supporter_membership_title">Συνδρομή υποστηρικτή Nuvio</string>
@@ -2942,8 +2942,8 @@
     <string name="supporter_membership_you_are">Είστε</string>
     <string name="supporter_membership_thank_you">Σας ευχαριστούμε.</string>
     <string name="supporter_membership_supporter_since">Υποστηρικτής από %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Υποστηρικτής</string>
-    <string name="supporter_membership_tier_supporter_plus">Υποστηρικτής Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Το Patreon είναι συνδεδεμένο</string>
     <string name="supporter_membership_connected_description">Δεν βρέθηκε ενεργή βαθμίδα Nuvio σε αυτόν τον λογαριασμό Patreon. Δείτε τις διαθέσιμες επιλογές ή ανανεώστε μετά την αλλαγή της συνδρομής σας στο Patreon.</string>
     <string name="supporter_membership_scan_support">Σάρωση για προβολή συνδρομής</string>

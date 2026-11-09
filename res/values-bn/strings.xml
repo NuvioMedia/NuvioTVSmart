@@ -522,8 +522,8 @@
     <string name="supporters_empty">এখনও কোনো সমর্থক পাওয়া যায়নি।</string>
     <string name="supporters_error_title">সমর্থকদের লোড করা যায়নি</string>
     <string name="supporters_no_message">কোনো মেসেজ শেয়ার করা হয়নি।</string>
-    <string name="supporters_level_supporter">সমর্থক</string>
-    <string name="supporters_level_supporter_plus">সাপোর্টার+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">%1$s থেকে Nuvio-কে সমর্থন করছেন</string>
     <string name="supporters_since_unknown">গর্বের সাথে Nuvio-কে সমর্থন করছেন</string>
     <string name="supporters_open_donations">সাপোর্ট পেজ খুলুন</string>
@@ -538,8 +538,8 @@
     <string name="supporter_membership_you_are">আপনি একজন</string>
     <string name="supporter_membership_thank_you">ধন্যবাদ।</string>
     <string name="supporter_membership_supporter_since">%1$s থেকে সমর্থক।</string>
-    <string name="supporter_membership_tier_supporter">সমর্থক</string>
-    <string name="supporter_membership_tier_supporter_plus">সাপোর্টার প্লাস</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon সংযুক্ত আছে</string>
     <string name="supporter_membership_connected_description">এই Patreon অ্যাকাউন্টে কোনো সক্রিয় Nuvio স্তর পাওয়া যায়নি। উপলব্ধ বিকল্পগুলো দেখুন বা আপনার Patreon মেম্বারশিপ পরিবর্তন করার পরে রিফ্রেশ করুন।</string>
     <string name="supporter_membership_scan_support">মেম্বারশিপ দেখতে স্ক্যান করুন</string>

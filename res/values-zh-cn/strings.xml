@@ -2789,8 +2789,8 @@
     <string name="custom_theme_preview">预览</string>
     <string name="custom_theme_preview_ring">焦点项目</string>
     <string name="advanced_section_dv_diagnostics">DV 诊断</string>
-    <string name="supporters_level_supporter">支持者</string>
-    <string name="supporters_level_supporter_plus">支持者+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">自 %1$s 起支持 Nuvio</string>
     <string name="supporters_since_unknown">自豪地支持 Nuvio</string>
     <string name="supporter_membership_title">Nuvio 支持者会员</string>
@@ -2804,8 +2804,8 @@
     <string name="supporter_membership_you_are">您是</string>
     <string name="supporter_membership_thank_you">谢谢您。</string>
     <string name="supporter_membership_supporter_since">自 %1$s 起成为支持者。</string>
-    <string name="supporter_membership_tier_supporter">支持者</string>
-    <string name="supporter_membership_tier_supporter_plus">支持者 Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon 已连接</string>
     <string name="supporter_membership_connected_description">在此 Patreon 账户上未找到有效的 Nuvio 会员等级。查看可用选项，或在更改 Patreon 会员后刷新。</string>
     <string name="supporter_membership_scan_support">扫描以查看会员</string>

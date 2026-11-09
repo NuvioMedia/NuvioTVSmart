@@ -2729,7 +2729,7 @@
     <string name="profile_background_normal">Normalne</string>
     <string name="profile_background_custom">Niestandardowe</string>
     <string name="profile_avatar_category_supporter">Osoba wspierająca</string>
-    <string name="supporters_level_supporter">Osoba wspierająca</string>
+    <string name="supporters_level_supporter">Supporter</string>
     <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Wspiera Nuvio od %1$s</string>
     <string name="supporters_since_unknown">Z dumą wspiera Nuvio</string>
@@ -3151,7 +3151,7 @@
     <string name="supporter_membership_you_are">Jesteś</string>
     <string name="supporter_membership_thank_you">Dziękujemy.</string>
     <string name="supporter_membership_supporter_since">Supporter od %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Osoba wspierająca</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
     <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon jest połączony</string>
     <string name="supporter_membership_connected_description">Nie znaleziono aktywnego poziomu Nuvio na tym koncie Patreon. Zobacz dostępne opcje lub odśwież po zmianie członkostwa.</string>

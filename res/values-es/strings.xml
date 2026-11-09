@@ -2045,8 +2045,8 @@
     <string name="action_apply">Aplicar</string>
     <string name="sub_opacity">Opacidad</string>
     <string name="sponsors_tab">Patrocinadores</string>
-    <string name="supporters_level_supporter">Apoyador</string>
-    <string name="supporters_level_supporter_plus">Apoyador+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Apoyando a Nuvio desde %1$s</string>
     <string name="supporters_since_unknown">Apoyando a Nuvio con orgullo</string>
     <string name="supporter_membership_title">Membresía de apoyador de Nuvio</string>
@@ -2060,8 +2060,8 @@
     <string name="supporter_membership_you_are">Eres</string>
     <string name="supporter_membership_thank_you">Gracias.</string>
     <string name="supporter_membership_supporter_since">Apoyador desde %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Apoyador</string>
-    <string name="supporter_membership_tier_supporter_plus">Apoyador Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon está conectado</string>
     <string name="supporter_membership_connected_description">No se encontró ningún nivel activo de Nuvio en esta cuenta de Patreon. Consulta las opciones disponibles o actualiza después de cambiar tu membresía de Patreon.</string>
     <string name="supporter_membership_scan_support">Escanea para ver la membresía</string>

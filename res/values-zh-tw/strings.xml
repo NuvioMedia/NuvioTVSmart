@@ -824,8 +824,8 @@
     <string name="supporters_empty">尚未找到支持者。</string>
     <string name="supporters_error_title">無法載入支持者</string>
     <string name="supporters_no_message">未分享訊息。</string>
-    <string name="supporters_level_supporter">支持者</string>
-    <string name="supporters_level_supporter_plus">支持者+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">自 %1$s 起支持 Nuvio</string>
     <string name="supporters_since_unknown">自豪地支持 Nuvio</string>
     <string name="supporters_open_donations">開啟支持頁面</string>
@@ -840,8 +840,8 @@
     <string name="supporter_membership_you_are">您是</string>
     <string name="supporter_membership_thank_you">謝謝您。</string>
     <string name="supporter_membership_supporter_since">自 %1$s 起成為支持者。</string>
-    <string name="supporter_membership_tier_supporter">支持者</string>
-    <string name="supporter_membership_tier_supporter_plus">支持者 Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon 已連線</string>
     <string name="supporter_membership_connected_description">在此 Patreon 帳戶上未找到有效的 Nuvio 會員等級。檢視可用選項，或在變更 Patreon 會員後重新整理。</string>
     <string name="supporter_membership_scan_support">掃描以檢視會員</string>

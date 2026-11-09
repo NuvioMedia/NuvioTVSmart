@@ -522,8 +522,8 @@
     <string name="supporters_empty">עדיין לא נמצאו תומכים.</string>
     <string name="supporters_error_title">לא ניתן לטעון תומכים</string>
     <string name="supporters_no_message">לא שותפה הודעה.</string>
-    <string name="supporters_level_supporter">תומך</string>
-    <string name="supporters_level_supporter_plus">תומך+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">תומך ב-Nuvio מאז %1$s</string>
     <string name="supporters_since_unknown">תומך ב-Nuvio בגאווה</string>
     <string name="supporters_open_donations">פתיחת דף תרומות</string>
@@ -538,8 +538,8 @@
     <string name="supporter_membership_you_are">הדרגה שלך:</string>
     <string name="supporter_membership_thank_you">תודה.</string>
     <string name="supporter_membership_supporter_since">תומך מאז %1$s.</string>
-    <string name="supporter_membership_tier_supporter">תומך</string>
-    <string name="supporter_membership_tier_supporter_plus">תומך פלוס</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon מחובר</string>
     <string name="supporter_membership_connected_description">לא נמצאה דרגת Nuvio פעילה בחשבון ה-Patreon הזה. אפשר לצפות באפשרויות הזמינות או לרענן לאחר שינוי מנוי ה-Patreon.</string>
     <string name="supporter_membership_scan_support">סריקה כדי לצפות במנויים</string>

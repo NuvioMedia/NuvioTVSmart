@@ -2855,8 +2855,8 @@
     <string name="custom_theme_preview_ring">フォーカス対象項目</string>
     <string name="debug_console_tizen_subtitle_capture_start">Tizenの字幕診断情報の取得</string>
     <string name="debug_console_tizen_subtitle_capture_stop">Tizenの字幕取得を停止する</string>
-    <string name="supporters_level_supporter">サポーター</string>
-    <string name="supporters_level_supporter_plus">サポーター+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Nuvioのサポート開始：%1$s</string>
     <string name="supporters_since_unknown">Nuvioを誇りを持ってサポートしています</string>
     <string name="supporter_membership_title">Nuvioサポーター会員</string>
@@ -2870,8 +2870,8 @@
     <string name="supporter_membership_you_are">あなたは</string>
     <string name="supporter_membership_thank_you">ありがとうございます。</string>
     <string name="supporter_membership_supporter_since">%1$sよりサポートされています。</string>
-    <string name="supporter_membership_tier_supporter">サポーター</string>
-    <string name="supporter_membership_tier_supporter_plus">サポーター・プラス</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreonが連携されています</string>
     <string name="supporter_membership_connected_description">このPatreonアカウントでは、有効なNuvioプランが見つかりませんでした。利用可能なオプションを確認するか、Patreonの会員プランを変更した後、ページを更新してください。</string>
     <string name="supporter_membership_scan_support">スキャンして会員情報を確認</string>

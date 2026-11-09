@@ -1750,8 +1750,8 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="action_apply">Taikyti</string>
     <string name="sub_opacity">Nepermatomumas</string>
     <string name="sponsors_tab">Rėmėjai</string>
-    <string name="supporters_level_supporter">Rėmėjas</string>
-    <string name="supporters_level_supporter_plus">Rėmėjas+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Palaikome Nuvio nuo %1$s</string>
     <string name="supporters_since_unknown">Didžiuojamės, kad remiame Nuvio</string>
     <string name="supporter_membership_title">Nuvio rėmėjo narystė</string>
@@ -1765,8 +1765,8 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="supporter_membership_you_are">Jūs esate</string>
     <string name="supporter_membership_thank_you">Ačiū.</string>
     <string name="supporter_membership_supporter_since">Rėmėjas nuo %1$s m.</string>
-    <string name="supporter_membership_tier_supporter">Rėmėjas</string>
-    <string name="supporter_membership_tier_supporter_plus">„Supporter Plus“</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">„Patreon“ yra prijungtas</string>
     <string name="supporter_membership_connected_description">Šioje „Patreon“ paskyroje nerasta jokio aktyviojo Nuvio lygio. Peržiūrėkite galimas parinktis arba atnaujinkite puslapį, pakeitę savo „Patreon“ narystę.</string>
     <string name="supporter_membership_scan_support">Nuskaitykite, kad peržiūrėtumėte narystę</string>

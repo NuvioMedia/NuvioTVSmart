@@ -788,8 +788,8 @@
     <string name="supporters_empty">Još nema pronađenih podržavalaca.</string>
     <string name="supporters_error_title">Učitavanje podržavalaca nije uspelo</string>
     <string name="supporters_no_message">Nema podeljene poruke.</string>
-    <string name="supporters_level_supporter">Podrška</string>
-    <string name="supporters_level_supporter_plus">Podrška+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Podržava Nuvio od %1$s</string>
     <string name="supporters_since_unknown">Ponosno podržava Nuvio</string>
     <string name="supporters_open_donations">Otvori stranicu za podršku</string>
@@ -804,7 +804,7 @@
     <string name="supporter_membership_you_are">Vi ste</string>
     <string name="supporter_membership_thank_you">Hvala vam.</string>
     <string name="supporter_membership_supporter_since">Podržavalac od %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Podrška</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
     <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon je povezan</string>
     <string name="supporter_membership_connected_description">Na ovom Patreon nalogu nije pronađen aktivan Nuvio nivo. Pogledajte dostupne opcije ili osvežite nakon promene Patreon članstva.</string>

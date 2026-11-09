@@ -597,8 +597,8 @@
     <string name="supporters_empty">Ende nuk u gjetën mbështetës.</string>
     <string name="supporters_error_title">Nuk mund të ngarkohen mbështetësit</string>
     <string name="supporters_no_message">Nuk u nda asnjë mesazh.</string>
-    <string name="supporters_level_supporter">Mbështetës</string>
-    <string name="supporters_level_supporter_plus">Mbështetës+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Mbështet Nuvio që nga %1$s</string>
     <string name="supporters_since_unknown">Duke mbështetur me krenari Nuvio</string>
     <string name="supporters_open_donations">Hap faqen e mbështetjes</string>
@@ -3147,8 +3147,8 @@
     <string name="supporter_membership_you_are">Ju jeni një</string>
     <string name="supporter_membership_thank_you">Faleminderit.</string>
     <string name="supporter_membership_supporter_since">Mbështetës që nga %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Mbështetës</string>
-    <string name="supporter_membership_tier_supporter_plus">Mbështetësi Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon është i lidhur</string>
     <string name="supporter_membership_connected_description">Nuk u gjet asnjë nivel aktiv i Nuvio në këtë llogari Patreon. Shikoni opsionet e disponueshme ose rifreskoni pasi të keni ndryshuar anëtarësimin tuaj në Patreon.</string>
     <string name="supporter_membership_scan_support">Skano për të parë anëtarësinë</string>

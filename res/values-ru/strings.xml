@@ -2679,8 +2679,8 @@
     <string name="settings_content_discovery_subtitle">Аддоны, плагины, каталоги и источники поиска контента</string>
     <string name="settings_content_discovery_addons_subtitle">Управление аддонами, порядком каталогов и коллекциями</string>
     <string name="settings_content_discovery_plugins_subtitle">Управление репозиториями и провайдерами потоков</string>
-    <string name="supporters_level_supporter">Спонсор</string>
-    <string name="supporters_level_supporter_plus">Спонсор+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Поддерживает Nuvio с %1$s</string>
     <string name="supporters_since_unknown">С гордостью поддерживает Nuvio</string>
     <string name="supporter_membership_title">Членство спонсора Nuvio</string>
@@ -2694,8 +2694,8 @@
     <string name="supporter_membership_you_are">Вы —</string>
     <string name="supporter_membership_thank_you">Спасибо.</string>
     <string name="supporter_membership_supporter_since">Спонсор с %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Спонсор</string>
-    <string name="supporter_membership_tier_supporter_plus">Спонсор Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon подключён</string>
     <string name="supporter_membership_connected_description">На этом аккаунте Patreon не найден активный уровень Nuvio. Просмотрите доступные варианты или обновите данные после изменения членства Patreon.</string>
     <string name="supporter_membership_scan_support">Отсканируйте, чтобы просмотреть членство</string>

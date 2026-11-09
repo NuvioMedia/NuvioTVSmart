@@ -2721,8 +2721,8 @@
     <string name="settings_content_discovery_plugins_subtitle">Upravljanje repozitorijev in ponudnikov pretočnih vsebin</string>
     <string name="advanced_section_dv_diagnostics">DV Diagnostika</string>
     <string name="settings_debrid_subtitle">Eksperimentalni viri računov v oblaku</string>
-    <string name="supporters_level_supporter">Podpornik</string>
-    <string name="supporters_level_supporter_plus">Podpornik+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Podpora podjetju Nuvio od %1$s</string>
     <string name="supporters_since_unknown">Z ponosom podpiramo Nuvio</string>
     <string name="supporter_membership_title">Članstvo v skupnosti podpornikov Nuvio</string>
@@ -2736,8 +2736,8 @@
     <string name="supporter_membership_you_are">Ti si</string>
     <string name="supporter_membership_thank_you">Hvala.</string>
     <string name="supporter_membership_supporter_since">Podpornik od %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Podpornik</string>
-    <string name="supporter_membership_tier_supporter_plus">Podpornik Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon je povezan</string>
     <string name="supporter_membership_connected_description">Na tem računu Patreon ni bilo najdeno nobeno aktivno Nuvio-stopnjo. Oglejte si razpoložljive možnosti ali osvežite stran po spremembi članstva na Patreonu.</string>
     <string name="supporter_membership_scan_support">Preglejte članstvo</string>

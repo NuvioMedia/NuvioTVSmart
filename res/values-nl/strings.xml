@@ -1877,8 +1877,8 @@
     <string name="supporters_empty">Nog geen ondersteuners gevonden.</string>
     <string name="supporters_error_title">Kon ondersteuners niet laden</string>
     <string name="supporters_no_message">Geen bericht gedeeld.</string>
-    <string name="supporters_level_supporter">Ondersteuner</string>
-    <string name="supporters_level_supporter_plus">Ondersteuner+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Steunt Nuvio sinds %1$s</string>
     <string name="supporters_since_unknown">Steunt Nuvio met trots</string>
     <string name="supporters_open_donations">Steunpagina openen</string>
@@ -1893,8 +1893,8 @@
     <string name="supporter_membership_you_are">Je bent een</string>
     <string name="supporter_membership_thank_you">Bedankt.</string>
     <string name="supporter_membership_supporter_since">Ondersteuner sinds %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Ondersteuner</string>
-    <string name="supporter_membership_tier_supporter_plus">Ondersteuner Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon is verbonden</string>
     <string name="supporter_membership_connected_description">Er is geen actieve Nuvio-tier gevonden op dit Patreon-account. Bekijk de beschikbare opties of vernieuw nadat je je Patreon-lidmaatschap hebt gewijzigd.</string>
     <string name="supporter_membership_scan_support">Scan om lidmaatschap te bekijken</string>

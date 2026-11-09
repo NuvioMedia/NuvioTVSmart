@@ -2597,7 +2597,7 @@
     <string name="settings_content_discovery_plugins_subtitle">Repositorys und Streaming-Anbieter verwalten</string>
     <string name="advanced_section_dv_diagnostics">DV-Diagnose</string>
     <string name="settings_debrid_subtitle">Experimentelle Quellen für Cloud-Konten</string>
-    <string name="supporters_level_supporter">Unterstützer</string>
+    <string name="supporters_level_supporter">Supporter</string>
     <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Unterstützung von Nuvio seit %1$s</string>
     <string name="supporters_since_unknown">Wir unterstützen stolz Nuvio</string>
@@ -2612,7 +2612,7 @@
     <string name="supporter_membership_you_are">Du bist ein</string>
     <string name="supporter_membership_thank_you">Vielen Dank.</string>
     <string name="supporter_membership_supporter_since">Unterstützt seit %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Unterstützer</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
     <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon ist verbunden</string>
     <string name="supporter_membership_connected_description">Für dieses Patreon-Konto wurde keine aktive Nuvio-Stufe gefunden. Sehen Sie sich die verfügbaren Optionen an oder aktualisieren Sie die Seite, nachdem Sie Ihre Patreon-Mitgliedschaft geändert haben.</string>

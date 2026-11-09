@@ -1979,8 +1979,8 @@
     <string name="profile_background_member_note">يمكن ضبط روابط الخلفية المخصصة من لوحة Nuvio على الويب.</string>
     <string name="home.continueWatching">متابعة المشاهدة</string>
     <string name="common.itemsCount">{{count}} عنصر</string>
-    <string name="supporters_level_supporter_plus">داعم+</string>
-    <string name="supporters_level_supporter">داعم</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
+    <string name="supporters_level_supporter">Supporter</string>
     <string name="detail.removeFromLibrary">إزالة من المكتبة</string>
     <string name="detail.addToLibrary">إضافة إلى المكتبة</string>
     <string name="detail.library">المكتبة</string>
@@ -2116,8 +2116,8 @@
     <string name="supporter_membership_connected_title">تم ربط Patreon</string>
     <string name="supporter_membership_connected_description">لم يتم العثور على فئة Nuvio نشطة في حساب Patreon هذا. اعرض الخيارات المتاحة أو حدّث بعد تغيير عضويتك في Patreon.</string>
     <string name="supporter_membership_description">دعم Nuvio يساعد على تغطية البنية التحتية والتطوير المستمر مع إبقاء التجربة الأساسية مجانية للجميع.</string>
-    <string name="supporter_membership_tier_supporter_plus">داعم+</string>
-    <string name="supporter_membership_tier_supporter">داعم</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
     <string name="supporter_membership_you_are">أنت</string>
     <string name="supporter_membership_thank_you">شكراً لك.</string>
     <string name="supporter_membership_supporter_since">داعم منذ %1$s.</string>

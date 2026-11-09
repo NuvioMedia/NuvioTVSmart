@@ -2894,7 +2894,7 @@
     <string name="custom_theme_save">Enregistrer le thème</string>
     <string name="custom_theme_preview">APERÇU</string>
     <string name="custom_theme_preview_ring">Élément sélectionné</string>
-    <string name="supporters_level_supporter">Partisan</string>
+    <string name="supporters_level_supporter">Supporter</string>
     <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Soutient Nuvio depuis %1$s</string>
     <string name="supporters_since_unknown">Soutient Nuvio avec fierté</string>
@@ -2909,7 +2909,7 @@
     <string name="supporter_membership_you_are">Vous êtes</string>
     <string name="supporter_membership_thank_you">Merci.</string>
     <string name="supporter_membership_supporter_since">Supporter depuis %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Partisan</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
     <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon est connecté</string>
     <string name="supporter_membership_connected_description">Aucun niveau Nuvio actif n’a été trouvé sur ce compte Patreon. Consultez les options disponibles ou actualisez après avoir modifié votre adhésion Patreon.</string>

@@ -2700,8 +2700,8 @@
     <string name="player_tizen_mkv_audio_unavailable">Bu TV'nin web oynatıcısı gömülü MKV ses parçalarını sunmuyor.</string>
     <string name="layout_cw_enabled">İzlemeye Devam Et\'i Göster</string>
     <string name="layout_cw_enabled_sub">Ana ekranda İzlemeye Devam Et satırını gösterir.</string>
-    <string name="supporters_level_supporter">Destekçi</string>
-    <string name="supporters_level_supporter_plus">Destekçi+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">%1$s tarihinden beri Nuvio'yu destekliyor</string>
     <string name="supporters_since_unknown">Nuvio'yu gururla destekliyor</string>
     <string name="profile_editor_tab_avatar">Avatar</string>
@@ -3124,8 +3124,8 @@
     <string name="supporter_membership_you_are">Seviyeniz:</string>
     <string name="supporter_membership_thank_you">Teşekkür ederiz.</string>
     <string name="supporter_membership_supporter_since">%1$s tarihinden beri destekçi.</string>
-    <string name="supporter_membership_tier_supporter">Destekçi</string>
-    <string name="supporter_membership_tier_supporter_plus">Destekçi Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon bağlandı</string>
     <string name="supporter_membership_connected_description">Bu Patreon hesabında aktif bir Nuvio seviyesi bulunamadı. Mevcut seçenekleri görüntüleyin veya Patreon üyeliğinizi değiştirdikten sonra yenileyin.</string>
     <string name="supporter_membership_scan_support">Üyeliği görüntülemek için taratın</string>

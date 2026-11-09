@@ -521,8 +521,8 @@
     <string name="supporters_empty">Még nincsenek támogatók.</string>
     <string name="supporters_error_title">A támogatók betöltése sikertelen</string>
     <string name="supporters_no_message">Nem érkezett üzenet.</string>
-    <string name="supporters_level_supporter">Támogató</string>
-    <string name="supporters_level_supporter_plus">Támogató+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">A Nuvio támogatója %1$s óta</string>
     <string name="supporters_since_unknown">A Nuvio büszke támogatója</string>
     <string name="supporters_open_donations">Támogatási oldal megnyitása</string>
@@ -537,8 +537,8 @@
     <string name="supporter_membership_you_are">Támogatói szinted:</string>
     <string name="supporter_membership_thank_you">Köszönjük.</string>
     <string name="supporter_membership_supporter_since">Támogató %1$s óta.</string>
-    <string name="supporter_membership_tier_supporter">Támogató</string>
-    <string name="supporter_membership_tier_supporter_plus">Támogató Plusz</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">A Patreon csatlakoztatva</string>
     <string name="supporter_membership_connected_description">Ezen a Patreon-fiókon nem található aktív Nuvio-tagsági szint. Nézd meg az elérhető lehetőségeket, vagy frissítsd az állapotot a Patreon-tagság módosítása után.</string>
     <string name="supporter_membership_scan_support">Tagság megtekintése QR-kóddal</string>

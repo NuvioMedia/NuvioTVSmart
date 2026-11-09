@@ -2600,8 +2600,8 @@
     <string name="settings_content_discovery_plugins_subtitle">சேகரிப்புகளையும் ஸ்ட்ரீம் வழங்குநர்களையும் நிர்வகிக்கவும்</string>
     <string name="advanced_section_dv_diagnostics">டிவி கண்டறியும் சோதனைகள்</string>
     <string name="settings_debrid_subtitle">சோதனை மேகக் கணக்கு ஆதாரங்கள்</string>
-    <string name="supporters_level_supporter">ஆதரவாளர்</string>
-    <string name="supporters_level_supporter_plus">ஆதரவாளர்+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">%1$s-ஐ Nuvio முதல் ஆதரிக்கிறது</string>
     <string name="supporters_since_unknown">Nuvio-ஐ பெருமையுடன் ஆதரிக்கிறோம்</string>
     <string name="supporter_membership_title">Nuvio ஆதரவாளர் உறுப்பினர்நிலை</string>
@@ -2615,8 +2615,8 @@
     <string name="supporter_membership_you_are">நீங்கள் ஒரு</string>
     <string name="supporter_membership_thank_you">நன்றி.</string>
     <string name="supporter_membership_supporter_since">%1$s முதல் ஆதரவாளர்.</string>
-    <string name="supporter_membership_tier_supporter">ஆதரவாளர்</string>
-    <string name="supporter_membership_tier_supporter_plus">ஆதரவாளர் பிளஸ்</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">பேட்ரியான் இணைக்கப்பட்டுள்ளது</string>
     <string name="supporter_membership_connected_description">இந்த Patreon கணக்கில் எந்தச் செயலில் உள்ள Nuvio நிலை கண்டறியப்படவில்லை. கிடைக்கக்கூடிய விருப்பங்களைப் பார்க்கவும் அல்லது உங்கள் Patreon உறுப்பினர் தகுதியை மாற்றிய பிறகு புதுப்பிக்கவும்.</string>
     <string name="supporter_membership_scan_support">உறுப்பினத்துவத்தைப் பார்க்க ஸ்கேன் செய்யவும்</string>

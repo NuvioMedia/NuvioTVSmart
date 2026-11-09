@@ -1819,7 +1819,7 @@
     <string name="action_apply">Bruk</string>
     <string name="sub_opacity">Opacitet</string>
     <string name="sponsors_tab">Sponsorer</string>
-    <string name="supporters_level_supporter">Støttespiller</string>
+    <string name="supporters_level_supporter">Supporter</string>
     <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Støtter Nuvio siden %1$s</string>
     <string name="supporters_since_unknown">Stolt støttespiller for Nuvio</string>
@@ -1834,7 +1834,7 @@
     <string name="supporter_membership_you_are">Du er en</string>
     <string name="supporter_membership_thank_you">Takk.</string>
     <string name="supporter_membership_supporter_since">Støtter siden %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Støttespiller</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
     <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon er tilkoblet</string>
     <string name="supporter_membership_connected_description">Det ble ikke funnet noe aktivt Nuvio-nivå på denne Patreon-kontoen. Se de tilgjengelige alternativene eller oppdater siden etter at du har endret Patreon-medlemskapet ditt.</string>

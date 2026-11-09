@@ -2769,8 +2769,8 @@
     <string name="custom_theme_preview_ring">Zaostřená položka</string>
     <string name="debug_console_tizen_subtitle_capture_start">Zachycení diagnostiky titulků v systému Tizen</string>
     <string name="debug_console_tizen_subtitle_capture_stop">Zastavit zachycování titulků v systému Tizen</string>
-    <string name="supporters_level_supporter">Podporovatel</string>
-    <string name="supporters_level_supporter_plus">Podporovatel+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Podpora Nuvio od %1$s</string>
     <string name="supporters_since_unknown">S hrdostí podporujeme Nuvio</string>
     <string name="supporter_membership_title">Členství v programu Nuvio Supporter</string>
@@ -2784,8 +2784,8 @@
     <string name="supporter_membership_you_are">Jste</string>
     <string name="supporter_membership_thank_you">Děkuji.</string>
     <string name="supporter_membership_supporter_since">Podporovatel od %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Podporovatel</string>
-    <string name="supporter_membership_tier_supporter_plus">Support Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon je připojen</string>
     <string name="supporter_membership_connected_description">Na tomto účtu Patreon nebyl nalezen žádný aktivní tarif Nuvio. Prohlédněte si dostupné možnosti nebo stránku obnovte po změně svého členství na Patreonu.</string>
     <string name="supporter_membership_scan_support">Naskenujte a zobrazte členství</string>

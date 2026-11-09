@@ -3033,8 +3033,8 @@
     <string name="custom_theme_preview">NÁHĽAD</string>
     <string name="custom_theme_preview_ring">Vybraná položka</string>
     <string name="advanced_section_dv_diagnostics">Diagnostika DV</string>
-    <string name="supporters_level_supporter">Podporovateľ</string>
-    <string name="supporters_level_supporter_plus">Podporovateľ+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Podporuje Nuvio od %1$s</string>
     <string name="supporters_since_unknown">Hrdý podporovateľ Nuvio</string>
     <string name="supporter_membership_title">Členstvo podporovateľa Nuvio</string>
@@ -3048,8 +3048,8 @@
     <string name="supporter_membership_you_are">Ste</string>
     <string name="supporter_membership_thank_you">Ďakujeme.</string>
     <string name="supporter_membership_supporter_since">Podporovateľom od %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Podporovateľ</string>
-    <string name="supporter_membership_tier_supporter_plus">Podporovateľ+</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon je pripojený</string>
     <string name="supporter_membership_connected_description">Na tomto účte Patreon sa nenašla žiadna aktívna úroveň Nuvio. Pozrite si dostupné možnosti alebo obnovte stav po zmene členstva na Patreone.</string>
     <string name="supporter_membership_scan_support">Naskenujte pre zobrazenie členstva</string>

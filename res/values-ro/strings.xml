@@ -1663,7 +1663,7 @@
     <string name="supporters_empty">Nu s-au găsit încă susținători.</string>
     <string name="supporters_error_title">Nu s-au putut încărca susținătorii</string>
     <string name="supporters_no_message">Nu a fost partajat niciun mesaj.</string>
-    <string name="supporters_level_supporter">Susținător</string>
+    <string name="supporters_level_supporter">Supporter</string>
     <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Oferim asistență pentru Nuvio din %1$s</string>
     <string name="supporters_since_unknown">Susținem cu mândrie Nuvio</string>
@@ -1679,7 +1679,7 @@
     <string name="supporter_membership_you_are">Ești un</string>
     <string name="supporter_membership_thank_you">Vă mulțumesc.</string>
     <string name="supporter_membership_supporter_since">Susținător din %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Susținător</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
     <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon este conectat</string>
     <string name="supporter_membership_connected_description">Nu s-a găsit niciun nivel de abonament Nuvio activ pe acest cont Patreon. Vizualizează opțiunile disponibile sau reîmprospătează pagina după ce îți modifici abonamentul Patreon.</string>

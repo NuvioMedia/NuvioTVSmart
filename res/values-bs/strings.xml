@@ -2089,8 +2089,8 @@
     <string name="action_apply">Primijeni</string>
     <string name="sub_opacity">Nepromočivost</string>
     <string name="sponsors_tab">Sponzori</string>
-    <string name="supporters_level_supporter">Podržavatelj</string>
-    <string name="supporters_level_supporter_plus">Podržavatelj+</string>
+    <string name="supporters_level_supporter">Supporter</string>
+    <string name="supporters_level_supporter_plus">Supporter+</string>
     <string name="supporters_since">Podrška za Nuvio od %1$s</string>
     <string name="supporters_since_unknown">Ponosno podržavamo Nuvio</string>
     <string name="supporter_membership_title">Nuvio Podržavajuće članstvo</string>
@@ -2104,8 +2104,8 @@
     <string name="supporter_membership_you_are">Ti si</string>
     <string name="supporter_membership_thank_you">Hvala.</string>
     <string name="supporter_membership_supporter_since">Podržavatelj od %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Podržavatelj</string>
-    <string name="supporter_membership_tier_supporter_plus">Pretplatnik Plus</string>
+    <string name="supporter_membership_tier_supporter">Supporter</string>
+    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
     <string name="supporter_membership_connected_title">Patreon je povezan</string>
     <string name="supporter_membership_connected_description">Na ovom Patreon računu nije pronađen nijedan aktivni nivo pretplate Nuvio. Pogledajte dostupne opcije ili osvježite stranicu nakon promjene vaše Patreon članarine.</string>
     <string name="supporter_membership_scan_support">Skenirajte da biste vidjeli članstvo</string>
