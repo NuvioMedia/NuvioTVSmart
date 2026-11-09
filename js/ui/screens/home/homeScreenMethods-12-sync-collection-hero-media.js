@@ -1,7 +1,8 @@
 import * as internals from "./homeScreenContext.js";
+import { getTrailerCleanupDelayMs } from "../../../platform/tvPerformancePolicy.js";
 
 export function createHomeScreenMethods12() {
-  const { MODERN_HOME_CONSTANTS, firstNonEmpty, isCollectionFolderItem, normalizeCollectionFolderItem } = internals;
+  const { getTvRuntimePerformanceProfile, firstNonEmpty, isCollectionFolderItem, normalizeCollectionFolderItem } = internals;
 
   return {
     syncCollectionHeroMedia(hero = null) {
@@ -249,7 +250,7 @@ export function createHomeScreenMethods12() {
           return;
         }
         cleanup();
-      }, MODERN_HOME_CONSTANTS.smartTvTrailerCleanupDelayMs);
+      }, getTrailerCleanupDelayMs(getTvRuntimePerformanceProfile()));
       this.homeTrailerLayerCleanupTimers.set(container, cleanupState);
       container.classList.remove("is-active");
     },

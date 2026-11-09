@@ -15,7 +15,6 @@ export const MODERN_HOME_CONSTANTS = {
   cameraSafetyDurationMs: 180,
   verticalScrollSettlePollMs: 60,
   smartTvLazyHydrationDebounceMs: 240,
-  smartTvTrailerCleanupDelayMs: 900,
   springScrollStiffness: 180,
   springScrollDampingRatio: 0.95,
   rowFocusInset: 40,

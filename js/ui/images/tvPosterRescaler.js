@@ -1,4 +1,5 @@
 import { getTvRuntimePerformanceProfile } from "../../platform/tvRuntimePerformance.js";
+import { getArtworkCacheLimit } from "../../platform/tvPerformancePolicy.js";
 
 // Android decodes artwork at the size Compose is going to draw it: Coil is
 // configured with precision(INEXACT) and hands BitmapFactory the target bounds,
@@ -119,10 +120,11 @@ function workerCount() {
 
 // Each entry holds a re-encoded JPEG of roughly 10-25KB, so even the larger
 // cache stays far below the cost of a single oversized decode. Android scales
-// its Coil memory cache by device RAM for the same reason.
+// its Coil memory cache by device RAM for the same reason. Modern TVs get a
+// larger window; constrained generations keep the smaller one.
 function cacheLimit() {
   const memory = Number(globalThis.navigator?.deviceMemory) || 0;
-  return memory > 0 && memory <= 1 ? 200 : 320;
+  return getArtworkCacheLimit(getTvRuntimePerformanceProfile(), memory);
 }
 
 let pool = null;
@@ -424,6 +426,9 @@ function releaseFromPool(state, objectUrl) {
   for (const entry of state.cache.values()) {
     if (entry.objectUrl === objectUrl) {
       entry.uses = Math.max(0, entry.uses - 1);
+      // Release is the point where the LRU can actually reclaim the slot; the
+      // next artwork request would otherwise be the first call to trim again.
+      trimCache(state);
       return;
     }
   }

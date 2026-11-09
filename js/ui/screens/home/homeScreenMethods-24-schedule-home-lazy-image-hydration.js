@@ -7,6 +7,7 @@ import {
   isRescalableArtworkFit
 } from "../../images/tvPosterRescaler.js";
 import { getTvArtworkPixelRatio } from "../../../platform/tvRuntimePerformance.js";
+import { getArtworkEvictIdleMs, getArtworkEvictMarginPx } from "../../../platform/tvPerformancePolicy.js";
 
 export function createHomeScreenMethods24() {
   const imageRequests = new WeakMap();
@@ -15,7 +16,6 @@ export function createHomeScreenMethods24() {
     CW_DAYS_CAP,
     HOME_LAZY_IMAGE_LIFECYCLE_SELECTOR,
     HOME_LAZY_IMAGE_ROW_SELECTOR,
-    HOME_LAZY_IMAGE_EVICT_MARGIN_PX,
     HOME_LEGACY_LAZY_HYDRATION_DEBOUNCE_MS,
     HOME_LEGACY_LAZY_HYDRATION_MAX_PER_FRAME,
     Router,
@@ -304,7 +304,7 @@ export function createHomeScreenMethods24() {
       // The sweep measures rows rather than images, which keeps it cheap enough
       // for the D-pad hot path.
       if (getTvRuntimePerformanceProfile().isTvRuntime && Router.getCurrent() === "home") {
-        this.evictDistantHomeLazyImages(anchorNode);
+        this.scheduleHomeLazyImageEviction(anchorNode);
       }
     },
     assignHomeLazyImageSource(image, src, priority = 2) {
@@ -363,6 +363,40 @@ export function createHomeScreenMethods24() {
         image.src = objectUrl || src;
       });
     },
+    scheduleHomeLazyImageEviction(anchorNode = null) {
+      const idleMs = getArtworkEvictIdleMs(getTvRuntimePerformanceProfile());
+      if (idleMs <= 0) {
+        this.evictDistantHomeLazyImages(anchorNode);
+        return;
+      }
+      // Modern TVs keep artwork while the viewer is still moving; releasing a
+      // row and then focusing back up pays a fetch and a decode again. The
+      // constrained generations keep the immediate sweep above.
+      if (this.homeLazyImageEvictTimer) {
+        clearTimeout(this.homeLazyImageEvictTimer);
+      }
+      const token = this.homeLoadToken;
+      this.homeLazyImageEvictTimer = setTimeout(() => {
+        this.homeLazyImageEvictTimer = null;
+        if (token !== this.homeLoadToken || Router.getCurrent() !== "home") {
+          return;
+        }
+        this.evictDistantHomeLazyImages(this.getCurrentFocusedNode?.() || anchorNode);
+      }, idleMs);
+      // A long uninterrupted scroll must not postpone eviction forever.
+      if (!this.homeLazyImageEvictMaxTimer) {
+        this.homeLazyImageEvictMaxTimer = setTimeout(
+          () => {
+            this.homeLazyImageEvictMaxTimer = null;
+            if (token !== this.homeLoadToken || Router.getCurrent() !== "home") {
+              return;
+            }
+            this.evictDistantHomeLazyImages(this.getCurrentFocusedNode?.() || anchorNode);
+          },
+          Math.max(4000, idleMs)
+        );
+      }
+    },
     evictDistantHomeLazyImages(anchorNode = null) {
       if (!this.container || !Array.isArray(this.homeLazyImageHydrationIndex)) {
         return 0;
@@ -378,7 +412,7 @@ export function createHomeScreenMethods24() {
         bottom: Number(globalThis.innerHeight || doc?.clientHeight || 0) || 1080,
         right: Number(globalThis.innerWidth || doc?.clientWidth || 0) || 1920
       };
-      const margin = HOME_LAZY_IMAGE_EVICT_MARGIN_PX;
+      const margin = getArtworkEvictMarginPx(getTvRuntimePerformanceProfile());
       const anchorRow = anchorNode?.closest?.(HOME_LAZY_IMAGE_ROW_SELECTOR) || null;
       let released = 0;
       // Measure rows, never individual images. A full per-image sweep measured
@@ -418,11 +452,11 @@ export function createHomeScreenMethods24() {
       if (!original) {
         return false;
       }
-      releaseHomeArtwork(painted);
       imageRequests.delete(image);
       delete image.dataset.originalSrc;
       image.dataset.src = original;
       image.removeAttribute("src");
+      releaseHomeArtwork(painted);
       return true;
     },
     releaseAllHomeLazyImages() {

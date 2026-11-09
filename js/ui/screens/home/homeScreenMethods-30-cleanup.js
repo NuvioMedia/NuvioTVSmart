@@ -18,6 +18,14 @@ export function createHomeScreenMethods30() {
       // the route keydown it delayed every exit by ~50 ms, and a quick return
       // to Home now cancels it and keeps the posters (see mount).
       this.cancelDeferredHomeArtworkRelease();
+      if (this.homeLazyImageEvictTimer) {
+        clearTimeout(this.homeLazyImageEvictTimer);
+        this.homeLazyImageEvictTimer = null;
+      }
+      if (this.homeLazyImageEvictMaxTimer) {
+        clearTimeout(this.homeLazyImageEvictMaxTimer);
+        this.homeLazyImageEvictMaxTimer = null;
+      }
       this.homeArtworkReleaseTimer = setTimeout(() => {
         this.homeArtworkReleaseTimer = null;
         // Hand every poster back to its original url before the rescaler is

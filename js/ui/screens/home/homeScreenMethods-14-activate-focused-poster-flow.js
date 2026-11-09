@@ -1,8 +1,9 @@
 import { registerHomeDomNodes } from "./homeDomUpdate.js";
 import * as internals from "./homeScreenContext.js";
+import { getTrailerMountGraceMs } from "../../../platform/tvPerformancePolicy.js";
 
 export function createHomeScreenMethods14() {
-  const { applyTrailerAudioPreferences } = internals;
+  const { applyTrailerAudioPreferences, getTvRuntimePerformanceProfile } = internals;
 
   return {
     async activateFocusedPosterFlow(node, flowToken = Number(this.focusedPosterFlowToken || 0)) {
@@ -38,6 +39,21 @@ export function createHomeScreenMethods14() {
         });
         if (Number(this.focusedPosterFlowToken || 0) !== Number(flowToken || 0) || !node.classList.contains("focused")) {
           return;
+        }
+      }
+      const mountGraceMs = getTrailerMountGraceMs(getTvRuntimePerformanceProfile());
+      if (mountGraceMs > 0) {
+        // Modern TVs defer the YouTube iframe mount until focus has been quiet
+        // for a moment. Constrained generations keep the previous timing.
+        const sinceNavigation = Date.now() - Number(this.lastModernHeroNavAt || 0);
+        const remainingGraceMs = mountGraceMs - sinceNavigation;
+        if (remainingGraceMs > 0) {
+          await new Promise((resolve) => {
+            setTimeout(resolve, remainingGraceMs);
+          });
+          if (Number(this.focusedPosterFlowToken || 0) !== Number(flowToken || 0) || !node.classList.contains("focused")) {
+            return;
+          }
         }
       }
 

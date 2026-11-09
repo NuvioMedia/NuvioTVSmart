@@ -8,10 +8,32 @@ export function createHomeScreenMethods13() {
       if (!container || !source) {
         return;
       }
+      if (source.kind === "youtube" && source.embedUrl) {
+        const existingFrame = container.querySelector("iframe");
+        if (existingFrame?.dataset?.trailerSrc === source.embedUrl) {
+          // Same trailer already mounted: reveal it instead of clearing and
+          // rebuilding the YouTube iframe, whose teardown is expensive on TV.
+          try {
+            existingFrame.contentWindow?.postMessage(
+              {
+                source: "nuvio-detail-trailer",
+                type: "command",
+                command: "play",
+                payload: {}
+              },
+              "*"
+            );
+          } catch (_) {}
+          container.classList.add("is-active");
+          onReady?.();
+          return;
+        }
+      }
       this.clearTrailerLayer(container);
       if (source.kind === "youtube" && source.embedUrl) {
         const frame = document.createElement("iframe");
         frame.className = "home-inline-trailer-frame";
+        frame.dataset.trailerSrc = source.embedUrl;
         frame.src = source.embedUrl;
         frame.title = "Trailer preview";
         frame.allow = "autoplay; encrypted-media; picture-in-picture";
