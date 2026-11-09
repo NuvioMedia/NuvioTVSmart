@@ -398,50 +398,6 @@ img.placeholder {
   height: 100%;
 }
 
-/* The branded arc animates stroke-dash data on the main thread; while Home is
-   parsing its rows the arc can freeze for a frame. A transform-only orbit on
-   the same indicator keeps visible motion on the compositor. */
-@keyframes homeLoadingOrbit {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes homeLoadingPulse {
-  from {
-    opacity: 0.55;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.home-loading-state .home-loading-spinner {
-  animation:
-    homeLoadingOrbit 1800ms linear infinite,
-    homeLoadingPulse 900ms ease-in-out infinite alternate;
-  will-change: transform, opacity;
-}
-
-/* The branded SVG arc draws a very short dash at the start of its cycle, so on
-   a slow Home mount it can look like a static dot. Keep the brand colours but
-   add a compositor-friendly ring that is always visibly rotating. */
-.home-loading-state .home-loading-spinner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 6px solid rgba(255, 255, 255, 0.16);
-  border-top-color: var(--secondary-color, #f5f5f5);
-}
-
-.home-loading-state .home-loading-spinner .nuvio-loading-indicator-svg {
-  opacity: 0;
-}
-
 .nuvio-loading-indicator {
   position: relative;
   display: inline-block;
