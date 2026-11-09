@@ -275,6 +275,14 @@
   opacity: 1;
 }
 
+/* Once the fade-out has finished, keep the inactive trailer out of the
+   compositor. The visible result is identical because the layer is already
+   fully transparent. */
+.home-screen-shell.home-layout-modern .home-hero-trailer-layer.is-trailer-layer-idle-hidden,
+.home-screen-shell.home-layout-modern .home-poster-trailer-layer.is-trailer-layer-idle-hidden {
+  display: none;
+}
+
 .home-screen-shell.home-layout-modern .home-modern-hero-media.trailer-active .home-hero-backdrop {
   opacity: 0;
 }

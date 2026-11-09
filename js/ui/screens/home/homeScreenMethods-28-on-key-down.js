@@ -58,6 +58,7 @@ export function createHomeScreenMethods28() {
       }
       if (this.layoutMode === "modern" && isDirectionalKeyCode(code)) {
         this.cancelFocusedPosterFlow();
+        this.pauseActiveTrailerLayersForNavigation();
       }
       if (this.handleHomeDpad(event)) {
         return;

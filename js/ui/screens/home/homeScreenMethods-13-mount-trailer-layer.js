@@ -8,6 +8,12 @@ export function createHomeScreenMethods13() {
       if (!container || !source) {
         return;
       }
+      const pendingHide = this.homeTrailerLayerHideTimers?.get?.(container);
+      if (pendingHide) {
+        clearTimeout(pendingHide);
+        this.homeTrailerLayerHideTimers.delete(container);
+      }
+      container.classList.remove("is-trailer-layer-idle-hidden");
       if (source.kind === "youtube" && source.embedUrl) {
         const existingFrame = container.querySelector("iframe");
         if (existingFrame?.dataset?.trailerSrc === source.embedUrl) {
