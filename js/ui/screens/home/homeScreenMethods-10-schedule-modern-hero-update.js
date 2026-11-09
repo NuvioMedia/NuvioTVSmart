@@ -1,7 +1,9 @@
 import * as internals from "./homeScreenContext.js";
+import { isModernTvProfile } from "../../../platform/tvPerformancePolicy.js";
+import { getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
 
 export function createHomeScreenMethods10() {
-  const { MODERN_HOME_CONSTANTS, getTvRuntimePerformanceProfile, shouldEnrichModernHero, preloadHeroAssets, buildHeroIdentity } = internals;
+  const { MODERN_HOME_CONSTANTS, shouldEnrichModernHero, preloadHeroAssets, buildHeroIdentity } = internals;
 
   return {
     scheduleModernHeroUpdate(node, { deferUntilVerticalSettle = false, immediate = false } = {}) {
@@ -31,10 +33,9 @@ export function createHomeScreenMethods10() {
       if (isRapidNav || immediate) {
         this.container?.querySelector(".home-modern-hero-card")?.classList.add("is-hero-focus-pending");
       }
-      const canPreloadHeroDuringVerticalScroll =
-        deferUntilVerticalSettle && getTvRuntimePerformanceProfile().isTvRuntime && !this.isPerformanceConstrained();
+      const shouldWaitForCamera = deferUntilVerticalSettle || isModernTvProfile(getTvRuntimePerformanceProfile());
       const waitForVerticalSettle = (callback) => {
-        if (deferUntilVerticalSettle && !canPreloadHeroDuringVerticalScroll && this.isModernVerticalScrollActive()) {
+        if (shouldWaitForCamera && this.isModernHydrationScrollActive()) {
           this.heroBackdropPreloadTimer = setTimeout(
             () => waitForVerticalSettle(callback),
             MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs
