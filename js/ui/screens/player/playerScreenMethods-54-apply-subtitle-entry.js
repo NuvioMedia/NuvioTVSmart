@@ -149,9 +149,16 @@ export function createPlayerScreenMethods54() {
         this.invalidateTrackDialogCaches();
         this.refreshSubtitleCueStyles();
         if (useTizenEmbeddedTextHtmlFallback) {
+          // A new track starts a fresh extractor attempt, so a previous
+          // track's service failure must not block its window.
+          this.clearWebOsEmbeddedTextSubtitleOverlay({ dispose: true });
           this.webOsEmbeddedTextSubtitleTrack = tizenEmbeddedTrack;
           this.webOsEmbeddedTextSubtitleUsingHtml = false;
           void this.loadWebOsEmbeddedTextSubtitleWindow(this.getPlaybackCurrentSeconds());
+        } else if (this.webOsEmbeddedTextSubtitleTrack) {
+          // Do not leave a previous SubRip/TX3G overlay or its callback
+          // delegation active after selecting a different AVPlay track.
+          this.clearWebOsEmbeddedTextSubtitleOverlay({ dispose: true });
         }
         this.renderControlButtons();
         this.renderSubtitleDialog();
