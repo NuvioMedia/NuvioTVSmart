@@ -135,6 +135,13 @@
   align-items: flex-end;
 }
 
+/* Hint the compositor only while the camera is actually moving; paying for a
+   promoted layer on every idle row would cost memory, especially on TV GPUs. */
+.home-screen-shell.home-layout-modern .home-track.is-camera-scrolling,
+.home-screen-shell.home-layout-modern .home-modern-rows-viewport.is-camera-scrolling {
+  will-change: scroll-position;
+}
+
 .home-screen-shell.home-layout-modern.home-modern-landscape-posters .home-modern-row .home-track {
   align-items: flex-start;
 }
