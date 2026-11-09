@@ -39,7 +39,7 @@ test("snapshot key is stable for the same profile, addons and Home order", () =>
   assert.match(first, /^2:/);
 });
 
-test("snapshot key changes when the profile, addons or Home order change", () => {
+test("snapshot key changes when the profile or addons change", () => {
   const prefs = { order: ["a:movie:top"], disabled: [], customTitles: {} };
   const base = buildHomeCatalogSnapshotKey({
     profileId: "2",
@@ -62,13 +62,39 @@ test("snapshot key changes when the profile, addons or Home order change", () =>
       homeCatalogPrefs: prefs
     })
   );
+});
+
+test("row order and visibility keep the cached rows, titles do not", () => {
+  const prefs = { order: ["a:movie:top"], disabled: [], customTitles: {} };
+  const base = buildHomeCatalogSnapshotKey({
+    profileId: "2",
+    addonDescriptors: descriptors,
+    homeCatalogPrefs: prefs
+  });
+  assert.equal(
+    base,
+    buildHomeCatalogSnapshotKey({
+      profileId: "2",
+      addonDescriptors: descriptors,
+      homeCatalogPrefs: {
+        order: ["b:series:new", "a:movie:top"],
+        disabled: ["a:movie:top"],
+        customTitles: {}
+      }
+    }),
+    "order and visibility are applied at paint time"
+  );
   assert.notEqual(
     base,
     buildHomeCatalogSnapshotKey({
       profileId: "2",
       addonDescriptors: descriptors,
-      homeCatalogPrefs: { ...prefs, order: ["b:series:new"] }
-    })
+      homeCatalogPrefs: {
+        ...prefs,
+        customTitles: { "a:movie:top": "My row" }
+      }
+    }),
+    "the stored row name carries the custom title"
   );
 });
 

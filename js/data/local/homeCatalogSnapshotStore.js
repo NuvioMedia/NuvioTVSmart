@@ -94,9 +94,11 @@ function stableHash(value) {
 }
 
 /**
- * The snapshot key must change whenever the addon list or the Home order
- * changes. A stale key is simply a miss; it never paints rows that belong to
- * another profile or another addon configuration.
+ * The snapshot key must change whenever the source changes: profile, account
+ * or addons. Row order and row visibility are presentation, applied by
+ * sortAndFilterRows on every paint, so changing them keeps the cached rows
+ * (the same source/structure split the native legacy client uses). Custom
+ * titles are baked into the stored row name, so they stay in the key.
  */
 export function buildHomeCatalogSnapshotKey({
   profileId = null,
@@ -112,10 +114,6 @@ export function buildHomeCatalogSnapshotKey({
     ])
     .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
   const prefs = {
-    order: Array.isArray(homeCatalogPrefs?.order) ? homeCatalogPrefs.order : [],
-    disabled: Array.isArray(homeCatalogPrefs?.disabled)
-      ? [...homeCatalogPrefs.disabled].sort()
-      : [],
     customTitles:
       homeCatalogPrefs?.customTitles && typeof homeCatalogPrefs.customTitles === "object"
         ? Object.keys(homeCatalogPrefs.customTitles)
