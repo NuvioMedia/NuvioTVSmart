@@ -1,5 +1,9 @@
 import { getTvRuntimePerformanceProfile } from "../../platform/tvRuntimePerformance.js";
-import { getArtworkCacheLimit } from "../../platform/tvPerformancePolicy.js";
+import {
+  getArtworkCacheLimit,
+  getDeviceMemoryGb,
+  isLowMemoryDevice
+} from "../../platform/tvPerformancePolicy.js";
 
 // Android decodes artwork at the size Compose is going to draw it: Coil is
 // configured with precision(INEXACT) and hands BitmapFactory the target bounds,
@@ -68,9 +72,17 @@ export function isJpegHeader(bytes) {
   );
 }
 
+// The native client bounds a compressed artwork body to 8 MiB; a huge addon
+// original would otherwise decode into tens of megabytes of pixels inside a
+// worker. The check runs before and after the download.
+export function isArtworkTooLarge(bytes) {
+  return Boolean(bytes) && Number(bytes.byteLength || 0) > 8388608;
+}
+
 const WORKER_SOURCE = `
 const sourceRect = ${computeSourceRect.toString()};
 const isJpeg = ${isJpegHeader.toString()};
+const isTooLarge = ${isArtworkTooLarge.toString()};
 
 self.onmessage = async (event) => {
   const { id, url, width, height, fit } = event.data || {};
@@ -80,10 +92,17 @@ self.onmessage = async (event) => {
     if (!response.ok) {
       throw new Error("http " + response.status);
     }
+    const declared = Number(response.headers.get("content-length") || 0);
+    if (declared > 8388608) {
+      throw new Error("too large");
+    }
     // Read the bytes off the response rather than the blob: Blob.arrayBuffer
     // is newer than OffscreenCanvas, so some webOS builds have the canvas but
     // not the blob method.
     const bytes = await response.arrayBuffer();
+    if (isTooLarge(bytes)) {
+      throw new Error("too large");
+    }
     if (!isJpeg(new Uint8Array(bytes, 0, Math.min(3, bytes.byteLength)))) {
       // Could carry transparency or animation. Leave it to the <img> tag.
       throw new Error("not jpeg");
@@ -113,9 +132,19 @@ self.onmessage = async (event) => {
 // but it is decoding natively while this has to re-encode in JavaScript. An LG
 // k8lp reports four cores, and filling all four starved the renderer that has
 // to paint the rows badly enough to stall it for seconds, so leave one free.
+export function artworkWorkerCount(cores, deviceMemory) {
+  // A full-size decode is held per job while the source is re-encoded, so the
+  // native client gives a 1 GB set two network threads instead of four. One
+  // worker keeps two jobs in flight, which is that ceiling.
+  if (isLowMemoryDevice(deviceMemory)) {
+    return 1;
+  }
+  const value = Number(cores) || 4;
+  return Math.min(Math.max(value - 1, 1), 3);
+}
+
 function workerCount() {
-  const cores = Number(globalThis.navigator?.hardwareConcurrency) || 4;
-  return Math.min(Math.max(cores - 1, 1), 3);
+  return artworkWorkerCount(globalThis.navigator?.hardwareConcurrency, getDeviceMemoryGb());
 }
 
 // Each entry holds a re-encoded JPEG of roughly 10-25KB, so even the larger
@@ -123,8 +152,7 @@ function workerCount() {
 // its Coil memory cache by device RAM for the same reason. Modern TVs get a
 // larger window; constrained generations keep the smaller one.
 function cacheLimit() {
-  const memory = Number(globalThis.navigator?.deviceMemory) || 0;
-  return getArtworkCacheLimit(getTvRuntimePerformanceProfile(), memory);
+  return getArtworkCacheLimit(getTvRuntimePerformanceProfile(), getDeviceMemoryGb());
 }
 
 let pool = null;
@@ -177,6 +205,7 @@ function createPool() {
     jobs: new Map(),
     nextId: 1,
     cache: new Map(),
+    failed: new Map(),
     inflight: new Map(),
     disposed: false
   };
@@ -285,6 +314,23 @@ function pump(state) {
   }
 }
 
+// Artwork 404s are deliberately left out: the native client excludes art from
+// its negative cache because a CDN 404 can be transient. Only answers that
+// depend on the bytes themselves are permanent for the session.
+const DETERMINISTIC_ARTWORK_FAILURE = /^(not jpeg|already small|too large)$/;
+const ARTWORK_FAILURE_LIMIT = 512;
+
+function rememberArtworkFailure(state, key, reason) {
+  if (!DETERMINISTIC_ARTWORK_FAILURE.test(String(reason || ""))) {
+    return;
+  }
+  if (state.failed.size >= ARTWORK_FAILURE_LIMIT) {
+    const oldest = state.failed.keys().next().value;
+    if (oldest !== undefined) state.failed.delete(oldest);
+  }
+  state.failed.set(key, true);
+}
+
 function trimCache(state) {
   const limit = cacheLimit();
   if (state.cache.size <= limit) {
@@ -340,6 +386,12 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
   // The fit belongs in the key: the same artwork in the same box is cropped
   // for one card type and stretched for another.
   const key = `${url}|${width}x${height}|${fit}`;
+  // These answers cannot change for the same url and target: a non-JPEG source
+  // stays non-JPEG and a source already smaller than the box stays smaller.
+  // Retrying them on every scroll only spends a worker fetch to learn it again.
+  if (state.failed.has(key)) {
+    return Promise.resolve(null);
+  }
   const cached = state.cache.get(key);
   if (cached) {
     cached.uses += 1;
@@ -373,7 +425,7 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
     waiters: 1
   };
   job.promise = new Promise((resolve) => {
-    job.settle = (blob) => {
+    job.settle = (blob, reason) => {
       // A timeout and a late reply can both land, and settling twice would
       // leak a second object url for the same job.
       if (job.done) {
@@ -382,6 +434,9 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
       job.done = true;
       state.inflight.delete(key);
       if (!blob || state.disposed) {
+        if (!blob && !state.disposed) {
+          rememberArtworkFailure(state, key, reason);
+        }
         resolve(null);
         return;
       }
@@ -468,6 +523,7 @@ function resetPool(state) {
   state.workers.length = 0;
   state.idle.length = 0;
   state.queue.length = 0;
+  state.failed?.clear?.();
 }
 
 /**

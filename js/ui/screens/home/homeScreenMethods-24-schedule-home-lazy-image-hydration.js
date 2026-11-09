@@ -7,7 +7,7 @@ import {
   isRescalableArtworkFit
 } from "../../images/tvPosterRescaler.js";
 import { getTvArtworkPixelRatio } from "../../../platform/tvRuntimePerformance.js";
-import { getArtworkEvictIdleMs, getArtworkEvictMarginPx } from "../../../platform/tvPerformancePolicy.js";
+import { getArtworkEvictIdleMs, getArtworkEvictMarginPx, getDeviceMemoryGb } from "../../../platform/tvPerformancePolicy.js";
 
 export function createHomeScreenMethods24() {
   const imageRequests = new WeakMap();
@@ -364,7 +364,7 @@ export function createHomeScreenMethods24() {
       });
     },
     scheduleHomeLazyImageEviction(anchorNode = null) {
-      const idleMs = getArtworkEvictIdleMs(getTvRuntimePerformanceProfile());
+      const idleMs = getArtworkEvictIdleMs(getTvRuntimePerformanceProfile(), getDeviceMemoryGb());
       if (idleMs <= 0) {
         this.evictDistantHomeLazyImages(anchorNode);
         return;
@@ -412,7 +412,7 @@ export function createHomeScreenMethods24() {
         bottom: Number(globalThis.innerHeight || doc?.clientHeight || 0) || 1080,
         right: Number(globalThis.innerWidth || doc?.clientWidth || 0) || 1920
       };
-      const margin = getArtworkEvictMarginPx(getTvRuntimePerformanceProfile());
+      const margin = getArtworkEvictMarginPx(getTvRuntimePerformanceProfile(), getDeviceMemoryGb());
       const anchorRow = anchorNode?.closest?.(HOME_LAZY_IMAGE_ROW_SELECTOR) || null;
       let released = 0;
       // Measure rows, never individual images. A full per-image sweep measured

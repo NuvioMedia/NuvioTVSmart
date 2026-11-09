@@ -19,11 +19,28 @@ export function isModernTvProfile(profile = null) {
   );
 }
 
-export function getArtworkEvictIdleMs(profile = null) {
+// RAM decides before the generation does. A 2022+ set with 1 GB still cannot
+// keep the modern artwork window, the same way the native legacy client lifts
+// the smallest texture budget to the lowest RAM tier first.
+export function isLowMemoryDevice(deviceMemory = 0) {
+  const memory = Number(deviceMemory);
+  return memory > 0 && memory <= 1;
+}
+
+/** The browser's coarse RAM estimate in GB, or 0 when the API is absent. */
+export function getDeviceMemoryGb() {
+  return Number(globalThis?.navigator?.deviceMemory) || 0;
+}
+
+export function getArtworkEvictIdleMs(profile = null, deviceMemory = 0) {
+  if (isLowMemoryDevice(deviceMemory)) return 0;
   return isModernTvProfile(profile) ? HOME_TV_PERFORMANCE_POLICY.modernArtworkEvictIdleMs : 0;
 }
 
-export function getArtworkEvictMarginPx(profile = null) {
+export function getArtworkEvictMarginPx(profile = null, deviceMemory = 0) {
+  if (isLowMemoryDevice(deviceMemory)) {
+    return HOME_TV_PERFORMANCE_POLICY.legacyArtworkEvictMarginPx;
+  }
   return isModernTvProfile(profile)
     ? HOME_TV_PERFORMANCE_POLICY.modernArtworkEvictMarginPx
     : HOME_TV_PERFORMANCE_POLICY.legacyArtworkEvictMarginPx;
@@ -40,10 +57,11 @@ export function getTrailerMountGraceMs(profile = null) {
 }
 
 export function getArtworkCacheLimit(profile = null, deviceMemory = 0) {
+  if (isLowMemoryDevice(deviceMemory)) {
+    return HOME_TV_PERFORMANCE_POLICY.lowMemoryArtworkCacheEntries;
+  }
   if (isModernTvProfile(profile)) {
     return HOME_TV_PERFORMANCE_POLICY.modernArtworkCacheEntries;
   }
-  return Number(deviceMemory) > 0 && Number(deviceMemory) <= 1
-    ? HOME_TV_PERFORMANCE_POLICY.lowMemoryArtworkCacheEntries
-    : HOME_TV_PERFORMANCE_POLICY.legacyArtworkCacheEntries;
+  return HOME_TV_PERFORMANCE_POLICY.legacyArtworkCacheEntries;
 }

@@ -32,8 +32,18 @@ test("constrained and legacy TV generations keep today's aggressive release", ()
 });
 
 test("modern TVs get the larger artwork cache; low-RAM TVs keep the smallest", () => {
-  assert.equal(getArtworkCacheLimit(modern, 1), 640);
-  assert.equal(getArtworkCacheLimit(constrained, 1), 200);
-  assert.equal(getArtworkCacheLimit(constrained, 2), 320);
+  assert.equal(getArtworkCacheLimit(modern, 4), 640);
+  assert.equal(getArtworkCacheLimit(constrained, 4), 320);
   assert.equal(getArtworkCacheLimit(browser, 2), 320);
+  // RAM decides before the generation: a modern 1 GB set gets the low tier.
+  assert.equal(getArtworkCacheLimit(modern, 1), 200);
+  assert.equal(getArtworkCacheLimit(constrained, 1), 200);
+});
+
+test("a modern TV with 1 GB RAM uses the legacy eviction window", () => {
+  assert.equal(getArtworkEvictIdleMs(modern, 1), 0);
+  assert.equal(getArtworkEvictMarginPx(modern, 1), 1600);
+  // Without the Device Memory API the profile alone still decides.
+  assert.equal(getArtworkEvictIdleMs(modern, 0), 1200);
+  assert.equal(getArtworkEvictMarginPx(modern, 0), 2600);
 });

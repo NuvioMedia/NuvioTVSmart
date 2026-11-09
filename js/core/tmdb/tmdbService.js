@@ -2,6 +2,11 @@ import { TmdbSettingsStore } from "../../data/local/tmdbSettingsStore.js";
 import { TMDB_API_KEY } from "../../config.js";
 import { PluginServiceClient } from "../../platform/pluginServiceClient.js";
 import { Platform } from "../../platform/index.js";
+import {
+  isTmdbHostBackedOff,
+  isTmdbRequestBlocked,
+  noteTmdbRequestResult
+} from "../network/tmdbNegativeCache.js";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_SERVICE_FETCH_TIMEOUT_MS = 10000;
@@ -20,30 +25,49 @@ export async function fetchTmdbJson(
   url,
   { signal = null, maxResponseBytes = TMDB_SERVICE_MAX_RESPONSE_BYTES } = {}
 ) {
+  // A 400/404/410 already seen for this exact request is not asked again for
+  // 24h (native legacy negcache). A different API key hits the same entry.
+  if (isTmdbRequestBlocked(url)) {
+    return null;
+  }
   // Some webOS TV runtimes can reject direct cross-origin fetches even while
   // the packaged network service can reach the same HTTPS endpoint. Keep the
   // service path scoped to webOS and retain the browser fetch as a fallback
   // for older installs or when the optional service is unavailable.
   if (Platform.isWebOS()) {
+    let result = null;
     try {
-      const result = await PluginServiceClient.fetch({
+      result = await PluginServiceClient.fetch({
         url,
         method: "GET",
         maxResponseBytes,
         timeoutMs: TMDB_SERVICE_FETCH_TIMEOUT_MS,
         signal
       });
-      if (!result?.ok) {
-        return null;
-      }
-      return JSON.parse(result.body || "");
     } catch (error) {
       if (signal?.aborted) throw error;
-      // Fall back to the existing direct request for compatibility.
+      // The service itself failed, not necessarily the host: keep the direct
+      // request as the fallback and leave the host backoff to that path.
+    }
+    if (result) {
+      if (!result.ok) {
+        noteTmdbRequestResult(url, { status: Number(result.status || 0) });
+        return null;
+      }
+      try {
+        const parsed = JSON.parse(result.body || "");
+        noteTmdbRequestResult(url, { status: 200 });
+        return parsed;
+      } catch (_) {
+        // A malformed service body still falls back to the direct request.
+      }
     }
   }
 
   if (signal?.aborted) throw new Error("TMDB request aborted");
+  if (isTmdbHostBackedOff(url)) {
+    return null;
+  }
   const controller = typeof AbortController === "function" ? new AbortController() : null;
   let rejectDeadline;
   const deadline = new Promise((_, reject) => {
@@ -59,14 +83,23 @@ export async function fetchTmdbJson(
   };
   const forwardAbort = () => abortRequest(new Error("TMDB request aborted"));
   signal?.addEventListener?.("abort", forwardAbort, { once: true });
-  const timeoutId = setTimeout(
-    () => abortRequest(new Error(`TMDB request timed out after ${TMDB_DIRECT_FETCH_TIMEOUT_MS}ms`)),
-    TMDB_DIRECT_FETCH_TIMEOUT_MS
-  );
+  const timeoutId = setTimeout(() => {
+    noteTmdbRequestResult(url, { networkError: true });
+    abortRequest(new Error(`TMDB request timed out after ${TMDB_DIRECT_FETCH_TIMEOUT_MS}ms`));
+  }, TMDB_DIRECT_FETCH_TIMEOUT_MS);
 
   try {
     const request = (async () => {
-      const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
+      let response;
+      try {
+        response = await fetch(url, controller ? { signal: controller.signal } : undefined);
+      } catch (error) {
+        if (!signal?.aborted) {
+          noteTmdbRequestResult(url, { networkError: true });
+        }
+        throw error;
+      }
+      noteTmdbRequestResult(url, { status: Number(response.status || 0) });
       if (!response.ok) {
         return null;
       }

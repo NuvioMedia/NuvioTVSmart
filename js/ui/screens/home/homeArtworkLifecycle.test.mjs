@@ -47,7 +47,8 @@ function buildHome({ rescale = null, tv = true, route = "home", constants = {} }
     getHomeArtworkObjectFit: rescale?.fit || (() => "cover"),
     isRescalableArtworkFit: (fit) => fit === "cover" || fit === "fill",
     getArtworkEvictIdleMs: () => 0,
-    getArtworkEvictMarginPx: () => 1600
+    getArtworkEvictMarginPx: () => 1600,
+    getDeviceMemoryGb: () => 0
   });
   context.globalThis = context;
   context.innerWidth = 1920;

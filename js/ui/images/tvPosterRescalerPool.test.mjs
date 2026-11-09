@@ -144,3 +144,45 @@ test("an unsupported fit is refused before any worker is started", async () => {
   );
   assert.equal(created.length, 0, "nothing should spin up for artwork that cannot be rescaled");
 });
+
+/** Answer every waiting job with the same outcome. */
+function drainFailed(result) {
+  for (let round = 0; round < 2000; round += 1) {
+    const worker = created.find((candidate) => !candidate.terminated && candidate.posted.length);
+    if (!worker) return;
+    const job = worker.posted.shift();
+    worker.onmessage({ data: { id: job.id, ...result } });
+  }
+}
+
+function postedJobs() {
+  return created.reduce((total, worker) => total + worker.posted.length, 0);
+}
+
+test("a source that cannot be rescaled is not fetched again this session", async () => {
+  reset();
+  const box = { width: 220, height: 338, fit: "cover" };
+  const first = rescaleHomeArtwork("https://art/not-jpeg.webp", box);
+  drainFailed({ ok: false, reason: "not jpeg" });
+  assert.equal(await first, null);
+  assert.equal(postedJobs(), 0);
+
+  assert.equal(await rescaleHomeArtwork("https://art/not-jpeg.webp", box), null);
+  assert.equal(postedJobs(), 0, "the known non-JPEG source must not spin up another job");
+});
+
+test("a transient failure is still retried", async () => {
+  reset();
+  const box = { width: 220, height: 338, fit: "cover" };
+  for (const reason of ["http 500", "http 404", "timeout"]) {
+    reset();
+    const first = rescaleHomeArtwork("https://art/flaky.jpg", box);
+    drainFailed({ ok: false, reason });
+    assert.equal(await first, null);
+
+    const second = rescaleHomeArtwork("https://art/flaky.jpg", box);
+    assert.ok(postedJobs() > 0, `${reason} must not be treated as permanent`);
+    drain();
+    assert.equal(typeof (await second), "string");
+  }
+});

@@ -1,7 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { computeSourceRect, isJpegHeader, isRescalableArtworkFit } from "./tvPosterRescaler.js";
+import {
+  artworkWorkerCount,
+  computeSourceRect,
+  isArtworkTooLarge,
+  isJpegHeader,
+  isRescalableArtworkFit
+} from "./tvPosterRescaler.js";
 import { getTvArtworkPixelRatio } from "../../platform/tvRuntimePerformance.js";
 
 // Every existing crop case is a cover crop; fill has its own cases below.
@@ -131,4 +137,18 @@ test("only JPEG bytes are accepted for re-encoding", () => {
     "a truncated header is not a jpeg"
   );
   assert.equal(isJpegHeader(null), false);
+});
+
+test("a source above the native 8 MiB body cap is refused", () => {
+  assert.equal(isArtworkTooLarge({ byteLength: 8388608 }), false);
+  assert.equal(isArtworkTooLarge({ byteLength: 8388609 }), true);
+  assert.equal(isArtworkTooLarge(null), false);
+});
+
+test("a 1 GB TV keeps one artwork worker", () => {
+  assert.equal(artworkWorkerCount(4, 1), 1);
+  assert.equal(artworkWorkerCount(8, 0.5), 1);
+  assert.equal(artworkWorkerCount(4, 2), 3);
+  assert.equal(artworkWorkerCount(8, undefined), 3);
+  assert.equal(artworkWorkerCount(1, undefined), 1);
 });
