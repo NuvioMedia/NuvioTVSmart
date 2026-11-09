@@ -61,10 +61,6 @@ export const HOME_BACKGROUND_RENDER_DELAY_LEGACY_MS = 180;
 // screen, because a hydrated image is never released. Rows stay mounted, so the
 // cost only ever grows and the renderer was killed around 477MB.
 //
-// Images this far outside the viewport give their bitmap back. The margin sits
-// well beyond the hydration margin so moving between two rows cannot drop an
-// image and immediately reload it.
-export const HOME_LAZY_IMAGE_EVICT_MARGIN_PX = 1600;
 export const HOME_LEGACY_LAZY_HYDRATION_DEBOUNCE_MS = 180;
 export const HOME_LEGACY_LAZY_HYDRATION_MAX_PER_FRAME = 2;
 export const HOME_LEGACY_HERO_BACKDROP_CROSSFADE_MS = 300;

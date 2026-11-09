@@ -41,7 +41,11 @@ export function syncLoadingIndicatorPalette(palette) {
 // The same Android frames are pre-rendered into a strip and scrolled with a
 // transform, which the compositor keeps running through that task.
 const LOADER_SPRITE_SIZE = 96;
-const LOADER_SPRITE_FRAMES = 120;
+// Modern TVs get a 60 fps strip; constrained and legacy TVs get half the
+// frames, which halves the decoded texture and still looks smooth on their
+// slower panels.
+const LOADER_SPRITE_FRAMES_MODERN = 120;
+const LOADER_SPRITE_FRAMES_CONSTRAINED = 60;
 
 let loaderSprite = null;
 let loaderSpritePending = false;
@@ -65,15 +69,14 @@ function loadingIndicatorEase(value) {
   return y((low + high) / 2);
 }
 
-function drawLoaderSprite(colors) {
+function drawLoaderSprite(colors, frames) {
   const size = LOADER_SPRITE_SIZE;
-  const frames = LOADER_SPRITE_FRAMES;
   const ratio = Math.min(2, Math.max(1, Number(globalThis.devicePixelRatio) || 1));
   const canvas = document.createElement("canvas");
   canvas.width = size * frames * ratio;
   canvas.height = size * ratio;
   const context = canvas.getContext("2d");
-  if (!context) return Promise.resolve(null);
+  if (!context || typeof canvas.toBlob !== "function") return Promise.resolve(null);
   context.scale(ratio, ratio);
   context.lineCap = "round";
   context.lineWidth = 50 * ((size * 0.75) / 350);
@@ -108,18 +111,36 @@ function drawLoaderSprite(colors) {
   });
 }
 
+export function resolveLoaderSpriteDelay(node) {
+  const arc = node?.querySelector?.(".nuvio-loading-indicator-arc");
+  const current = Number(arc?.getAnimations?.()?.[0]?.currentTime || 0);
+  return current > 0 ? `-${Math.round(current)}ms` : "0ms";
+}
+
 function applyLoaderSpriteToMounted() {
   if (!loaderSprite || typeof document === "undefined") return;
   document.querySelectorAll(".home-loading-spinner").forEach((node) => {
     node.classList.add("has-loader-sprite");
+    node.classList.toggle("has-loader-sprite-60", loaderSprite.frames <= 60);
     node.style.setProperty("--loader-sprite", `url(${loaderSprite.url})`);
+    // A strip that becomes ready mid-loader must continue from the frame the
+    // SVG arc is already showing, not restart at frame 0.
+    node.style.setProperty("--loader-sprite-delay", resolveLoaderSpriteDelay(node));
   });
+}
+
+export function loaderSpriteFramesFor(profile) {
+  return isModernTvProfile(profile)
+    ? LOADER_SPRITE_FRAMES_MODERN
+    : LOADER_SPRITE_FRAMES_CONSTRAINED;
 }
 
 function scheduleLoaderSprite() {
   if (typeof window === "undefined" || loaderSpritePending) return;
-  if (!isModernTvProfile(getTvRuntimePerformanceProfile())) return;
-  const key = loadingAccentColors.join(",");
+  const profile = getTvRuntimePerformanceProfile();
+  if (!profile?.isTvRuntime) return;
+  const frames = loaderSpriteFramesFor(profile);
+  const key = `${loadingAccentColors.join(",")}|${frames}`;
   if (loaderSprite?.key === key) {
     applyLoaderSpriteToMounted();
     return;
@@ -127,15 +148,15 @@ function scheduleLoaderSprite() {
   loaderSpritePending = true;
   const build = () => {
     loaderSpritePending = false;
-    const currentKey = loadingAccentColors.join(",");
-    void drawLoaderSprite(loadingAccentColors).then((url) => {
+    const currentKey = `${loadingAccentColors.join(",")}|${frames}`;
+    void drawLoaderSprite(loadingAccentColors, frames).then((url) => {
       if (!url) return;
-      if (currentKey !== loadingAccentColors.join(",")) {
+      if (currentKey !== `${loadingAccentColors.join(",")}|${frames}`) {
         URL.revokeObjectURL(url);
         return;
       }
       if (loaderSprite?.url) URL.revokeObjectURL(loaderSprite.url);
-      loaderSprite = { url, key: currentKey };
+      loaderSprite = { url, key: currentKey, frames };
       applyLoaderSpriteToMounted();
     });
   };
@@ -146,9 +167,9 @@ function scheduleLoaderSprite() {
   }
 }
 
-function getLoaderSpriteUrl(className) {
+function getLoaderSprite(className) {
   if (!className.split(/\s+/).includes("home-loading-spinner")) return null;
-  return loaderSprite?.url || null;
+  return loaderSprite || null;
 }
 
 function renderGradientStops() {
@@ -187,11 +208,15 @@ export function renderLoadingIndicator(options = {}) {
   const accessibilityAttribute = label
     ? `role="status" aria-label="${escapeAttribute(label)}"`
     : 'aria-hidden="true"';
-  const spriteUrl = getLoaderSpriteUrl(className);
-  if (!spriteUrl) scheduleLoaderSprite();
+  const sprite = getLoaderSprite(className);
+  if (!sprite) scheduleLoaderSprite();
+  const spriteClass = sprite
+    ? ` has-loader-sprite${sprite.frames <= 60 ? " has-loader-sprite-60" : ""}`
+    : "";
+  const spriteStyle = sprite ? ` style="--loader-sprite: url(${escapeAttribute(sprite.url)})"` : "";
 
   return `
-    <span class="nuvio-loading-indicator${className ? ` ${escapeAttribute(className)}` : ""}${spriteUrl ? " has-loader-sprite" : ""}" ${accessibilityAttribute}${spriteUrl ? ` style="--loader-sprite: url(${escapeAttribute(spriteUrl)})"` : ""}>
+    <span class="nuvio-loading-indicator${className ? ` ${escapeAttribute(className)}` : ""}${spriteClass}" ${accessibilityAttribute}${spriteStyle}>
       <svg class="nuvio-loading-indicator-svg" viewBox="0 0 350 350" aria-hidden="true" focusable="false">
         <defs><linearGradient id="${gradientId}" class="nuvio-loading-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="350" y2="350">${renderGradientStops()}</linearGradient></defs>
         <circle class="nuvio-loading-indicator-arc" cx="175" cy="175" r="112.5" fill="none" stroke="${solidColor || `url(#${gradientId})`}" stroke-width="37.5" stroke-linecap="round"/>

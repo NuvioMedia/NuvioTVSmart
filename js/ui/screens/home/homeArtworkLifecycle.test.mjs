@@ -30,7 +30,6 @@ function buildHome({ rescale = null, tv = true, route = "home", constants = {} }
       CW_DAYS_CAP: 30,
       HOME_LAZY_IMAGE_LIFECYCLE_SELECTOR: LIFECYCLE_SELECTOR,
       HOME_LAZY_IMAGE_ROW_SELECTOR: ROW_SELECTOR,
-      HOME_LAZY_IMAGE_EVICT_MARGIN_PX: 1600,
       HOME_LEGACY_LAZY_HYDRATION_DEBOUNCE_MS: 180,
       HOME_LEGACY_LAZY_HYDRATION_MAX_PER_FRAME: 2,
       Router: { getCurrent: () => route },

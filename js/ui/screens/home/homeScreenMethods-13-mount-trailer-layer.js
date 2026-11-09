@@ -8,6 +8,7 @@ export function createHomeScreenMethods13() {
       if (!container || !source) {
         return;
       }
+      this.cancelTrailerLayerCleanup?.(container);
       const pendingHide = this.homeTrailerLayerHideTimers?.get?.(container);
       if (pendingHide) {
         clearTimeout(pendingHide);

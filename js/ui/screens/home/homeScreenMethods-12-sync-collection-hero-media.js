@@ -144,6 +144,22 @@ export function createHomeScreenMethods12() {
         }
       });
     },
+    cancelTrailerLayerCleanup(container) {
+      if (!container) {
+        return;
+      }
+      const pendingCleanup = this.homeTrailerLayerCleanupTimers?.get?.(container);
+      if (!pendingCleanup) {
+        return;
+      }
+      if (pendingCleanup.idleId) {
+        globalThis.cancelIdleCallback?.(pendingCleanup.idleId);
+      }
+      if (pendingCleanup.timeoutId) {
+        clearTimeout(pendingCleanup.timeoutId);
+      }
+      this.homeTrailerLayerCleanupTimers.delete(container);
+    },
     clearTrailerLayer(container) {
       if (!container) {
         return;
@@ -161,15 +177,7 @@ export function createHomeScreenMethods12() {
         clearTimeout(pendingHide);
         this.homeTrailerLayerHideTimers.delete(container);
       }
-      if (pendingCleanup) {
-        if (pendingCleanup.idleId) {
-          globalThis.cancelIdleCallback?.(pendingCleanup.idleId);
-        }
-        if (pendingCleanup.timeoutId) {
-          clearTimeout(pendingCleanup.timeoutId);
-        }
-        this.homeTrailerLayerCleanupTimers.delete(container);
-      }
+      this.cancelTrailerLayerCleanup(container);
       this.pauseTrailerLayer(container);
       const activeFrame = container.querySelector("iframe");
       if (activeFrame) {

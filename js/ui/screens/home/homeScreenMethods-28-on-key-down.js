@@ -56,11 +56,32 @@ export function createHomeScreenMethods28() {
           this.scheduleModernSidebarPillAutoCollapse({ restart: wasIconOnly });
         }
       }
-      if (this.layoutMode === "modern" && isDirectionalKeyCode(code)) {
+      const directionalNavigation = this.layoutMode === "modern" && isDirectionalKeyCode(code);
+      let navigationBefore = null;
+      if (directionalNavigation) {
         this.cancelFocusedPosterFlow();
+        navigationBefore = {
+          node: this.getCurrentFocusedNode(),
+          heroIndex: this.heroIndex,
+          sidebarExpanded: Boolean(this.sidebarExpanded),
+          verticalFastScroll: Boolean(this.modernVerticalFastScrollState)
+        };
+      }
+      const handledNavigation = this.handleHomeDpad(event);
+      // A key at the edge of a row or list moves nothing. Pausing the trailer
+      // there would hide it with no focus change to restore it.
+      if (
+        directionalNavigation &&
+        handledNavigation &&
+        navigationBefore &&
+        (this.getCurrentFocusedNode() !== navigationBefore.node ||
+          this.heroIndex !== navigationBefore.heroIndex ||
+          Boolean(this.sidebarExpanded) !== navigationBefore.sidebarExpanded ||
+          Boolean(this.modernVerticalFastScrollState) !== navigationBefore.verticalFastScroll)
+      ) {
         this.pauseActiveTrailerLayersForNavigation();
       }
-      if (this.handleHomeDpad(event)) {
+      if (handledNavigation) {
         return;
       }
       const isHomeHoldTarget = this.isHomeHoldTarget(currentFocusedNode);

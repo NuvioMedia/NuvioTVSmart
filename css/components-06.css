@@ -442,6 +442,7 @@ img.placeholder {
   background-repeat: no-repeat;
   background-size: calc(96px * 120) 96px;
   animation: homeLoadingSprite 2000ms steps(120) infinite;
+  animation-delay: var(--loader-sprite-delay, 0ms);
   will-change: transform;
 }
 
@@ -451,5 +452,23 @@ img.placeholder {
   }
   to {
     transform: translateX(calc(-96px * 120));
+  }
+}
+
+/* Constrained and legacy TVs get half the frames, so the strip is half as
+   wide and half the decoded texture. */
+.home-loading-spinner.has-loader-sprite.has-loader-sprite-60::before {
+  width: calc(96px * 60);
+  background-size: calc(96px * 60) 96px;
+  animation: homeLoadingSprite60 2000ms steps(60) infinite;
+  animation-delay: var(--loader-sprite-delay, 0ms);
+}
+
+@keyframes homeLoadingSprite60 {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-96px * 60));
   }
 }
