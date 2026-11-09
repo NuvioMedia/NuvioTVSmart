@@ -300,13 +300,20 @@ export function createHomeScreenMethods15() {
         leftPad = Math.max(0, Number.parseFloat(styles?.paddingLeft || "0") || 0);
         track.dataset.trackPadAlignLeft = String(leftPad);
       }
-      const trackRect = track.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const targetLeft = targetRect.left - trackRect.left + Number(track.scrollLeft || 0) - Number(layoutAdjustment || 0);
+      let targetLeft = 0;
+      if (target.offsetParent === track) {
+        // Cards are direct track children in the common layout; their
+        // offsetLeft is already the content coordinate, so no rect reads are
+        // needed on the D-pad hot path.
+        targetLeft = Number(target.offsetLeft || 0);
+      } else {
+        const trackRect = track.getBoundingClientRect();
+        targetLeft = target.getBoundingClientRect().left - trackRect.left + Number(track.scrollLeft || 0);
+      }
       const maxScrollLeft = Math.max(0, Number(track.scrollWidth || 0) - Number(track.clientWidth || 0));
       return {
         container: track,
-        value: Math.max(0, Math.min(maxScrollLeft, targetLeft - leftPad))
+        value: Math.max(0, Math.min(maxScrollLeft, targetLeft - leftPad - Number(layoutAdjustment || 0)))
       };
     }
   };
