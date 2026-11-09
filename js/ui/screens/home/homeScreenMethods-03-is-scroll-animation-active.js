@@ -58,6 +58,18 @@ export function createHomeScreenMethods03() {
       }
       return this.isScrollAnimationActive(this.modernCameraFollowLastVerticalContainer, "y");
     },
+    isModernHydrationScrollActive() {
+      if (this.layoutMode !== "modern") {
+        return false;
+      }
+      if (this.isModernVerticalScrollActive()) {
+        return true;
+      }
+      if (this.isPerformanceConstrained() || this.isLegacyTvRuntime()) {
+        return false;
+      }
+      return this.isScrollAnimationActive(this.modernCameraFollowLastHorizontalContainer, "x");
+    },
     isSidebarFocusActive() {
       return Boolean(this.container?.querySelector(".home-sidebar .focusable.focused, .modern-sidebar-panel .focusable.focused"));
     },

@@ -112,7 +112,7 @@ export function createHomeScreenMethods24() {
           : MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs;
         const retryAfterVerticalSettle = () => {
           this.homeLazyImageHydrationSettleTimer = null;
-          if (this.isModernVerticalScrollActive()) {
+          if (this.isModernHydrationScrollActive()) {
             this.homeLazyImageHydrationSettleTimer = setTimeout(retryAfterVerticalSettle, MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs);
             return;
           }

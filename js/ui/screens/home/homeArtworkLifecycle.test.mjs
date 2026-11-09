@@ -146,6 +146,7 @@ function makeScreen(context, { rows, images }) {
     isSidebarFocusActive: () => false,
     shouldUseImmediateFocusScroll: () => false,
     isModernVerticalScrollActive: () => false,
+    isModernHydrationScrollActive: () => false,
     getCurrentFocusedNode: () => null
   });
 }
@@ -228,6 +229,7 @@ test("animated vertical navigation waits for the camera to settle before hydrati
   screen.layoutMode = "modern";
   let scrolling = true;
   screen.isModernVerticalScrollActive = () => scrolling;
+  screen.isModernHydrationScrollActive = () => scrolling;
 
   screen.scheduleHomeLazyImageHydration(row, { deferUntilVerticalSettle: true });
   await new Promise((resolve) => setTimeout(resolve, 15));
