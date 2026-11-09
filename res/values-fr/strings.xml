@@ -3346,10 +3346,10 @@
     <string name="profile_copy_settings_error">Impossible de copier les paramètres. Vérifiez votre connexion et réessayez.</string>
     <string name="profile_copy_settings_created_success">Profil créé avec les paramètres de %1$s.</string>
     <string name="profile_copy_settings_created_error">Profil créé, mais les paramètres n’ont pas pu être copiés. Vous pouvez réessayer depuis les options du profil.</string>
-    <string name="profile_copy_settings_credentials_title">Copy credentials from %1$s?</string>
-    <string name="profile_copy_settings_success_title">Settings copied</string>
-    <string name="profile_copy_settings_error_title">Could not copy settings</string>
-    <string name="common.done">Done</string>
+    <string name="profile_copy_settings_credentials_title">Copier les clés API de %1$s ?</string>
+    <string name="profile_copy_settings_success_title">Paramètres copiés</string>
+    <string name="profile_copy_settings_error_title">Impossible de copier les paramètres</string>
+    <string name="common.done">Terminé</string>
     <string name="settings_stream_badges_in_player_title">Afficher dans le lecteur</string>
     <string name="settings_stream_badges_in_player_description">Afficher, sous le titre du lecteur, les badges de la vidéo et de l’audio en cours de lecture. Nécessite un pack de badges correspondant à du texte brut, comme 2160p ou Atmos.</string>
     <string name="settings_stream_player_badges_title">Badges du lecteur</string>
@@ -3389,5 +3389,5 @@
     <string name="stream_test_label_parallel8">Connexion parallèle (blocs de 8 Mo)</string>
     <string name="stream_test_label_parallel16">Connexion parallèle (blocs de 16 Mo)</string>
     <string name="stream_test_error_connection">Échec de la connexion. Le lien du dernier flux lu a peut-être expiré ou est injoignable. Veuillez relancer la lecture de la vidéo, puis réessayer.</string>
-    <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="settings_p2p_cache_unsupported">Non disponible sur cette TV.</string>
 </resources>
