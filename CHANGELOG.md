@@ -1,3 +1,23 @@
+## 1.3.11
+
+### Improvements & Fixes
+
+- Home navigation on entry-level 2022 webOS TVs is now smooth: Modern Home tracks no longer become compositor layers on Chromium 87 (about 1,460 layers before), and 1 GB TVs use the constrained effect set (#1313)
+- Home hero age rating and status now share one Android-style badge with an internal divider, instead of two separate pills joined by a dot
+- The in-player audio menu now shows every track on Android's three lines: title, language, and codec | channels | sample rate
+- Returning to Home no longer leaves rescaled posters blank: the retained Home keeps its artwork and pool alive until the DOM is actually discarded, matching Android TV's back stack (#1309)
+- Embedded SubRip subtitles on Samsung TVs keep working when the optional packaged extractor is unavailable, with bounded TX3G retries and a clean reset when the AVPlay track changes (#1306)
+- Blur Unwatched Episodes now applies to the detail rail on Samsung TVs again, matching Android TV and webOS (#1304)
+- Home starts painting sooner: an IndexedDB catalog snapshot is used before addons answer, the startup update check waits for the first Home paint, and poster artwork is decoded lazily at the drawn size
+- Modern TVs wait for the camera to settle before hydrating poster artwork or preloading the next hero, and only the moving track or viewport gets a temporary compositor hint
+- Home trailers pause when a D-pad key actually moves focus and their hidden layers leave the compositor during navigation; the same YouTube iframe is reused instead of rebuilt on return
+- Home artwork and trailer cleanup are tiered by device class, so modern TVs keep a wider artwork window while constrained and legacy sets keep the aggressive release
+- The Home loader keeps animating while the first rows are built on modern TVs, using a pre-rendered strip; it stays visually identical to Android TV
+- Reordering or hiding a Home row no longer discards the cached catalog snapshot, so the next start still paints from cache
+- Added the native legacy caches and RAM safeguards: TMDB negative caching with a hashed URL on disk, escalating retry windows, an 8 MiB artwork body cap, a 1280px source clamp and one artwork worker on 1 GB TVs
+- Supporter tier labels are now the canonical English brand names in every language, and the tier next to the profile logo uses Android's spacing
+- Added an opt-in frame and layer sampler for TV diagnostics
+
 ## 1.3.10
 
 ### Improvements & Fixes

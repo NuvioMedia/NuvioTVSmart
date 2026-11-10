@@ -314,6 +314,23 @@ export function formatAudioChannelLayout(value) {
   return `${channels}ch`;
 }
 
+function formatAudioChannelCount(value) {
+  const text = cleanDisplayText(value);
+  if (!text) {
+    return "";
+  }
+  const numericValue = Number(text);
+  if (Number.isInteger(numericValue) && numericValue > 0) {
+    return `${numericValue} ch`;
+  }
+  if (text === "Mono") return "1 ch";
+  if (text === "Stereo") return "2 ch";
+  if (text === "5.1") return "6 ch";
+  if (text === "7.1") return "8 ch";
+  const numericMatch = text.match(/^(\d{1,2})(?:\s*ch)?$/i);
+  return numericMatch ? `${Number(numericMatch[1])} ch` : text;
+}
+
 export function formatAudioTrackDisplay(track = {}, index = 0) {
   const rawLabel = getMeaningfulTrackLabel(track);
   const rawLanguage = cleanDisplayText(getUsableAudioTrackLanguageValue(track));
@@ -336,8 +353,16 @@ export function formatAudioTrackDisplay(track = {}, index = 0) {
     pushUniqueText(secondaryParts, `${Math.round(sampleRate / 1000)} kHz`);
   }
   const secondary = secondaryParts.join(" | ");
+  // Android's audio card keeps the language on its own line and the codec,
+  // channel count and sample rate together on the metadata line.
+  const metadataParts = [];
+  pushUniqueText(metadataParts, codecName);
+  pushUniqueText(metadataParts, formatAudioChannelCount(track?.channelCount || track?.channels));
+  if (Number.isFinite(sampleRate) && sampleRate > 0) {
+    pushUniqueText(metadataParts, `${Math.round(sampleRate / 1000)} kHz`);
+  }
 
-  return { label, secondary };
+  return { label, secondary, languageText: languageLabel, metadata: metadataParts.join(" | ") };
 }
 
 export function formatTime(secondsValue) {

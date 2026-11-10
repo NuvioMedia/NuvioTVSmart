@@ -343,12 +343,15 @@ export function createPlayerScreenMethods61() {
                       ? t("player_audio_tizen_dash_unsupported", {}, "Changing DASH audio tracks is not supported on this TV.")
                       : t("player.audio.unsupportedCodec", {}, "Codec not supported by this device");
                   const label = disabled ? `${entry.label || ""} · ${t("player.audio.unsupported", {}, "Unsupported")}` : entry.label || "";
-                  const secondary =
-                    disabled || conversionFailed ? [entry.secondary, unsupportedText].filter(Boolean).join(" · ") : entry.secondary || "";
+                  const metadataText =
+                    disabled || conversionFailed
+                      ? [entry.metadata || entry.secondary, unsupportedText].filter(Boolean).join(" · ")
+                      : entry.metadata || entry.secondary || "";
                   return `
-                  <div class="player-dialog-item focusable${selected ? " selected" : ""}${focused ? " focused" : ""}${disabled ? " disabled" : ""}${pending ? " pending" : ""}" role="radio" aria-checked="${selected ? "true" : "false"}" data-audio-column="tracks" data-audio-index="${index}" aria-disabled="${disabled ? "true" : "false"}" aria-busy="${pending ? "true" : "false"}">
+                  <div class="player-dialog-item focusable${selected ? " selected" : ""}${focused ? " focused" : ""}${disabled ? " disabled" : ""}${pending ? " pending" : ""}${entry.languageText ? " has-language" : ""}" role="radio" aria-checked="${selected ? "true" : "false"}" data-audio-column="tracks" data-audio-index="${index}" aria-disabled="${disabled ? "true" : "false"}" aria-busy="${pending ? "true" : "false"}">
                     <div class="player-dialog-item-main">${escapeHtml(label)}</div>
-                    <div class="player-dialog-item-sub">${escapeHtml(secondary)}</div>
+                    ${entry.languageText ? `<div class="player-dialog-item-language">${escapeHtml(entry.languageText)}</div>` : ""}
+                    <div class="player-dialog-item-sub">${escapeHtml(metadataText)}</div>
                     <div class="player-dialog-item-check">${pending ? "&#8230;" : selected ? "&#10003;" : ""}</div>
                   </div>
                 `;

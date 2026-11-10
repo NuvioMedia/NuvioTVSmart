@@ -79,6 +79,19 @@ html.no-css-grid .player-dialog-item > .player-dialog-item-sub {
   margin-top: 2px;
 }
 
+html.no-css-grid .player-audio-track-list .player-dialog-item > .player-dialog-item-language {
+  flex: 0 0 100%;
+  order: 3;
+  margin-top: 2px;
+  font-size: var(--player-overlay-small-font);
+  line-height: 1.3;
+  color: var(--player-atv-text-secondary);
+}
+
+html.no-css-grid .player-audio-track-list .player-dialog-item > .player-dialog-item-sub {
+  order: 4;
+}
+
 html.no-css-grid .player-dialog-item > .player-dialog-item-sub:empty {
   display: none;
 }

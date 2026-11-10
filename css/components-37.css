@@ -135,10 +135,36 @@
 .player-audio-track-list .player-dialog-item {
   padding: min(0.83vw, 16px) min(1.25vw, 24px); /* ATV 12dp/8dp */
   row-gap: min(0.42vw, 8px); /* ATV audio track text gap 4dp -> 8px */
+  grid-template-rows: auto auto auto;
+}
+
+.player-audio-track-list .player-dialog-item-language {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+  font-size: var(--player-overlay-small-font);
+  line-height: 1.3;
+  color: var(--player-atv-text-secondary);
+}
+
+.player-audio-track-list .player-dialog-item.selected .player-dialog-item-language {
+  color: currentColor;
 }
 
 .player-audio-track-list .player-dialog-item-sub {
+  grid-row: 3 / 4;
   margin-top: 0;
+}
+
+.player-audio-track-list .player-dialog-item-check {
+  grid-row: 1 / 4;
+}
+
+.player-audio-track-list .player-dialog-item:not(.has-language) .player-dialog-item-sub {
+  grid-row: 2 / 3;
+}
+
+.player-audio-track-list .player-dialog-item:not(.has-language) .player-dialog-item-check {
+  grid-row: 1 / 3;
 }
 
 .player-audio-track-list .player-dialog-item.focused {

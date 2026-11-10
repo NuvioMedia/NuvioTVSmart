@@ -480,6 +480,16 @@
   letter-spacing: 0.03em;
 }
 
+.home-screen-shell.home-layout-modern .home-modern-hero-badge-combined {
+  gap: 16px;
+}
+
+.home-screen-shell.home-layout-modern .home-modern-hero-badge-divider {
+  width: 2px;
+  height: 24px;
+  background: rgb(var(--focus-color-rgb) / 0.55);
+}
+
 .home-screen-shell.home-layout-modern .home-hero-chip-row {
   display: none;
 }

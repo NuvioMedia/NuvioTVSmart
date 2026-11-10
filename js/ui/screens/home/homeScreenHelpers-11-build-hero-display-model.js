@@ -79,7 +79,7 @@ import { localizedGenreLabel } from "../../../i18n/genreLabels.js";
 
 import { buildWatchedTitleIdSet, isTitleItemWatched, renderTitleWatchedBadge } from "../../components/watchedTitleBadge.js";
 
-import { buildModernRowKey, MODERN_HOME_CONSTANTS, renderModernHomeLayout } from "./modernHomeLayout.js";
+import { buildModernRowKey, MODERN_HOME_CONSTANTS, renderModernHeroBadges, renderModernHomeLayout } from "./modernHomeLayout.js";
 
 import { formatHomeRuntimeText, shouldPreserveHomeRuntimeText } from "./homeRuntime.js";
 
@@ -382,9 +382,9 @@ export function renderModernHeroSecondary(display) {
   if (display.secondaryHighlightText) {
     parts.push(`<span class="home-modern-hero-highlight">${escapeHtml(display.secondaryHighlightText)}</span>`);
   }
-  display.badges.forEach((badge) => {
-    parts.push(`<span class="home-modern-hero-badge">${escapeHtml(badge)}</span>`);
-  });
+  if (display.badges.length) {
+    parts.push(renderModernHeroBadges(display.badges, escapeHtml));
+  }
   if (display.showImdbSecondary) {
     parts.push(`
       <span class="home-hero-imdb">
