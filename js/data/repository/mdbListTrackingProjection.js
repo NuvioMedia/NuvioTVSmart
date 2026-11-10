@@ -1,4 +1,4 @@
-import { mdbAliases, mdbContentId, invalidMdbTracking } from "./mdbListTrackingCodec.js";
+import { mdbAliases, mdbContentId } from "./mdbListTrackingCodec.js";
 
 // Build aliases once per snapshot, rather than scanning the watched library per episode.
 export function normalizeMdbSnapshot(snapshot) {
@@ -21,13 +21,13 @@ export function normalizeMdbSnapshot(snapshot) {
       group.keys.add(key);
     }
   }
+  // MDBList can return different provider ids for the same title across rows;
+  // Android TV keeps the newest row's ids and merges the rest instead of
+  // failing the whole snapshot.
   function merge(group, ids, media) {
-    for (const [key, id] of Object.entries(ids)) {
-      if (group.ids[key] != null && group.ids[key] !== id) invalidMdbTracking();
-      group.ids[key] = id;
-    }
+    for (const [key, id] of Object.entries(ids)) group.ids[key] = id;
     for (const [key, value] of Object.entries(media))
-      if (key !== "ids" && value) group.media[key] ||= value;
+      if (key !== "ids" && value) group.media[key] = value;
   }
   const normalize = (rows) => {
     const unique = new Map();

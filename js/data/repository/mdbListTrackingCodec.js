@@ -14,9 +14,13 @@ export function mdbArray(value) {
 }
 export function mdbTime(value) {
   if (typeof value !== "string") invalidMdbTracking();
+  const text = value.trim();
   const match =
-    /^(\d{4})-(\d\d)-(\d\d)([T ])(\d\d):(\d\d):(\d\d)(?:\.\d{1,9})?(Z|[+-]\d\d:\d\d)?$/.exec(value);
-  if (!match || (match[4] === "T" && !match[8]) || (match[4] === " " && match[8]))
+    /^(\d{4})-(\d\d)-(\d\d)([Tt ])(\d\d):(\d\d):(\d\d)(?:\.\d{1,9})?(Z|z|[+-]\d\d:\d\d)?$/.exec(
+      text
+    );
+  const separator = match?.[4]?.toUpperCase();
+  if (!match || (separator === "T" && !match[8]) || (separator === " " && match[8]))
     invalidMdbTracking();
   const [, year, month, day, , hour, minute, second, zone] = match;
   const calendar = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
@@ -31,20 +35,29 @@ export function mdbTime(value) {
     Number(second) > 59
   )
     invalidMdbTracking();
-  if (zone && zone !== "Z") {
-    const hours = Number(zone.slice(1, 3)),
-      minutes = Number(zone.slice(4));
+  const normalizedZone = zone?.toUpperCase();
+  if (normalizedZone && normalizedZone !== "Z") {
+    const hours = Number(normalizedZone.slice(1, 3)),
+      minutes = Number(normalizedZone.slice(4));
     if (hours > 18 || minutes > 59 || (hours === 18 && minutes !== 0)) invalidMdbTracking();
   }
-  const time = Date.parse(match[4] === " " ? value.replace(" ", "T") + "Z" : value);
+  const iso =
+    separator === " " ? `${text.replace(" ", "T")}Z` : text.replace("t", "T").replace(/z$/i, "Z");
+  const time = Date.parse(iso);
   if (!Number.isFinite(time)) invalidMdbTracking();
   return time;
 }
 function positiveId(value) {
-  if (!["number", "string"].includes(typeof value) || !/^[1-9]\d*$/.test(String(value)))
+  if (!["number", "string"].includes(typeof value) || !/^[1-9]\d*$/.test(String(value).trim()))
     return null;
   const id = Number(value);
   return Number.isSafeInteger(id) ? id : null;
+}
+function hasText(value) {
+  return ["string", "number", "boolean"].includes(typeof value) && Boolean(String(value).trim());
+}
+function optionalTime(value) {
+  return hasText(value) ? mdbTime(value) : null;
 }
 export function mdbPercentage(value) {
   if (!["number", "string"].includes(typeof value) || String(value).trim() === "")
@@ -57,8 +70,8 @@ export function mdbIds(value) {
   const row = mdbObject(value),
     ids = mdbObject(row.ids ?? row),
     result = {};
-  const imdb = ids.imdb ?? ids.imdbid;
-  if (/^tt\d+$/.test(imdb || "")) result.imdb = imdb;
+  const imdb = String(ids.imdb ?? ids.imdbid ?? "").trim();
+  if (/^tt\d+$/.test(imdb)) result.imdb = imdb;
   for (const key of ["tmdb", "tvdb", "trakt"]) {
     const id = positiveId(ids[key] ?? ids[`${key}id`]);
     if (id) result[key] = id;
@@ -99,7 +112,8 @@ export function mdbMedia(value) {
 function coordinates(type, target, seasonOverride) {
   if (!["episode", "season"].includes(type)) return { season: null, episode: null };
   mdbObject(target);
-  const season = seasonOverride ?? target.season ?? (type === "season" ? target.number : null);
+  const season =
+    seasonOverride ?? (type === "season" ? (target.number ?? target.season) : target.season);
   const episode = target.number ?? target.episode;
   if (
     !Number.isSafeInteger(season) ||
@@ -122,8 +136,9 @@ export function decodeMdbWatched(payload) {
     records = [];
   if (!["movies", "shows", "seasons", "episodes"].some((key) => key in p)) invalidMdbTracking();
   const add = (type, row, target, media, season) => {
-    const at = row.last_watched_at ?? row.watched_at;
-    if (at == null) return;
+    const lastWatchedAt = row.last_watched_at;
+    const at = hasText(lastWatchedAt) ? lastWatchedAt : row.watched_at;
+    if (!hasText(at)) return;
     records.push({
       type,
       media,
@@ -157,7 +172,7 @@ export function decodeMdbWatched(payload) {
 export function decodeMdbPlayback(payload) {
   return mdbArray(payload).map((raw) => {
     const row = mdbObject(raw),
-      type = row.type;
+      type = typeof row.type === "string" ? row.type.trim() : row.type;
     if (!["movie", "episode"].includes(type)) invalidMdbTracking();
     const progress = mdbPercentage(row.progress),
       id = Number(row.id);
@@ -176,7 +191,7 @@ export function decodeMdbPlayback(payload) {
       media: mdbMedia(type === "movie" ? row.movie : (row.show ?? row.episode?.show)),
       ...coordinates(type, row.episode),
       progress,
-      updatedAt: mdbTime(row.paused_at ?? row.updated_at),
+      updatedAt: optionalTime(row.paused_at) ?? mdbTime(row.updated_at),
       runtime: positiveId(row.runtime) <= 2147483647 ? positiveId(row.runtime) || 0 : 0,
       episodeTitle: row.episode?.title || null
     };
@@ -185,7 +200,8 @@ export function decodeMdbPlayback(payload) {
 export function decodeMdbDropped(payload, seasons = false) {
   const p = mdbObject(payload),
     key = seasons ? "seasons" : "shows";
-  return mdbArray(p[key]).map((raw) => {
+  if (!(key in p)) invalidMdbTracking();
+  return mdbArray(p[key] ?? []).map((raw) => {
     const row = mdbObject(raw),
       target = mdbObject(row[seasons ? "season" : "show"]);
     return {
@@ -198,31 +214,39 @@ export function decodeMdbActivities(payload) {
   const p = mdbObject(payload);
   if (!["watched_at", "episode_watched_at", "journal_at"].some((key) => key in p))
     invalidMdbTracking();
-  mdbTime(p.server_time);
-  for (const [key, value] of Object.entries(p))
-    if (key.endsWith("_at") && value != null) mdbTime(value);
-  return p;
+  const activities = { ...p, server_time: String(p.server_time).trim() };
+  mdbTime(activities.server_time);
+  for (const [key, value] of Object.entries(activities))
+    if (key.endsWith("_at"))
+      activities[key] = hasText(value) ? (mdbTime(value), String(value).trim()) : null;
+  return activities;
 }
 export function decodeMdbJournal(payload) {
   const p = mdbObject(payload);
   if (p.requires_full_sync === true) return null;
   return mdbArray(p.journal).flatMap((raw) => {
     const row = mdbObject(raw);
-    if (row.category === "rated") return [];
+    const category = typeof row.category === "string" ? row.category.trim() : row.category;
+    if (category === "rated") return [];
+    const itemType =
+        typeof row.item_type === "string" ? row.item_type.trim().toLowerCase() : row.item_type,
+      status = typeof row.status === "string" ? row.status.trim() : row.status;
     if (
-      row.category !== "watched" ||
-      !["movie", "show", "season", "episode"].includes(row.item_type) ||
-      !["added", "removed"].includes(row.status)
+      category !== "watched" ||
+      !["movie", "show", "season", "episode"].includes(itemType) ||
+      !["added", "removed"].includes(status)
     )
       invalidMdbTracking();
+    const valueAt = optionalTime(row.value_at);
+    if (valueAt == null && status !== "removed") invalidMdbTracking();
     return [
       {
-        type: row.item_type,
+        type: itemType,
         media: { ids: mdbIds(row.ids) },
-        ...coordinates(row.item_type, { season: row.season, episode: row.episode }),
-        removed: row.status === "removed",
+        ...coordinates(itemType, { season: row.season, episode: row.episode }),
+        removed: status === "removed",
         actionAt: mdbTime(row.action_at),
-        updatedAt: mdbTime(row.value_at ?? (row.status === "removed" ? row.action_at : null)),
+        updatedAt: valueAt ?? mdbTime(row.action_at),
         episodeTmdbId: row.episode_tmdb_id ?? null,
         episodeTvdbId: row.episode_tvdb_id ?? null
       }
