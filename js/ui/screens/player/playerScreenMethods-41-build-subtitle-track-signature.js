@@ -15,6 +15,7 @@ export function createPlayerScreenMethods41() {
     inferTrackLanguageCodeFromText,
     getTrackLanguageValue,
     getUsableAudioTrackLanguageValue,
+    getMeaningfulTrackLabel,
     isForcedSubtitleTrack
   } = internals;
 
@@ -267,6 +268,62 @@ export function createPlayerScreenMethods41() {
       return {
         ...mergedTrack,
         ...getAudioTrackSupportState(mergedTrack)
+      };
+    },
+    mergeManifestAudioTrackMetadata(track, index, avplayTrackCount = 0) {
+      const manifestTracks = Array.isArray(this.manifestAudioTracks) ? this.manifestAudioTracks : [];
+      if (!manifestTracks.length) {
+        return track;
+      }
+
+      const avplayLanguage = getUsableAudioTrackLanguageValue(track);
+      const avplayLanguageCode = normalizeTrackLanguageCode(avplayLanguage);
+      const avplayLabel = getMeaningfulTrackLabel(track);
+      let manifestTrack = null;
+
+      if (avplayLanguageCode) {
+        // AVPlay already knows the language; only take the manifest entry that
+        // carries the same language, never a positional guess.
+        manifestTrack =
+          manifestTracks.find((entry) => {
+            const manifestLanguage = normalizeTrackLanguageCode(getUsableAudioTrackLanguageValue(entry));
+            return Boolean(manifestLanguage) && manifestLanguage === avplayLanguageCode;
+          }) || null;
+      } else if (Number(avplayTrackCount) === manifestTracks.length) {
+        // HLS keeps the EXT-X-MEDIA order in the player's audio list. Position
+        // is only safe with a single audio group; a flattened multi-group
+        // manifest has no deterministic player order.
+        const groupIds = new Set(manifestTracks.map((entry) => cleanDisplayText(entry?.groupId)).filter(Boolean));
+        if (groupIds.size <= 1) {
+          manifestTrack = manifestTracks[Number(index)] || null;
+        }
+      }
+      if (!manifestTrack && avplayLabel) {
+        const normalizedAvplayLabel = normalizeComparableText(avplayLabel);
+        manifestTrack =
+          manifestTracks.find((entry) =>
+            [entry?.name, entry?.label].some((value) => normalizeComparableText(cleanDisplayText(value)) === normalizedAvplayLabel)
+          ) || null;
+      }
+      if (!manifestTrack) {
+        return track;
+      }
+
+      const manifestLanguage = getUsableAudioTrackLanguageValue(manifestTrack);
+      const displayLabel = avplayLabel || getMeaningfulTrackLabel(manifestTrack);
+      const language = avplayLanguage || manifestLanguage;
+      return {
+        ...track,
+        label: displayLabel || track?.label || "",
+        name: displayLabel || track?.name || "",
+        language,
+        lang: cleanDisplayText(track?.lang) || language,
+        channels: track?.channels || manifestTrack?.channels || "",
+        channelCount: track?.channelCount || manifestTrack?.channels || "",
+        characteristics: track?.characteristics || manifestTrack?.characteristics || "",
+        isDefault: Boolean(track?.isDefault || manifestTrack?.isDefault),
+        autoselect: Boolean(track?.autoselect || manifestTrack?.autoselect),
+        uri: track?.uri || manifestTrack?.uri || null
       };
     },
     revokeExternalSubtitleObjectUrls() {
