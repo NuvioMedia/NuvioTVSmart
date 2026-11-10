@@ -26,7 +26,13 @@ export function createPlayerScreenMethods60() {
             ? PlayerController.getSelectedAvPlayAudioTrackIndex()
             : -1;
         entries = avplayAudioTracks.map((track, index) => {
-          const mergedTrack = this.mergeAvPlayAudioTrackMetadata(track, index);
+          let mergedTrack = this.mergeAvPlayAudioTrackMetadata(track, index);
+          if (Environment.isTizen() && this.manifestAudioTracks.length) {
+            // AVPlay exposes manifest names/languages only from extra_info; when
+            // they are absent, the parsed HLS/DASH rendition list is the same
+            // metadata Android TV reads from the manifest.
+            mergedTrack = this.mergeManifestAudioTrackMetadata(mergedTrack, index, avplayAudioTracks.length);
+          }
           const support = this.isTizenDashAudioSwitchingUnsupported()
             ? { supported: false, unsupportedReason: "tizen-dash-audio" }
             : getAudioTrackSupportState(mergedTrack);
