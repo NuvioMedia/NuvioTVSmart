@@ -8,6 +8,7 @@ import {
   nextLiveDurationGrowth,
   LivePlaybackWatchClock
 } from "../js/ui/screens/player/livePlaybackUi.js";
+import { toCurrentCncVerseHlsUrl } from "../js/ui/screens/player/legacyCncVerseHlsUrl.js";
 
 test("Android live policy: channel or runtime evidence, never URL, tv, stream or unknown duration", () => {
   for (const itemType of ["movie", "series", "tv", "stream", "live", ""]) {
@@ -342,6 +343,51 @@ test("HTTP 416 retries the current source from the start once, clearing resume",
       "only one full-restart retry is allowed"
     );
     assert.equal(calls.length, 1);
+  } finally {
+    PlayerController.playbackEngine = previousEngine;
+  }
+});
+
+test("HTTP 416 on the legacy CNCVerse route retries through the current bridge route", () => {
+  const previousEngine = PlayerController.playbackEngine;
+  PlayerController.playbackEngine = "hls.js";
+  const calls = [];
+  const legacyUrl = "http://129.225.106.195/d/master.m3u8?d=abc&clearkey=key&h_x_cnc_plugin=PlayFyProvider&maxh=540";
+  const modernUrl = "http://129.225.106.195/proxy/mpd/manifest.m3u8?d=abc&clearkey=key&h_x_cnc_plugin=PlayFyProvider&maxh=540";
+  const source = { id: "src", url: legacyUrl };
+  const s = {
+    ...createPlayerScreenMethods36(),
+    activePlaybackUrl: legacyUrl,
+    streamCandidates: [source],
+    hasRetriedCurrentStreamAfter416: false,
+    pendingPlaybackRestore: { timeSeconds: 1800 },
+    lastPlaybackErrorAt: Date.now(),
+    loadingVisible: false,
+    paused: true,
+    sourcesError: "old",
+    updateLoadingVisibility() {},
+    getStreamCandidateByUrl: (url) => (url === legacyUrl ? source : null),
+    getCurrentStreamCandidate: () => source,
+    playStreamByUrl(url, options) {
+      calls.push({ url, options });
+    }
+  };
+  try {
+    assert.equal(toCurrentCncVerseHlsUrl(legacyUrl), modernUrl);
+    assert.equal(toCurrentCncVerseHlsUrl("https://live.example/master.m3u8"), null);
+    assert.equal(
+      toCurrentCncVerseHlsUrl("http://host/d/master.m3u8?d=abc"),
+      null,
+      "only the CNCVerse bridge layout is migrated"
+    );
+    assert.equal(s.retryCurrentStreamFromStartAfter416(), true);
+    assert.deepEqual(
+      calls.map((call) => call.url),
+      [modernUrl]
+    );
+    assert.equal(calls[0].options.sourceCandidate.url, modernUrl);
+    assert.equal(s.streamCandidates[0].url, modernUrl);
+    assert.equal(s.hasRetriedCurrentStreamAfter416, true);
   } finally {
     PlayerController.playbackEngine = previousEngine;
   }
