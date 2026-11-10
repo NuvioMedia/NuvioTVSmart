@@ -303,8 +303,12 @@ export function createHomeScreenMethods12() {
       }
       const layers = this.container?.querySelectorAll(".home-poster-trailer-layer, .home-hero-trailer-layer");
       layers?.forEach((layer) => {
-        const hasPendingCleanup = this.homeTrailerLayerCleanupTimers?.has?.(layer);
-        if (hasPendingCleanup || layer.querySelector("iframe, video")) {
+        // Never re-arm a pending cleanup: each later key would postpone it and
+        // keep the paused player alive for the whole navigation.
+        if (this.homeTrailerLayerCleanupTimers?.has?.(layer)) {
+          return;
+        }
+        if (layer.querySelector("iframe, video")) {
           this.scheduleTrailerLayerCleanup(layer);
         }
       });
