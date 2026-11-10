@@ -247,9 +247,53 @@ assert.throws(() => codec.mdbTime("123"));
 assert.throws(() => codec.mdbIds({ tmdb: true }));
 assert.throws(() => codec.mdbPercentage(false));
 assert.equal(codec.mdbIds({ mdblist: 123 }).mdblist, "123");
+assert.deepEqual(codec.mdbIds({ imdb: " tt123 ", mdblist: " abc " }), {
+  imdb: "tt123",
+  mdblist: "abc"
+});
+assert.equal(codec.mdbTime("2026-11-09t18:12:24.806z"), codec.mdbTime("2026-11-09T18:12:24.806Z"));
 assert.throws(() => codec.decodeMdbPlayback([{ ...playback[0], progress: null }]));
 assert.throws(() => codec.decodeMdbWatched({ unexpected: [] }));
 assert.throws(() => codec.decodeMdbDropped({ seasons: [{ season: { number: -1 }, show }] }, true));
+assert.deepEqual(codec.decodeMdbDropped({ shows: null }, false), []);
+assert.deepEqual(codec.decodeMdbDropped({ seasons: null }, true), []);
+assert.throws(() => codec.decodeMdbDropped({}, false));
+const blankActivities = codec.decodeMdbActivities({
+  server_time: now,
+  watched_at: "",
+  episode_watched_at: " ",
+  journal_at: null
+});
+assert.equal(blankActivities.watched_at, null);
+assert.equal(blankActivities.episode_watched_at, null);
+const blankWatched = codec.decodeMdbWatched({
+  movies: [
+    { watched_at: "", movie },
+    { last_watched_at: "", watched_at: now, movie: { ids: { imdb: "tt999" } } }
+  ],
+  shows: [],
+  seasons: [],
+  episodes: []
+});
+assert.equal(blankWatched.length, 1);
+assert.equal(blankWatched[0].media.ids.imdb, "tt999");
+const caseJournal = codec.decodeMdbJournal({
+  journal: [
+    {
+      category: " watched ",
+      item_type: "MOVIE",
+      ids: { tmdb: 1 },
+      status: " removed ",
+      action_at: now,
+      value_at: ""
+    }
+  ],
+  pagination: { has_more: false }
+});
+assert.equal(caseJournal.length, 1);
+assert.equal(caseJournal[0].type, "movie");
+assert.equal(caseJournal[0].removed, true);
+assert.equal(caseJournal[0].updatedAt, codec.mdbTime(now));
 await assert.rejects(
   codec.mdbTrackingPages(
     async () => ({ payload: { movies: [], next_cursor: "same" }, headers: new Headers() }),
@@ -268,15 +312,25 @@ assert.equal(
   null
 );
 const blank = { watched: [], playback: [], dropped: [] };
-assert.throws(() =>
-  normalizeMdbSnapshot({
-    ...blank,
-    watched: [
-      { type: "movie", media: { ids: { imdb: "tt1", tmdb: 1 } } },
-      { type: "movie", media: { ids: { imdb: "tt1", tmdb: 2 } } }
-    ]
-  })
-);
+// Android TV merges conflicting provider ids instead of dropping the snapshot.
+const mergedConflict = normalizeMdbSnapshot({
+  ...blank,
+  watched: [
+    {
+      type: "movie",
+      media: { ids: { imdb: "tt1", tmdb: 1 }, title: "Old" },
+      updatedAt: 1
+    },
+    {
+      type: "movie",
+      media: { ids: { imdb: "tt1", tmdb: 2 }, title: "New" },
+      updatedAt: 2
+    }
+  ]
+});
+assert.equal(mergedConflict.watched.length, 1);
+assert.deepEqual(mergedConflict.watched[0].media.ids, { imdb: "tt1", tmdb: 2 });
+assert.equal(mergedConflict.watched[0].media.title, "New");
 const hidden = normalizeMdbSnapshot({
   ...blank,
   watched: codec.decodeMdbWatched(watched),
