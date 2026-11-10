@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { toCurrentCncVerseHlsUrl } from "./legacyCncVerseHlsUrl.js";
 
 const TIZEN_AVPLAY_CONNECTION_RETRY_MAX_ATTEMPTS = 2;
 const TIZEN_AVPLAY_CONNECTION_RETRY_DELAY_MS = 1500;
@@ -49,6 +50,28 @@ export function createPlayerScreenMethods36() {
       this.updateLoadingVisibility();
 
       const sourceCandidate = this.getStreamCandidateByUrl(retryUrl) || this.getCurrentStreamCandidate();
+      const currentBridgeUrl = toCurrentCncVerseHlsUrl(retryUrl);
+      if (currentBridgeUrl) {
+        const bridgeCandidate = sourceCandidate ? { ...sourceCandidate, url: currentBridgeUrl } : null;
+        if (Array.isArray(this.streamCandidates)) {
+          this.streamCandidates = this.streamCandidates.map((entry) =>
+            entry?.url === retryUrl ? { ...entry, url: currentBridgeUrl } : entry
+          );
+        }
+        console.warn("Playback request returned HTTP 416; retrying the current source through the current bridge route once", {
+          from: retryUrl,
+          to: currentBridgeUrl,
+          engine: currentEngine
+        });
+        void this.playStreamByUrl(currentBridgeUrl, {
+          preservePanel: true,
+          resetSilentAudioState: false,
+          forceEngine: currentEngine,
+          sourceCandidate: bridgeCandidate
+        });
+        return true;
+      }
+
       console.warn("Playback request returned HTTP 416; retrying the current source from the start once", {
         url: retryUrl,
         engine: currentEngine
