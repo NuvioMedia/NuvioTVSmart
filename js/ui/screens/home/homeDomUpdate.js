@@ -3,7 +3,16 @@ import { releaseHomeArtwork } from "../../images/tvPosterRescaler.js";
 
 // Compare generated markup, rather than the live DOM: focus, image hydration,
 // expansion and trailer playback all add state that a data refresh must retain.
-const sourceByNode = new WeakMap();
+// Stored on the node itself: Chromium 63's WeakMap rehashes on insert once the
+// table is full of collected keys, and every hero update registers new nodes
+// (measured on a 2019 Tizen: 55 ms per D-pad press spent in WeakMap.set).
+const SOURCE_KEY = "__nuvioHomeSource";
+const sourceByNode = {
+  get: (node) => node?.[SOURCE_KEY],
+  set: (node, value) => {
+    node[SOURCE_KEY] = value;
+  }
+};
 const mountedShells = new WeakMap();
 
 export function hasMountedHomeDom(container) {
