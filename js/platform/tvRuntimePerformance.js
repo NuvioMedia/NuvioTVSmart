@@ -1,5 +1,6 @@
 import { Platform } from "./index.js";
 import { TizenCapabilities } from "./tizen/tizenCapabilities.js";
+import { getDeviceMemoryGb, isLowMemoryDevice } from "./tvPerformancePolicy.js";
 
 // The first common TV generation with a modern Chromium baseline is Samsung
 // Tizen 6.5 / Chromium M85 (2022) and LG webOS TV 22 / Chromium M87 (2022).
@@ -150,6 +151,10 @@ export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
   const isLegacyByChromium = chromiumVersionKnown && chromiumMajorVersion < modernChromiumMajor;
   const isUnidentifiedRuntime = !tvYearKnown && !chromiumVersionKnown;
   const isLegacyTvRuntime = isLegacyByYear || isLegacyByChromium || isUnidentifiedRuntime;
+  // RAM decides before the generation does: a 2022+ set with 1 GB cannot
+  // sustain the modern effect set either. Keep the check narrow (memory only),
+  // because hardwareConcurrency would flag almost every TV.
+  const lowMemoryTv = isLowMemoryDevice(getDeviceMemoryGb());
 
   cachedProfile = Object.freeze({
     isTvRuntime: true,
@@ -159,7 +164,7 @@ export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
     tvYearKnown,
     chromiumVersionKnown,
     isLegacyTvRuntime,
-    isPerformanceConstrained: Boolean(isLegacyTvRuntime)
+    isPerformanceConstrained: Boolean(isLegacyTvRuntime || lowMemoryTv)
   });
   return cachedProfile;
 }

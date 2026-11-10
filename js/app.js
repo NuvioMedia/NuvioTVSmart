@@ -236,9 +236,9 @@ function renderFatalError(error) {
 }
 
 function isLowEndDevice() {
-  // TV runtimes use the year/Chromium profile below. Their exposed
-  // hardwareConcurrency/deviceMemory values are often coarse and would mark
-  // otherwise modern TV generations as low-end by accident.
+  // TV runtimes use the year/Chromium profile, which also applies the narrow
+  // 1 GB RAM check. Their exposed hardwareConcurrency is often coarse and
+  // would mark otherwise modern TV generations as low-end by accident.
   if (getTvRuntimePerformanceProfile().isTvRuntime) {
     return false;
   }

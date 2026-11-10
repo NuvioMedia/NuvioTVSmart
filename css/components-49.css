@@ -296,12 +296,16 @@
   line-clamp: 4;
 }
 
-/* Legacy webOS and Chromium 87 stall with a compositor layer for every Home
-   track, even after artwork settles. Keep native overflow and spring scrolling
-   while letting the renderer manage the tracks without forced promotion. */
+/* Legacy webOS and Chromium 87 promote every user-scrollable Home track to its
+   own compositor layer, even after artwork settles. The app already drives row
+   scrolling by writing scrollLeft, so the tracks only need to stay
+   programmatically scrollable: overflow:hidden still is a scroll container,
+   while removing the user-scrollable overflow that forces the promotion. */
 .legacy-webos .home-screen-shell.home-layout-modern .home-track,
 .webos-unpromoted-home-tracks .home-screen-shell.home-layout-modern .home-track {
   transform: none;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .performance-constrained .home-content-card.focused,
