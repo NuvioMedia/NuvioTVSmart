@@ -89,7 +89,7 @@ export function createPlayerControllerMethods01() {
         if (formatHint === "m3u8" || formatHint === "hls") {
           return "application/vnd.apple.mpegurl";
         }
-        if (formatHint === "mpd" || formatHint === "dash") {
+        if (formatHint === "mpd" || formatHint === "dash" || this.isLikelyDashMimeType(formatHint)) {
           return "application/dash+xml";
         }
         if (path.includes("/playlist")) {

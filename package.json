@@ -5,7 +5,7 @@
   "version": "1.3.11",
   "scripts": {
     "build": "node ./scripts/build.mjs",
-    "test": "node --test scripts/test-profile-scoped-store-cache.mjs scripts/test-plugin-service-lifecycle.mjs && node --test scripts/test-media-server-sync.mjs && npm run test:plugins && npm run test:perf",
+    "test": "node --test scripts/test-dash-mime-hints.mjs scripts/test-profile-scoped-store-cache.mjs scripts/test-plugin-service-lifecycle.mjs && node --test scripts/test-media-server-sync.mjs && npm run test:plugins && npm run test:perf",
     "test:perf": "node --test js/data/local/homeCatalogSnapshotStore.test.mjs js/core/diagnostics/frameBudget.test.mjs js/core/network/tmdbNegativeCache.test.mjs js/core/tmdb/tmdbServiceNegativeCache.test.mjs js/ui/images/tvArtworkLazyLoader.test.mjs js/ui/images/tvArtworkLazyLoaderLifecycle.test.mjs js/ui/images/tvPosterRescaler.test.mjs js/ui/images/tvPosterRescalerPool.test.mjs js/core/poster/customPoster.test.mjs js/platform/tvPerformancePolicy.test.mjs js/platform/tvRuntimePerformance.test.mjs js/ui/components/loadingIndicatorSprite.test.mjs js/ui/screens/home/homeHeroBadges.test.mjs js/ui/screens/home/homeArtworkLifecycle.test.mjs js/ui/screens/home/homeArtworkRetention.test.mjs js/ui/screens/home/homeTrailerLayerLifecycle.test.mjs js/ui/screens/home/homeNavigationTrailerPause.test.mjs",
     "test:ambient": "node scripts/test-ambient-legacy-tizen.mjs && node scripts/test-tizen-ambient-screensaver.mjs && node scripts/test-oct16-ui-parity.mjs",
     "test:boot-guard": "node --test scripts/test-boot-guard.mjs",
