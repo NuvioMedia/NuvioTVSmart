@@ -300,9 +300,13 @@
    own compositor layer, even after artwork settles. The app already drives row
    scrolling by writing scrollLeft, so the tracks only need to stay
    programmatically scrollable: overflow:hidden still is a scroll container,
-   while removing the user-scrollable overflow that forces the promotion. */
+   while removing the user-scrollable overflow that forces the promotion.
+   Constrained sets snap their rows instead of animating them, so they gain
+   nothing from the layers either: on a 2019 Tizen set each newly shown row
+   cost five layers and their textures. */
 .legacy-webos .home-screen-shell.home-layout-modern .home-track,
-.webos-unpromoted-home-tracks .home-screen-shell.home-layout-modern .home-track {
+.webos-unpromoted-home-tracks .home-screen-shell.home-layout-modern .home-track,
+.performance-constrained .home-screen-shell.home-layout-modern .home-track {
   transform: none;
   overflow-x: hidden;
   overflow-y: hidden;

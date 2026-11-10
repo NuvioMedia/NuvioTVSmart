@@ -8,6 +8,10 @@ export const MODERN_HOME_CONSTANTS = {
   verticalKeyRepeatThrottleMs: 112,
   trackPaginationIdleMs: 160,
   trackPaginationPrefetchDelayMs: 40,
+  // Constrained rows mount 8 cards, so the load-ahead rule is already true
+  // when focus lands on a row. Wait for focus to rest there before fetching
+  // and appending the next page, or every row crossed on the way pays for it.
+  trackPaginationPrefetchDwellConstrainedMs: 400,
   trackPaginationLoadAheadItems: 4,
   cameraFollowDelayMs: 140,
   cameraFollowDurationXMs: 440,
