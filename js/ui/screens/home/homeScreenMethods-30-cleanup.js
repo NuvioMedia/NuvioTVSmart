@@ -6,6 +6,9 @@ export function createHomeScreenMethods30() {
 
   return {
     cleanup() {
+      this.homeRowWindow?.destroy();
+      this.homeRowWindow = null;
+      this.homeRowWindowRoot = null;
       if (this.homeLazyImageEvictTimer) {
         clearTimeout(this.homeLazyImageEvictTimer);
         this.homeLazyImageEvictTimer = null;

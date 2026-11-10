@@ -28,6 +28,16 @@
   contain: layout;
 }
 
+/* Rows parked by homeRowWindow.js keep their height and leave layout. */
+.home-screen-shell .home-row.home-row-parked {
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.home-screen-shell .home-row.home-row-parked > * {
+  display: none !important;
+}
+
 .home-screen-shell.home-layout-modern .home-row {
   margin-bottom: 48px;
 }

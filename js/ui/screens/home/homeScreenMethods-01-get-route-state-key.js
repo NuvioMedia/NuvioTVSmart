@@ -246,6 +246,8 @@ export function createHomeScreenMethods01() {
       if (this.homeHoldFocusLocked) {
         return false;
       }
+      // Saved scroll offsets and the restored card need real boxes in every row.
+      this.homeRowWindow?.unparkAll();
       const focusState = state?.layoutMode === this.layoutMode ? state : this.savedFocusStates?.[this.layoutMode] || null;
       if (!focusState) {
         return false;
