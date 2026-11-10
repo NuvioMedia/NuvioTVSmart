@@ -274,7 +274,8 @@ export async function fetchModernHeroTmdbEnrichment(hero = {}, itemType = "movie
       TmdbMetadataService.fetchEnrichment({
         tmdbId,
         contentType: itemType,
-        language: settings.language
+        language: settings.language,
+        includeCredits: false
       }),
       2200,
       null

@@ -43,7 +43,10 @@ export function createTmdbMetadataServiceMethods01() {
   } = internals;
 
   return {
-    async fetchEnrichment({ tmdbId, contentType, language = null } = {}) {
+    // includeCredits: false is for callers that never show people (the Home
+    // hero). A series' aggregate credits are hundreds of entries to localise:
+    // about 90 ms per newly focused card on a 2019 Tizen set.
+    async fetchEnrichment({ tmdbId, contentType, language = null, includeCredits = true } = {}) {
       const settings = TmdbSettingsStore.get();
       const apiKey = String(TMDB_API_KEY || "").trim();
       if (!settings.enabled || !apiKey || !tmdbId) {
@@ -54,7 +57,7 @@ export function createTmdbMetadataServiceMethods01() {
       const lang = normalizeMoreLikeThisLanguage(language || settings.language);
       const imageLanguages = buildTmdbImageLanguageFilter(lang);
       const creditType = type === "tv" ? "aggregate_credits" : "credits";
-      const params = `api_key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(lang)}&append_to_response=images,${creditType},release_dates,content_ratings,videos,external_ids&include_image_language=${encodeURIComponent(imageLanguages)}`;
+      const params = `api_key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(lang)}&append_to_response=images,${includeCredits ? `${creditType},` : ""}release_dates,content_ratings,videos,external_ids&include_image_language=${encodeURIComponent(imageLanguages)}`;
       const url = `${TMDB_BASE_URL}/${type}/${encodeURIComponent(String(tmdbId))}?${params}`;
 
       const data = await fetchTmdbJson(url, { maxResponseBytes: TMDB_METADATA_MAX_RESPONSE_BYTES });
@@ -62,15 +65,18 @@ export function createTmdbMetadataServiceMethods01() {
         return null;
       }
 
-      data.credits = resolveTmdbCredits(data, type);
-      const englishPersonNames = await fetchEnglishPersonNames({
-        type,
-        tmdbId,
-        apiKey,
-        data,
-        language: lang
-      });
-      const resolvedCredits = resolveCredits(data?.credits, englishPersonNames, lang);
+      let resolvedCredits = null;
+      if (includeCredits) {
+        data.credits = resolveTmdbCredits(data, type);
+        const englishPersonNames = await fetchEnglishPersonNames({
+          type,
+          tmdbId,
+          apiKey,
+          data,
+          language: lang
+        });
+        resolvedCredits = resolveCredits(data?.credits, englishPersonNames, lang);
+      }
       const logoPath = selectBestLocalizedLogoPath(data?.images?.logos, lang);
       const releaseInfoValue =
         type === "tv"
