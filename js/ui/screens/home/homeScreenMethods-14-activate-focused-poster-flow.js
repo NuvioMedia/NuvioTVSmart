@@ -124,9 +124,16 @@ export function createHomeScreenMethods14() {
         return;
       }
       if (this.layoutMode === "modern") {
-        // Commit bounds in the same render. Keeping the full text and letting
-        // CSS draw ellipsis avoids a full-text frame between background refreshes.
-        this.applyModernHeroDescriptionBounds(scope || this.container);
+        // Measuring here forced a layout in the middle of every hero update,
+        // two or three times per focus: 17 ms each on a 2025 OLED. The previous
+        // bounds stay applied meanwhile and CSS clamps the text, so one
+        // measurement at the start of the next frame is enough.
+        if (!this.homeHeroBoundsFrame) {
+          this.homeHeroBoundsFrame = requestAnimationFrame(() => {
+            this.homeHeroBoundsFrame = 0;
+            this.applyModernHeroDescriptionBounds(this.container);
+          });
+        }
         return;
       }
       // Tizen fast path: the binary-search textContent loop below forces
