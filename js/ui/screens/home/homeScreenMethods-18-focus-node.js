@@ -209,6 +209,14 @@ export function createHomeScreenMethods18() {
       }
       this.syncHomeRowWindow();
     },
+    prepareHomeRowsForRestore(state = null) {
+      // Coming back to a kept Home DOM: the window was dropped in cleanup.
+      this.syncHomeRowWindow();
+      const rowKeys = Object.entries(state?.trackStates || {})
+        .filter(([, scrollLeft]) => Number(scrollLeft) > 0)
+        .map(([rowKey]) => rowKey);
+      this.homeRowWindow?.ensureRowKeysReady([...rowKeys, state?.rowKey]);
+    },
     syncHomeRowWindow() {
       const root = this.layoutMode === "modern" ? this.container?.querySelector(".home-modern-rows-viewport") : null;
       if (!root || !isHomeRowWindowSupported()) {

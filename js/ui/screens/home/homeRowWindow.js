@@ -98,6 +98,21 @@ export function createHomeRowWindow({
       }
       return changed;
     },
+    // Restoring a saved Home position touches the focused row and the rows the
+    // user had scrolled sideways; the others can stay parked.
+    ensureRowKeysReady(rowKeys = []) {
+      const wanted = new Set(rowKeys.map((rowKey) => String(rowKey || "")).filter(Boolean));
+      let changed = false;
+      observed.forEach((section) => {
+        if (wanted.has(String(section.dataset?.rowKey || ""))) {
+          changed = unpark(section) || changed;
+        }
+      });
+      if (changed) {
+        this.refresh();
+      }
+      return changed;
+    },
     unparkAll() {
       let changed = false;
       observed.forEach((section) => {
@@ -117,10 +132,11 @@ export function createHomeRowWindow({
       observer.disconnect();
       connect();
     },
+    // Rows stay parked: Home keeps its DOM while another screen is open, and
+    // waking 30 rows only to hide them restyled ~1900 elements on the way out.
     destroy() {
       observer?.disconnect();
       observer = null;
-      observed.forEach(unpark);
       observed.clear();
     }
   };

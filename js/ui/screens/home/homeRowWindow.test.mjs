@@ -6,7 +6,7 @@ import {
   HOME_ROW_PARKED_CLASS
 } from "./homeRowWindow.js";
 
-function section({ height = 392, focused = false } = {}) {
+function section({ height = 392, focused = false, rowKey = "" } = {}) {
   const classes = new Set();
   const node = {
     isConnected: true,
@@ -17,6 +17,7 @@ function section({ height = 392, focused = false } = {}) {
       remove: (name) => classes.delete(name),
       contains: (name) => classes.has(name)
     },
+    dataset: { rowKey },
     querySelector: (selector) => (selector === ".focused" && focused ? {} : null),
     previousElementSibling: null,
     nextElementSibling: null
@@ -96,13 +97,27 @@ test("ensureReady restores the target row and its neighbours in the same task", 
   assert.equal(rowWindow.ensureReady(rows[2]), false);
 });
 
-test("observe drops removed rows and destroy restores everything", () => {
+test("restoring a saved position wakes only the rows it names", () => {
+  const rows = [section({ rowKey: "a" }), section({ rowKey: "b" }), section({ rowKey: "c" })];
+  const { rowWindow, report } = setup(rows);
+  report([]);
+  assert.equal(rowWindow.ensureRowKeysReady(["b", undefined, ""]), true);
+  assert.deepEqual(rows.map(parked), [true, false, true]);
+  assert.equal(rowWindow.ensureRowKeysReady(["missing"]), false);
+});
+
+test("observe drops removed rows; destroy leaves rows parked for the next window", () => {
   const rows = [section(), section()];
   const { rowWindow, observers, report } = setup(rows);
   report([]);
   rowWindow.observe([rows[0]]);
   assert.equal(observers[0].targets.has(rows[1]), false);
   rowWindow.destroy();
+  assert.equal(observers[0].connected, false);
+  assert.equal(parked(rows[0]), true);
+  // A new window over the same DOM restores the rows that come into view.
+  const next = setup(rows);
+  next.report([0]);
   assert.equal(parked(rows[0]), false);
 });
 
