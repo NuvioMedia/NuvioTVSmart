@@ -1,4 +1,6 @@
+/* global __NUVIO_APP_VERSION__ */
 import { Platform } from "./index.js";
+import { readForcedTvTier, readMeasuredTvTier } from "./tvAdaptiveTier.js";
 import { TizenCapabilities } from "./tizen/tizenCapabilities.js";
 import { getDeviceMemoryGb, isLowMemoryDevice } from "./tvPerformancePolicy.js";
 
@@ -155,6 +157,13 @@ export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
   // sustain the modern effect set either. Keep the check narrow (memory only),
   // because hardwareConcurrency would flag almost every TV.
   const lowMemoryTv = isLowMemoryDevice(getDeviceMemoryGb());
+  // What the TV was measured to deliver decides after its generation does:
+  // see tvAdaptiveTier.js. The forced tier is a test hook; "full" only drops
+  // the generation rule, so a slow set is still measured and moved back.
+  const forcedTier = readForcedTvTier();
+  const appVersion = typeof __NUVIO_APP_VERSION__ !== "undefined" ? __NUVIO_APP_VERSION__ : "0.0.0";
+  const isMeasuredSlow = readMeasuredTvTier(appVersion) === "constrained";
+  const legacyRuntime = forcedTier === "full" ? false : isLegacyTvRuntime;
 
   cachedProfile = Object.freeze({
     isTvRuntime: true,
@@ -163,8 +172,11 @@ export function getTvRuntimePerformanceProfile({ forceRefresh = false } = {}) {
     chromiumMajorVersion,
     tvYearKnown,
     chromiumVersionKnown,
-    isLegacyTvRuntime,
-    isPerformanceConstrained: Boolean(isLegacyTvRuntime || lowMemoryTv)
+    isLegacyTvRuntime: legacyRuntime,
+    isMeasuredSlow,
+    isPerformanceConstrained: Boolean(
+      forcedTier === "constrained" || legacyRuntime || lowMemoryTv || isMeasuredSlow
+    )
   });
   return cachedProfile;
 }

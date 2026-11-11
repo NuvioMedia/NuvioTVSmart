@@ -30,7 +30,11 @@ import { runAfterFirstHomePaint } from "./runtime/startupScheduler.js";
 import { Platform } from "./platform/index.js";
 import { TizenCapabilities } from "./platform/tizen/tizenCapabilities.js";
 import { PluginServiceClient } from "./platform/pluginServiceClient.js";
-import { getTvRuntimePerformanceProfile } from "./platform/tvRuntimePerformance.js";
+import {
+  getTvRuntimePerformanceProfile,
+  resetTvRuntimePerformanceProfile
+} from "./platform/tvRuntimePerformance.js";
+import { createFramePaceMonitor, storeMeasuredTvTier } from "./platform/tvAdaptiveTier.js";
 import { LocalStore } from "./core/storage/localStore.js";
 import { I18n } from "./i18n/index.js";
 import { getLatestAppUpdateWithRetry } from "./core/update/appUpdateService.js";
@@ -286,6 +290,27 @@ function applyPerformanceMode() {
       document.body.classList.toggle(className, rootClasses.contains(className));
     }
   );
+}
+
+// A TV on the full profile is watched after every key press; one that cannot
+// hold its frame rate is moved to the constrained profile, now and on the next
+// launches of this build.
+function watchTvFramePace() {
+  const profile = getTvRuntimePerformanceProfile();
+  if (!profile.isTvRuntime || profile.isPerformanceConstrained) {
+    return;
+  }
+  const monitor = createFramePaceMonitor({
+    onSlow: (lostMs) => {
+      storeMeasuredTvTier({ tier: "constrained", appVersion: APP_VERSION, lostMs });
+      resetTvRuntimePerformanceProfile();
+      applyPerformanceMode();
+      console.warn(`TV moved to the constrained profile (${Math.round(lostMs)} ms lost per key)`);
+    }
+  });
+  // Readable from the remote inspector when a set's tier is in question.
+  globalThis.__NUVIO_FRAME_PACE__ = monitor;
+  document.addEventListener("keydown", () => monitor.noteKey(), true);
 }
 
 function isAddonRemoteMode() {
@@ -739,6 +764,7 @@ async function bootstrapApp() {
     markBootStage("PluginService starts on first plugin use");
   }
   applyPerformanceMode();
+  watchTvFramePace();
   startTvArtworkLazyLoader();
   installFrameBudgetSampler();
   markBootStage("Loading language resources");
