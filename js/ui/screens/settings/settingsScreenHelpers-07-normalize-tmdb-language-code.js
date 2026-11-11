@@ -262,8 +262,11 @@ export function animateSettingsScroll(container, nextPosition, axis = "y") {
     container[frameKey] = null;
   }
 
+  // Constrained sets snap, like Home: on a 2019 Tizen set the spring cost a
+  // 10 ms composite on each of its ~11 frames, for every key in Settings.
+  const snap = Boolean(globalThis.document?.body?.classList?.contains("performance-constrained"));
   const startPosition = getScrollPosition(container, axis);
-  if (Math.abs(nextPosition - startPosition) < 1 || typeof requestAnimationFrame !== "function") {
+  if (snap || Math.abs(nextPosition - startPosition) < 1 || typeof requestAnimationFrame !== "function") {
     setScrollPosition(container, nextPosition, axis);
     updateSettingsScrollIndicators(container);
     return;
