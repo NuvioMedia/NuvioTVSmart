@@ -60,11 +60,6 @@
   );
 }
 
-.legacy-tizen .stream-route-backdrop-dim,
-.legacy-webos .stream-route-backdrop-dim {
-  background: rgba(13, 13, 13, 0.24);
-}
-
 .legacy-tizen .stream-route-left-gradient,
 .legacy-webos .stream-route-left-gradient {
   background: linear-gradient(
@@ -93,7 +88,9 @@
 
 .legacy-tizen .stream-route-panel-shell,
 .legacy-webos .stream-route-panel-shell {
-  background: rgba(26, 26, 26, 0.82) !important;
+  /* Android TV paints the stream panel at 65% of the elevated surface; the
+     legacy override made it 82% and added a second black veil over the whole
+     backdrop, so the screen looked different from Android and from webOS 5+. */
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 

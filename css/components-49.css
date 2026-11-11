@@ -418,9 +418,12 @@
 }
 
 .legacy-tizen .home-screen-shell.home-layout-modern {
-  --home-content-start: 128px;
-  --home-track-end: 128px;
-  --home-continue-track-end: 128px;
+  /* Android TV starts the rows and the hero copy at the same inset (the hero
+     copy is pinned at 104px below); the extra 24px here pushed every row to
+     the right of the hero. */
+  --home-content-start: 104px;
+  --home-track-end: 52px;
+  --home-continue-track-end: 52px;
   --modern-track-peek-extension: 72px;
   --modern-hero-copy-top-safe: 56px;
   --modern-hero-copy-right: 72px;

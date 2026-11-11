@@ -133,6 +133,17 @@
   transform: none !important;
 }
 
+/* Tizen 5 pauses CSS animations while the app is idle, so a new slide stayed at
+   opacity 0 until the JS fallback above fired: every change showed about half a
+   second of black. The old engine cuts to the next image instead of fading. */
+.legacy-tizen .ambient-backdrop,
+.legacy-tizen .ambient-shade,
+.legacy-tizen .ambient-title,
+.legacy-tizen .ambient-genres {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
 .player-stream-info-overlay {
   position: absolute;
   inset: 0;

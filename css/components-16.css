@@ -493,3 +493,14 @@
 .home-screen-shell.home-layout-modern .home-hero-chip-row {
   display: none;
 }
+/* Tizen 5 has no flex gap: without the margin the rating and the status run
+   together inside the same pill ("TV-Y|IN CORSO"). */
+.no-flex-gap .home-modern-hero-badge-combined > * + * {
+  margin-left: 16px;
+}
+
+[dir="rtl"].no-flex-gap .home-modern-hero-badge-combined > * + *,
+[dir="rtl"] .no-flex-gap .home-modern-hero-badge-combined > * + * {
+  margin-left: 0;
+  margin-right: 16px;
+}
