@@ -28,14 +28,20 @@
   contain: layout;
 }
 
-/* Rows parked by homeRowWindow.js keep their height and leave layout. */
+/* Rows parked by homeRowWindow.js keep their height and leave rendering.
+   Engines with content-visibility keep the row's layout cached, so bringing
+   it back is cheap: with display:none a 15-card row cost a 50 ms frame on a
+   2025 OLED at every step down. Older engines drop the children instead. */
 .home-screen-shell .home-row.home-row-parked {
   box-sizing: border-box;
   overflow: hidden;
+  content-visibility: hidden;
 }
 
-.home-screen-shell .home-row.home-row-parked > * {
-  display: none !important;
+@supports not (content-visibility: hidden) {
+  .home-screen-shell .home-row.home-row-parked > * {
+    display: none !important;
+  }
 }
 
 .home-screen-shell.home-layout-modern .home-row {
