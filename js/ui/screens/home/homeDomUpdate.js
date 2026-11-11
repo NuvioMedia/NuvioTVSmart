@@ -15,6 +15,14 @@ const sourceByNode = {
 };
 const mountedShells = new WeakMap();
 
+// A row whose generated markup did not change is sent as this empty stand-in:
+// parsing all the rows again on every data refresh was half of the refresh
+// (152 of 304 ms on a 2025 webOS set). Only valid for a row that is mounted.
+const UNCHANGED_ROW = "data-home-row-unchanged";
+export function unchangedHomeRowMarkup(escapedRowKey) {
+  return `<section data-row-key="${escapedRowKey}" ${UNCHANGED_ROW}></section>`;
+}
+
 export function hasMountedHomeDom(container) {
   const shell = mountedShells.get(container);
   return Boolean(shell && shell === container.querySelector(".home-shell"));
@@ -143,6 +151,7 @@ function releasePosters(node) {
 }
 
 function updateNode(node, source, protectedNode) {
+  if (source.nodeType === 1 && source.hasAttribute(UNCHANGED_ROW)) return;
   const previous = sourceByNode.get(node);
   const markup = signature(source);
   if (markup !== undefined && previous.markup === markup) return;

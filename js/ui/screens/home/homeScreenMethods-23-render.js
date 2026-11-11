@@ -203,6 +203,8 @@ export function createHomeScreenMethods23() {
           formatCatalogRowTitle,
           shouldDeferRowImages: shouldDeferHomeRowImages,
           watchedTitleIds: this.watchedTitleIds,
+          rowMarkupCache: (this.rowMarkupCache = this.rowMarkupCache || new WeakMap()),
+          mountedRowMarkups: canUpdateInPlace ? this.renderedRowMarkups : null,
           escapeHtml,
           escapeAttribute
         });
@@ -305,7 +307,12 @@ export function createHomeScreenMethods23() {
           this.cancelFocusedPosterFlow();
           this.expandedPosterNode = null;
         }
-        updatedInPlace = updateHomeDom(this.container, nextMarkup, {
+        // Rows whose markup is the one already mounted are not parsed again.
+        const domMarkup = modernLayoutPayload
+          ? nextMarkup.replace(modernLayoutPayload.markup, () => modernLayoutPayload.domMarkup)
+          : nextMarkup;
+        this.renderedRowMarkups = modernLayoutPayload?.rowMarkups || null;
+        updatedInPlace = updateHomeDom(this.container, domMarkup, {
           incremental: canUpdateInPlace,
           focusedNode: liveFocusedNode
         });
