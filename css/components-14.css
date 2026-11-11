@@ -12,7 +12,7 @@
   width: 22px;
   height: 6px;
   border-radius: 999px;
-  background: rgb(var(--secondary-color-rgb) / 0.35);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.35);
 }
 
 .home-screen-shell .home-hero-indicator.is-active {
@@ -428,8 +428,8 @@
     180deg,
     transparent 0%,
     transparent 45%,
-    rgb(var(--bg-color-rgb) / 0.7) 78%,
-    rgb(var(--bg-color-rgb) / 0.95) 100%
+    rgba(var(--bg-color-rgb-legacy), 0.7) 78%,
+    rgba(var(--bg-color-rgb-legacy), 0.95) 100%
   );
 }
 

@@ -235,7 +235,7 @@
   height: 100%;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgb(var(--bg-elevated-rgb) / 0.35);
+  background: rgba(var(--bg-elevated-rgb-legacy), 0.35);
   padding: 20px;
   display: flex;
   flex-direction: column;

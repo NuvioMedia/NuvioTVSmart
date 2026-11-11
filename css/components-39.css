@@ -148,7 +148,7 @@
 .series-stream-overlay-backdrop {
   position: absolute;
   inset: 0;
-  background: rgb(var(--bg-color-rgb) / 0.68);
+  background: rgba(var(--bg-color-rgb-legacy), 0.68);
 }
 
 .series-stream-panel {
@@ -158,8 +158,8 @@
   grid-template-columns: 0.94fr 1.46fr;
   gap: 20px;
   border-radius: 20px;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.16);
-  background: rgb(var(--bg-elevated-rgb) / 0.78);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.16);
+  background: rgba(var(--bg-elevated-rgb-legacy), 0.78);
   backdrop-filter: blur(8px);
   padding: 18px;
   overflow: hidden;
@@ -222,7 +222,7 @@
   padding: 0 16px;
   border-radius: 999px;
   border: 1px solid var(--border-color);
-  background: rgb(var(--focus-color-rgb) / 0.06);
+  background: rgba(var(--focus-color-rgb-legacy), 0.06);
   color: var(--text-color);
   font-size: 20px;
   white-space: nowrap;
@@ -236,7 +236,7 @@
 .series-stream-filter.focused {
   transform: none;
   border-color: var(--secondary-color);
-  box-shadow: 0 0 0 3px rgb(var(--secondary-color-rgb) / 0.3);
+  box-shadow: 0 0 0 3px rgba(var(--secondary-color-rgb-legacy), 0.3);
 }
 
 .series-stream-list {
@@ -268,8 +268,8 @@
   border-radius: 14px;
   padding: 11px 13px;
   margin-bottom: 8px;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.12);
-  background: rgb(var(--focus-color-rgb) / 0.04);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.12);
+  background: rgba(var(--focus-color-rgb-legacy), 0.04);
 }
 
 .series-stream-card:last-child {
@@ -279,7 +279,7 @@
 .series-stream-card.focused {
   transform: none;
   border-color: var(--secondary-color);
-  box-shadow: 0 0 0 3px rgb(var(--secondary-color-rgb) / 0.28);
+  box-shadow: 0 0 0 3px rgba(var(--secondary-color-rgb-legacy), 0.28);
 }
 
 .series-stream-title {
@@ -335,7 +335,7 @@
   height: 24px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgb(var(--secondary-color-rgb) / 0.14);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.14);
   color: var(--text-color);
   font-size: 13px;
   font-weight: 600;
@@ -344,7 +344,7 @@
 .series-stream-empty {
   padding: 18px;
   border-radius: 12px;
-  background: rgb(var(--focus-color-rgb) / 0.06);
+  background: rgba(var(--focus-color-rgb-legacy), 0.06);
   color: var(--text-secondary);
 }
 
@@ -365,16 +365,16 @@
   /* Android TV BackdropLayer leftGradient: fadeWidth = 78% of screen. */
   background: linear-gradient(
     90deg,
-    rgb(var(--bg-color-rgb) / 1) 0%,
-    rgb(var(--bg-color-rgb) / 0.95) 7.8%,
-    rgb(var(--bg-color-rgb) / 0.84) 17.16%,
-    rgb(var(--bg-color-rgb) / 0.7) 28.08%,
-    rgb(var(--bg-color-rgb) / 0.52) 40.56%,
-    rgb(var(--bg-color-rgb) / 0.34) 51.48%,
-    rgb(var(--bg-color-rgb) / 0.18) 60.84%,
-    rgb(var(--bg-color-rgb) / 0.07) 70.2%,
-    rgb(var(--bg-color-rgb) / 0) 78%,
-    rgb(var(--bg-color-rgb) / 0) 100%
+    rgba(var(--bg-color-rgb-legacy), 1) 0%,
+    rgba(var(--bg-color-rgb-legacy), 0.95) 7.8%,
+    rgba(var(--bg-color-rgb-legacy), 0.84) 17.16%,
+    rgba(var(--bg-color-rgb-legacy), 0.7) 28.08%,
+    rgba(var(--bg-color-rgb-legacy), 0.52) 40.56%,
+    rgba(var(--bg-color-rgb-legacy), 0.34) 51.48%,
+    rgba(var(--bg-color-rgb-legacy), 0.18) 60.84%,
+    rgba(var(--bg-color-rgb-legacy), 0.07) 70.2%,
+    rgba(var(--bg-color-rgb-legacy), 0) 78%,
+    rgba(var(--bg-color-rgb-legacy), 0) 100%
   );
 }
 

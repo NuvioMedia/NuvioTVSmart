@@ -23,7 +23,7 @@
   border-radius: 999px;
   border: 1px solid var(--border-color);
   background: rgba(26, 26, 26, 0.94);
-  background: rgb(var(--bg-elevated-rgb) / 0.94);
+  background: rgba(var(--bg-elevated-rgb-legacy), 0.94);
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 700;
@@ -119,7 +119,7 @@
 
 .settings-layout-card.focused .settings-layout-badge,
 .settings-layout-card.is-selected .settings-layout-badge {
-  border-color: rgb(var(--focus-color-rgb) / 0.4);
+  border-color: rgba(var(--focus-color-rgb-legacy), 0.4);
   color: #fff;
 }
 
@@ -291,7 +291,7 @@
 
 .settings-layout-card.focused .settings-layout-preview,
 .settings-layout-card.is-selected .settings-layout-preview {
-  box-shadow: inset 0 0 0 1px rgb(var(--focus-color-rgb) / 0.16);
+  box-shadow: inset 0 0 0 1px rgba(var(--focus-color-rgb-legacy), 0.16);
 }
 
 @keyframes settingsLayoutClassicPreviewScroll {

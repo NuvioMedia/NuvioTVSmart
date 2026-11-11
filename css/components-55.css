@@ -295,7 +295,7 @@
   min-height: 64px;
   margin-top: 28px;
   padding: 0 32px;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.22);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.22);
   border-radius: 999px;
   background: var(--card-bg);
   color: var(--text-color);
@@ -304,7 +304,7 @@
 
 .tmdb-entity-retry.focused {
   border-color: var(--focus-color);
-  box-shadow: 0 0 0 3px rgb(var(--focus-color-rgb) / 0.22);
+  box-shadow: 0 0 0 3px rgba(var(--focus-color-rgb-legacy), 0.22);
   background: var(--focus-bg);
 }
 
@@ -335,10 +335,10 @@
 .tmdb-entity-hero-scrim {
   background: linear-gradient(
     90deg,
-    rgb(var(--bg-color-rgb) / 1) 0%,
-    rgb(var(--bg-color-rgb) / 0.94) 26%,
-    rgb(var(--bg-color-rgb) / 0.72) 60%,
-    rgb(var(--bg-color-rgb) / 0.42) 100%
+    rgba(var(--bg-color-rgb-legacy), 1) 0%,
+    rgba(var(--bg-color-rgb-legacy), 0.94) 26%,
+    rgba(var(--bg-color-rgb-legacy), 0.72) 60%,
+    rgba(var(--bg-color-rgb-legacy), 0.42) 100%
   );
 }
 

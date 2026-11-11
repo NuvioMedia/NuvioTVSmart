@@ -8,10 +8,13 @@
   --bg-color-rgb-legacy: 13, 13, 13;
   --bg-elevated: #1a1a1a;
   --bg-elevated-rgb: 26 26 26;
+  --bg-elevated-rgb-legacy: 26, 26, 26;
   --card-bg: #222222;
   --card-bg-rgb: 34 34 34;
+  --card-bg-rgb-legacy: 34, 34, 34;
   --secondary-color: #f5f5f5;
   --secondary-color-rgb: 245 245 245;
+  --secondary-color-rgb-legacy: 245, 245, 245;
   --secondary-variant: #e0e0e0;
   --on-secondary: #111111;
   --error-color: #cf6679;
@@ -21,6 +24,7 @@
   --text-tertiary: #808080;
   --focus-color: #ffffff;
   --focus-color-rgb: 255 255 255;
+  --focus-color-rgb-legacy: 255, 255, 255;
   --focus-bg: #303030;
   --border-color: #333333;
   --app-font-family: "Inter", "Segoe UI", Arial, sans-serif;

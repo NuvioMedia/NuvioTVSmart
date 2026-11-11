@@ -229,7 +229,7 @@
 
 .profile-row {
   padding: 14px 0;
-  border-bottom: 1px solid rgb(var(--focus-color-rgb) / 0.08);
+  border-bottom: 1px solid rgba(var(--focus-color-rgb-legacy), 0.08);
 }
 
 .profile-row:last-child {

@@ -440,13 +440,21 @@
 
 .no-backdrop-filter .modern-sidebar-shell.blur-enabled .modern-sidebar-panel {
   background:
-    linear-gradient(180deg, rgb(var(--bg-elevated-rgb) / 0.96), rgb(var(--bg-elevated-rgb) / 0.96)),
+    linear-gradient(
+      180deg,
+      rgba(var(--bg-elevated-rgb-legacy), 0.96),
+      rgba(var(--bg-elevated-rgb-legacy), 0.96)
+    ),
     var(--bg-elevated);
 }
 
 .no-backdrop-filter .modern-sidebar-shell.blur-enabled .modern-sidebar-pill-chip {
   background:
-    linear-gradient(180deg, rgb(var(--bg-elevated-rgb) / 0.92), rgb(var(--bg-elevated-rgb) / 0.92)),
+    linear-gradient(
+      180deg,
+      rgba(var(--bg-elevated-rgb-legacy), 0.92),
+      rgba(var(--bg-elevated-rgb-legacy), 0.92)
+    ),
     var(--bg-elevated);
 }
 

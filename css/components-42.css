@@ -72,7 +72,7 @@
 }
 
 .series-detail-description.focused {
-  background: rgb(var(--focus-color-rgb) / 0.1);
+  background: rgba(var(--focus-color-rgb-legacy), 0.1);
   border-radius: 16px;
   outline: 0;
 }

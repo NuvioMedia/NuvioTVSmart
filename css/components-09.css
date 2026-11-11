@@ -105,12 +105,12 @@
 }
 
 .search-nav-item.active {
-  background: rgb(var(--secondary-color-rgb) / 0.18);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.18);
 }
 
 .search-nav-item.focused {
   border-color: var(--secondary-color);
-  box-shadow: 0 0 0 3px rgb(var(--secondary-color-rgb) / 0.22);
+  box-shadow: 0 0 0 3px rgba(var(--secondary-color-rgb-legacy), 0.22);
 }
 
 .search-content {
@@ -196,7 +196,7 @@
 .search-voice-btn.focused,
 .search-input-field.focused {
   border-color: var(--secondary-color);
-  box-shadow: 0 0 0 2px rgb(var(--secondary-color-rgb) / 0.22);
+  box-shadow: 0 0 0 2px rgba(var(--secondary-color-rgb-legacy), 0.22);
 }
 
 .search-input-field::placeholder {
@@ -419,9 +419,17 @@
   padding: 28px 30px;
   border-radius: 30px;
   background:
-    radial-gradient(circle at top right, rgb(var(--secondary-color-rgb) / 0.24), transparent 34%),
-    linear-gradient(135deg, rgb(var(--bg-elevated-rgb) / 0.96), rgb(var(--bg-color-rgb) / 0.98));
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.18);
+    radial-gradient(
+      circle at top right,
+      rgba(var(--secondary-color-rgb-legacy), 0.24),
+      transparent 34%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(var(--bg-elevated-rgb-legacy), 0.96),
+      rgba(var(--bg-color-rgb-legacy), 0.98)
+    );
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.18);
   box-shadow: 0 22px 54px rgba(0, 0, 0, 0.24);
 }
 
