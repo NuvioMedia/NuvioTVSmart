@@ -43,3 +43,43 @@ test("the custom-poster fallback keeps the bounded TMDB size too", () => {
   });
   assert.equal(attributes, ' data-original-poster="https://image.tmdb.org/t/p/w500/fallback.jpg"');
 });
+
+test("a TV asks a resizing poster service for card-sized artwork, nobody else does", async () => {
+  const { Platform } = await import("../../platform/index.js");
+  const settings = {
+    customPosterUrlPattern:
+      "https://easyposters.realbestia.com/key/poster/{imdb_id}.jpg?type={type}&shape={shape}",
+    customPosterEnabledScreens: ["home"]
+  };
+  const poster = (pattern = settings.customPosterUrlPattern) =>
+    customPosterForItem(
+      { id: "tt1", type: "movie", poster: "https://addon.example/p.jpg" },
+      "home",
+      "poster",
+      { ...settings, customPosterUrlPattern: pattern }
+    ).poster;
+  const plain = "https://easyposters.realbestia.com/key/poster/tt1.jpg?type=movie&shape=poster";
+  assert.equal(poster(), plain, "a browser keeps the service's own size");
+
+  const previous = globalThis.__NUVIO_PLATFORM__;
+  globalThis.__NUVIO_PLATFORM__ = "tizen";
+  Platform.current = null;
+  try {
+    assert.match(poster(), /^https:\/\/easyposters\.realbestia\.com\/.*&w=(342|500)$/);
+    assert.equal(poster(`${settings.customPosterUrlPattern}&w=800`), `${plain}&w=800`);
+    assert.match(
+      customPosterForItem({ id: "tt1", poster: plain }, "home", "poster", SETTINGS).poster,
+      /&w=(342|500)$/,
+      "a poster the addon itself took from the service is sized too"
+    );
+    assert.equal(
+      poster("https://other.example/{imdb_id}.jpg"),
+      "https://other.example/tt1.jpg",
+      "a service without a width parameter is left alone"
+    );
+  } finally {
+    if (previous === undefined) delete globalThis.__NUVIO_PLATFORM__;
+    else globalThis.__NUVIO_PLATFORM__ = previous;
+    Platform.current = null;
+  }
+});
