@@ -413,9 +413,9 @@
 }
 
 .home-screen-shell .home-continue-card.focused .home-continue-media {
-  box-shadow:
-    inset 0 0 0 2px var(--secondary-color),
-    0 0 0 2px var(--secondary-color);
+  /* Android TV draws one 2dp ring inside the card; the second outer copy made
+     the band twice as thick here. */
+  box-shadow: inset 0 0 0 2px var(--secondary-color);
   background-color: var(--focus-bg);
 }
 
