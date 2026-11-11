@@ -59,6 +59,7 @@ export function createHomeScreenMethods13() {
               return;
             }
             revealed = true;
+            frame.dataset.trailerRevealed = "true";
             if (fallbackTimer) {
               clearTimeout(fallbackTimer);
               fallbackTimer = 0;
