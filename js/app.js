@@ -94,7 +94,9 @@ function loadRemoteStylesheet(href) {
       link.href = href;
       link.onload = () => resolve(true);
       link.onerror = () => resolve(false);
-      head.appendChild(link);
+      // Before the local sheets, like the old @imports: they rely on source
+      // order to size `.material-icons` (Google's sheet sets 24px).
+      head.insertBefore(link, head.querySelector('link[rel="stylesheet"]'));
     } catch (_) {
       resolve(false);
     }
