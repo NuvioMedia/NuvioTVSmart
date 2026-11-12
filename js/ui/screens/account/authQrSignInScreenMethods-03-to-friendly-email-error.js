@@ -136,7 +136,9 @@ export function createAuthQrSignInScreenMethods03() {
       }
       this.cleanup();
       if (!this.onboardingMode && this.hasBackDestination) {
-        Router.back();
+        // The cleanup above hides this screen, so the Router must not hand the
+        // Back request back to it as an overlay dismissal (black screen).
+        Router.back({ skipConsume: true });
         return;
       }
       Router.navigate("home", {}, { replaceHistory: true, skipStackPush: true });
