@@ -239,6 +239,7 @@ export function createSearchScreenMethods05() {
       });
 
       input.addEventListener("focus", () => {
+        this.imeDismissed = false;
         const current = this.container?.querySelector(".focusable.focused") || null;
         if (current !== input) {
           this.focusNode(current, input);

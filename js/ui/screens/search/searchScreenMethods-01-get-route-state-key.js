@@ -205,6 +205,7 @@ export function createSearchScreenMethods01() {
       this.voiceRecognition = this.voiceRecognition || null;
       this.searchToastTimer = null;
       this.inputSearchTimer = null;
+      this.imeDismissed = false;
       this.posterOptionsMenu = null;
       this.posterOptionsController = null;
       this.pendingPosterOptionsFocusId = "";
@@ -333,7 +334,8 @@ export function createSearchScreenMethods01() {
         this.requestRender();
         return;
       }
-      const preserveInputEditing = document.activeElement === input;
+      const preserveInputEditing =
+        document.activeElement === input || Boolean(this.imeDismissed && this.container?.querySelector(".focusable.focused") === input);
       const selectionSnapshot = preserveInputEditing ? null : getInputSelectionSnapshot(input);
 
       while (header.nextSibling) {
