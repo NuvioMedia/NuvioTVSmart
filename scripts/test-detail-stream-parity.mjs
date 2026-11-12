@@ -185,6 +185,13 @@ assert.doesNotMatch(
   /border-radius|padding:/
 );
 assert.doesNotMatch(ruleBody(streamCss, ".legacy-webos .stream-route-list"), /padding:/);
+// The constrained profile animates every property for 140ms. The manual
+// webOS scroller feeds focus scrolling from row rects right after the
+// transform, so it must move without a transition.
+assert.match(
+  ruleBody(streamCss, ".legacy-webos .stream-route-list.manual-scroll > *"),
+  /transition:\s*none\s*!important;/
+);
 assert.doesNotMatch(
   streamCss,
   /\.legacy-webos \.stream-route-(?:chip|chip-track|chip-wrap|resume-label|card-row|card-heading|card-quality|card-line|card-side|badges|stream-badge|addon-badge|addon-name|left-inner|logo|panel-header)\s*\{/

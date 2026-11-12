@@ -157,6 +157,11 @@
 
 .legacy-webos .stream-route-list.manual-scroll > * {
   transform: translateY(var(--stream-route-manual-scroll, 0));
+  /* Old webOS always runs constrained, whose blanket rule adds a 140ms
+     transition to every property. The manual scroller must jump instantly:
+     focus scrolling reads the row rects right after the transform, and an
+     in-flight transition made the list lag and overshoot on key repeats. */
+  transition: none !important;
 }
 
 .legacy-tizen .stream-route-shell {
