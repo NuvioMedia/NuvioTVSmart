@@ -25,6 +25,8 @@
   /* ATV sidebarContentOffset 54dp -> 108px: the 144px rail overlaps the
      content, it does not push it. */
   --home-sidebar-content-offset: 108px;
+  /* Android TV: spacing.xxs = 2dp, and the project maps 1dp to 2px. */
+  --home-focus-ring: 4px;
   --home-content-start: 104px;
   --home-row-gap: 24px;
   --home-track-end: 104px;
@@ -509,4 +511,30 @@
 [dir="rtl"] .no-flex-gap .home-modern-hero-badge-combined > * + * {
   margin-left: 0;
   margin-right: 16px;
+}
+
+/* One ring on the card edge, above the artwork, exactly Android's 4px. The
+   wrapper used to add a 2px border plus a 2px outer shadow: 4px only where the
+   shadow survived (webOS), 2px on constrained sets. */
+.home-screen-shell.home-layout-modern .home-poster-card.focused,
+.home-screen-shell.home-layout-modern .home-continue-card.focused {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.home-screen-shell.home-layout-modern .home-poster-card.focused .home-poster-frame,
+.home-screen-shell.home-layout-modern .home-collection-card.focused .home-poster-frame {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.home-screen-shell.home-layout-modern .home-poster-card.focused .home-poster-frame::before,
+.home-screen-shell.home-layout-modern .home-collection-card.focused .home-poster-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--home-focus-ring) var(--secondary-color);
+  pointer-events: none;
 }
