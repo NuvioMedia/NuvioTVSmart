@@ -9,6 +9,7 @@ node_modules/
 tests/
 *.ipk
 *.wgt
+*.zip
 dist/
 .cache/
 .pm2/
