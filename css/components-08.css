@@ -19,7 +19,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 22px 40px 56px;
-  margin-left: var(--legacy-sidebar-rail-width);
+  margin-left: var(--home-sidebar-content-offset, var(--legacy-sidebar-rail-width));
 }
 
 /* Collapsible sidebar takes no space — no margin needed */

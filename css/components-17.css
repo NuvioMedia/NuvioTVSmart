@@ -130,7 +130,8 @@
   --home-track-gap: 24px;
   margin-left: calc(var(--modern-track-peek-extension) * -1);
   padding-left: calc(var(--home-content-start) + var(--modern-track-peek-extension));
-  padding-right: 52px;
+  /* ATV row contentPadding 52dp -> 104px */
+  padding-right: 104px;
   padding-bottom: 0;
   align-items: flex-end;
 }

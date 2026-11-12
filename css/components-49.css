@@ -422,8 +422,8 @@
      copy is pinned at 104px below); the extra 24px here pushed every row to
      the right of the hero. */
   --home-content-start: 104px;
-  --home-track-end: 52px;
-  --home-continue-track-end: 52px;
+  --home-track-end: 104px;
+  --home-continue-track-end: 104px;
   --modern-track-peek-extension: 72px;
   --modern-hero-copy-top-safe: 56px;
   --modern-hero-copy-right: 72px;
@@ -443,10 +443,10 @@
 
 /* Engines without flex gap also drop the end padding of a scrolling flex
    track, so the last card stopped flush against the screen edge. A trailing
-   flex item restores the 52px the newer engines get from padding-right. */
+   flex item restores the 104px the newer engines get from padding-right. */
 .no-flex-gap .home-screen-shell.home-layout-modern .home-track::after {
   content: "";
   display: block;
-  flex: 0 0 52px;
+  flex: 0 0 104px;
   height: 1px;
 }
