@@ -213,7 +213,8 @@
   letter-spacing: 0;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  /* ATV AutoResizeText clips instead of ellipsizing the profile name. */
+  text-overflow: clip;
   opacity: 0;
   transition: opacity 125ms cubic-bezier(0.4, 0, 0.2, 1);
 }
