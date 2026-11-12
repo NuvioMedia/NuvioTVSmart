@@ -34,7 +34,10 @@
   --modern-hero-media-height: calc(100% - var(--modern-rows-viewport-height) + 132px);
   --modern-trailer-overscan-zoom: 1.35;
   --modern-hero-copy-top-safe: 40px;
-  --modern-hero-copy-bottom-gap: 32px;
+  /* Android keeps 16dp (32px at this density) between the hero copy and the
+     rows. The viewport sits 8px lower than 52%, so the variable is 24 and the
+     rendered gap is 32. */
+  --modern-hero-copy-bottom-gap: 24px;
   --modern-hero-copy-right: 96px;
   --modern-hero-copy-max-width: 42%;
   --modern-hero-logo-max-width: 440px;
