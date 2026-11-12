@@ -324,10 +324,34 @@ class AddonRepository {
   }
 
   readProfileScopedValue(key, normalizeValue, defaultValue, profileId = null) {
+    // Reading parses, normalizes and re-serializes the whole envelope, and one
+    // installed-addons lookup asks for the same key once per addon. Reuse the
+    // result until the key, the profile list or the active profile changes.
+    const requestedProfileId = String(profileId ?? ProfileManager.getActiveProfileId() ?? "1");
+    const cached = (this.profileScopedValueCache ||= new Map()).get(key);
+    const isFresh = () =>
+      cached.keyRevision === LocalStore.revision(key) &&
+      cached.profilesRevision === LocalStore.revision(PROFILES_KEY) &&
+      cached.profileId === requestedProfileId;
+    if (cached && isFresh()) {
+      return this.cloneValue(cached.value);
+    }
     const envelope = this.readProfileScopedEnvelope(key, normalizeValue);
-    return this.cloneValue(
-      this.ensureProfileScopedValue(key, envelope, normalizeValue, defaultValue, profileId)
+    const value = this.ensureProfileScopedValue(
+      key,
+      envelope,
+      normalizeValue,
+      defaultValue,
+      profileId
     );
+    // Stamp after the read: it may rewrite the key while normalizing it.
+    this.profileScopedValueCache.set(key, {
+      keyRevision: LocalStore.revision(key),
+      profilesRevision: LocalStore.revision(PROFILES_KEY),
+      profileId: requestedProfileId,
+      value: this.cloneValue(value)
+    });
+    return this.cloneValue(value);
   }
 
   writeProfileScopedValue(key, normalizeValue, value, profileId = null) {

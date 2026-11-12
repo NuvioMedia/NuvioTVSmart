@@ -202,3 +202,27 @@ test("cache-only reads stay offline and explicit refresh bypasses the background
   await repository.refreshInstalledAddons();
   assert.equal(fetches, 2);
 });
+
+test("profile-scoped reads are reused until the key is written again", async () => {
+  const { LocalStore } = await import("../../core/storage/localStore.js");
+  const [url] = addonRepository.getInstalledAddonUrls();
+  const states = addonRepository.getAddonEnabledStates();
+  states.leaked = true;
+  assert.equal(addonRepository.getAddonEnabledStates().leaked, undefined);
+  assert.equal(addonRepository.isAddonEnabled(url), true);
+
+  const reads = [];
+  const getItem = globalThis.localStorage.getItem;
+  globalThis.localStorage.getItem = (key) => (reads.push(key), getItem(key));
+  try {
+    addonRepository.isAddonEnabled(url);
+    assert.equal(reads.includes("installedAddonEnabledStates"), false);
+  } finally {
+    globalThis.localStorage.getItem = getItem;
+  }
+
+  const envelope = LocalStore.get("installedAddonEnabledStates");
+  envelope.profiles["1"] = { [url]: false };
+  LocalStore.set("installedAddonEnabledStates", envelope);
+  assert.equal(addonRepository.isAddonEnabled(url), false);
+});
