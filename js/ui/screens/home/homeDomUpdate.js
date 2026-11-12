@@ -28,10 +28,15 @@ export function hasMountedHomeDom(container) {
   return Boolean(shell && shell === container.querySelector(".home-shell"));
 }
 
+// A sibling walk: this runs for every node of every card that is mounted or
+// appended, and Array.from(childNodes).filter() was two thirds of that cost on
+// Chromium 63.
 function children(node) {
-  return Array.from(node.childNodes).filter(
-    (child) => child.nodeType !== 3 || child.textContent.trim()
-  );
+  const result = [];
+  for (let child = node.firstChild; child; child = child.nextSibling) {
+    if (child.nodeType !== 3 || child.textContent.trim()) result.push(child);
+  }
+  return result;
 }
 
 function key(node) {
@@ -69,7 +74,8 @@ function snapshot(source) {
 function remember(node, source) {
   sourceByNode.set(node, snapshot(source));
   const liveChildren = children(node);
-  children(source).forEach((child, index) => remember(liveChildren[index], child));
+  const sourceChildren = source === node ? liveChildren : children(source);
+  sourceChildren.forEach((child, index) => remember(liveChildren[index], child));
 }
 
 export function registerHomeDomNodes(nodes) {
