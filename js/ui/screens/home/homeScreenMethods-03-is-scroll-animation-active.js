@@ -71,7 +71,18 @@ export function createHomeScreenMethods03() {
       return this.isScrollAnimationActive(this.modernCameraFollowLastHorizontalContainer, "x");
     },
     isSidebarFocusActive() {
-      return Boolean(this.container?.querySelector(".home-sidebar .focusable.focused, .modern-sidebar-panel .focusable.focused"));
+      const container = this.container;
+      if (!container) {
+        return false;
+      }
+      // Asked several times per key. Searching the whole Home for a focused
+      // sidebar item walks every row when the answer is no, so keep the
+      // sidebar roots and look only inside them.
+      let roots = this.sidebarFocusRoots;
+      if (!roots?.length || roots.some((root) => !container.contains(root))) {
+        roots = this.sidebarFocusRoots = Array.from(container.querySelectorAll(".home-sidebar, .modern-sidebar-panel"));
+      }
+      return roots.some((root) => Boolean(root.querySelector(".focusable.focused")));
     },
     getRowFocusInset() {
       if (this.layoutMode === "modern") {
