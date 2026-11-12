@@ -58,14 +58,24 @@ ambient.show = () => {
   ambient.showing = true;
 };
 
-// Home: the normal tick reads settings and arms the screensaver block.
+// Home: the normal tick reads settings. The screensaver block loads Samsung's
+// plugin synchronously, so it waits for ten idle seconds instead of landing on
+// the tick that coincides with the Home mount.
 ambient.tick();
 assert.equal(storeReads, 1);
 assert.equal(trailerChecks, 1);
-assert.equal(screenSaver.blocks, 1);
+assert.equal(screenSaver.blocks, 0, "no screensaver call while Home is mounting");
 assert.equal(ambient.idleRoute, "home");
 const signature = ambient.signature;
 assert.ok(signature);
+clock += 9000;
+ambient.tick();
+assert.equal(screenSaver.blocks, 0);
+clock += 1000;
+ambient.tick();
+assert.equal(screenSaver.blocks, 1, "armed after ten idle seconds");
+storeReads = 1;
+trailerChecks = 1;
 
 // Player: a minute of ticks reads nothing and keeps the screensaver released.
 route = "player";
