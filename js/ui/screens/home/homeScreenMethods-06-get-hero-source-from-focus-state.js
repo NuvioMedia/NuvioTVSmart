@@ -209,6 +209,7 @@ export function createHomeScreenMethods06() {
       if (!state || !viewport) {
         return false;
       }
+      this.prepareHomeRowsForRestore(state);
       Object.entries(state.trackStates || {}).forEach(([rowKey, scrollLeft]) => {
         const track = this.container?.querySelector(`[data-track-row-key="${rowKey}"]`);
         if (track) {

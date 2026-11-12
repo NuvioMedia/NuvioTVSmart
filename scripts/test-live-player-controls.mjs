@@ -352,8 +352,10 @@ test("HTTP 416 on the legacy CNCVerse route retries through the current bridge r
   const previousEngine = PlayerController.playbackEngine;
   PlayerController.playbackEngine = "hls.js";
   const calls = [];
-  const legacyUrl = "http://129.225.106.195/d/master.m3u8?d=abc&clearkey=key&h_x_cnc_plugin=PlayFyProvider&maxh=540";
-  const modernUrl = "http://129.225.106.195/proxy/mpd/manifest.m3u8?d=abc&clearkey=key&h_x_cnc_plugin=PlayFyProvider&maxh=540";
+  const legacyUrl =
+    "http://129.225.106.195/d/master.m3u8?d=abc&clearkey=key&h_x_cnc_plugin=PlayFyProvider&maxh=540";
+  const modernUrl =
+    "http://129.225.106.195/proxy/mpd/manifest.m3u8?d=abc&clearkey=key&h_x_cnc_plugin=PlayFyProvider&maxh=540";
   const source = { id: "src", url: legacyUrl };
   const s = {
     ...createPlayerScreenMethods36(),

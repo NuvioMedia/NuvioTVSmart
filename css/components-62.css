@@ -450,9 +450,9 @@
   height: 100%;
   background: linear-gradient(
     90deg,
-    rgb(var(--bg-color-rgb) / 0.96) 0%,
-    rgb(var(--bg-color-rgb) / 0.82) 55%,
-    rgb(var(--bg-color-rgb) / 0.6) 100%
+    rgba(var(--bg-color-rgb-legacy), 0.96) 0%,
+    rgba(var(--bg-color-rgb-legacy), 0.82) 55%,
+    rgba(var(--bg-color-rgb-legacy), 0.6) 100%
   );
 }
 .party-screen-content {

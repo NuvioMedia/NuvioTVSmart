@@ -22,6 +22,11 @@
 }
 
 .home-screen-shell.home-layout-modern {
+  /* ATV sidebarContentOffset 54dp -> 108px: the 144px rail overlaps the
+     content, it does not push it. */
+  --home-sidebar-content-offset: 108px;
+  /* Android TV: spacing.xxs = 2dp, and the project maps 1dp to 2px. */
+  --home-focus-ring: 4px;
   --home-content-start: 104px;
   --home-row-gap: 24px;
   --home-track-end: 104px;
@@ -34,7 +39,10 @@
   --modern-hero-media-height: calc(100% - var(--modern-rows-viewport-height) + 132px);
   --modern-trailer-overscan-zoom: 1.35;
   --modern-hero-copy-top-safe: 40px;
-  --modern-hero-copy-bottom-gap: 32px;
+  /* Android keeps 16dp (32px at this density) between the hero copy and the
+     rows. The viewport sits 8px lower than 52%, so the variable is 24 and the
+     rendered gap is 32. */
+  --modern-hero-copy-bottom-gap: 24px;
   --modern-hero-copy-right: 96px;
   --modern-hero-copy-max-width: 42%;
   --modern-hero-logo-max-width: 440px;
@@ -113,9 +121,9 @@
   background: linear-gradient(
     90deg,
     var(--bg-color) 0%,
-    rgb(var(--bg-color-rgb) / 0.86) 22%,
-    rgb(var(--bg-color-rgb) / 0.56) 46%,
-    rgb(var(--bg-color-rgb) / 0.16) 76%,
+    rgba(var(--bg-color-rgb-legacy), 0.86) 22%,
+    rgba(var(--bg-color-rgb-legacy), 0.56) 46%,
+    rgba(var(--bg-color-rgb-legacy), 0.16) 76%,
     transparent 100%
   );
   /* Restrict to left 45% so the right side of the image stays unobscured */
@@ -129,8 +137,8 @@
     180deg,
     transparent 0%,
     transparent 82%,
-    rgb(var(--bg-color-rgb) / 0.25) 89.2%,
-    rgb(var(--bg-color-rgb) / 0.65) 95.5%,
+    rgba(var(--bg-color-rgb-legacy), 0.25) 89.2%,
+    rgba(var(--bg-color-rgb-legacy), 0.65) 95.5%,
     var(--bg-color) 100%
   );
 }
@@ -151,9 +159,9 @@
   background: linear-gradient(
     90deg,
     var(--bg-color) 0%,
-    rgb(var(--bg-color-rgb) / 0.9) 22%,
-    rgb(var(--bg-color-rgb) / 0.8) 46%,
-    rgb(var(--bg-color-rgb) / 0.42) 76%,
+    rgba(var(--bg-color-rgb-legacy), 0.9) 22%,
+    rgba(var(--bg-color-rgb-legacy), 0.8) 46%,
+    rgba(var(--bg-color-rgb-legacy), 0.42) 76%,
     transparent 100%
   );
 }
@@ -164,8 +172,8 @@
     180deg,
     transparent 0%,
     transparent 64%,
-    rgb(var(--bg-color-rgb) / 0.35) 74.8%,
-    rgb(var(--bg-color-rgb) / 0.75) 85.6%,
+    rgba(var(--bg-color-rgb-legacy), 0.35) 74.8%,
+    rgba(var(--bg-color-rgb-legacy), 0.75) 85.6%,
     var(--bg-color) 100%
   );
 }
@@ -471,7 +479,7 @@
   align-items: center;
   min-height: 40px;
   padding: 0 18px;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.55);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.55);
   border-radius: 12px;
   color: var(--text-color);
   font-size: 18px;
@@ -487,9 +495,46 @@
 .home-screen-shell.home-layout-modern .home-modern-hero-badge-divider {
   width: 2px;
   height: 24px;
-  background: rgb(var(--focus-color-rgb) / 0.55);
+  background: rgba(var(--focus-color-rgb-legacy), 0.55);
 }
 
 .home-screen-shell.home-layout-modern .home-hero-chip-row {
   display: none;
+}
+/* Tizen 5 has no flex gap: without the margin the rating and the status run
+   together inside the same pill ("TV-Y|IN CORSO"). */
+.no-flex-gap .home-modern-hero-badge-combined > * + * {
+  margin-left: 16px;
+}
+
+[dir="rtl"].no-flex-gap .home-modern-hero-badge-combined > * + *,
+[dir="rtl"] .no-flex-gap .home-modern-hero-badge-combined > * + * {
+  margin-left: 0;
+  margin-right: 16px;
+}
+
+/* One ring on the card edge, above the artwork, exactly Android's 4px. The
+   wrapper used to add a 2px border plus a 2px outer shadow: 4px only where the
+   shadow survived (webOS), 2px on constrained sets. */
+.home-screen-shell.home-layout-modern .home-poster-card.focused,
+.home-screen-shell.home-layout-modern .home-continue-card.focused {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.home-screen-shell.home-layout-modern .home-poster-card.focused .home-poster-frame,
+.home-screen-shell.home-layout-modern .home-collection-card.focused .home-poster-frame {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.home-screen-shell.home-layout-modern .home-poster-card.focused .home-poster-frame::before,
+.home-screen-shell.home-layout-modern .home-collection-card.focused .home-poster-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--home-focus-ring) var(--secondary-color);
+  pointer-events: none;
 }

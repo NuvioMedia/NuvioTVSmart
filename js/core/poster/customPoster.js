@@ -1,6 +1,11 @@
 import { LayoutPreferences } from "../../data/local/layoutPreferences.js";
 import { CUSTOM_POSTER_SCREENS } from "./customPosterScreens.js";
-import { normalizeTmdbBackdropUrl, normalizeTmdbPosterUrl } from "../tmdb/tmdbImageUrl.js";
+import {
+  normalizeTmdbBackdropUrl,
+  normalizeTmdbPosterUrl,
+  preferredTmdbCardPosterSize
+} from "../tmdb/tmdbImageUrl.js";
+import { Platform } from "../../platform/index.js";
 export { CUSTOM_POSTER_SCREENS } from "./customPosterScreens.js";
 const prepared = new Map();
 export function extractPosterIds(id, imdbId = null) {
@@ -121,6 +126,19 @@ export function resolveCustomPoster(pattern, ids, type, shape = "poster") {
   }
   return null;
 }
+// Android decodes a poster at the size of its card whatever the source is.
+// An <img> decodes the whole file: an 800x1200 poster in a 221x339 card cost a
+// 2019 Tizen set 408 ms of decoding for every row scrolled into view (130 ms
+// at 342 px). Services that resize on request are asked for the card's width,
+// the same width the TV takes from TMDB. Other hosts stay untouched.
+const WIDTH_PARAM_BY_HOST = { "easyposters.realbestia.com": "w" };
+function tvCardSizedPoster(url) {
+  if (!url || !(Platform.isTizen() || Platform.isWebOS())) return url;
+  const param = WIDTH_PARAM_BY_HOST[/^https?:\/\/([^/?#]+)/i.exec(url)?.[1]?.toLowerCase()];
+  if (!param || new RegExp(`[?&]${param}=`).test(url)) return url;
+  const width = preferredTmdbCardPosterSize().slice(1);
+  return `${url}${url.includes("?") ? "&" : "?"}${param}=${width}`;
+}
 export function customPosterForItem(
   item,
   screen,
@@ -128,12 +146,11 @@ export function customPosterForItem(
   settings = LayoutPreferences.get()
 ) {
   if (!item) return item;
-  // Keep every screen on the same TMDB source sizes as Home. The helper is
-  // idempotent and leaves non-TMDB artwork byte-for-byte unchanged, so a
-  // custom poster or an addon poster is never rewritten here.
+  // Keep every screen on the same source sizes as Home. The helpers are
+  // idempotent and leave artwork from any other host byte-for-byte unchanged.
   const normalizedItem = {
     ...item,
-    poster: normalizeTmdbPosterUrl(item.poster),
+    poster: tvCardSizedPoster(normalizeTmdbPosterUrl(item.poster)),
     backdrop: normalizeTmdbBackdropUrl(item.backdrop),
     background: normalizeTmdbBackdropUrl(item.background),
     landscapePoster: normalizeTmdbBackdropUrl(item.landscapePoster),
@@ -146,7 +163,10 @@ export function customPosterForItem(
   if (!supportsShape && shape !== "poster") return item;
   const ids = extractPosterIds(item.id || item.contentId, item.imdbId || item.imdb_id);
   const type = item.apiType || item.type || item.contentType || "movie";
-  const poster = resolveCustomPoster(pattern, ids, type, shape);
+  const poster =
+    shape === "poster"
+      ? tvCardSizedPoster(resolveCustomPoster(pattern, ids, type, shape))
+      : resolveCustomPoster(pattern, ids, type, shape);
   const landscape = supportsShape ? resolveCustomPoster(pattern, ids, type, "landscape") : null;
   if (!poster && !landscape) return item;
   return {

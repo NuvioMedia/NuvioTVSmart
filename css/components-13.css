@@ -51,7 +51,7 @@
 .home-row-see-all.focused {
   transform: none;
   border-color: var(--secondary-color);
-  box-shadow: 0 0 0 3px rgb(var(--secondary-color-rgb) / 0.22);
+  box-shadow: 0 0 0 2px rgba(var(--secondary-color-rgb-legacy), 0.22);
 }
 
 .home-seeall-card {
@@ -127,7 +127,7 @@
 .home-content-card.focused {
   transform: none;
   border-color: var(--secondary-color);
-  box-shadow: 0 0 0 4px rgb(var(--secondary-color-rgb) / 0.22);
+  box-shadow: 0 0 0 2px rgba(var(--secondary-color-rgb-legacy), 0.22);
 }
 
 .home-content-card .content-poster {

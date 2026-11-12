@@ -10,7 +10,7 @@
   border-radius: min(1.35vw, 26px);
   box-sizing: border-box;
   border: 2px solid var(--profile-editor-neutral-border, var(--border-color));
-  background: var(--profile-editor-neutral-bg, rgb(var(--focus-color-rgb) / 0.05));
+  background: var(--profile-editor-neutral-bg, rgba(var(--focus-color-rgb-legacy), 0.05));
   transition:
     border-color 120ms ease,
     background 120ms ease,
@@ -24,7 +24,7 @@
   border-color: var(--secondary-color);
   box-shadow:
     inset 0 0 0 2px var(--secondary-color),
-    0 0 0 2px rgb(var(--secondary-color-rgb) / 0.28);
+    0 0 0 2px rgba(var(--secondary-color-rgb-legacy), 0.28);
 }
 
 .profile-editor-name-input {
@@ -85,7 +85,7 @@
   padding: 16px 36px;
   border-radius: 40px;
   border: 2px solid var(--profile-editor-neutral-border, var(--border-color));
-  background: var(--profile-editor-neutral-bg, rgb(var(--focus-color-rgb) / 0.06));
+  background: var(--profile-editor-neutral-bg, rgba(var(--focus-color-rgb-legacy), 0.06));
   color: var(--text-secondary);
   font: inherit;
   font-size: 26px;
@@ -139,7 +139,7 @@
   padding: 8px;
   border: 2px solid var(--profile-editor-neutral-border, var(--border-color));
   border-radius: min(1.04vw, 20px);
-  background: var(--profile-editor-neutral-bg, rgb(var(--focus-color-rgb) / 0.06));
+  background: var(--profile-editor-neutral-bg, rgba(var(--focus-color-rgb-legacy), 0.06));
   color: var(--text-color);
   font: inherit;
   text-align: center;
@@ -226,7 +226,7 @@
   padding: 16px 36px;
   border-radius: 40px;
   border: 2px solid var(--profile-editor-neutral-border, var(--border-color));
-  background: var(--profile-editor-neutral-bg, rgb(var(--focus-color-rgb) / 0.06));
+  background: var(--profile-editor-neutral-bg, rgba(var(--focus-color-rgb-legacy), 0.06));
   color: var(--text-secondary);
   font-size: 26px;
   line-height: 1.2;
@@ -247,7 +247,7 @@
 
 .profile-avatar-category.focused {
   border-color: var(--secondary-color);
-  background: var(--profile-editor-neutral-bg, rgb(var(--focus-color-rgb) / 0.06));
+  background: var(--profile-editor-neutral-bg, rgba(var(--focus-color-rgb-legacy), 0.06));
   color: var(--text-color);
   box-shadow: inset 0 0 0 2px var(--secondary-color);
 }
@@ -332,7 +332,7 @@
   padding: min(1.25vw, 24px) min(2.92vw, 56px);
   border-radius: min(1.25vw, 24px);
   border: 1px solid var(--profile-editor-neutral-border, var(--border-color));
-  background: var(--profile-editor-neutral-bg, rgb(var(--focus-color-rgb) / 0.06));
+  background: var(--profile-editor-neutral-bg, rgba(var(--focus-color-rgb-legacy), 0.06));
   color: var(--text-color);
   font-size: min(1.5625vw, 30px);
   line-height: 1.2;
@@ -365,7 +365,7 @@
   color: var(--text-color);
   box-shadow:
     inset 0 0 0 2px var(--secondary-color),
-    0 0 0 2px rgb(var(--secondary-color-rgb) / 0.28);
+    0 0 0 2px rgba(var(--secondary-color-rgb-legacy), 0.28);
 }
 
 .profile-overlay-button.profile-overlay-button-primary.focused {
@@ -374,7 +374,7 @@
   color: var(--text-color);
   box-shadow:
     inset 0 0 0 2px var(--secondary-color),
-    0 0 0 2px rgb(var(--secondary-color-rgb) / 0.28);
+    0 0 0 2px rgba(var(--secondary-color-rgb-legacy), 0.28);
 }
 
 .profile-overlay-button.is-disabled,

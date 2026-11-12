@@ -192,6 +192,7 @@ export function createHomeScreenMethods01() {
         return false;
       }
 
+      this.prepareHomeRowsForRestore(focusState);
       Object.entries(focusState.trackStates || {}).forEach(([rowKey, scrollLeft]) => {
         const track = this.getNavigationTrackNodes().find((node) => String(node.dataset.trackRowKey || "") === String(rowKey || ""));
         if (track) {
@@ -247,6 +248,8 @@ export function createHomeScreenMethods01() {
         return false;
       }
       const focusState = state?.layoutMode === this.layoutMode ? state : this.savedFocusStates?.[this.layoutMode] || null;
+      // The restored card and the saved row offsets need real boxes.
+      this.prepareHomeRowsForRestore(focusState);
       if (!focusState) {
         return false;
       }

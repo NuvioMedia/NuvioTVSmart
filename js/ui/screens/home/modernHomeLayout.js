@@ -1,4 +1,5 @@
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
+import { unchangedHomeRowMarkup } from "./homeDomUpdate.js";
 
 export const MODERN_HOME_CONSTANTS = {
   heroFocusDelayMs: 450,
@@ -8,6 +9,10 @@ export const MODERN_HOME_CONSTANTS = {
   verticalKeyRepeatThrottleMs: 112,
   trackPaginationIdleMs: 160,
   trackPaginationPrefetchDelayMs: 40,
+  // Constrained rows mount 8 cards, so the load-ahead rule is already true
+  // when focus lands on a row. Wait for focus to rest there before fetching
+  // and appending the next page, or every row crossed on the way pays for it.
+  trackPaginationPrefetchDwellConstrainedMs: 400,
   trackPaginationLoadAheadItems: 4,
   cameraFollowDelayMs: 140,
   cameraFollowDurationXMs: 440,
@@ -62,12 +67,21 @@ export function renderModernHomeLayout({
   formatCatalogRowTitle,
   shouldDeferRowImages,
   watchedTitleIds = null,
+  // Home only. A catalog landing re-renders Home once per row: without these
+  // every pass rebuilt and re-parsed every row already on screen (4 s of a
+  // 2025 webOS set's startup). rowMarkupCache: WeakMap of a row's items to its
+  // last markup; mountedRowMarkups: row key to the markup now in the DOM.
+  rowMarkupCache = null,
+  mountedRowMarkups = null,
   escapeHtml,
   escapeAttribute
 } = {}) {
   const catalogSeeAllMap = new Map();
   const sectionsMarkup = [];
+  const domSectionsMarkup = [];
+  const rowMarkups = new Map();
   const posterSettings = LayoutPreferences.get();
+  const posterSettingsKey = rowMarkupCache ? JSON.stringify(posterSettings) : "";
 
   rows.forEach((rowData, rowIndex) => {
     const isCollectionRow = rowData?.rowKind === "collection";
@@ -112,6 +126,36 @@ export function renderModernHomeLayout({
       typeof shouldDeferRowImages === "function"
         ? shouldDeferRowImages(rowIndex, rowKey, focusedRowKey)
         : false;
+    const escapedRowKey = escapeHtml(rowKey);
+    // Everything a row's markup is built from; the items themselves are
+    // covered by the identity of their array, which a refresh replaces.
+    const cacheKey = [
+      rowKey,
+      rowIndex,
+      visibleItems.length,
+      rowTitle,
+      rowData.type,
+      rowData.addonBaseUrl,
+      rowData.addonId,
+      rowData.addonName,
+      Boolean(rowData.suppressPosterText),
+      showPosterLabels,
+      preferLandscapePosters,
+      deferRowImages,
+      expandFocusedPoster && focusedRowKey === rowKey ? focusedItemIndex : -1,
+      posterSettingsKey
+    ].join("\u0000");
+    const cached = rowMarkupCache && !isCollectionRow ? rowMarkupCache.get(rowItems) : null;
+    if (cached && cached.key === cacheKey && cached.watchedTitleIds === watchedTitleIds) {
+      sectionsMarkup.push(cached.markup);
+      domSectionsMarkup.push(
+        mountedRowMarkups?.get(escapedRowKey) === cached.markup
+          ? unchangedHomeRowMarkup(escapedRowKey)
+          : cached.markup
+      );
+      rowMarkups.set(escapedRowKey, cached.markup);
+      return;
+    }
     const cardsMarkup = visibleItems
       .map((item, itemIndex) =>
         createPosterCardMarkup(
@@ -131,7 +175,7 @@ export function renderModernHomeLayout({
       )
       .join("");
 
-    sectionsMarkup.push(`
+    const sectionMarkup = `
       <section class="home-row home-modern-row home-row-enter" data-row-key="${escapeHtml(rowKey)}" data-row-index="${rowIndex}">
         <div class="home-row-head">
           <h2 class="home-row-title">${escapeHtml(rowTitle)}</h2>
@@ -140,12 +184,20 @@ export function renderModernHomeLayout({
           ${cardsMarkup}
         </div>
       </section>
-    `);
+    `;
+    sectionsMarkup.push(sectionMarkup);
+    domSectionsMarkup.push(
+      mountedRowMarkups?.get(escapedRowKey) === sectionMarkup
+        ? unchangedHomeRowMarkup(escapedRowKey)
+        : sectionMarkup
+    );
+    rowMarkups.set(escapedRowKey, sectionMarkup);
+    if (rowMarkupCache && !isCollectionRow) {
+      rowMarkupCache.set(rowItems, { key: cacheKey, watchedTitleIds, markup: sectionMarkup });
+    }
   });
 
-  return {
-    catalogSeeAllMap,
-    markup: `
+  const stageMarkup = (catalogSections) => `
       <section class="home-modern-stage">
         ${
           showHeroSection
@@ -185,12 +237,19 @@ export function renderModernHomeLayout({
               posterSettings
             })}
             <div class="home-modern-catalogs">
-              ${sectionsMarkup.join("")}
+              ${catalogSections}
             </div>
           </div>
         </div>
       </section>
-    `
+    `;
+  const [beforeCatalogs, afterCatalogs] = stageMarkup("\u0000").split("\u0000");
+  return {
+    catalogSeeAllMap,
+    rowMarkups,
+    markup: beforeCatalogs + sectionsMarkup.join("") + afterCatalogs,
+    // Same page with the rows already mounted left out, for the in-place update.
+    domMarkup: beforeCatalogs + domSectionsMarkup.join("") + afterCatalogs
   };
 }
 

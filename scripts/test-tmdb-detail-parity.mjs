@@ -235,6 +235,20 @@ test("series use aggregate cast/crew, movies retain standard credits, including 
   assert.ok(!calls.at(-1).url.includes("aggregate_credits"));
 });
 
+test("callers that never show people skip the credits request and its mapping", async () => {
+  const { TmdbMetadataService, fixtures, calls } = await setup();
+  fixtures.settings.language = "fr";
+  fixtures.respond = async (url) => (url.pathname.endsWith("/videos") ? { results: [] } : tvData());
+  const hero = await TmdbMetadataService.fetchEnrichment({
+    tmdbId: "7",
+    contentType: "series",
+    includeCredits: false
+  });
+  assert.equal(hero.credits, null);
+  assert.ok(calls.length > 0);
+  assert.ok(calls.every((call) => !call.url.includes("credits")));
+});
+
 test("metadata uses packaged webOS transport with direct fallback; Tizen/browser use bounded fetch", async () => {
   const api = await setup();
   api.fixtures.webos = true;

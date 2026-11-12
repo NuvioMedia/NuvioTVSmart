@@ -439,7 +439,7 @@
 .library-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(var(--bg-color-rgb) / 0.58);
+  background: rgba(var(--bg-color-rgb-legacy), 0.58);
   display: flex;
   align-items: center;
   justify-content: center;

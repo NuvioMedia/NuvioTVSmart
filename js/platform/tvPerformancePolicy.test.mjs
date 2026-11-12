@@ -6,6 +6,7 @@ import {
   getArtworkEvictIdleMs,
   getArtworkEvictMarginPx,
   getTrailerCleanupDelayMs,
+  getHeroEnrichDwellMs,
   getTrailerMountGraceMs,
   isModernTvProfile
 } from "./tvPerformancePolicy.js";
@@ -26,7 +27,8 @@ test("constrained and legacy TV generations keep today's aggressive release", ()
     assert.equal(isModernTvProfile(profile), false);
     assert.equal(getArtworkEvictIdleMs(profile), 0);
     assert.equal(getArtworkEvictMarginPx(profile), 1600);
-    assert.equal(getTrailerCleanupDelayMs(profile), 900);
+    // Short enough to drop the paused iframe right after the focus frame.
+    assert.equal(getTrailerCleanupDelayMs(profile), 80);
     assert.equal(getTrailerMountGraceMs(profile), 0);
   }
 });
@@ -46,4 +48,10 @@ test("a modern TV with 1 GB RAM uses the legacy eviction window", () => {
   // Without the Device Memory API the profile alone still decides.
   assert.equal(getArtworkEvictIdleMs(modern, 0), 1200);
   assert.equal(getArtworkEvictMarginPx(modern, 0), 2600);
+});
+
+test("only constrained sets wait for focus to rest before enriching the hero", () => {
+  assert.equal(getHeroEnrichDwellMs({ isTvRuntime: true, isPerformanceConstrained: true }), 500);
+  assert.equal(getHeroEnrichDwellMs({ isTvRuntime: true, isPerformanceConstrained: false }), 0);
+  assert.equal(getHeroEnrichDwellMs(null), 0);
 });

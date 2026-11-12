@@ -11,8 +11,8 @@
   min-height: 56px;
   padding: 0 20px;
   border-radius: 999px;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.18);
-  background: rgb(var(--focus-color-rgb) / 0.1);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.18);
+  background: rgba(var(--focus-color-rgb-legacy), 0.1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -191,7 +191,7 @@
 }
 
 .discover-action-card.focused .discover-action-card-inner {
-  background: rgb(var(--secondary-color-rgb) / 0.18);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.18);
 }
 
 .discover-action-card-title {

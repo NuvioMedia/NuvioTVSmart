@@ -10,7 +10,7 @@ const released = [];
 const context = vm.createContext({ releaseHomeArtwork: (url) => released.push(url) });
 vm.runInContext(
   source.replace(/^import .*;$/gm, "").replaceAll("export function", "function") +
-    "\nglobalThis.api = { registerHomeDomNodes, updateHomeDom, sourceByNode, releasePosters };",
+    "\nglobalThis.api = { registerHomeDomNodes, updateHomeDom, sourceByNode, releasePosters, updateNode, unchangedHomeRowMarkup };",
   context
 );
 let documentsCreated = 0;
@@ -69,6 +69,19 @@ const poster = {
 context.api.releasePosters({ nodeType: 1, matches: () => false, querySelectorAll: () => [poster] });
 assert.deepEqual(released, ["blob:poster"]);
 assert.equal(poster.dataset.originalSrc, undefined);
+// An unchanged-row stand-in leaves the mounted row and its snapshot alone.
+const stub = context.api.unchangedHomeRowMarkup("row&amp;1");
+assert.equal(stub, '<section data-row-key="row&amp;1" data-home-row-unchanged></section>');
+const mountedRow = {
+  get classList() {
+    assert.fail("An unchanged row must not be reconciled");
+  }
+};
+context.api.updateNode(mountedRow, {
+  nodeType: 1,
+  hasAttribute: (name) => name === "data-home-row-unchanged"
+});
+assert.equal(context.api.sourceByNode.get(mountedRow), undefined);
 console.log(
   "Home snapshots and parsing share the inert document, including early live-node registration."
 );

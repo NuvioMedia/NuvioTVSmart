@@ -300,9 +300,13 @@
    own compositor layer, even after artwork settles. The app already drives row
    scrolling by writing scrollLeft, so the tracks only need to stay
    programmatically scrollable: overflow:hidden still is a scroll container,
-   while removing the user-scrollable overflow that forces the promotion. */
+   while removing the user-scrollable overflow that forces the promotion.
+   Constrained sets snap their rows instead of animating them, so they gain
+   nothing from the layers either: on a 2019 Tizen set each newly shown row
+   cost five layers and their textures. */
 .legacy-webos .home-screen-shell.home-layout-modern .home-track,
-.webos-unpromoted-home-tracks .home-screen-shell.home-layout-modern .home-track {
+.webos-unpromoted-home-tracks .home-screen-shell.home-layout-modern .home-track,
+.performance-constrained .home-screen-shell.home-layout-modern .home-track {
   transform: none;
   overflow-x: hidden;
   overflow-y: hidden;
@@ -414,9 +418,12 @@
 }
 
 .legacy-tizen .home-screen-shell.home-layout-modern {
-  --home-content-start: 128px;
-  --home-track-end: 128px;
-  --home-continue-track-end: 128px;
+  /* Android TV starts the rows and the hero copy at the same inset (the hero
+     copy is pinned at 104px below); the extra 24px here pushed every row to
+     the right of the hero. */
+  --home-content-start: 104px;
+  --home-track-end: 104px;
+  --home-continue-track-end: 104px;
   --modern-track-peek-extension: 72px;
   --modern-hero-copy-top-safe: 56px;
   --modern-hero-copy-right: 72px;
@@ -426,4 +433,20 @@
   margin-left: calc(var(--modern-track-peek-extension) * -1);
   padding-left: calc(var(--home-content-start) + var(--modern-track-peek-extension));
   padding-right: var(--home-track-end);
+}
+
+/* The no-flex-gap fallback already spaces cards with margin-left on `* + *`;
+   the per-card margin-right added a second 24px, so rows sat 48px apart. */
+.legacy-tizen .home-screen-shell.home-layout-modern .home-track > .home-content-card {
+  margin-right: 0;
+}
+
+/* Engines without flex gap also drop the end padding of a scrolling flex
+   track, so the last card stopped flush against the screen edge. A trailing
+   flex item restores the 104px the newer engines get from padding-right. */
+.no-flex-gap .home-screen-shell.home-layout-modern .home-track::after {
+  content: "";
+  display: block;
+  flex: 0 0 104px;
+  height: 1px;
 }

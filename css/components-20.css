@@ -74,7 +74,7 @@
 
 .supporters-tab.selected {
   background: var(--card-bg);
-  border-color: rgb(var(--focus-rgb) / 0.8);
+  border-color: rgba(var(--focus-color-rgb-legacy), 0.8);
   color: var(--text-color);
   font-weight: 600;
 }

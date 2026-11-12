@@ -431,7 +431,7 @@
   max-width: 70%;
   padding: 24px 36px;
   border-radius: 18px;
-  background: rgb(var(--card-bg-rgb) / 0.96);
+  background: rgba(var(--card-bg-rgb-legacy), 0.96);
   border: 1px solid var(--secondary-color);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   text-align: center;

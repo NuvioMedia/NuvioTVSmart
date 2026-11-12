@@ -24,16 +24,16 @@
   /* Keep the old-engine fallback on the same Android TV left gradient. */
   background: linear-gradient(
     90deg,
-    rgb(var(--bg-color-rgb) / 1) 0%,
-    rgb(var(--bg-color-rgb) / 0.95) 7.8%,
-    rgb(var(--bg-color-rgb) / 0.84) 17.16%,
-    rgb(var(--bg-color-rgb) / 0.7) 28.08%,
-    rgb(var(--bg-color-rgb) / 0.52) 40.56%,
-    rgb(var(--bg-color-rgb) / 0.34) 51.48%,
-    rgb(var(--bg-color-rgb) / 0.18) 60.84%,
-    rgb(var(--bg-color-rgb) / 0.07) 70.2%,
-    rgb(var(--bg-color-rgb) / 0) 78%,
-    rgb(var(--bg-color-rgb) / 0) 100%
+    rgba(var(--bg-color-rgb-legacy), 1) 0%,
+    rgba(var(--bg-color-rgb-legacy), 0.95) 7.8%,
+    rgba(var(--bg-color-rgb-legacy), 0.84) 17.16%,
+    rgba(var(--bg-color-rgb-legacy), 0.7) 28.08%,
+    rgba(var(--bg-color-rgb-legacy), 0.52) 40.56%,
+    rgba(var(--bg-color-rgb-legacy), 0.34) 51.48%,
+    rgba(var(--bg-color-rgb-legacy), 0.18) 60.84%,
+    rgba(var(--bg-color-rgb-legacy), 0.07) 70.2%,
+    rgba(var(--bg-color-rgb-legacy), 0) 78%,
+    rgba(var(--bg-color-rgb-legacy), 0) 100%
   );
 }
 
@@ -41,16 +41,16 @@
   /* Android TV mirrors the detail gradient for RTL locales. */
   background: linear-gradient(
     270deg,
-    rgb(var(--bg-color-rgb) / 1) 0%,
-    rgb(var(--bg-color-rgb) / 0.95) 7.8%,
-    rgb(var(--bg-color-rgb) / 0.84) 17.16%,
-    rgb(var(--bg-color-rgb) / 0.7) 28.08%,
-    rgb(var(--bg-color-rgb) / 0.52) 40.56%,
-    rgb(var(--bg-color-rgb) / 0.34) 51.48%,
-    rgb(var(--bg-color-rgb) / 0.18) 60.84%,
-    rgb(var(--bg-color-rgb) / 0.07) 70.2%,
-    rgb(var(--bg-color-rgb) / 0) 78%,
-    rgb(var(--bg-color-rgb) / 0) 100%
+    rgba(var(--bg-color-rgb-legacy), 1) 0%,
+    rgba(var(--bg-color-rgb-legacy), 0.95) 7.8%,
+    rgba(var(--bg-color-rgb-legacy), 0.84) 17.16%,
+    rgba(var(--bg-color-rgb-legacy), 0.7) 28.08%,
+    rgba(var(--bg-color-rgb-legacy), 0.52) 40.56%,
+    rgba(var(--bg-color-rgb-legacy), 0.34) 51.48%,
+    rgba(var(--bg-color-rgb-legacy), 0.18) 60.84%,
+    rgba(var(--bg-color-rgb-legacy), 0.07) 70.2%,
+    rgba(var(--bg-color-rgb-legacy), 0) 78%,
+    rgba(var(--bg-color-rgb-legacy), 0) 100%
   );
 }
 

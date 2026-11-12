@@ -1,5 +1,5 @@
 import * as internals from "./homeScreenContext.js";
-import { isModernTvProfile } from "../../../platform/tvPerformancePolicy.js";
+import { getHeroEnrichDwellMs, isModernTvProfile } from "../../../platform/tvPerformancePolicy.js";
 import { getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
 
 export function createHomeScreenMethods10() {
@@ -92,7 +92,11 @@ export function createHomeScreenMethods10() {
             return;
           }
           const shouldEnrichHero = shouldEnrichModernHero(latestHero);
-          const focusedHero = shouldEnrichHero ? { ...latestHero, heroMetaEnriching: true } : { ...latestHero, heroMetaEnriching: false };
+          // While the dwell runs the hero is a plain, complete catalog hero:
+          // the enriching flag would keep the previous backdrop on screen.
+          const enrichDwellMs = shouldEnrichHero ? getHeroEnrichDwellMs(getTvRuntimePerformanceProfile()) : 0;
+          const focusedHero =
+            shouldEnrichHero && !enrichDwellMs ? { ...latestHero, heroMetaEnriching: true } : { ...latestHero, heroMetaEnriching: false };
 
           // Android publishes the newly focused preview as soon as focus settles;
           // metadata enrichment remains an independent background update. Waiting
@@ -106,6 +110,16 @@ export function createHomeScreenMethods10() {
           }
           this.applyHeroToDom();
 
+          if (shouldEnrichHero && enrichDwellMs) {
+            void preloadHeroAssets(focusedHero, "modern");
+            this.heroEnrichDwellTimer = setTimeout(() => {
+              this.heroEnrichDwellTimer = null;
+              if (Number(this.heroFocusToken || 0) === focusToken) {
+                void this.enrichCurrentHeroAsync(focusedHero, focusToken, { deferCommit: true });
+              }
+            }, enrichDwellMs);
+            return;
+          }
           if (shouldEnrichHero) {
             void this.enrichCurrentHeroAsync(focusedHero, focusToken, { deferCommit: true });
             return;

@@ -139,7 +139,7 @@
   min-height: 64px;
   padding: 16px 24px;
   border-radius: 16px;
-  background: rgb(var(--secondary-color-rgb) / 0.1);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.1);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -459,5 +459,5 @@
 
 .settings-toggle-pill.is-checked {
   justify-content: flex-end;
-  background: rgb(var(--secondary-color-rgb) / 0.35);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.35);
 }

@@ -586,7 +586,9 @@
 .legacy-tizen .home-screen-shell.home-layout-modern .home-modern-hero-copy,
 .legacy-webos .home-screen-shell.home-layout-modern .home-modern-hero-copy {
   top: 0;
-  bottom: 52vh;
+  /* 52vh measured from the card left 18px instead of the 32px Android keeps
+     above the rows; the +14px restores that gap on a 1080p set. */
+  bottom: calc(52vh + 14px);
 }
 
 .legacy-tizen .home-screen-shell.home-layout-modern .home-modern-hero-media::before,

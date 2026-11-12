@@ -77,3 +77,45 @@ test("vertical rail keeps its existing centred scroll", () => {
   assert.equal(vertical.rail.scrollTop, 198);
   assert.equal(vertical.rail.scrollLeft, 0);
 });
+
+test("constrained sets snap the rail instead of running the spring", () => {
+  const frames = [];
+  const { scrollSettingsRailItem: scrollWithFrames } = new Function(
+    "clamp",
+    "SETTINGS_RAIL_SCROLL_TARGET_RATIO",
+    "SETTINGS_RAIL_SCROLL_DAMPING_RATIO",
+    "SETTINGS_RAIL_SCROLL_STIFFNESS",
+    "requestAnimationFrame",
+    "cancelAnimationFrame",
+    `${source}\nreturn { scrollSettingsRailItem };`
+  )(
+    (value, min, max) => Math.min(max, Math.max(min, value)),
+    0.42,
+    0.95,
+    180,
+    (callback) => frames.push(callback),
+    () => {}
+  );
+  const previousDocument = globalThis.document;
+  const setConstrained = (constrained) => {
+    globalThis.document = {
+      body: { classList: { contains: (name) => constrained && name === "performance-constrained" } }
+    };
+  };
+  try {
+    setConstrained(false);
+    const animated = railFixture({ horizontal: true, itemStart: 480 });
+    scrollWithFrames(animated.node);
+    assert.equal(animated.rail.scrollLeft, 0, "the full profile starts a spring");
+    assert.equal(frames.length > 0, true);
+
+    frames.length = 0;
+    setConstrained(true);
+    const snapped = railFixture({ horizontal: true, itemStart: 480 });
+    scrollWithFrames(snapped.node);
+    assert.equal(snapped.rail.scrollLeft, 124);
+    assert.equal(frames.filter((frame) => String(frame).includes("velocity")).length, 0);
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});

@@ -59,6 +59,7 @@ export function createHomeScreenMethods13() {
               return;
             }
             revealed = true;
+            frame.dataset.trailerRevealed = "true";
             if (fallbackTimer) {
               clearTimeout(fallbackTimer);
               fallbackTimer = 0;
@@ -67,6 +68,7 @@ export function createHomeScreenMethods13() {
             onReady?.();
           }, delayMs);
         };
+        let lastTrailerTime = 0;
         const handleProxyMessage = (event) => {
           if (event?.source !== frame.contentWindow) {
             return;
@@ -79,13 +81,22 @@ export function createHomeScreenMethods13() {
             frame.dataset.ambientTrailerPlaying = "false";
           }
           if (data.type === "firstFrame") {
-            frame.dataset.ambientTrailerPlaying = "true";
+            frame.dataset.ambientTrailerPlaying = String(frame.dataset.ambientTrailerLooped !== "true");
             reveal(150);
             return;
           }
           const state = data.type === "state" && data.state && typeof data.state === "object" ? data.state : null;
           if (state) {
-            frame.dataset.ambientTrailerPlaying = String(state.paused === false && state.loading === false);
+            // The embed loops; Android plays a trailer once and then lets the
+            // idle period start, so only the first pass counts as playing.
+            const time = Number(state.currentTime || 0);
+            if (time + 1 < lastTrailerTime) {
+              frame.dataset.ambientTrailerLooped = "true";
+            }
+            lastTrailerTime = time;
+            frame.dataset.ambientTrailerPlaying = String(
+              frame.dataset.ambientTrailerLooped !== "true" && state.paused === false && state.loading === false
+            );
           }
           if (state && Number(state.currentTime || 0) > 0 && state.paused === false) {
             reveal(150);
@@ -156,6 +167,13 @@ export function createHomeScreenMethods13() {
         };
         ["playing", "canplay", "loadeddata", "loadedmetadata", "timeupdate"].forEach((eventName) => {
           video.addEventListener(eventName, activate, { once: true });
+        });
+        let lastVideoTime = 0;
+        video.addEventListener("timeupdate", () => {
+          if (video.currentTime + 1 < lastVideoTime) {
+            video.dataset.ambientTrailerLooped = "true";
+          }
+          lastVideoTime = video.currentTime;
         });
         video.addEventListener(
           "error",

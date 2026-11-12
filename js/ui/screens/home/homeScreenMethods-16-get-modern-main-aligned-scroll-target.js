@@ -34,6 +34,14 @@ export function createHomeScreenMethods16() {
       let nextValue = null;
       if (isVerticalMove || isEnteringMainFromSidebar) {
         nextValue = targetTop - inset;
+        // Android TV brings the whole row into view, title included. Aligning
+        // only the card left the row head above the viewport edge: with the
+        // 28px title gap the title lost its top 19px.
+        const rowHead = target.closest?.(".home-row")?.querySelector?.(".home-row-head");
+        if (rowHead) {
+          const headTop = rowHead.getBoundingClientRect().top - mainRect.top + main.scrollTop - Number(layoutAdjustment || 0);
+          nextValue = Math.min(nextValue, headTop - 8);
+        }
       } else if (adjustedTop < visibleTop) {
         nextValue = anchorTop - inset;
       } else if (adjustedBottom > visibleBottom) {

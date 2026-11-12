@@ -19,7 +19,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 22px 40px 56px;
-  margin-left: var(--legacy-sidebar-rail-width);
+  margin-left: var(--home-sidebar-content-offset, var(--legacy-sidebar-rail-width));
 }
 
 /* Collapsible sidebar takes no space — no margin needed */
@@ -145,10 +145,18 @@
 }
 
 .modern-sidebar-shell.blur-enabled .modern-sidebar-panel {
-  border-color: rgb(var(--focus-color-rgb) / 0.14);
+  border-color: rgba(var(--focus-color-rgb-legacy), 0.14);
   background:
-    linear-gradient(180deg, rgb(var(--bg-elevated-rgb) / 0.32), rgb(var(--bg-elevated-rgb) / 0.32)),
-    linear-gradient(180deg, rgb(var(--card-bg-rgb) / 0.88), rgb(var(--bg-elevated-rgb) / 0.84));
+    linear-gradient(
+      180deg,
+      rgba(var(--bg-elevated-rgb-legacy), 0.32),
+      rgba(var(--bg-elevated-rgb-legacy), 0.32)
+    ),
+    linear-gradient(
+      180deg,
+      rgba(var(--card-bg-rgb-legacy), 0.88),
+      rgba(var(--bg-elevated-rgb-legacy), 0.84)
+    );
   backdrop-filter: blur(0px) saturate(1);
   -webkit-backdrop-filter: blur(0px) saturate(1);
 }
@@ -242,7 +250,7 @@
 }
 
 .modern-sidebar-nav-item.selected {
-  background: rgb(var(--secondary-color-rgb) / 0.15);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.15);
   color: var(--secondary-color);
 }
 
@@ -253,7 +261,7 @@
 }
 
 .modern-sidebar-nav-item.selected.focused {
-  background: rgb(var(--secondary-color-rgb) / 0.28);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.28);
   color: var(--secondary-color);
 }
 
@@ -387,10 +395,18 @@
 }
 
 .modern-sidebar-shell.blur-enabled .modern-sidebar-pill-chip {
-  border-color: rgb(var(--focus-color-rgb) / 0.14);
+  border-color: rgba(var(--focus-color-rgb-legacy), 0.14);
   background:
-    linear-gradient(180deg, rgb(var(--bg-elevated-rgb) / 0.28), rgb(var(--bg-elevated-rgb) / 0.28)),
-    linear-gradient(180deg, rgb(var(--card-bg-rgb) / 0.86), rgb(var(--bg-elevated-rgb) / 0.82));
+    linear-gradient(
+      180deg,
+      rgba(var(--bg-elevated-rgb-legacy), 0.28),
+      rgba(var(--bg-elevated-rgb-legacy), 0.28)
+    ),
+    linear-gradient(
+      180deg,
+      rgba(var(--card-bg-rgb-legacy), 0.86),
+      rgba(var(--bg-elevated-rgb-legacy), 0.82)
+    );
 }
 
 .modern-sidebar-shell.performance-constrained.blur-enabled .modern-sidebar-panel,

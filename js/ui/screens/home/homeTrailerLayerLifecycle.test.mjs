@@ -130,3 +130,40 @@ test("reusing the mounted trailer clears the pending idle hide too", async () =>
   assert.equal(hidden, false, "the old hide timer must not run after the reuse");
   assert.equal(screen.homeTrailerLayerHideTimers.has(container), false);
 });
+
+test("a later key never postpones a pending trailer cleanup", () => {
+  const context = buildContext();
+  const screen = makeScreen(context);
+  const pending = makeContainer("https://www.youtube.com/embed/abc");
+  const mounted = makeContainer("https://www.youtube.com/embed/def");
+  screen.homeTrailerLayerCleanupTimers.set(pending, { idleId: 0, timeoutId: 0, completed: false });
+  // Both trailers already played: only the cleanup timing is under test.
+  pending.firstElementChild.dataset.trailerRevealed = "true";
+  mounted.querySelector = () => ({ dataset: { trailerRevealed: "true" } });
+  screen.container = { querySelectorAll: () => [pending, mounted] };
+  screen.shouldUseImmediateFocusScroll = () => true;
+  const scheduled = [];
+  screen.scheduleTrailerLayerCleanup = (layer) => scheduled.push(layer);
+
+  screen.refreshPendingHomeTrailerCleanup();
+
+  assert.deepEqual(scheduled, [mounted]);
+});
+
+test("a trailer that has not shown a frame is dropped when focus moves, on any TV", async () => {
+  const context = buildContext();
+  const screen = makeScreen(context);
+  const booting = makeContainer("https://www.youtube.com/embed/abc");
+  const playing = makeContainer("https://www.youtube.com/embed/def");
+  playing.firstElementChild.dataset.trailerRevealed = "true";
+  screen.container = { querySelectorAll: () => [booting, playing] };
+  screen.shouldUseImmediateFocusScroll = () => false;
+  const cleared = [];
+  screen.clearTrailerLayer = (layer) => cleared.push(layer);
+
+  screen.refreshPendingHomeTrailerCleanup();
+  screen.refreshPendingHomeTrailerCleanup();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+
+  assert.deepEqual(cleared, [booting]);
+});

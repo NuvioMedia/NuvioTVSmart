@@ -199,7 +199,7 @@
   z-index: 40;
   padding: 14px 24px;
   border-radius: 18px;
-  background: rgb(var(--bg-elevated-rgb) / 0.96);
+  background: rgba(var(--bg-elevated-rgb-legacy), 0.96);
   color: var(--text-color);
   border: 1px solid var(--border-color);
   font-size: 22px;
@@ -277,7 +277,11 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   background:
-    radial-gradient(140% 90% at 78% 0%, rgb(var(--secondary-color-rgb) / 0.22), transparent 40%),
+    radial-gradient(
+      140% 90% at 78% 0%,
+      rgba(var(--secondary-color-rgb-legacy), 0.22),
+      transparent 40%
+    ),
     var(--bg-color);
   color: var(--text-color);
   padding: 26px var(--tv-safe-gutter-wide, 96px) 38px;
@@ -343,8 +347,8 @@ html.tizen-tv.no-css-math .plugins-route-shell {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.22);
-  background: rgb(var(--focus-color-rgb) / 0.08);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.22);
+  background: rgba(var(--focus-color-rgb-legacy), 0.08);
   color: var(--text-color);
   margin-bottom: 10px;
 }
@@ -357,7 +361,7 @@ html.tizen-tv.no-css-math .plugins-route-shell {
 .cast-detail-back.focused {
   transform: none;
   border-color: var(--focus-color);
-  box-shadow: 0 0 0 3px rgb(var(--focus-color-rgb) / 0.2);
+  box-shadow: 0 0 0 3px rgba(var(--focus-color-rgb-legacy), 0.2);
 }
 
 .cast-detail-hero-content {
@@ -372,7 +376,7 @@ html.tizen-tv.no-css-math .plugins-route-shell {
   height: 320px;
   border-radius: 18px;
   background: var(--card-bg) center center / cover no-repeat;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.14);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.14);
 }
 
 .cast-detail-meta {
@@ -400,7 +404,7 @@ html.tizen-tv.no-css-math .plugins-route-shell {
   padding: 0 12px;
   align-items: center;
   border-radius: 999px;
-  background: rgb(var(--focus-color-rgb) / 0.08);
+  background: rgba(var(--focus-color-rgb-legacy), 0.08);
 }
 
 .cast-detail-bio {

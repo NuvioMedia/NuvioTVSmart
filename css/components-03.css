@@ -34,7 +34,7 @@
 
 .profile-card.is-activating .profile-avatar-ring {
   border-color: var(--focus-color);
-  box-shadow: 0 0 0 3px rgb(var(--focus-color-rgb) / 0.35);
+  box-shadow: 0 0 0 3px rgba(var(--focus-color-rgb-legacy), 0.35);
 }
 
 .profile-avatar-ring {

@@ -133,6 +133,30 @@
   transform: none !important;
 }
 
+/* The constrained profile cuts every animation to 0.01ms, which ended these
+   at their last keyframe (opacity 0) at once: the slide never appeared and
+   only the fallback above showed it. Ambient Mode keeps its own timings; a
+   constrained Tizen 5 set holds 59 fps while it runs. */
+.performance-constrained .ambient-backdrop,
+.performance-constrained .ambient-shade,
+.performance-constrained .ambient-title,
+.performance-constrained .ambient-genres {
+  animation-duration: 12950ms !important;
+}
+
+/* Without its own layer the moving backdrop was repainted on the main thread
+   every frame (25 fps on a constrained Tizen 5 set, 45 with the layer). The
+   layers only exist while Ambient Mode is on screen. */
+.performance-constrained .ambient-backdrop {
+  will-change: transform, opacity;
+}
+
+.performance-constrained .ambient-shade,
+.performance-constrained .ambient-title,
+.performance-constrained .ambient-genres {
+  will-change: opacity;
+}
+
 .player-stream-info-overlay {
   position: absolute;
   inset: 0;

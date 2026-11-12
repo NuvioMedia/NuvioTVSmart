@@ -87,6 +87,35 @@ test("poster settings are read once per layout, stay fresh, and preserve card ma
     !refreshed.includes("https://posters.example/a/"),
     "a later render must read current profile settings"
   );
+
+  // Home's row cache: an unchanged row is neither rebuilt nor sent to the parser.
+  let built = 0;
+  const watched = new Set();
+  const cached = {
+    ...options,
+    rowMarkupCache: new WeakMap(),
+    watchedTitleIds: watched,
+    createPosterCardMarkup: (...args) => (built++, api.createPosterCardMarkup(...args))
+  };
+  context.unchangedHomeRowMarkup = (rowKey) => `<stub ${rowKey}>`;
+  const first = api.renderModernHomeLayout(cached);
+  assert.equal(built, 20);
+  assert.equal(first.domMarkup, first.markup, "nothing is mounted yet");
+  const second = api.renderModernHomeLayout({ ...cached, mountedRowMarkups: first.rowMarkups });
+  assert.equal(built, 20, "an unchanged row must not be rebuilt");
+  assert.equal(second.markup, first.markup);
+  assert.ok(second.domMarkup.includes("<stub ") && !second.domMarkup.includes("Title 0"));
+  api.renderModernHomeLayout({ ...cached, watchedTitleIds: new Set() });
+  assert.equal(built, 40, "new watched state must rebuild the row");
+  pattern = "https://posters.example/c/{imdb_id}";
+  assert.ok(api.renderModernHomeLayout(cached).markup.includes("https://posters.example/c/tt0"));
+  const moreItems = structuredClone(options.rows);
+  assert.ok(
+    api
+      .renderModernHomeLayout({ ...cached, rows: moreItems, mountedRowMarkups: first.rowMarkups })
+      .domMarkup.includes("Title 0"),
+    "a refreshed item list is rendered and parsed again"
+  );
 });
 
 test("landscape artwork keeps its own branding while backdrop fallbacks retain overlays", async () => {

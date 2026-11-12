@@ -24,13 +24,13 @@
 .stream-route-left-gradient {
   background: linear-gradient(
     90deg,
-    rgb(var(--bg-color-rgb) / 1) 0%,
-    rgb(var(--bg-color-rgb) / 0.85) 15%,
-    rgb(var(--bg-color-rgb) / 0.4) 30%,
-    rgb(var(--bg-color-rgb) / 0.15) 50%,
-    rgb(var(--bg-color-rgb) / 0.4) 70%,
-    rgb(var(--bg-color-rgb) / 0.85) 85%,
-    rgb(var(--bg-color-rgb) / 1) 100%
+    rgba(var(--bg-color-rgb-legacy), 1) 0%,
+    rgba(var(--bg-color-rgb-legacy), 0.85) 15%,
+    rgba(var(--bg-color-rgb-legacy), 0.4) 30%,
+    rgba(var(--bg-color-rgb-legacy), 0.15) 50%,
+    rgba(var(--bg-color-rgb-legacy), 0.4) 70%,
+    rgba(var(--bg-color-rgb-legacy), 0.85) 85%,
+    rgba(var(--bg-color-rgb-legacy), 1) 100%
   );
 }
 
@@ -214,8 +214,8 @@
   flex: 1;
   min-height: 0;
   border-radius: 32px;
-  background: rgb(var(--bg-elevated-rgb) / 0.65);
-  box-shadow: inset 0 0 0 1px rgb(var(--focus-color-rgb) / 0.035);
+  background: rgba(var(--bg-elevated-rgb-legacy), 0.65);
+  box-shadow: inset 0 0 0 1px rgba(var(--focus-color-rgb-legacy), 0.035);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   padding: 0;
@@ -307,7 +307,7 @@
   min-height: 0;
   padding: 32px;
   border-radius: 24px;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.06);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.06);
   background: var(--bg-elevated);
   box-sizing: border-box;
   display: flex;
@@ -327,8 +327,8 @@
   padding: 0;
   flex: 0 0 auto;
   border-radius: 12px;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.12);
-  background: rgb(var(--bg-elevated-rgb) / 0.7);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.12);
+  background: rgba(var(--bg-elevated-rgb-legacy), 0.7);
   color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
@@ -354,7 +354,7 @@
 .stream-route-native-button.focused {
   transform: scale(1.08);
   border-color: var(--secondary-color);
-  background: rgb(var(--card-bg-rgb) / 0.98);
+  background: rgba(var(--card-bg-rgb-legacy), 0.98);
   color: var(--secondary-color);
   box-shadow:
     0 0 0 3px var(--secondary-color),

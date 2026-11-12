@@ -60,11 +60,6 @@
   );
 }
 
-.legacy-tizen .stream-route-backdrop-dim,
-.legacy-webos .stream-route-backdrop-dim {
-  background: rgba(13, 13, 13, 0.24);
-}
-
 .legacy-tizen .stream-route-left-gradient,
 .legacy-webos .stream-route-left-gradient {
   background: linear-gradient(
@@ -93,7 +88,9 @@
 
 .legacy-tizen .stream-route-panel-shell,
 .legacy-webos .stream-route-panel-shell {
-  background: rgba(26, 26, 26, 0.82) !important;
+  /* Android TV paints the stream panel at 65% of the elevated surface; the
+     legacy override made it 82% and added a second black veil over the whole
+     backdrop, so the screen looked different from Android and from webOS 5+. */
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
@@ -295,7 +292,7 @@
   min-height: 64px;
   margin-top: 28px;
   padding: 0 32px;
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.22);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.22);
   border-radius: 999px;
   background: var(--card-bg);
   color: var(--text-color);
@@ -304,7 +301,7 @@
 
 .tmdb-entity-retry.focused {
   border-color: var(--focus-color);
-  box-shadow: 0 0 0 3px rgb(var(--focus-color-rgb) / 0.22);
+  box-shadow: 0 0 0 3px rgba(var(--focus-color-rgb-legacy), 0.22);
   background: var(--focus-bg);
 }
 
@@ -335,10 +332,10 @@
 .tmdb-entity-hero-scrim {
   background: linear-gradient(
     90deg,
-    rgb(var(--bg-color-rgb) / 1) 0%,
-    rgb(var(--bg-color-rgb) / 0.94) 26%,
-    rgb(var(--bg-color-rgb) / 0.72) 60%,
-    rgb(var(--bg-color-rgb) / 0.42) 100%
+    rgba(var(--bg-color-rgb-legacy), 1) 0%,
+    rgba(var(--bg-color-rgb-legacy), 0.94) 26%,
+    rgba(var(--bg-color-rgb-legacy), 0.72) 60%,
+    rgba(var(--bg-color-rgb-legacy), 0.42) 100%
   );
 }
 

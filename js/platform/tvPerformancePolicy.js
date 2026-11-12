@@ -6,8 +6,16 @@ export const HOME_TV_PERFORMANCE_POLICY = Object.freeze({
   modernArtworkEvictMarginPx: 2600,
   legacyArtworkEvictMarginPx: 1600,
   modernTrailerCleanupDelayMs: 2400,
-  legacyTrailerCleanupDelayMs: 900,
+  // A paused YouTube iframe shares the app's thread: measured on a 2019 Tizen
+  // set it kept every D-pad press near 500 ms busy until it was removed, while
+  // removing it is a single ~340 ms task. Constrained sets drop it right after
+  // the focus frame instead of carrying it through the navigation.
+  legacyTrailerCleanupDelayMs: 80,
   modernTrailerMountGraceMs: 1000,
+  // Addon and TMDB enrichment of a newly focused card costs about 100 ms of
+  // main-thread work on a 2019 Tizen set. Constrained sets show the catalog
+  // data at once and enrich only the card the user rests on.
+  constrainedHeroEnrichDwellMs: 500,
   modernArtworkCacheEntries: 640,
   legacyArtworkCacheEntries: 320,
   lowMemoryArtworkCacheEntries: 200
@@ -50,6 +58,12 @@ export function getTrailerCleanupDelayMs(profile = null) {
   return isModernTvProfile(profile)
     ? HOME_TV_PERFORMANCE_POLICY.modernTrailerCleanupDelayMs
     : HOME_TV_PERFORMANCE_POLICY.legacyTrailerCleanupDelayMs;
+}
+
+export function getHeroEnrichDwellMs(profile = null) {
+  return profile?.isPerformanceConstrained
+    ? HOME_TV_PERFORMANCE_POLICY.constrainedHeroEnrichDwellMs
+    : 0;
 }
 
 export function getTrailerMountGraceMs(profile = null) {

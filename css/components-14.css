@@ -12,7 +12,7 @@
   width: 22px;
   height: 6px;
   border-radius: 999px;
-  background: rgb(var(--secondary-color-rgb) / 0.35);
+  background: rgba(var(--secondary-color-rgb-legacy), 0.35);
 }
 
 .home-screen-shell .home-hero-indicator.is-active {
@@ -26,6 +26,22 @@
   z-index: 2;
   margin-bottom: 32px;
   contain: layout;
+}
+
+/* Rows parked by homeRowWindow.js keep their height and leave rendering.
+   Engines with content-visibility keep the row's layout cached, so bringing
+   it back is cheap: with display:none a 15-card row cost a 50 ms frame on a
+   2025 OLED at every step down. Older engines drop the children instead. */
+.home-screen-shell .home-row.home-row-parked {
+  box-sizing: border-box;
+  overflow: hidden;
+  content-visibility: hidden;
+}
+
+@supports not (content-visibility: hidden) {
+  .home-screen-shell .home-row.home-row-parked > * {
+    display: none !important;
+  }
 }
 
 .home-screen-shell.home-layout-modern .home-row {
@@ -397,10 +413,23 @@
 }
 
 .home-screen-shell .home-continue-card.focused .home-continue-media {
-  box-shadow:
-    inset 0 0 0 2px var(--secondary-color),
-    0 0 0 2px var(--secondary-color);
   background-color: var(--focus-bg);
+}
+
+/* Android TV draws one 2dp ring inside the card. An inset shadow on the media
+   box itself is painted under the artwork, so the ring vanished as soon as the
+   image loaded; this layer sits above it. */
+.home-screen-shell .home-continue-card.focused .home-continue-media::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--home-focus-ring) var(--secondary-color);
+  pointer-events: none;
 }
 
 .home-screen-shell .home-continue-media::after {
@@ -412,8 +441,8 @@
     180deg,
     transparent 0%,
     transparent 45%,
-    rgb(var(--bg-color-rgb) / 0.7) 78%,
-    rgb(var(--bg-color-rgb) / 0.95) 100%
+    rgba(var(--bg-color-rgb-legacy), 0.7) 78%,
+    rgba(var(--bg-color-rgb-legacy), 0.95) 100%
   );
 }
 

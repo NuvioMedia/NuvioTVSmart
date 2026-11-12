@@ -303,7 +303,10 @@ export function createHomeScreenMethods20() {
       const rendered = this.renderedWatchedTitleIds;
       const unchanged =
         rendered instanceof Set && rendered.size === this.watchedTitleIds.size && [...rendered].every((id) => this.watchedTitleIds.has(id));
-      if (!unchanged) {
+      if (unchanged) {
+        // Same titles: keep the rendered set, whose identity the row markup cache checks.
+        this.watchedTitleIds = rendered;
+      } else {
         this.requestBackgroundRender();
       }
     }

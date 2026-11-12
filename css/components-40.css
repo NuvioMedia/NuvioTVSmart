@@ -236,7 +236,7 @@
   height: 70px;
   border-radius: 12px;
   background: var(--detail-bg-elevated);
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.12);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.12);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -284,14 +284,14 @@
   border-radius: 16px;
   padding: 10px;
   background: var(--detail-bg-elevated);
-  border: 1px solid rgb(var(--focus-color-rgb) / 0.12);
+  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.12);
   box-sizing: border-box;
 }
 
 .detail-morelike-card.focused {
   transform: none;
   border-color: var(--focus-color);
-  box-shadow: 0 0 0 3px rgb(var(--focus-color-rgb) / 0.24);
+  box-shadow: 0 0 0 3px rgba(var(--focus-color-rgb-legacy), 0.24);
 }
 
 .detail-morelike-poster {

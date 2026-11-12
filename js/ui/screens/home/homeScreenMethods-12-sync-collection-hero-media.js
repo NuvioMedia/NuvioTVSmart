@@ -298,13 +298,34 @@ export function createHomeScreenMethods12() {
       this.scheduleTrailerLayerHide(container);
     },
     refreshPendingHomeTrailerCleanup() {
+      const layers = this.container?.querySelectorAll(".home-poster-trailer-layer, .home-hero-trailer-layer");
+      // A YouTube iframe that has not shown a frame yet is pure boot work on the
+      // app's thread: 2.4 s of long tasks on a 2025 OLED, far more on slow sets.
+      // Once the user moves on nothing visible is lost by dropping it, on any TV.
+      layers?.forEach((layer) => {
+        const frame = layer.querySelector("iframe");
+        if (!frame || frame.dataset.trailerRevealed === "true" || frame.dataset.trailerBootDrop === "true") {
+          return;
+        }
+        frame.dataset.trailerBootDrop = "true";
+        // After the focus frame, not inside the key handler.
+        setTimeout(() => {
+          if (frame.isConnected !== false && layer.querySelector("iframe") === frame && frame.dataset.trailerRevealed !== "true") {
+            this.cancelTrailerLayerCleanup?.(layer);
+            this.clearTrailerLayer(layer);
+          }
+        }, 0);
+      });
       if (!this.shouldUseImmediateFocusScroll()) {
         return;
       }
-      const layers = this.container?.querySelectorAll(".home-poster-trailer-layer, .home-hero-trailer-layer");
       layers?.forEach((layer) => {
-        const hasPendingCleanup = this.homeTrailerLayerCleanupTimers?.has?.(layer);
-        if (hasPendingCleanup || layer.querySelector("iframe, video")) {
+        // Never re-arm a pending cleanup: each later key would postpone it and
+        // keep the paused player alive for the whole navigation.
+        if (this.homeTrailerLayerCleanupTimers?.has?.(layer)) {
+          return;
+        }
+        if (layer.querySelector("iframe, video")) {
           this.scheduleTrailerLayerCleanup(layer);
         }
       });

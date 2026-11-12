@@ -650,6 +650,10 @@ export function createHomeScreenMethods04() {
         clearTimeout(this.heroBackdropPreloadTimer);
         this.heroBackdropPreloadTimer = null;
       }
+      if (this.heroEnrichDwellTimer) {
+        clearTimeout(this.heroEnrichDwellTimer);
+        this.heroEnrichDwellTimer = null;
+      }
       if (this.deferredContinueWatchingFocusTimer) {
         clearTimeout(this.deferredContinueWatchingFocusTimer);
         this.deferredContinueWatchingFocusTimer = null;

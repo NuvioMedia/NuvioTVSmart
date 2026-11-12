@@ -249,6 +249,14 @@ export const AmbientMode = {
     this.showing = true;
     if (Platform.isWebOS())
       WebOSPlayerExtensions.startAmbientKeepAwake(() => this.showing && !document.hidden);
+    // On a Tizen 5 set the slide animations advanced but were only seen on
+    // screen while something kept requesting frames, so Ambient Mode does.
+    if (Platform.isTizen() && typeof requestAnimationFrame === "function") {
+      const keepPresenting = () => {
+        if (this.showing) requestAnimationFrame(keepPresenting);
+      };
+      requestAnimationFrame(keepPresenting);
+    }
     const screen = Router.getCurrentScreen?.();
     screen?.stopTrailerPlayback?.();
     screen?.cancelFocusedPosterFlow?.();

@@ -216,8 +216,8 @@
   background: linear-gradient(
     180deg,
     var(--bg-color) 0%,
-    rgb(var(--bg-color-rgb) / 0.96) 72%,
-    rgb(var(--bg-color-rgb) / 0) 100%
+    rgba(var(--bg-color-rgb-legacy), 0.96) 72%,
+    rgba(var(--bg-color-rgb-legacy), 0) 100%
   );
 }
 
@@ -255,7 +255,7 @@
   background: var(--focus-bg);
   color: var(--text-color);
   border-color: var(--secondary-color);
-  box-shadow: 0 0 0 2px rgb(var(--secondary-color-rgb) / 0.22);
+  box-shadow: 0 0 0 2px rgba(var(--secondary-color-rgb-legacy), 0.22);
 }
 
 .folder-detail-follow-layout {
