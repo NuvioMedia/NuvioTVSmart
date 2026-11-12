@@ -1,4 +1,4 @@
-import { access, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +19,10 @@ const serviceStageDir = path.join(stagingDir, "space.nuvio.webos.service");
 const pluginServiceStageDir = path.join(stagingDir, "space.nuvio.webos.plugin.service");
 
 const appName = "Nuvio TV";
+// LG recommends uploading two packages: 1920x1080 for UHD models and 1280x720
+// for Full HD models, whose graphics canvas stops at 1280x720.
+const DEFAULT_RESOLUTION = "1920x1080";
+const SUPPORTED_RESOLUTIONS = new Set([DEFAULT_RESOLUTION, "1280x720"]);
 const webOsServiceId = "space.nuvio.webos.service";
 const webOsPluginServiceId = "space.nuvio.webos.plugin.service";
 const webOsServiceSourceDir = path.join(rootDir, "services", "webos");
@@ -179,7 +183,7 @@ ${webOsScriptTag}  <script>
 `;
 }
 
-async function stageApp() {
+async function stageApp(resolution) {
   const { version } = await readAppMetadata();
   await cp(distDir, appStageDir, { recursive: true });
   await pruneCssFileForPlatform(path.join(appStageDir, "css", "bundle.css"), "webos");
@@ -188,6 +192,7 @@ async function stageApp() {
   const appInfo = JSON.parse(await readFile(appInfoPath, "utf8"));
   appInfo.title = appName;
   appInfo.version = version;
+  appInfo.resolution = resolution;
   appInfo.icon = "icon.png";
   appInfo.largeIcon = "largeIcon.png";
   appInfo.services = [webOsServiceId, webOsPluginServiceId];
@@ -308,39 +313,69 @@ async function stagePluginService() {
   });
 }
 
-async function packageWebOs() {
+function readRequestedResolution() {
+  const argument = process.argv.find((value) => value.startsWith("--resolution="));
+  const requested = String(
+    argument
+      ? argument.slice("--resolution=".length)
+      : process.env.NUVIO_WEBOS_RESOLUTION || DEFAULT_RESOLUTION
+  ).trim();
+  if (!SUPPORTED_RESOLUTIONS.has(requested)) {
+    throw new Error(
+      `Unsupported webOS resolution "${requested}". Use one of: ${[...SUPPORTED_RESOLUTIONS].join(", ")}.`
+    );
+  }
+  return requested;
+}
+
+async function packageWebOs(resolution) {
   await syncVersionFiles();
   await assertDistExists();
 
-  console.log("staging webOS package files...");
+  console.log(`staging webOS package files (${resolution})...`);
   await rm(stagingDir, { recursive: true, force: true });
   await mkdir(stagingDir, { recursive: true });
-  await Promise.all([stageApp(), stageService(), stagePluginService()]);
+  await Promise.all([stageApp(resolution), stageService(), stagePluginService()]);
 
   console.log("creating webOS IPK...");
+  const { version } = await readAppMetadata();
+  // Non-default resolutions pack into a scratch directory and then move out,
+  // so neither build can overwrite the other's IPK.
+  const outputDir =
+    resolution === DEFAULT_RESOLUTION ? rootDir : path.join(cacheDir, "webos-package-out");
+  if (outputDir !== rootDir) {
+    await rm(outputDir, { recursive: true, force: true });
+    await mkdir(outputDir, { recursive: true });
+  }
+  const packagedIpk = path.join(outputDir, `space.nuvio.webos_${version}_all.ipk`);
   try {
     await runWebOsToolsBinary("ares-package", [
       appStageDir,
       serviceStageDir,
       pluginServiceStageDir,
       "--outdir",
-      rootDir
+      outputDir
     ]);
   } catch (error) {
-    const { version } = await readAppMetadata();
-    const expectedIpk = path.join(rootDir, `space.nuvio.webos_${version}_all.ipk`);
-    if (await pathExists(expectedIpk)) {
+    if (await pathExists(packagedIpk)) {
       console.warn(
-        `ares-package exited with an error, but ${expectedIpk} was created successfully. Continuing.`
+        `ares-package exited with an error, but ${packagedIpk} was created successfully. Continuing.`
       );
     } else {
       throw error;
     }
   }
+
+  if (outputDir === rootDir) {
+    return;
+  }
+  const resolutionIpk = path.join(rootDir, `space.nuvio.webos_${version}_${resolution}_all.ipk`);
+  await rename(packagedIpk, resolutionIpk);
+  console.log(`webOS ${resolution} package: ${resolutionIpk}`);
 }
 
 try {
-  await packageWebOs();
+  await packageWebOs(readRequestedResolution());
 } catch (error) {
   console.error("\nwebOS packaging failed:");
   console.error(error);

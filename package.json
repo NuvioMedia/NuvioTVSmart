@@ -23,6 +23,7 @@
     "package:tizen": "npm run build && node ./scripts/package-tizen.mjs",
     "package:tizen:store": "npm run build && node ./scripts/package-tizen.mjs --store",
     "package:webos": "npm run build && node ./scripts/package-webos.mjs",
+    "package:webos:720": "npm run build && node ./scripts/package-webos.mjs --resolution=1280x720",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "serve": "node ./scripts/serve.mjs",
