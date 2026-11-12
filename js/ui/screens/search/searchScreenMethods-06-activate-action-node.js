@@ -191,6 +191,25 @@ export function createSearchScreenMethods06() {
         return;
       }
 
+      const nativeCode = Number(event?.originalKeyCode || code);
+      if (Platform.isTizen() && (nativeCode === 65376 || nativeCode === 65385)) {
+        const input = this.container?.querySelector("#searchInput");
+        if (input && this.isSearchInputEditingActive(event)) {
+          // Samsung's IME reports its Done/Cancel keys instead of the remote
+          // Enter/Back. End the editing session before returning to the D-pad
+          // graph, as Android does on IME Done, so the keyboard cannot keep
+          // swallowing the next Back press.
+          this.imeDismissed = true;
+          if (nativeCode === 65376) {
+            this.cancelScheduledInputSearch();
+            await this.runSearchFromInput(input, { autoFocusResults: true, rememberToHistory: true });
+          } else {
+            input.blur?.();
+          }
+          return;
+        }
+      }
+
       if (this.keepSearchInputEditingKey(event, code)) {
         return;
       }
