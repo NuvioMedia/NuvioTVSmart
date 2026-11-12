@@ -440,3 +440,13 @@
 .legacy-tizen .home-screen-shell.home-layout-modern .home-track > .home-content-card {
   margin-right: 0;
 }
+
+/* Engines without flex gap also drop the end padding of a scrolling flex
+   track, so the last card stopped flush against the screen edge. A trailing
+   flex item restores the 52px the newer engines get from padding-right. */
+.no-flex-gap .home-screen-shell.home-layout-modern .home-track::after {
+  content: "";
+  display: block;
+  flex: 0 0 52px;
+  height: 1px;
+}
