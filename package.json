@@ -2,7 +2,7 @@
   "name": "nuvio-tv-smart",
   "private": true,
   "type": "module",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "scripts": {
     "build": "node ./scripts/build.mjs",
     "test": "node --test scripts/test-dash-mime-hints.mjs scripts/test-profile-scoped-store-cache.mjs scripts/test-plugin-service-lifecycle.mjs && node --test scripts/test-media-server-sync.mjs && npm run test:plugins && npm run test:perf",
