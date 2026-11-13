@@ -20,7 +20,7 @@ let bridgeStartCalls = 0;
 let applicationLaunchCalls = 0;
 let applicationControlCalls = 0;
 
-function installTizen({ webService = false, launchAvailable = true } = {}) {
+function installTizen({ webService = false, launchAvailable = true, launchStarts = true } = {}) {
   globalThis.tizen = {
     ApplicationControl: class ApplicationControl {
       constructor(operation) {
@@ -45,7 +45,7 @@ function installTizen({ webService = false, launchAvailable = true } = {}) {
         }
         assert.equal(serviceId, "DemoPkg.EngineFsService");
         applicationControlCalls += 1;
-        serviceStarted = true;
+        serviceStarted = serviceStarted || launchStarts;
         onSuccess?.();
       },
       launch(serviceId, onSuccess, onFailure) {
@@ -55,7 +55,7 @@ function installTizen({ webService = false, launchAvailable = true } = {}) {
         }
         assert.equal(serviceId, "DemoPkg.EngineFsService");
         applicationLaunchCalls += 1;
-        serviceStarted = true;
+        serviceStarted = serviceStarted || launchStarts;
         onSuccess?.();
       }
     }
@@ -72,13 +72,13 @@ globalThis.fetch = async () => {
   };
 };
 
-function resetState({ webService = false, launchAvailable = true } = {}) {
+function resetState({ webService = false, launchAvailable = true, launchStarts = true } = {}) {
   serviceStarted = false;
   bridgeStartCalls = 0;
   applicationLaunchCalls = 0;
   applicationControlCalls = 0;
   globalThis.__NUVIO_TIZEN_WRT_SERVICE__ = undefined;
-  installTizen({ webService, launchAvailable });
+  installTizen({ webService, launchAvailable, launchStarts });
   Platform.current = null;
   resetTizenCapabilitiesCache();
 }
@@ -162,6 +162,31 @@ try {
   assert.equal(official.startMethod, "tizen-application-control-default");
   assert.equal(applicationControlCalls, 1);
   assert.equal(applicationLaunchCalls, 0);
+
+  // Tizen 9/10 export the Service class instead of startService() and accept
+  // launch calls without starting the service. Service#start() may stay
+  // pending while the service already runs.
+  class TizenTenService {
+    constructor(serviceId) {
+      assert.equal(serviceId, "DemoPkg.EngineFsService");
+      this.serviceId = serviceId;
+    }
+    start() {
+      bridgeStartCalls += 1;
+      serviceStarted = true;
+      return new Promise(() => {});
+    }
+  }
+  for (const webService of [false, true]) {
+    resetState({ webService, launchStarts: false });
+    globalThis.__NUVIO_TIZEN_WRT_SERVICE__ = { Service: TizenTenService };
+    const tizenTen = await TizenEngineFsService.ensureStarted({ purpose: "p2p" });
+    assert.equal(tizenTen.status, "success");
+    assert.equal(tizenTen.startMethod, "wrt-service-legacy");
+    assert.equal(bridgeStartCalls, 1);
+    assert.equal(applicationLaunchCalls, 0);
+    assert.equal(applicationControlCalls, 0);
+  }
 
   console.log("tizen subtitle service start tests passed");
 } finally {

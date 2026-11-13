@@ -1,5 +1,6 @@
 import { Platform } from "../index.js";
 import { TizenCapabilities } from "./tizenCapabilities.js";
+import { getWrtServiceClass, startWithWrtServiceClass } from "./tizenWrtService.js";
 
 const LOCAL_BASE_URLS = ["http://127.0.0.1:2711", "http://localhost:2711"];
 const START_TIMEOUT_MS = 12000;
@@ -18,6 +19,7 @@ const STARTUP_DIAGNOSTIC_EVENTS = new Set([
   "application-control start call",
   "application launch call",
   "wrt startService call",
+  "wrt Service.start call",
   "startService acknowledged",
   "startService failed",
   "health wait success",
@@ -205,6 +207,11 @@ async function startWithApplication(serviceId) {
 async function startWithWrtService(serviceId) {
   const service = globalThis.__NUVIO_TIZEN_WRT_SERVICE__;
   if (!service || typeof service.startService !== "function") {
+    const Service = getWrtServiceClass(service);
+    if (Service) {
+      diagnostic("wrt Service.start call", { serviceId });
+      return startWithWrtServiceClass(Service, serviceId);
+    }
     diagnostic("wrt service API unavailable", { serviceId });
     throw new Error("Tizen wrt:service startService API unavailable");
   }

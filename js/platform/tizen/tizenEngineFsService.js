@@ -1,5 +1,6 @@
 import { Platform } from "../index.js";
 import { TizenCapabilities } from "./tizenCapabilities.js";
+import { getWrtServiceClass, startWithWrtServiceClass } from "./tizenWrtService.js";
 
 const LOCAL_BASE_URLS = ["http://127.0.0.1:2710", "http://localhost:2710"];
 
@@ -114,6 +115,11 @@ async function startViaWrtService(serviceId) {
     globalThis.webapis?.wrt?.service ||
     globalThis.webapis?.service;
   if (!wrtService) {
+    const Service = getWrtServiceClass(wrtBridge);
+    if (Service) {
+      diagnostic("wrt Service.start call", { serviceId });
+      return startWithWrtServiceClass(Service, serviceId);
+    }
     diagnostic("wrt service API unavailable", { serviceId });
     throw new Error("wrt service API unavailable");
   }
@@ -157,7 +163,10 @@ async function startViaTizenApplication(serviceId) {
 
 async function requestServiceStart(serviceId) {
   const errors = [];
-  const legacyServiceFirst = TizenCapabilities.get().webServiceSupported === false;
+  // Tizen 9/10 accept launch calls for a service id without starting it; only
+  // the wrt:service Service class starts it there.
+  const legacyServiceFirst =
+    TizenCapabilities.get().webServiceSupported === false || Boolean(getWrtServiceClass());
   const officialAttempts = [
     {
       method: "tizen-application-control-default",
