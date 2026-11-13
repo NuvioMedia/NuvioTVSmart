@@ -383,6 +383,14 @@ jobs:
       - name: Build Linux installer
         run: npm run dist:linux
 
+      - name: Package installer CLI
+        id: cli
+        run: |
+          npm test
+          CLI_FILE="$(npm pack --silent | tail -n 1)"
+          mv "$CLI_FILE" NuvioTVSmart-Installer-CLI.tgz
+          echo "cli_name=NuvioTVSmart-Installer-CLI.tgz" >> "$GITHUB_OUTPUT"
+
       - name: Normalize installer artifact
         id: installer
         env:
@@ -404,4 +412,5 @@ jobs:
           TAG_NAME: ${{ needs.resolve-release-payload.outputs.tag }}
           INSTALLER_NAME: ${{ steps.installer.outputs.installer_name }}
           SOURCE_REPO: ${{ github.repository }}
-        run: gh release upload "$TAG_NAME" "$INSTALLER_NAME" --repo "$SOURCE_REPO" --clobber
+          CLI_NAME: ${{ steps.cli.outputs.cli_name }}
+        run: gh release upload "$TAG_NAME" "$INSTALLER_NAME" "$CLI_NAME" --repo "$SOURCE_REPO" --clobber
