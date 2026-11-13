@@ -106,6 +106,8 @@ function row(key, itemCount = 2) {
     catalogId: "top",
     catalogName: "Top",
     apiType: "movie",
+    type: "series",
+    skipStep: 20,
     homeCatalogKey: key,
     homeCatalogDisableKey: key,
     loadingItems: [{ id: "loading" }],
@@ -134,15 +136,17 @@ test("only successful catalog rows are written, with bounded items and no loadin
   assert.equal(compact.length, 1);
   assert.equal(compact[0].homeCatalogKey, "a:movie:top");
   assert.equal(compact[0].loadingItems, null);
+  assert.equal(compact[0].type, "series", "the row type drives its title suffix and cache key");
+  assert.equal(compact[0].skipStep, 20);
   assert.equal(compact[0].result.data.items.length, 60);
   assert.equal(compact[0].result.data.items[0].poster, "https://image.tmdb.org/t/p/w500/0.jpg");
 });
 
 test("snapshot freshness rejects another version, missing rows and expired records", () => {
   const now = 1_000_000_000;
-  const fresh = { version: 1, savedAt: now - 1000, rows: [row("a")] };
+  const fresh = { version: 2, savedAt: now - 1000, rows: [row("a")] };
   assert.equal(isHomeCatalogSnapshotFresh(fresh, now), true);
-  assert.equal(isHomeCatalogSnapshotFresh({ ...fresh, version: 2 }, now), false);
+  assert.equal(isHomeCatalogSnapshotFresh({ ...fresh, version: 1 }, now), false);
   assert.equal(isHomeCatalogSnapshotFresh({ ...fresh, rows: null }, now), false);
   assert.equal(
     isHomeCatalogSnapshotFresh({ ...fresh, savedAt: now - 13 * 60 * 60 * 1000 }, now),
