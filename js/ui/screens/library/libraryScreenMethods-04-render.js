@@ -260,7 +260,7 @@ export function createLibraryScreenMethods04() {
         selector = ".library-cloud-search-input.focusable";
       } else if (this.lastMainFocus?.matches?.(".library-picker-anchor")) {
         selector = this.getMainFocusSelector(this.lastMainFocus);
-      } else if (this.lastMainFocus?.dataset?.action) {
+      } else if (this.lastMainFocus?.dataset?.action && !this.lastMainFocus.dataset.focusKey) {
         selector = this.getMainFocusSelector(this.lastMainFocus);
       } else if (state.lastFocusedPosterKey) {
         selector = `.library-grid-card[data-focus-key="${selectorValue(state.lastFocusedPosterKey)}"]`;
