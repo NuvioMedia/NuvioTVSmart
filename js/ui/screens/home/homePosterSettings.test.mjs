@@ -6,6 +6,7 @@ import vm from "node:vm";
 test("poster settings are read once per layout, stay fresh, and preserve card markup", async () => {
   let reads = 0;
   let pattern = "https://posters.example/a/{imdb_id}";
+  let locale = "it";
   const context = vm.createContext({
     LayoutPreferences: {
       get() {
@@ -14,6 +15,8 @@ test("poster settings are read once per layout, stay fresh, and preserve card ma
       }
     },
     Router: { getCurrent: () => "home" },
+    I18n: { getLocale: () => locale },
+    Platform: { isTizen: () => false, isWebOS: () => false },
     isCollectionFolderItem: () => false,
     normalizeCatalogItem: (item) => item,
     firstNonEmpty: (...values) => values.find(Boolean) || "",
@@ -107,6 +110,13 @@ test("poster settings are read once per layout, stay fresh, and preserve card ma
   assert.ok(second.domMarkup.includes("<stub ") && !second.domMarkup.includes("Title 0"));
   api.renderModernHomeLayout({ ...cached, watchedTitleIds: new Set() });
   assert.equal(built, 40, "new watched state must rebuild the row");
+  const sameWatched = new Set();
+  api.renderModernHomeLayout({ ...cached, watchedTitleIds: sameWatched });
+  assert.equal(built, 60);
+  locale = "en";
+  api.renderModernHomeLayout({ ...cached, watchedTitleIds: sameWatched });
+  assert.equal(built, 80, "a language change must rebuild the row's translated labels");
+  locale = "it";
   pattern = "https://posters.example/c/{imdb_id}";
   assert.ok(api.renderModernHomeLayout(cached).markup.includes("https://posters.example/c/tt0"));
   const moreItems = structuredClone(options.rows);

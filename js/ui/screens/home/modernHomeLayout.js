@@ -1,5 +1,6 @@
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 import { unchangedHomeRowMarkup } from "./homeDomUpdate.js";
+import { I18n } from "../../../i18n/index.js";
 
 export const MODERN_HOME_CONSTANTS = {
   heroFocusDelayMs: 450,
@@ -81,7 +82,10 @@ export function renderModernHomeLayout({
   const domSectionsMarkup = [];
   const rowMarkups = new Map();
   const posterSettings = LayoutPreferences.get();
-  const posterSettingsKey = rowMarkupCache ? JSON.stringify(posterSettings) : "";
+  // Cached rows hold translated labels (the watched badge), so the locale is part of the key.
+  const posterSettingsKey = rowMarkupCache
+    ? JSON.stringify([posterSettings, I18n.getLocale()])
+    : "";
 
   rows.forEach((rowData, rowIndex) => {
     const isCollectionRow = rowData?.rowKind === "collection";
