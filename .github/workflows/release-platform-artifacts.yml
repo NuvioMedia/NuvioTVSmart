@@ -414,3 +414,72 @@ jobs:
           SOURCE_REPO: ${{ github.repository }}
           CLI_NAME: ${{ steps.cli.outputs.cli_name }}
         run: gh release upload "$TAG_NAME" "$INSTALLER_NAME" "$CLI_NAME" --repo "$SOURCE_REPO" --clobber
+
+  build-ios-installer-release:
+    runs-on: macos-latest
+    needs:
+      - resolve-release-payload
+      - build-webos-release
+      - build-tizen-release
+    permissions:
+      contents: write
+    steps:
+      - name: Check out installer repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.INSTALLER_REPO || 'NuvioMedia/NuvioTVSmart-Installer' }}
+          token: ${{ secrets.REPO_DISPATCH_TOKEN || github.token }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # The iOS app reuses the installer UI and signing code; Electron itself is not needed.
+      - name: Install installer dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        run: npm ci
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Build unsigned iOS installer IPA
+        id: installer
+        env:
+          TAG_NAME: ${{ needs.resolve-release-payload.outputs.tag }}
+        run: |
+          VERSION="${TAG_NAME#v}"
+          TARGET_FILE="NuvioTVSmart-Installer-iOS-${TAG_NAME}.ipa"
+          ios/build-ipa.sh "$VERSION" "$TARGET_FILE"
+          echo "installer_name=$TARGET_FILE" >> "$GITHUB_OUTPUT"
+          echo "installer_version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Stable AltStore/SideStore source URL:
+      # https://github.com/<repo>/releases/latest/download/NuvioTVSmart-Installer-AltStore.json
+      - name: Generate AltStore source
+        id: altstore
+        env:
+          TAG_NAME: ${{ needs.resolve-release-payload.outputs.tag }}
+          INSTALLER_NAME: ${{ steps.installer.outputs.installer_name }}
+          INSTALLER_VERSION: ${{ steps.installer.outputs.installer_version }}
+          SOURCE_REPO: ${{ github.repository }}
+        run: |
+          SOURCE_FILE="NuvioTVSmart-Installer-AltStore.json"
+          node ios/altstore-source.mjs \
+            --ipa "$INSTALLER_NAME" \
+            --version "$INSTALLER_VERSION" \
+            --tag "$TAG_NAME" \
+            --download-url "https://github.com/${SOURCE_REPO}/releases/download/${TAG_NAME}/${INSTALLER_NAME}" \
+            --out "$SOURCE_FILE"
+          echo "source_name=$SOURCE_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload iOS installer and AltStore source to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.resolve-release-payload.outputs.tag }}
+          INSTALLER_NAME: ${{ steps.installer.outputs.installer_name }}
+          SOURCE_NAME: ${{ steps.altstore.outputs.source_name }}
+          SOURCE_REPO: ${{ github.repository }}
+        run: gh release upload "$TAG_NAME" "$INSTALLER_NAME" "$SOURCE_NAME" --repo "$SOURCE_REPO" --clobber
