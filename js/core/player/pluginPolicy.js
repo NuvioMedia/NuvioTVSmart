@@ -72,7 +72,11 @@ function snapshotFields(
     normalAddonsSupported,
     candidate,
     executable,
-    supportLevel: candidate ? (quota === PLUGIN_QUOTAS.modern ? "full" : "limited") : "unsupported",
+    supportLevel: candidate
+      ? quota === PLUGIN_QUOTAS.limited
+        ? "limited"
+        : "full"
+      : "unsupported",
     reason,
     pluginServiceAvailable: false,
     localJsPluginSupported: executable,
@@ -176,7 +180,9 @@ export function getPluginCapabilitySnapshot() {
         pluginServicePackaged
       };
     }
-    const quota = version >= 6 ? PLUGIN_QUOTAS.modern : PLUGIN_QUOTAS.limited;
+    // Same quota as Android on every supported webOS; how many providers run
+    // at once adapts to the TV in pluginResourceGovernor.js.
+    const quota = PLUGIN_QUOTAS.modern;
     return {
       ...snapshotFields(platform, quota, {
         appSupported,

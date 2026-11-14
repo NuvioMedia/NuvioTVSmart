@@ -595,6 +595,79 @@ async function buildPluginRuntimeAssets() {
     path.join(rootDir, "node_modules", "crypto-js", "LICENSE"),
     path.join(distDir, "assets", "libs", "crypto-js.LICENSE")
   );
+  await buildQuickJsMvpWasm();
+}
+
+// The QuickJS WASM embedded in quickjs-emscripten needs sign-ext, non-trapping
+// float-to-int and bulk memory (Chrome 74/75). webOS 5 and Tizen 5.5 ship
+// Chromium 68/69, so the worker loads this lowered MVP copy there instead.
+async function buildQuickJsMvpWasm() {
+  const { default: binaryen } = await import("binaryen");
+  const source = await readFile(
+    path.join(
+      rootDir,
+      "node_modules",
+      "@jitl",
+      "quickjs-wasmfile-release-sync",
+      "dist",
+      "emscripten-module.wasm"
+    )
+  );
+  await assertSameAsEmbeddedQuickJsWasm(source);
+  const module = binaryen.readBinary(source);
+  const F = binaryen.Features;
+  module.setFeatures(
+    F.MVP | F.MutableGlobals | F.SignExt | F.NontrappingFPToInt | F.BulkMemory | F.BulkMemoryOpt
+  );
+  module.runPasses([
+    "signext-lowering",
+    "llvm-nontrapping-fptoint-lowering",
+    "llvm-memory-copy-fill-lowering"
+  ]);
+  module.setFeatures(F.MVP);
+  if (!module.validate()) throw new Error("QuickJS MVP WASM lowering failed validation");
+  const output = module.emitBinary();
+  module.dispose();
+  await writeFile(path.join(distDir, "assets", "libs", "quickjs-mvp.wasm"), output);
+}
+
+// The worker hands the lowered file to the embedded glue as wasmModule, so its
+// imports must match: fail the build if the two packages ever drift apart.
+async function assertSameAsEmbeddedQuickJsWasm(expected) {
+  const { execFileSync } = await import("node:child_process");
+  // A CommonJS child runs the browser bundle as-is and reports the bytes it
+  // instantiates, without touching this build's globals.
+  const script = `
+    const fs = require("fs");
+    globalThis.self = globalThis;
+    const instantiate = WebAssembly.instantiate;
+    WebAssembly.instantiate = (b, ...r) => {
+      if (ArrayBuffer.isView(b)) process.stdout.write(Buffer.from(b.buffer, b.byteOffset, b.byteLength).toString("base64"));
+      return instantiate.call(WebAssembly, b, ...r);
+    };
+    require("vm").runInThisContext(fs.readFileSync(process.argv[1], "utf8"));
+    QJS.newQuickJSWASMModule(QJS.RELEASE_SYNC);
+  `;
+  const embedded = Buffer.from(
+    execFileSync(
+      process.execPath,
+      [
+        "-e",
+        script,
+        path.join(rootDir, "node_modules", "quickjs-emscripten", "dist", "index.global.js")
+      ],
+      {
+        encoding: "utf8",
+        maxBuffer: 16 * 1024 * 1024
+      }
+    ),
+    "base64"
+  );
+  if (!embedded.equals(expected)) {
+    throw new Error(
+      "quickjs-emscripten embedded WASM differs from @jitl/quickjs-wasmfile-release-sync"
+    );
+  }
 }
 
 async function buildSubtitleAutoSyncWorker() {

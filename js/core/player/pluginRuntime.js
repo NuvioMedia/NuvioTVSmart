@@ -1,6 +1,9 @@
 import { TMDB_API_KEY } from "../../config.js";
 import { PluginServiceClient } from "../../platform/pluginServiceClient.js";
 import { PLUGIN_QUOTAS } from "./pluginPolicy.js";
+import { createPluginResourceGovernor, QUICKJS_BASE_WASM_BYTES } from "./pluginResourceGovernor.js";
+import { getDeviceMemoryGb } from "../../platform/tvPerformancePolicy.js";
+import { getTvRuntimePerformanceProfile } from "../../platform/tvRuntimePerformance.js";
 import { PluginStore } from "../../data/local/pluginStore.js";
 import {
   diagnosticError,
@@ -11,6 +14,69 @@ import {
 const activeWorkers = new Set();
 const activeCancellers = new Map();
 let runtimeTestPromise = null;
+
+// Warm workers are reused: each provider still gets its own QuickJS runtime,
+// but the QuickJS script and WASM are not loaded and compiled again.
+const idleWorkers = [];
+const IDLE_WORKER_TTL_MS = 30000;
+// WASM memory never shrinks, so a worker a heavy provider grew is dropped.
+const RECYCLE_WASM_BYTES = 2 * QUICKJS_BASE_WASM_BYTES;
+let governor = null;
+
+function resourceGovernor() {
+  if (!governor) {
+    let storage = null;
+    try {
+      storage = globalThis.localStorage || null;
+    } catch (_) {}
+    governor = createPluginResourceGovernor({
+      deviceMemoryGb: getDeviceMemoryGb(),
+      constrained: getTvRuntimePerformanceProfile().isPerformanceConstrained === true,
+      storage,
+      readMainHeap: () => globalThis.performance?.memory || null
+    });
+  }
+  return governor;
+}
+
+function terminateWorker(worker) {
+  try {
+    worker.terminate();
+  } catch (_) {}
+}
+
+function acquireWorker() {
+  const idle = idleWorkers.pop();
+  if (idle) {
+    clearTimeout(idle.timer);
+    return idle.worker;
+  }
+  return new Worker(workerUrl());
+}
+
+function releaseWorker(worker, wasmBytes) {
+  worker.onmessage = null;
+  worker.onerror = null;
+  const keep = resourceGovernor().allowedConcurrency(PLUGIN_QUOTAS.modern.maxConcurrent);
+  if (!(wasmBytes > 0) || wasmBytes > RECYCLE_WASM_BYTES || idleWorkers.length >= keep) {
+    terminateWorker(worker);
+    return;
+  }
+  const entry = { worker, timer: 0 };
+  entry.timer = setTimeout(() => {
+    const index = idleWorkers.indexOf(entry);
+    if (index >= 0) idleWorkers.splice(index, 1);
+    terminateWorker(worker);
+  }, IDLE_WORKER_TTL_MS);
+  idleWorkers.push(entry);
+}
+
+function dropIdleWorkers() {
+  idleWorkers.splice(0).forEach((entry) => {
+    clearTimeout(entry.timer);
+    terminateWorker(entry.worker);
+  });
+}
 
 function workerUrl() {
   if (globalThis.__NUVIO_PLUGIN_WORKER_URL__) {
@@ -153,8 +219,9 @@ export const PluginRuntime = {
 
     let worker;
     try {
-      worker = new Worker(workerUrl());
+      worker = acquireWorker();
     } catch (error) {
+      resourceGovernor().reportPressure();
       emitPluginDiagnosticEvent(
         "plugin worker creation failed",
         { ...runtimeDetails, error: diagnosticError(error) },
@@ -163,29 +230,31 @@ export const PluginRuntime = {
       throw error;
     }
     activeWorkers.add(worker);
+    resourceGovernor().workerStarted();
     const executionId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const pendingRequestIds = new Set();
     let timeoutId = 0;
     let settled = false;
     let abortListener = null;
 
-    const terminate = () => {
+    // wasmBytes > 0 only on a clean result: that worker can serve the next provider.
+    const release = (wasmBytes = 0) => {
       if (timeoutId) clearTimeout(timeoutId);
       if (abortListener) signal?.removeEventListener?.("abort", abortListener);
       pendingRequestIds.forEach((requestId) => void PluginServiceClient.cancel(requestId));
       pendingRequestIds.clear();
       activeWorkers.delete(worker);
       activeCancellers.delete(worker);
-      try {
-        worker.terminate();
-      } catch (_) {}
+      resourceGovernor().workerEnded();
+      if (wasmBytes > 0) releaseWorker(worker, wasmBytes);
+      else terminateWorker(worker);
     };
 
     return new Promise((resolve, reject) => {
-      const finish = (error, value) => {
+      const finish = (error, value, wasmBytes = 0) => {
         if (settled) return;
         settled = true;
-        terminate();
+        release(error ? 0 : wasmBytes);
         if (error) reject(error);
         else resolve(value);
       };
@@ -206,6 +275,8 @@ export const PluginRuntime = {
         finish(error);
       }, timeoutMs);
       worker.onerror = (event) => {
+        // An uncaught worker failure on a TV is almost always memory running out.
+        resourceGovernor().reportPressure();
         const error = new Error(String(event?.message || "Plugin worker failed"));
         emitPluginDiagnosticEvent(
           "plugin worker failed",
@@ -278,7 +349,9 @@ export const PluginRuntime = {
           return;
         }
         if (message.type === "result") {
-          finish(null, Array.isArray(message.results) ? message.results : []);
+          const wasmBytes = Number(message.wasmMemoryBytes) || 0;
+          if (wasmBytes > 0) resourceGovernor().observeWorker(wasmBytes);
+          finish(null, Array.isArray(message.results) ? message.results : [], wasmBytes);
           return;
         }
         if (message.type === "error") {
@@ -331,10 +404,16 @@ export const PluginRuntime = {
     });
     activeCancellers.clear();
     activeWorkers.clear();
+    dropIdleWorkers();
     runtimeTestPromise = null;
   },
 
   getActiveWorkerCount() {
     return activeWorkers.size;
+  },
+
+  // How many providers may run side by side now; never above the Android ceiling.
+  allowedConcurrency(max) {
+    return resourceGovernor().allowedConcurrency(max);
   }
 };

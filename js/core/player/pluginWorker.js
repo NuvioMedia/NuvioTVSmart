@@ -550,10 +550,64 @@ async function resolveGuestPromise(context, runtime, handle, timeoutMs) {
   return resolution;
 }
 
+// memory.copy probe: bulk memory shipped last (Chrome 75) of the features the
+// stock QuickJS WASM needs, so older engines get the lowered MVP build.
+var BULK_MEMORY_PROBE = new Uint8Array([
+  0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 2, 1, 0, 5, 3, 1, 0, 1, 10, 14, 1, 12, 0, 65,
+  0, 65, 0, 65, 0, 252, 10, 0, 0, 11
+]);
+var quickJSModulePromise = null;
+
+function loadQuickJS(QJS) {
+  if (WebAssembly.validate(BULK_MEMORY_PROBE)) return QJS.getQuickJS();
+  if (!quickJSModulePromise) {
+    // XHR, not fetch: packaged webOS apps run from file://, which fetch rejects.
+    quickJSModulePromise = new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "../libs/quickjs-mvp.wasm");
+      xhr.responseType = "arraybuffer";
+      xhr.onload = function () {
+        // status 0 is a successful file:// load
+        if ((xhr.status === 0 || xhr.status === 200) && xhr.response && xhr.response.byteLength) {
+          resolve(xhr.response);
+        } else reject(new Error("QuickJS MVP WASM failed to load (" + xhr.status + ")"));
+      };
+      xhr.onerror = function () {
+        reject(new Error("QuickJS MVP WASM failed to load"));
+      };
+      xhr.send();
+    })
+      .then(function (bytes) {
+        return WebAssembly.compile(bytes);
+      })
+      .then(function (wasmModule) {
+        return QJS.newQuickJSWASMModule(
+          QJS.newVariant(QJS.RELEASE_SYNC, { wasmModule: wasmModule })
+        );
+      })
+      .catch(function (error) {
+        quickJSModulePromise = null;
+        throw error;
+      });
+  }
+  return quickJSModulePromise;
+}
+
+// The pool reuses this worker after a result; the WASM size it reached tells
+// the runtime how much memory a provider costs on this TV.
+function sendResult(execution, results) {
+  var wasmMemoryBytes = 0;
+  try {
+    wasmMemoryBytes = execution.quickJS.getWasmMemory().buffer.byteLength;
+  } catch (_) {}
+  send({ type: "result", results: results, wasmMemoryBytes: wasmMemoryBytes });
+}
+
 async function execute(message) {
   // Workers do not inherit the page's core-js polyfills on older TV browsers.
   if (typeof workerScope.globalThis === "undefined") workerScope.globalThis = workerScope;
-  importScripts("../libs/quickjs-emscripten.global.js");
+  // A pooled worker serves many providers: load the QuickJS script only once.
+  if (!workerScope.QJS) importScripts("../libs/quickjs-emscripten.global.js");
   var QJS = workerScope.QJS;
   if (!QJS || typeof QJS.getQuickJS !== "function")
     throw new Error("QuickJS WASM asset unavailable");
@@ -575,7 +629,8 @@ async function execute(message) {
   // the VM on the regular QuickJS module, as Android does, and drive promise
   // jobs explicitly in resolveGuestPromise(). This avoids Asyncify re-entry
   // and its smaller/less predictable host stack on Tizen Web Workers.
-  var quickJS = await QJS.getQuickJS();
+  var quickJS = await loadQuickJS(QJS);
+  execution.quickJS = quickJS;
   var context = quickJS.newContext({
     // Eval is required by quickjs-emscripten's evalCode host API and remains
     // available to the guest, as it does on Android.
@@ -817,7 +872,7 @@ async function execute(message) {
       level: "error",
       message: "getStreams invocation failed: " + String(error?.message || error)
     });
-    send({ type: "result", results: [] });
+    sendResult(execution, []);
     return;
   }
   var resolvedCallResult;
@@ -845,7 +900,7 @@ async function execute(message) {
       message:
         "getStreams promise failed: " + String(providerCallError?.message || providerCallError)
     });
-    send({ type: "result", results: [] });
+    sendResult(execution, []);
     return;
   }
   disposeCallHandle();
@@ -868,7 +923,7 @@ async function execute(message) {
     : [];
   execution.cleanup();
   activeExecution = null;
-  send({ type: "result", results });
+  sendResult(execution, results);
 }
 
 workerScope.onmessage = function (event) {
