@@ -483,3 +483,71 @@ jobs:
           SOURCE_NAME: ${{ steps.altstore.outputs.source_name }}
           SOURCE_REPO: ${{ github.repository }}
         run: gh release upload "$TAG_NAME" "$INSTALLER_NAME" "$SOURCE_NAME" --repo "$SOURCE_REPO" --clobber
+
+  build-android-installer-release:
+    runs-on: ubuntu-latest
+    needs:
+      - resolve-release-payload
+      - build-webos-release
+      - build-tizen-release
+    permissions:
+      contents: write
+    steps:
+      - name: Check out installer repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.INSTALLER_REPO || 'NuvioMedia/NuvioTVSmart-Installer' }}
+          token: ${{ secrets.REPO_DISPATCH_TOKEN || github.token }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # The Android app reuses the installer UI and signing code; Electron itself is not needed.
+      - name: Install installer dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        run: npm ci
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # The same release key signs every version, so the app updates in place.
+      - name: Write Android release key
+        env:
+          NUVIO_ANDROID_KEYSTORE_BASE64: ${{ secrets.NUVIO_ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$NUVIO_ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::NUVIO_ANDROID_KEYSTORE_BASE64 secret is required to sign the Android installer."
+            exit 1
+          fi
+          printf '%s' "$NUVIO_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/nuvio-android-release.jks"
+          echo "NUVIO_ANDROID_KEYSTORE=$RUNNER_TEMP/nuvio-android-release.jks" >> "$GITHUB_ENV"
+
+      - name: Build Android installer APK
+        id: installer
+        env:
+          TAG_NAME: ${{ needs.resolve-release-payload.outputs.tag }}
+          NUVIO_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.NUVIO_ANDROID_KEYSTORE_PASSWORD }}
+          NUVIO_ANDROID_KEY_ALIAS: ${{ secrets.NUVIO_ANDROID_KEY_ALIAS }}
+          NUVIO_ANDROID_KEY_PASSWORD: ${{ secrets.NUVIO_ANDROID_KEY_PASSWORD }}
+        run: |
+          VERSION="${TAG_NAME#v}"
+          TARGET_FILE="NuvioTVSmart-Installer-Android-${TAG_NAME}.apk"
+          android/build-apk.sh "$VERSION" "$TARGET_FILE"
+          APKSIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)"
+          "$APKSIGNER" verify --print-certs "$TARGET_FILE"
+          echo "installer_name=$TARGET_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Android installer to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.resolve-release-payload.outputs.tag }}
+          INSTALLER_NAME: ${{ steps.installer.outputs.installer_name }}
+          SOURCE_REPO: ${{ github.repository }}
+        run: gh release upload "$TAG_NAME" "$INSTALLER_NAME" --repo "$SOURCE_REPO" --clobber
