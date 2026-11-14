@@ -36,6 +36,47 @@ const EXPECTED_STARTUP_EVENTS = new Set([
 ]);
 const lastStartupDiagnostic = new Map();
 let startPromise = null;
+// Last healthy probe. Probing /health before every plugin fetch doubled the
+// connections to the service and, under load, timed out and relaunched it.
+let cachedReachable = null;
+let reachableBaseUrls = [];
+let probePromise = null;
+// Chromium opens at most 6 connections per host (127.0.0.1 and localhost count
+// apart). Plugin fetches hold one for seconds, so cap them at 5 per host and
+// leave one free for /health and /cancel, which otherwise queued and failed.
+const FETCH_SLOTS_PER_BASE_URL = 5;
+const activeFetches = new Map();
+let fetchWaiters = [];
+
+function leastBusyBaseUrl(fallback) {
+  const urls = reachableBaseUrls.length ? reachableBaseUrls : [fallback];
+  return urls.reduce((best, url) =>
+    (activeFetches.get(url) || 0) < (activeFetches.get(best) || 0) ? url : best
+  );
+}
+
+async function acquireFetchSlot(fallback, signal) {
+  for (;;) {
+    if (signal?.aborted) throw new DOMException("The user aborted a request.", "AbortError");
+    const baseUrl = leastBusyBaseUrl(fallback);
+    const active = activeFetches.get(baseUrl) || 0;
+    if (active < FETCH_SLOTS_PER_BASE_URL) {
+      activeFetches.set(baseUrl, active + 1);
+      return baseUrl;
+    }
+    await new Promise((resolve) => {
+      fetchWaiters.push(resolve);
+      signal?.addEventListener?.("abort", resolve, { once: true });
+    });
+  }
+}
+
+function releaseFetchSlot(baseUrl) {
+  activeFetches.set(baseUrl, Math.max(0, (activeFetches.get(baseUrl) || 0) - 1));
+  const waiters = fetchWaiters;
+  fetchWaiters = [];
+  waiters.forEach((resolve) => resolve());
+}
 
 function diagnosticError(error) {
   const details = {
@@ -341,6 +382,8 @@ async function findBaseUrl(timeoutMs = PROBE_TIMEOUT_MS) {
   });
   const reachable = results.find((entry) => entry.result);
   if (reachable) {
+    cachedReachable = reachable.result;
+    reachableBaseUrls = results.filter((entry) => entry.result).map((entry) => entry.baseUrl);
     return reachable.result;
   }
 
@@ -419,6 +462,7 @@ export const TizenPluginService = {
       });
       return { status: "unsupported", detail: "Tizen plugin support starts at Tizen 6.0" };
     }
+    if (cachedReachable) return { status: "success", ...cachedReachable, started: false };
     const serviceId = getServiceId();
     diagnostic("ensure begin", {
       serviceId,
@@ -443,7 +487,9 @@ export const TizenPluginService = {
       return { status: "unsupported", detail: "Tizen WebAssembly is unavailable" };
     }
     try {
-      const reachable = await findBaseUrl();
+      // Concurrent first requests share one probe.
+      if (!probePromise) probePromise = findBaseUrl().finally(() => (probePromise = null));
+      const reachable = await probePromise;
       diagnostic("ensure found existing service", { baseUrl: reachable.baseUrl });
       return { status: "success", ...reachable, started: false };
     } catch (error) {
@@ -504,6 +550,7 @@ export const TizenPluginService = {
 
   async health() {
     diagnostic("health API requested", {});
+    cachedReachable = null; // an explicit health check always probes the service
     const started = await this.ensureStarted();
     if (started.status !== "success") {
       diagnostic("health API unavailable", { detail: started.detail || "" });
@@ -543,7 +590,11 @@ export const TizenPluginService = {
     const started = await this.ensureStarted();
     if (started.status !== "success")
       throw new Error(started.detail || "Tizen plugin service unavailable");
-    const baseUrl = started.baseUrl;
+    const holdsSlot = method === "fetch";
+    // A fetch whose scraper was aborted while waiting must not take a slot.
+    const baseUrl = holdsSlot
+      ? await acquireFetchSlot(started.baseUrl, signal)
+      : leastBusyBaseUrl(started.baseUrl);
     const requestDetails = serviceRequestDetails(method, baseUrl, timeoutMs, payload, signal);
     diagnostic("service request begin", requestDetails);
     const controller = typeof AbortController === "function" ? new AbortController() : null;
@@ -568,6 +619,11 @@ export const TizenPluginService = {
       });
       return result;
     } catch (error) {
+      // Connection refused: the service died, so the next request probes and restarts it.
+      if (error?.name === "TypeError" && !controller?.signal?.aborted) {
+        cachedReachable = null;
+        reachableBaseUrls = [];
+      }
       diagnostic("service request failed", {
         ...requestDetails,
         error: diagnosticError(error)
@@ -576,6 +632,7 @@ export const TizenPluginService = {
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener?.("abort", abort);
+      if (holdsSlot) releaseFetchSlot(baseUrl);
     }
   },
 
