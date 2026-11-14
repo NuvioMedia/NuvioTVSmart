@@ -98,15 +98,169 @@ function traceRequestDetails(payload, parsed, redirects) {
   return details;
 }
 
-function isLoopbackAddress(value) {
-  var address = String(value || "")
+function stripIpBracketsAndZone(value) {
+  var text = String(value || "")
     .trim()
     .toLowerCase();
-  if (!address) return false;
-  address = address.split("%", 1)[0];
-  if (address === "::1" || address === "0:0:0:0:0:0:0:1") return true;
-  address = address.replace(/^::ffff:/, "");
-  return /^127(?:\.\d{1,3}){3}$/.test(address);
+  if (!text) return "";
+  if (text.charAt(0) === "[" && text.charAt(text.length - 1) === "]") {
+    text = text.slice(1, -1);
+  }
+  var zoneIndex = text.indexOf("%");
+  if (zoneIndex >= 0) {
+    text = text.slice(0, zoneIndex);
+  }
+  return text;
+}
+
+function parseIpv4Octets(value) {
+  var text = String(value || "");
+  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(text)) return null;
+  var parts = text.split(".");
+  var octets = [];
+  for (var i = 0; i < 4; i += 1) {
+    var part = parts[i];
+    if (part.length > 1 && part.charAt(0) === "0") return null;
+    var num = Number(part);
+    if (num < 0 || num > 255) return null;
+    octets.push(num);
+  }
+  return octets;
+}
+
+function parseIpv6SegmentList(segments, allowTrailingIpv4) {
+  var groups = [];
+  for (var i = 0; i < segments.length; i += 1) {
+    var segment = segments[i];
+    if (!segment) return null;
+    if (allowTrailingIpv4 && i === segments.length - 1 && segment.indexOf(".") >= 0) {
+      var octets = parseIpv4Octets(segment);
+      if (!octets) return null;
+      groups.push(((octets[0] << 8) | octets[1]) >>> 0);
+      groups.push(((octets[2] << 8) | octets[3]) >>> 0);
+    } else {
+      if (!/^[0-9a-f]{1,4}$/.test(segment)) return null;
+      groups.push(parseInt(segment, 16));
+    }
+  }
+  return groups;
+}
+
+function parseIpv6Groups(value) {
+  var text = String(value || "");
+  if (!text || text.indexOf(":") < 0) return null;
+  var halves = text.split("::");
+  if (halves.length > 2) return null;
+  if (halves.length === 1) {
+    var singleGroups = parseIpv6SegmentList(halves[0].split(":"), true);
+    if (!singleGroups || singleGroups.length !== 8) return null;
+    return singleGroups;
+  }
+  var leftSegments = halves[0] ? halves[0].split(":") : [];
+  var rightSegments = halves[1] ? halves[1].split(":") : [];
+  var leftGroups = parseIpv6SegmentList(leftSegments, false);
+  var rightGroups = parseIpv6SegmentList(rightSegments, true);
+  if (!leftGroups || !rightGroups) return null;
+  var missingCount = 8 - (leftGroups.length + rightGroups.length);
+  if (missingCount < 1) return null;
+  var result = leftGroups.slice();
+  for (var i = 0; i < missingCount; i += 1) {
+    result.push(0);
+  }
+  return result.concat(rightGroups);
+}
+
+function parseIpAddress(value) {
+  var text = stripIpBracketsAndZone(value);
+  if (!text) return null;
+  var ipv4 = parseIpv4Octets(text);
+  if (ipv4) return { family: 4, octets: ipv4 };
+  var ipv6 = parseIpv6Groups(text);
+  if (ipv6) return { family: 6, groups: ipv6 };
+  return null;
+}
+
+function isBlockedIpv4Octets(octets) {
+  var first = octets[0];
+  var second = octets[1];
+  // Block loopback (127.0.0.0/8), unspecified (0.0.0.0/8), and link-local / metadata (169.254.0.0/16).
+  // RFC1918 private LAN ranges remain allowed so self-hosted LAN plugins/addons keep working.
+  return first === 127 || first === 0 || (first === 169 && second === 254);
+}
+
+function isBlockedIpv6Groups(groups) {
+  // Link-local fe80::/10 (fe80..febf).
+  if ((groups[0] & 0xffc0) === 0xfe80) return true;
+  // Embedded IPv4-in-IPv6: IPv4-compatible ::/96 (including :: and ::1) and IPv4-mapped ::ffff:0:0/96.
+  if (
+    groups[0] === 0 &&
+    groups[1] === 0 &&
+    groups[2] === 0 &&
+    groups[3] === 0 &&
+    groups[4] === 0 &&
+    (groups[5] === 0 || groups[5] === 0xffff)
+  ) {
+    return isBlockedIpv4Octets([
+      (groups[6] >> 8) & 0xff,
+      groups[6] & 0xff,
+      (groups[7] >> 8) & 0xff,
+      groups[7] & 0xff
+    ]);
+  }
+  return false;
+}
+
+function isBlockedIpAddress(value) {
+  var parsed = parseIpAddress(value);
+  if (!parsed) return false;
+  return parsed.family === 4
+    ? isBlockedIpv4Octets(parsed.octets)
+    : isBlockedIpv6Groups(parsed.groups);
+}
+
+function isAllowedResolvedIp(value, netModule) {
+  var raw = String(value || "").trim();
+  if (!raw) return false;
+  var parsed = parseIpAddress(raw);
+  if (!parsed) return false;
+  if (
+    parsed.family === 4 ? isBlockedIpv4Octets(parsed.octets) : isBlockedIpv6Groups(parsed.groups)
+  ) {
+    return false;
+  }
+  var netMod = netModule || getNetModule();
+  return netMod.isIP(raw) !== 0;
+}
+
+function normalizeHostname(hostname) {
+  var host = String(hostname || "")
+    .trim()
+    .toLowerCase();
+  if (host.charAt(0) === "[" && host.charAt(host.length - 1) === "]") {
+    host = host.slice(1, -1);
+  }
+  return host.replace(/\.+$/, "");
+}
+
+function isBlockedHostname(hostname) {
+  var host = normalizeHostname(hostname);
+  if (!host) return true;
+  if (host === "localhost" || /\.localhost$/.test(host)) return true;
+  return isBlockedIpAddress(host);
+}
+
+function isLoopbackAddress(value) {
+  var parsed = parseIpAddress(value);
+  if (!parsed) return false;
+  if (parsed.family === 4) return parsed.octets[0] === 127;
+  var groups = parsed.groups;
+  if (groups[0] === 0 && groups[1] === 0 && groups[2] === 0 && groups[3] === 0 && groups[4] === 0) {
+    if (groups[5] === 0 && groups[6] === 0 && groups[7] === 1) return true;
+    if (groups[5] === 0 || groups[5] === 0xffff) {
+      return ((groups[6] >> 8) & 0xff) === 127;
+    }
+  }
+  return false;
 }
 
 function isLoopbackRequest(request) {
@@ -176,6 +330,11 @@ function validatePayload(payload) {
     return {
       ok: false,
       error: "Only valid HTTP(S) URLs are allowed"
+    };
+  if (isBlockedHostname(parsed.hostname))
+    return {
+      ok: false,
+      error: "Blocked restricted destination address"
     };
   var requestedMethod = String((payload && payload.method) || "GET").toUpperCase();
   var method =
@@ -253,10 +412,16 @@ function lookupHost(parsed, callback) {
     callback(error);
     return;
   }
-  var host = String(parsed.hostname || "")
-    .toLowerCase()
-    .replace(/^\[|\]$/g, "");
+  var host = normalizeHostname(parsed && parsed.hostname);
+  if (!host || isBlockedHostname(host)) {
+    callback(new Error("Blocked restricted destination address"));
+    return;
+  }
   if (netModule.isIP(host)) {
+    if (!isAllowedResolvedIp(host, netModule)) {
+      callback(new Error("Blocked restricted destination address"));
+      return;
+    }
     callback(null, [host]);
     return;
   }
@@ -266,39 +431,63 @@ function lookupHost(parsed, callback) {
     done = true;
     callback(error || null, addresses || null);
   }
+  function validateResolvedEntries(entries) {
+    var validated = [];
+    for (var i = 0; i < entries.length; i += 1) {
+      var entry = entries[i];
+      var rawAddress =
+        entry && typeof entry === "object" && entry.address !== undefined ? entry.address : entry;
+      var addressText = rawAddress == null ? "" : String(rawAddress).trim();
+      if (!addressText || !isAllowedResolvedIp(addressText, netModule)) {
+        return null;
+      }
+      validated.push(addressText);
+    }
+    return validated;
+  }
   try {
     dnsModule.lookup(host, { all: true, verbatim: true }, function (error, addresses) {
       if (error) {
         finish(error);
         return;
       }
-      var values = Array.isArray(addresses) ? addresses : [{ address: addresses }];
-      values = values
-        .filter(function (entry) {
-          return entry && entry.address;
-        })
-        .sort(function (left, right) {
-          return netModule.isIPv4(left.address) === netModule.isIPv4(right.address)
-            ? 0
-            : netModule.isIPv4(left.address)
-              ? -1
-              : 1;
-        });
+      var values = Array.isArray(addresses)
+        ? addresses
+        : addresses && typeof addresses === "object"
+          ? [addresses]
+          : [{ address: addresses }];
       if (!values.length) {
         finish(new Error("DNS lookup returned no address"));
         return;
       }
-      finish(
-        null,
-        values.map(function (entry) {
-          return String(entry.address || "");
-        })
-      );
+      // Fail closed if any returned address is invalid or points to a blocked network range.
+      var validatedAddresses = validateResolvedEntries(values);
+      if (!validatedAddresses || !validatedAddresses.length) {
+        finish(new Error("Blocked restricted destination address"));
+        return;
+      }
+      validatedAddresses.sort(function (left, right) {
+        return netModule.isIPv4(left) === netModule.isIPv4(right)
+          ? 0
+          : netModule.isIPv4(left)
+            ? -1
+            : 1;
+      });
+      finish(null, validatedAddresses);
     });
   } catch (_) {
     try {
       dnsModule.lookup(host, function (error, address) {
-        finish(error || null, address ? [String(address)] : null);
+        if (error) {
+          finish(error);
+          return;
+        }
+        var addressText = address == null ? "" : String(address).trim();
+        if (!addressText || !isAllowedResolvedIp(addressText, netModule)) {
+          finish(new Error("Blocked restricted destination address"));
+          return;
+        }
+        finish(null, [addressText]);
       });
     } catch (error) {
       finish(error);
@@ -473,15 +662,10 @@ function performFetch(payload, callback, redirects, trace, networkState) {
       finish(lookupError);
       return;
     }
-    var resolvedAddresses = (Array.isArray(addresses) ? addresses : [addresses])
-      .map(function (address) {
-        return String(address || "");
-      })
-      .filter(function (address, index, list) {
-        return address && list.indexOf(address) === index;
-      });
-    resolvedAddresses = orderResolvedAddresses(networkState, parsed, resolvedAddresses);
-    if (!resolvedAddresses.length) {
+    var rawAddresses = (Array.isArray(addresses) ? addresses : [addresses]).map(function (address) {
+      return String(address == null ? "" : address).trim();
+    });
+    if (!rawAddresses.length || (rawAddresses.length === 1 && !rawAddresses[0])) {
       var missingAddressError = new Error("DNS lookup returned no address");
       emitTrace(
         trace,
@@ -491,6 +675,32 @@ function performFetch(payload, callback, redirects, trace, networkState) {
       finish(missingAddressError);
       return;
     }
+    var netModule;
+    try {
+      netModule = getNetModule();
+    } catch (error) {
+      finish(error);
+      return;
+    }
+    if (
+      isBlockedHostname(parsed.hostname) ||
+      rawAddresses.some(function (addr) {
+        return !addr || !isAllowedResolvedIp(addr, netModule);
+      })
+    ) {
+      var blockedAddressError = new Error("Blocked restricted destination address");
+      emitTrace(
+        trace,
+        "fetch dns blocked",
+        Object.assign({}, requestTrace, { error: traceError(blockedAddressError) })
+      );
+      finish(blockedAddressError);
+      return;
+    }
+    var resolvedAddresses = rawAddresses.filter(function (address, index, list) {
+      return address && list.indexOf(address) === index;
+    });
+    resolvedAddresses = orderResolvedAddresses(networkState, parsed, resolvedAddresses);
     var address = resolvedAddresses[0];
     emitTrace(
       trace,
@@ -618,7 +828,24 @@ function performFetch(payload, callback, redirects, trace, networkState) {
       method: validation.method,
       headers: requestHeaders,
       servername: String(parsed.hostname || "").replace(/^\[|\]$/g, ""),
-      agent: requestAgent(networkState, transport, parsed, address)
+      agent: requestAgent(networkState, transport, parsed, address),
+      lookup: function (lookupHostname, lookupOptions, lookupCallback) {
+        if (typeof lookupOptions === "function") {
+          lookupCallback = lookupOptions;
+          lookupOptions = {};
+        }
+        var targetIp = String(lookupHostname || address || "").trim();
+        if (!isAllowedResolvedIp(targetIp, netModule)) {
+          lookupCallback(new Error("Blocked restricted destination address"));
+          return;
+        }
+        var family = netModule.isIPv6(targetIp) ? 6 : 4;
+        if (lookupOptions && lookupOptions.all) {
+          lookupCallback(null, [{ address: targetIp, family: family }]);
+          return;
+        }
+        lookupCallback(null, targetIp, family);
+      }
     };
     var requestSent = false;
     try {
@@ -689,11 +916,19 @@ function performFetch(payload, callback, redirects, trace, networkState) {
             responseDone(new Error("Invalid redirect URL"));
             return;
           }
+          var previousUrl = parseUrl(validation.url);
+          var redirectedUrl = parseUrl(nextUrl);
+          if (!redirectedUrl) {
+            responseDone(new Error("Only valid HTTP(S) URLs are allowed"));
+            return;
+          }
+          if (isBlockedHostname(redirectedUrl.hostname)) {
+            responseDone(new Error("Blocked restricted destination address"));
+            return;
+          }
           redirected = true;
           settleAttempt();
           var redirectedPayload = Object.assign({}, payload, { url: nextUrl });
-          var previousUrl = parseUrl(validation.url);
-          var redirectedUrl = parseUrl(nextUrl);
           var crossOrigin =
             previousUrl &&
             redirectedUrl &&
@@ -977,6 +1212,13 @@ function createPluginHttpServer({ port = 2711, logger = console, trace } = {}) {
     var now = Date.now();
     if (requestId && inFlightRequests[requestId]) {
       return { ok: false, status: 409, error: "Duplicate plugin request id" };
+    }
+    var parsedUrl = parseUrl(payload && payload.url);
+    if (!parsedUrl) {
+      return { ok: false, status: 400, error: "Only valid HTTP(S) URLs are allowed" };
+    }
+    if (isBlockedHostname(parsedUrl.hostname)) {
+      return { ok: false, status: 403, error: "Blocked restricted destination address" };
     }
     var shouldQueue = activeRequestCount >= MAX_ACTIVE_REQUESTS || queuedRequests.length > 0;
     if (shouldQueue && queuedRequests.length >= MAX_QUEUED_REQUESTS) {
