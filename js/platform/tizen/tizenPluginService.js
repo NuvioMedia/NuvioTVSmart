@@ -260,7 +260,7 @@ async function startWithWrtService(serviceId) {
   return service.startService.call(service, serviceId);
 }
 
-function getStartAttempts(serviceId, webServiceSupported) {
+function getStartAttempts(serviceId, webServiceSupported, tizenMajorVersion = 0) {
   const wrtAttempt = {
     method: "wrt-service",
     start: () => startWithWrtService(serviceId)
@@ -280,10 +280,14 @@ function getStartAttempts(serviceId, webServiceSupported) {
   // use the application-control fallback only for an explicit true capability;
   // application.launch remains the final generic-ID fallback and is accepted
   // only after the real PluginService /health endpoint becomes reachable.
+  // On Tizen 5.x wrt:service acknowledges the call but never starts the
+  // service (seen on a 5.5 TV: 12 s lost on /health), so launch it directly.
   const attempts =
     webServiceSupported === true
       ? [wrtAttempt, applicationControlAttempt, applicationLaunchAttempt]
-      : [wrtAttempt, applicationLaunchAttempt];
+      : tizenMajorVersion === 5
+        ? [applicationLaunchAttempt, wrtAttempt]
+        : [wrtAttempt, applicationLaunchAttempt];
   diagnostic("launcher attempts selected", {
     serviceId,
     webServiceSupported,
@@ -292,9 +296,9 @@ function getStartAttempts(serviceId, webServiceSupported) {
   return attempts;
 }
 
-async function requestServiceStart(serviceId, webServiceSupported = null) {
+async function requestServiceStart(serviceId, webServiceSupported = null, tizenMajorVersion = 0) {
   const errors = [];
-  const attempts = getStartAttempts(serviceId, webServiceSupported);
+  const attempts = getStartAttempts(serviceId, webServiceSupported, tizenMajorVersion);
   diagnostic("startup sequence begin", {
     serviceId,
     webServiceSupported,
@@ -505,7 +509,8 @@ export const TizenPluginService = {
           }
           const startResult = await requestServiceStart(
             serviceId,
-            capabilities.webServiceSupported
+            capabilities.webServiceSupported,
+            capabilities.tizenMajorVersion || 0
           );
           const reachable = startResult.reachable;
           diagnostic("explicit startup success", {
