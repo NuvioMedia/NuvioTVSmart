@@ -1,38 +1,59 @@
 // Kodi-style vertical scrolling for Home hero descriptions that overflow their
-// clamped box. Mirrors Android AutoScrollingText: start delay, constant speed,
-// end pause, quick return, a few cycles, and edge fades instead of an ellipsis.
+// clamped box. Mirrors Android AutoScrollingText: start delay, a reading pace
+// per line, end pause, quick return, a few cycles, and edge fades instead of an ellipsis.
 
 export const HERO_AUTOSCROLL_START_DELAY_MS = 3000;
 export const HERO_AUTOSCROLL_END_PAUSE_MS = 3000;
 export const HERO_AUTOSCROLL_RETURN_DURATION_MS = 600;
 export const HERO_AUTOSCROLL_MAX_CYCLES = 3;
 export const HERO_AUTOSCROLL_FADE_FRACTION = 0.18;
-export const HERO_AUTOSCROLL_SPEED_DP_PER_SECOND = 12;
+// Time per line rather than a fixed speed, so the reading pace is the same at
+// any text size (Android AUTO_SCROLL_MS_PER_LINE).
+export const HERO_AUTOSCROLL_MS_PER_LINE = 2500;
 
 export function buildHeroDescriptionScrollPlan({
   contentHeight = 0,
   viewportHeight = 0,
-  pixelsPerSecond = HERO_AUTOSCROLL_SPEED_DP_PER_SECOND
+  lineHeight = 0
 } = {}) {
   const content = Number(contentHeight);
   const viewport = Number(viewportHeight);
-  const speed = Number(pixelsPerSecond);
-  if (!Number.isFinite(content) || !Number.isFinite(viewport) || !Number.isFinite(speed)) {
+  const line = Number(lineHeight);
+  if (!Number.isFinite(content) || !Number.isFinite(viewport) || !Number.isFinite(line)) {
     return null;
   }
   const distance = content - viewport;
-  if (distance <= 1 || viewport <= 0 || speed <= 0) {
+  if (distance <= 1 || viewport <= 0 || line <= 0) {
     return null;
   }
   return {
     distance,
-    durationMs: Math.max(1, Math.round((distance / speed) * 1000)),
+    durationMs: Math.max(1, Math.round((distance / line) * HERO_AUTOSCROLL_MS_PER_LINE)),
     startDelayMs: HERO_AUTOSCROLL_START_DELAY_MS,
     endPauseMs: HERO_AUTOSCROLL_END_PAUSE_MS,
     returnDurationMs: HERO_AUTOSCROLL_RETURN_DURATION_MS,
     cycles: HERO_AUTOSCROLL_MAX_CYCLES,
     fadeFraction: HERO_AUTOSCROLL_FADE_FRACTION
   };
+}
+
+function resolveLineHeight(node, viewportHeight) {
+  let style = null;
+  try {
+    style = node.ownerDocument?.defaultView?.getComputedStyle?.(node) || null;
+  } catch {
+    style = null;
+  }
+  const lineHeight = parseFloat(style?.lineHeight);
+  if (Number.isFinite(lineHeight) && lineHeight > 0) {
+    return lineHeight;
+  }
+  const fontSize = parseFloat(style?.fontSize);
+  if (Number.isFinite(fontSize) && fontSize > 0) {
+    return fontSize * 1.2;
+  }
+  // No computed style (tests, detached nodes): the hero clamps to three lines.
+  return viewportHeight / 3;
 }
 
 function now() {
@@ -260,9 +281,7 @@ export function createHeroDescriptionAutoScroller({
       const plan = buildHeroDescriptionScrollPlan({
         contentHeight: track.scrollHeight,
         viewportHeight,
-        pixelsPerSecond:
-          HERO_AUTOSCROLL_SPEED_DP_PER_SECOND *
-          Math.max(1, Number(globalThis.devicePixelRatio) || 1)
+        lineHeight: resolveLineHeight(node, viewportHeight)
       });
       if (!plan) {
         node.classList.remove("hero-description-autoscroll");
