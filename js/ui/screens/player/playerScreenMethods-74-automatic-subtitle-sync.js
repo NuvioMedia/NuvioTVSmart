@@ -3,7 +3,7 @@ import * as internals from "./playerScreenContext.js";
 import { AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../../core/player/subtitleAutoSyncEngine.js";
 import { alignSubtitleAutoSyncAsync } from "../../../core/player/subtitleAutoSyncWorkerClient.js";
 import { retimeAutoSyncSubtitleText } from "../../../core/player/subtitleAutoSyncRetimer.js";
-import { isConfirmedAutoSyncNoFit } from "../../../core/player/autosyncOutcome.js";
+import { confirmsAutoSyncNoFit, isConfirmedAutoSyncNoFit } from "../../../core/player/autosyncOutcome.js";
 
 const AUTO_SYNC_TOAST_MS = 2200;
 
@@ -278,9 +278,9 @@ export function createPlayerScreenMethods74() {
             return;
           }
           if (!candidate?.confident) {
-            // A real but ambiguous comparison confirms a no-fit; a null result
-            // (too few cues, implausible transform) proves nothing.
-            if (candidate) {
+            // Only a clearly ambiguous comparison confirms a no-fit; a null result
+            // or a real but weak match proves nothing.
+            if (confirmsAutoSyncNoFit(candidate)) {
               ambiguousReferences += 1;
             }
             if (!settings.thorough) {
