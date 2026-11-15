@@ -681,6 +681,11 @@ function setupTizenPlaybackLifecycle() {
   if (!Platform.isTizen()) return;
 
   document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      // Finish a player exit that the TV suspended before its history traversal committed.
+      void Router.resumePendingHistoryReturn();
+      return;
+    }
     if (document.visibilityState !== "hidden" || Router.getCurrent() !== "player") return;
 
     // Samsung requires hidden playback to follow the player exit path.

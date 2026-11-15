@@ -107,6 +107,26 @@ export function createRouterMethods01() {
       }
       return false;
     },
+    async resumePendingHistoryReturn() {
+      // Tizen can freeze a hidden page before the traversal it requested commits,
+      // leaving every later Back blocked behind this pending return.
+      const pending = this.pendingHistoryReturn;
+      if (!pending || this.current !== pending.sourceRoute) {
+        return false;
+      }
+      const state = window?.history?.state || null;
+      if (state?.route !== pending.sourceRoute) {
+        // The browser moved but its popstate was lost.
+        return this.consumePendingHistoryReturn(state);
+      }
+      const historySteps = this.stack.length - pending.targetStackIndex;
+      if (this.stack.length !== Number(pending.stackLength) || historySteps < 1) {
+        this.pendingHistoryReturn = null;
+        return false;
+      }
+      window.history.go(-historySteps);
+      return true;
+    },
     restoreCurrentHistoryState(previousState = null) {
       if (!window?.history) {
         return;
