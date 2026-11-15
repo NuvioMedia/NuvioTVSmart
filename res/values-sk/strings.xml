@@ -2995,7 +2995,7 @@
     <string name="autosync_label_synced">Automaticky synchronizované</string>
     <string name="layout_always_show_landscape_clearlogo">Vždy pozadie s logom pre plagáty na šírku</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Ignorovať plagát na šírku z doplnku a namiesto neho použiť pozadie s prekrytím priesvitného loga.</string>
-    <string name="autosync_toast_no_fit">Synchronizácia sa nepodarila: tieto titulky nezodpovedajú tejto verzii videa.</string>
+    <string name="autosync_toast_no_fit">Synchronizácia zlyhala: tieto titulky sa nezhodujú s touto verziou videa.</string>
     <string name="common.cantonese">Kantónčina</string>
     <string name="layout_trailer_play_in_background">Prehrať na pozadí</string>
     <string name="layout_trailer_play_in_background_sub">Prehrať Trailer namiesto pozadia, zatiaľ čo stránka zostáva viditeľná.</string>
@@ -3326,8 +3326,8 @@
     <string name="collections_editor_tmdb_without_keywords_helper">Vylúčiť tituly zodpovedajúce týmto číslam kľúčových slov TMDB.</string>
     <string name="collections_editor_tmdb_without_watch_providers">Vylúčené ID poskytovateľov obsahu</string>
     <string name="collections_editor_tmdb_without_watch_providers_helper">Vylúčiť tituly dostupné od týchto čísel poskytovateľov TMDB vo vybranom regióne.</string>
-    <string name="layout_hero_description_auto_scroll">layout_hero_description_auto_scroll</string>
-    <string name="layout_hero_description_auto_scroll_sub">layout_hero_description_auto_scroll_sub</string>
+    <string name="layout_hero_description_auto_scroll">Automaticky posúvať popisy</string>
+    <string name="layout_hero_description_auto_scroll_sub">Pomaly posúvať dlhé popisy na domovskej obrazovke namiesto ich orezávania.</string>
     <string name="profile_copy_settings_label">Kopírovať nastavenia</string>
     <string name="profile_copy_settings_setup_title">Nastavenia profilu</string>
     <string name="profile_copy_settings_setup_subtitle">Začnite odznova alebo jednorazovo skopírujte nastavenia TV z iného profilu.</string>
@@ -3382,15 +3382,15 @@
     <string name="stream_test_no_stream">Nezaznamenalo sa žiadne prehrávanie. Prehrajte video, aby ste mohli spustiť diagnostický test na jeho hostiteľovi.</string>
     <string name="stream_test_btn_running">Prebieha testovanie….</string>
     <string name="stream_test_btn_measuring_baseline">Meranie základnej línie….</string>
-    <string name="stream_test_btn_measuring_parallel1">Meranie paralelného sťahovania (1 MB časti)….</string>
-    <string name="stream_test_btn_measuring_parallel4">Meranie paralelného sťahovania (4 MB časti)….</string>
-    <string name="stream_test_btn_measuring_parallel8">Meranie paralelného sťahovania (8 MB časti)….</string>
-    <string name="stream_test_btn_measuring_parallel16">Meranie paralelného sťahovania (16 MB časti)….</string>
+    <string name="stream_test_btn_measuring_parallel1">Meranie paralelného sťahovania (1 pripojenie)….</string>
+    <string name="stream_test_btn_measuring_parallel4">Meranie paralelného sťahovania (4 pripojenia)….</string>
+    <string name="stream_test_btn_measuring_parallel8">Meranie paralelného sťahovania (8 pripojení)….</string>
+    <string name="stream_test_btn_measuring_parallel16">Meranie paralelného sťahovania (16 pripojení)….</string>
     <string name="stream_test_label_baseline">Štandardné jedno pripojenie (základná línia)</string>
-    <string name="stream_test_label_parallel1">Paralelné pripojenie (1 MB časti)</string>
-    <string name="stream_test_label_parallel4">Paralelné pripojenie (4 MB časti)</string>
-    <string name="stream_test_label_parallel8">Paralelné pripojenie (8 MB časti)</string>
-    <string name="stream_test_label_parallel16">Paralelné pripojenie (16 MB časti)</string>
+    <string name="stream_test_label_parallel1">Paralelné pripojenie (1 pripojenie)</string>
+    <string name="stream_test_label_parallel4">Paralelné pripojenie (4 pripojenia)</string>
+    <string name="stream_test_label_parallel8">Paralelné pripojenie (8 pripojení)</string>
+    <string name="stream_test_label_parallel16">Paralelné pripojenie (16 pripojení)</string>
     <string name="stream_test_error_connection">Pripojenie zlyhalo. Odkaz na naposledy prehrávaný stream vypršal alebo je nedostupný. Prehrajte video znova a skúste to ešte raz.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
 </resources>

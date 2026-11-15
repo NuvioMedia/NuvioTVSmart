@@ -3324,8 +3324,8 @@
     <string name="collections_editor_tmdb_without_keywords_helper">Exclude titles matching these TMDB keyword numbers.</string>
     <string name="collections_editor_tmdb_without_watch_providers">Excluded watch provider IDs</string>
     <string name="collections_editor_tmdb_without_watch_providers_helper">Exclude titles available from these TMDB watch provider numbers in the selected region.</string>
-    <string name="layout_hero_description_auto_scroll">layout_hero_description_auto_scroll</string>
-    <string name="layout_hero_description_auto_scroll_sub">layout_hero_description_auto_scroll_sub</string>
+    <string name="layout_hero_description_auto_scroll">Auto-scroll Descriptions</string>
+    <string name="layout_hero_description_auto_scroll_sub">Slowly scroll long descriptions on the Home screen instead of cutting them off.</string>
     <string name="profile_copy_settings_label">Copy Settings</string>
     <string name="profile_copy_settings_setup_title">Profile Settings</string>
     <string name="profile_copy_settings_setup_subtitle">Start fresh or copy TV settings from another profile once.</string>
@@ -3380,15 +3380,15 @@
     <string name="stream_test_no_stream">No playback recorded. Play a video to run diagnostic tests on its host.</string>
     <string name="stream_test_btn_running">Running...</string>
     <string name="stream_test_btn_measuring_baseline">Measuring Baseline...</string>
-    <string name="stream_test_btn_measuring_parallel1">Measuring Parallel (1MB)...</string>
-    <string name="stream_test_btn_measuring_parallel4">Measuring Parallel (4MB)...</string>
-    <string name="stream_test_btn_measuring_parallel8">Measuring Parallel (8MB)...</string>
-    <string name="stream_test_btn_measuring_parallel16">Measuring Parallel (16MB)...</string>
+    <string name="stream_test_btn_measuring_parallel1">Measuring Parallel (1 connection)...</string>
+    <string name="stream_test_btn_measuring_parallel4">Measuring Parallel (4 connections)...</string>
+    <string name="stream_test_btn_measuring_parallel8">Measuring Parallel (8 connections)...</string>
+    <string name="stream_test_btn_measuring_parallel16">Measuring Parallel (16 connections)...</string>
     <string name="stream_test_label_baseline">Standard Single Connection (Baseline)</string>
-    <string name="stream_test_label_parallel1">Parallel Connect (1 MB Chunks)</string>
-    <string name="stream_test_label_parallel4">Parallel Connect (4 MB Chunks)</string>
-    <string name="stream_test_label_parallel8">Parallel Connect (8 MB Chunks)</string>
-    <string name="stream_test_label_parallel16">Parallel Connect (16 MB Chunks)</string>
+    <string name="stream_test_label_parallel1">Parallel Connect (1 connection)</string>
+    <string name="stream_test_label_parallel4">Parallel Connect (4 connections)</string>
+    <string name="stream_test_label_parallel8">Parallel Connect (8 connections)</string>
+    <string name="stream_test_label_parallel16">Parallel Connect (16 connections)</string>
     <string name="stream_test_error_connection">Connection failed. The last played stream link may have expired or is unreachable. Please play the video again and retry.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
 </resources>

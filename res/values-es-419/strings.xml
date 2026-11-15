@@ -3326,8 +3326,8 @@
     <string name="collections_editor_tmdb_without_keywords_helper">Excluye títulos que coincidan con estos números de palabras clave de TMDB.</string>
     <string name="collections_editor_tmdb_without_watch_providers">IDs de proveedores de streaming excluidos</string>
     <string name="collections_editor_tmdb_without_watch_providers_helper">Excluye títulos disponibles en estos números de proveedores de streaming de TMDB en la región seleccionada.</string>
-    <string name="layout_hero_description_auto_scroll">layout_hero_description_auto_scroll</string>
-    <string name="layout_hero_description_auto_scroll_sub">layout_hero_description_auto_scroll_sub</string>
+    <string name="layout_hero_description_auto_scroll">Desplazar descripciones automáticamente</string>
+    <string name="layout_hero_description_auto_scroll_sub">Desplaza lentamente las descripciones largas en la pantalla de Inicio en lugar de cortarlas.</string>
     <string name="profile_copy_settings_label">Copiar configuración</string>
     <string name="profile_copy_settings_setup_title">Configuración del perfil</string>
     <string name="profile_copy_settings_setup_subtitle">Comienza desde cero o copia una vez la configuración de TV desde otro perfil.</string>
@@ -3382,15 +3382,15 @@
     <string name="stream_test_no_stream">No hay reproducciones registradas. Reproduce un video para ejecutar pruebas de diagnóstico en su servidor.</string>
     <string name="stream_test_btn_running">Ejecutando...</string>
     <string name="stream_test_btn_measuring_baseline">Midiendo línea base...</string>
-    <string name="stream_test_btn_measuring_parallel1">Midiendo conexión paralela (1 MB)...</string>
-    <string name="stream_test_btn_measuring_parallel4">Midiendo conexión paralela (4 MB)...</string>
-    <string name="stream_test_btn_measuring_parallel8">Midiendo conexión paralela (8 MB)...</string>
-    <string name="stream_test_btn_measuring_parallel16">Midiendo conexión paralela (16 MB)...</string>
+    <string name="stream_test_btn_measuring_parallel1">Midiendo conexión paralela (1 conexión)...</string>
+    <string name="stream_test_btn_measuring_parallel4">Midiendo conexión paralela (4 conexiones)...</string>
+    <string name="stream_test_btn_measuring_parallel8">Midiendo conexión paralela (8 conexiones)...</string>
+    <string name="stream_test_btn_measuring_parallel16">Midiendo conexión paralela (16 conexiones)...</string>
     <string name="stream_test_label_baseline">Conexión única estándar (línea base)</string>
-    <string name="stream_test_label_parallel1">Conexión paralela (fragmentos de 1 MB)</string>
-    <string name="stream_test_label_parallel4">Conexión paralela (fragmentos de 4 MB)</string>
-    <string name="stream_test_label_parallel8">Conexión paralela (fragmentos de 8 MB)</string>
-    <string name="stream_test_label_parallel16">Conexión paralela (fragmentos de 16 MB)</string>
+    <string name="stream_test_label_parallel1">Conexión paralela (1 conexión)</string>
+    <string name="stream_test_label_parallel4">Conexión paralela (4 conexiones)</string>
+    <string name="stream_test_label_parallel8">Conexión paralela (8 conexiones)</string>
+    <string name="stream_test_label_parallel16">Conexión paralela (16 conexiones)</string>
     <string name="stream_test_error_connection">La conexión falló. Es posible que el enlace de la última transmisión reproducida haya expirado o no esté disponible. Reproduce el video nuevamente e inténtalo otra vez.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
 </resources>

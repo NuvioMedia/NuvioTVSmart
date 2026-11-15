@@ -1322,7 +1322,7 @@
     <string name="cast_detail_retry">Réessayer</string>
     <string name="cast_detail_filmography">Filmographie</string>
     <string name="cast_detail_born">Naissance : %1$s</string>
-    <string name="cast_detail_born_died">Naissance : %1$s — †%2$s</string>
+    <string name="cast_detail_born_died">Naissance&#160;: %1$s — Décès&#160;: %2$s</string>
     <string name="cast_detail_age">%1$d ans</string>
     <string name="catalog_see_all_from">depuis %1$s</string>
     <string name="catalog_see_all_empty_title">Aucun élément disponible</string>
@@ -2857,7 +2857,7 @@
     <string name="autosync_label_synced">Synchronisé automatiquement</string>
     <string name="layout_always_show_landscape_clearlogo">Toujours utiliser l’arrière-plan avec logo pour les affiches paysage</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Ignorer l’affiche paysage fournie par l’addon et utiliser à la place l’arrière-plan avec le logo en superposition.</string>
-    <string name="autosync_toast_no_fit">Échec de la synchronisation : ces sous-titres ne correspondent pas à cette version de la vidéo.</string>
+    <string name="autosync_toast_no_fit">Échec de la synchronisation&#160;: ces sous-titres ne correspondent pas à cette version de la vidéo.</string>
     <string name="common.cantonese">Cantonais</string>
     <string name="layout_trailer_play_in_background">Lire en arrière-plan</string>
     <string name="layout_trailer_play_in_background_sub">Lire la bande-annonce à la place de l’arrière-plan, tout en laissant la page visible.</string>
@@ -3323,8 +3323,8 @@
     <string name="collections_editor_tmdb_without_keywords_helper">Exclut les titres correspondant à ces numéros de mots-clés TMDB.</string>
     <string name="collections_editor_tmdb_without_watch_providers">ID des fournisseurs de visionnage exclus</string>
     <string name="collections_editor_tmdb_without_watch_providers_helper">Exclut les titres disponibles chez ces fournisseurs de visionnage TMDB dans la région sélectionnée.</string>
-    <string name="layout_hero_description_auto_scroll">layout_hero_description_auto_scroll</string>
-    <string name="layout_hero_description_auto_scroll_sub">layout_hero_description_auto_scroll_sub</string>
+    <string name="layout_hero_description_auto_scroll">Défilement automatique des descriptions</string>
+    <string name="layout_hero_description_auto_scroll_sub">Faire défiler lentement les longues descriptions sur l’écran d’accueil au lieu de les couper.</string>
     <string name="profile_copy_settings_label">Copier les paramètres</string>
     <string name="profile_copy_settings_setup_title">Paramètres du profil</string>
     <string name="profile_copy_settings_setup_subtitle">Repartez de zéro ou copiez une seule fois les paramètres TV d’un autre profil.</string>
@@ -3379,15 +3379,15 @@
     <string name="stream_test_no_stream">Aucune lecture enregistrée. Lisez une vidéo pour lancer des tests de diagnostic sur son hôte.</string>
     <string name="stream_test_btn_running">En cours…</string>
     <string name="stream_test_btn_measuring_baseline">Mesure de la référence…</string>
-    <string name="stream_test_btn_measuring_parallel1">Mesure en parallèle (1 Mo)…</string>
-    <string name="stream_test_btn_measuring_parallel4">Mesure en parallèle (4 Mo)…</string>
-    <string name="stream_test_btn_measuring_parallel8">Mesure en parallèle (8 Mo)…</string>
-    <string name="stream_test_btn_measuring_parallel16">Mesure en parallèle (16 Mo)…</string>
+    <string name="stream_test_btn_measuring_parallel1">Mesure en parallèle (1 connexion)…</string>
+    <string name="stream_test_btn_measuring_parallel4">Mesure en parallèle (4 connexions)…</string>
+    <string name="stream_test_btn_measuring_parallel8">Mesure en parallèle (8 connexions)…</string>
+    <string name="stream_test_btn_measuring_parallel16">Mesure en parallèle (16 connexions)…</string>
     <string name="stream_test_label_baseline">Connexion unique standard (référence)</string>
-    <string name="stream_test_label_parallel1">Connexion parallèle (blocs de 1 Mo)</string>
-    <string name="stream_test_label_parallel4">Connexion parallèle (blocs de 4 Mo)</string>
-    <string name="stream_test_label_parallel8">Connexion parallèle (blocs de 8 Mo)</string>
-    <string name="stream_test_label_parallel16">Connexion parallèle (blocs de 16 Mo)</string>
+    <string name="stream_test_label_parallel1">Connexion parallèle (1 connexion)</string>
+    <string name="stream_test_label_parallel4">Connexion parallèle (4 connexions)</string>
+    <string name="stream_test_label_parallel8">Connexion parallèle (8 connexions)</string>
+    <string name="stream_test_label_parallel16">Connexion parallèle (16 connexions)</string>
     <string name="stream_test_error_connection">Échec de la connexion. Le lien du dernier flux lu a peut-être expiré ou est injoignable. Veuillez relancer la lecture de la vidéo, puis réessayer.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
 </resources>

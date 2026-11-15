@@ -173,13 +173,13 @@ export function createSettingsScreenMethods05() {
           case "BASELINE":
             return t("stream_test_btn_measuring_baseline", {}, "Measuring Baseline...");
           case "PARALLEL_1":
-            return t("stream_test_btn_measuring_parallel1", {}, "Measuring Parallel (1MB)...");
+            return t("stream_test_btn_measuring_parallel1", {}, "Measuring Parallel (1 connection)...");
           case "PARALLEL_4":
-            return t("stream_test_btn_measuring_parallel4", {}, "Measuring Parallel (4MB)...");
+            return t("stream_test_btn_measuring_parallel4", {}, "Measuring Parallel (4 connections)...");
           case "PARALLEL_8":
-            return t("stream_test_btn_measuring_parallel8", {}, "Measuring Parallel (8MB)...");
+            return t("stream_test_btn_measuring_parallel8", {}, "Measuring Parallel (8 connections)...");
           case "PARALLEL_16":
-            return t("stream_test_btn_measuring_parallel16", {}, "Measuring Parallel (16MB)...");
+            return t("stream_test_btn_measuring_parallel16", {}, "Measuring Parallel (16 connections)...");
           default:
             return t("stream_test_btn_running", {}, "Running...");
         }
@@ -255,7 +255,7 @@ export function createSettingsScreenMethods05() {
                       }),
                       ...[1, 4, 8, 16].map((connections) =>
                         this.renderInformationRow({
-                          title: t(`stream_test_label_parallel${connections}`, {}, `Parallel Connect (${connections} MB Chunks)`),
+                          title: t(`stream_test_label_parallel${connections}`, {}, `Parallel Connect (${connections} ${connections === 1 ? "connection" : "connections"})`),
                           value: this.formatNetworkMbps(this.streamSpeedTestParallel?.[connections])
                         })
                       )

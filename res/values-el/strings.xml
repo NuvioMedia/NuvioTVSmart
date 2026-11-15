@@ -2889,7 +2889,7 @@
     <string name="autosync_label_synced">Αυτόματα συγχρονισμένος</string>
     <string name="layout_always_show_landscape_clearlogo">Πάντα φόντο με λογότυπο για οριζόντιες αφίσες</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Αγνόηση της οριζόντιας αφίσας από το πρόσθετο και χρήση φόντου με επικάλυψη clearlogo.</string>
-    <string name="autosync_toast_no_fit">Αποτυχία συγχρονισμού: αυτοί οι υπότιτλοι δεν ταιριάζουν με αυτή την έκδοση του βίντεο.</string>
+    <string name="autosync_toast_no_fit">Ο συγχρονισμός απέτυχε: αυτοί οι υπότιτλοι δεν ταιριάζουν με αυτή την έκδοση του βίντεο.</string>
     <string name="common.cantonese">Καντονέζικα</string>
     <string name="layout_trailer_play_in_background">Αναπαραγωγή στο παρασκήνιο</string>
     <string name="layout_trailer_play_in_background_sub">Αναπαραγωγή του τρέιλερ στη θέση του φόντου όσο η σελίδα παραμένει ορατή.</string>
@@ -3334,8 +3334,8 @@
     <string name="collections_editor_tmdb_without_keywords_helper">Αποκλείστε τίτλους που ταιριάζουν με αυτούς τους αριθμούς λέξεων-κλειδιών TMDB.</string>
     <string name="collections_editor_tmdb_without_watch_providers">Αποκλεισμένα ID παρόχων προβολής</string>
     <string name="collections_editor_tmdb_without_watch_providers_helper">Αποκλείστε τίτλους διαθέσιμους από αυτούς τους αριθμούς παρόχων προβολής TMDB στην επιλεγμένη περιοχή.</string>
-    <string name="layout_hero_description_auto_scroll">layout_hero_description_auto_scroll</string>
-    <string name="layout_hero_description_auto_scroll_sub">layout_hero_description_auto_scroll_sub</string>
+    <string name="layout_hero_description_auto_scroll">Αυτόματη κύλιση περιγραφών</string>
+    <string name="layout_hero_description_auto_scroll_sub">Αργή κύλιση των μεγάλων περιγραφών στην Αρχική οθόνη αντί για περικοπή τους.</string>
     <string name="profile_copy_settings_label">Αντιγραφή ρυθμίσεων</string>
     <string name="profile_copy_settings_setup_title">Ρυθμίσεις προφίλ</string>
     <string name="profile_copy_settings_setup_subtitle">Ξεκινήστε από την αρχή ή αντιγράψτε μία φορά τις ρυθμίσεις TV από άλλο προφίλ.</string>
@@ -3390,15 +3390,15 @@
     <string name="stream_test_no_stream">Δεν έχει καταγραφεί αναπαραγωγή. Αναπαράγετε ένα βίντεο για να εκτελέσετε διαγνωστικές δοκιμές στον διακομιστή του.</string>
     <string name="stream_test_btn_running">Εκτελείται...</string>
     <string name="stream_test_btn_measuring_baseline">Μέτρηση βάσης αναφοράς...</string>
-    <string name="stream_test_btn_measuring_parallel1">Μέτρηση παράλληλης (1MB)...</string>
-    <string name="stream_test_btn_measuring_parallel4">Μέτρηση παράλληλης (4MB)...</string>
-    <string name="stream_test_btn_measuring_parallel8">Μέτρηση παράλληλης (8MB)...</string>
-    <string name="stream_test_btn_measuring_parallel16">Μέτρηση παράλληλης (16MB)...</string>
+    <string name="stream_test_btn_measuring_parallel1">Μέτρηση παράλληλης (1 σύνδεση)...</string>
+    <string name="stream_test_btn_measuring_parallel4">Μέτρηση παράλληλης (4 συνδέσεις)...</string>
+    <string name="stream_test_btn_measuring_parallel8">Μέτρηση παράλληλης (8 συνδέσεις)...</string>
+    <string name="stream_test_btn_measuring_parallel16">Μέτρηση παράλληλης (16 συνδέσεις)...</string>
     <string name="stream_test_label_baseline">Τυπική μονή σύνδεση (βάση αναφοράς)</string>
-    <string name="stream_test_label_parallel1">Παράλληλη σύνδεση (τμήματα 1 MB)</string>
-    <string name="stream_test_label_parallel4">Παράλληλη σύνδεση (τμήματα 4 MB)</string>
-    <string name="stream_test_label_parallel8">Παράλληλη σύνδεση (τμήματα 8 MB)</string>
-    <string name="stream_test_label_parallel16">Παράλληλη σύνδεση (τμήματα 16 MB)</string>
+    <string name="stream_test_label_parallel1">Παράλληλη σύνδεση (1 σύνδεση)</string>
+    <string name="stream_test_label_parallel4">Παράλληλη σύνδεση (4 συνδέσεις)</string>
+    <string name="stream_test_label_parallel8">Παράλληλη σύνδεση (8 συνδέσεις)</string>
+    <string name="stream_test_label_parallel16">Παράλληλη σύνδεση (16 συνδέσεις)</string>
     <string name="stream_test_error_connection">Η σύνδεση απέτυχε. Ο σύνδεσμος της τελευταίας αναπαραγωγής μπορεί να έχει λήξει ή να μην είναι προσβάσιμος. Αναπαράγετε ξανά το βίντεο και δοκιμάστε πάλι.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
 </resources>
