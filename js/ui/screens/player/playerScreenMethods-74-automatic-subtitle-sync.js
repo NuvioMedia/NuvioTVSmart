@@ -6,6 +6,8 @@ import { retimeAutoSyncSubtitleText } from "../../../core/player/subtitleAutoSyn
 import { confirmsAutoSyncNoFit, isConfirmedAutoSyncNoFit } from "../../../core/player/autosyncOutcome.js";
 
 const AUTO_SYNC_TOAST_MS = 2200;
+// The other same-language subtitles AutoSync tries when the picked one does not fit.
+const AUTO_SYNC_MAX_ALTERNATIVES = 6;
 
 function normalizeToleranceMs(value) {
   const tolerance = Math.trunc(Number(value));
@@ -44,6 +46,7 @@ export function createPlayerScreenMethods74() {
       this.autoSyncedSubtitleUrl = "";
       this.currentAddonSubtitleSource = null;
       if (resetStartupKey) {
+        this.automaticSubtitleSyncSearchedUrls = null;
         this.automaticSubtitleSyncStartupKey = "";
       }
     },
@@ -188,7 +191,72 @@ export function createPlayerScreenMethods74() {
       this.applySubtitlePresentationSettings({ refreshTrackRendering: true });
       return true;
     },
-    maybeRunAutomaticSubtitleSync(subtitle, { source = null, startup = false } = {}) {
+    /**
+     * Android STARTUP_SEARCH / SELECTED_THEN_SEARCH: when the subtitle picked at start-up
+     * (or restored from the series preference) does not fit, try the other subtitles in
+     * its language and switch to the first one that fits. A manual pick never switches.
+     */
+    async findFittingAlternativeSubtitle({ subtitle, references, isStillRelevant }) {
+      const languageKey = normalizeSubtitleLanguageKey(subtitle.lang || subtitle.language || subtitle.languageCode || "");
+      const searched = this.automaticSubtitleSyncSearchedUrls || (this.automaticSubtitleSyncSearchedUrls = new Set());
+      searched.add(String(subtitle.url || ""));
+      const candidates = (Array.isArray(this.subtitles) ? this.subtitles : [])
+        .filter(
+          (entry) =>
+            entry?.url &&
+            !searched.has(String(entry.url)) &&
+            normalizeSubtitleLanguageKey(entry.lang || entry.language || entry.languageCode || "") === languageKey
+        )
+        .slice(0, AUTO_SYNC_MAX_ALTERNATIVES);
+      for (const candidate of candidates) {
+        searched.add(String(candidate.url));
+        let cues = [];
+        try {
+          const raw = await this.fetchSubtitleRawBody(candidate.url, {
+            languageHint: candidate.lang || candidate.language || candidate.languageCode || ""
+          });
+          const body = String(raw?.body || "");
+          cues = this.parseSubtitleCues(/\[Script Info\]|\[Events\]/i.test(body) ? convertAssBodyToVtt(body) : body);
+        } catch (_) {
+          cues = [];
+        }
+        if (!isStillRelevant()) {
+          return null;
+        }
+        if (!Array.isArray(cues) || cues.length < 4) {
+          continue;
+        }
+        for (const reference of references) {
+          const match = await alignSubtitleAutoSyncAsync({
+            referenceCues: reference.cues,
+            targetCues: cues.map(toAutoSyncTargetCue)
+          });
+          if (!isStillRelevant()) {
+            return null;
+          }
+          if (match?.confident) {
+            return candidate;
+          }
+        }
+      }
+      return null;
+    },
+    switchToAutoSyncAlternative(candidate) {
+      const option = this.collectSubtitleOptionItems?.().find((entry) => entry?.entry?.track?.url === candidate.url);
+      if (!option) {
+        return false;
+      }
+      console.info("AutoSync: selected subtitle did not fit, switching to a same-language subtitle that does");
+      // The switch is AutoSync's own choice, so it stays a start-up selection.
+      this.startupSubtitlePreferenceApplying = true;
+      try {
+        this.selectSubtitleOption(option, { focusOptions: false });
+      } finally {
+        this.startupSubtitlePreferenceApplying = false;
+      }
+      return true;
+    },
+    maybeRunAutomaticSubtitleSync(subtitle, { source = null, startup = false, searchAlternatives = false } = {}) {
       const settings = this.getAutomaticSubtitleSyncSettings();
       if (!settings.enabled || !subtitle?.url) {
         return false;
@@ -251,6 +319,7 @@ export function createPlayerScreenMethods74() {
         }
 
         let bestMatch = null;
+        const usableReferences = [];
         let evaluatedReferences = 0;
         let ambiguousReferences = 0;
         for (const referenceRequest of referenceRequests) {
@@ -268,6 +337,7 @@ export function createPlayerScreenMethods74() {
             return;
           }
           evaluatedReferences += 1;
+          usableReferences.push(reference);
           // The alignment runs in a Web Worker when the runtime has one, so a
           // long scan does not freeze playback on single-core TVs (issue #1208).
           const candidate = await alignSubtitleAutoSyncAsync({
@@ -309,6 +379,17 @@ export function createPlayerScreenMethods74() {
         }
 
         if (!bestMatch) {
+          // Nothing in the video to compare with means other subtitles cannot fit either.
+          if (searchAlternatives && usableReferences.length && isStillRelevant()) {
+            const alternative = await this.findFittingAlternativeSubtitle({
+              subtitle,
+              references: usableReferences,
+              isStillRelevant
+            });
+            if (alternative && isStillRelevant() && this.switchToAutoSyncAlternative(alternative)) {
+              return;
+            }
+          }
           if (
             isConfirmedAutoSyncNoFit({
               evaluatedReferences,

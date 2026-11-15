@@ -23,6 +23,9 @@ export function createPlayerScreenMethods55() {
         return;
       }
       const startupSelection = Boolean(this.startupSubtitlePreferenceApplying);
+      // Android: a start-up pick or a restored series preference may search other
+      // same-language subtitles when it does not fit; a manual pick never does.
+      const searchAlternatives = startupSelection;
       const subtitleId = subtitle.id || subtitle.url || `subtitle-${subtitleIndex}`;
       const isCurrentSelection = () => Number(selectionToken) === Number(this.subtitleSelectionToken);
       if (!isCurrentSelection()) {
@@ -35,7 +38,8 @@ export function createPlayerScreenMethods55() {
           if (await this.applyTvHtmlAddonSubtitle(subtitle, subtitleIndex, selectionToken)) {
             this.maybeRunAutomaticSubtitleSync(subtitle, {
               source: this.currentAddonSubtitleSource,
-              startup: startupSelection
+              startup: startupSelection,
+              searchAlternatives
             });
             return;
           }
