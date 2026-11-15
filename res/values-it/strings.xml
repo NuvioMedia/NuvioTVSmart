@@ -3441,4 +3441,12 @@
     <string name="playback_exo_chapters_sub">Leggi i capitoli dei file MKV per segnarli sulla barra di avanzamento e saltare da uno all\'altro.</string>
     <string name="playback_chapter_title_title">Mostra titolo del capitolo</string>
     <string name="playback_chapter_title_sub">Mostra il nome del capitolo corrente sopra la barra di avanzamento.</string>
+    <string name="autoplay_fallback_next_source">Passa alla sorgente successiva in caso di errore</string>
+    <string name="autoplay_fallback_next_source_sub">Se la sorgente scelta in automatico non funziona o non parte in tempo, prova in silenzio le sorgenti successive che corrispondono.</string>
+    <string name="autoplay_fallback_max_sources">Sorgenti da provare in caso di errore</string>
+    <string name="autoplay_fallback_max_sources_sub">Quante altre sorgenti corrispondenti provare prima di mostrare l\'errore.</string>
+    <string name="autoplay_fallback_startup_timeout">Tempo di avvio di una sorgente</string>
+    <string name="autoplay_fallback_startup_timeout_sub">Quanto attendere l\'avvio di una sorgente prima di provare la successiva.</string>
+    <string name="autoplay_fallback_startup_timeout_value">%1$ds</string>
+    <string name="player_error_source_startup_timeout">La sorgente non è partita entro %1$d secondi.</string>
 </resources>
