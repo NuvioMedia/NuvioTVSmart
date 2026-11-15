@@ -61,10 +61,32 @@ export function scraperIdForManifest(repositoryId, manifestId, filename = "scrap
   return `${prefix}${base.slice(0, maxBaseLength)}_${suffix}`;
 }
 
+// Android's Plugin.supportsType: series, show and other all mean "tv" on both
+// sides, so a "series" scraper also serves the "tv" type used for TMDB lookups.
+function normalizePluginType(value) {
+  const type = text(value).toLowerCase();
+  return type === "series" || type === "show" || type === "other" ? "tv" : type;
+}
+
 export function pluginSupportsType(supportedTypes, mediaType) {
-  const target = text(mediaType).toLowerCase();
-  const targets = target === "series" ? ["series", "tv", "anime"] : target === "other" ? ["other", "tv"] : [target];
-  return list(supportedTypes).some((entry) => targets.includes(entry));
+  const raw = text(mediaType).toLowerCase();
+  const target = normalizePluginType(raw);
+  return list(supportedTypes).some((entry) => {
+    const type = normalizePluginType(entry);
+    // Smart keeps anime-only scrapers on "series" requests.
+    return type === target || (raw === "series" && type === "anime");
+  });
+}
+
+// Android's jsPluginMediaType: an episode request reaches a "series" scraper as
+// "series", the type its getStreams() expects, instead of the TMDB "tv".
+export function jsPluginMediaType(mediaType, supportedTypes, season, episode) {
+  return text(mediaType).toLowerCase() === "tv" &&
+    season != null &&
+    episode != null &&
+    list(supportedTypes).some((entry) => text(entry).toLowerCase() === "series")
+    ? "series"
+    : mediaType;
 }
 
 export function normalizePluginManifest(raw, manifestUrl = "") {

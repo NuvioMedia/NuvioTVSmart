@@ -20,6 +20,7 @@ import {
   normalizePluginRepositoryType,
   normalizePluginState,
   pluginSupportsType,
+  jsPluginMediaType,
   randomPluginUuid,
   resolvePluginUrl,
   isPluginShortCode,
@@ -1097,7 +1098,11 @@ async function executeOne(
   if (!code?.code) return [];
   const executionSettings =
     currentState(executionProfileId).settings.scraperSettings?.[scraper.id] || {};
-  const key = `${executionProfileId}:${repository.id}:${scraper.id}:${args.tmdbId}:${args.mediaType}:${args.season}:${args.episode}`;
+  const scraperArgs = {
+    ...args,
+    mediaType: jsPluginMediaType(args.mediaType, scraper.supportedTypes, args.season, args.episode)
+  };
+  const key = `${executionProfileId}:${repository.id}:${scraper.id}:${scraperArgs.tmdbId}:${scraperArgs.mediaType}:${scraperArgs.season}:${scraperArgs.episode}`;
   const promise = singleFlight
     .run(
       key,
@@ -1111,7 +1116,7 @@ async function executeOne(
               profileId: executionProfileId,
               repositoryId: repository.id,
               settings: executionSettings,
-              args,
+              args: scraperArgs,
               quota,
               timeoutMs: quota.providerTimeoutMs,
               signal: executionSignal
