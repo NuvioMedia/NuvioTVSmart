@@ -207,10 +207,12 @@ export function createPlayerScreenMethods52() {
       const selectedOption = this.collectSubtitleOptionItems().find((entry) => entry.selected);
       if (selectedOption?.id !== option.id || selectedOption?.sourceType !== option.sourceType) {
         this.startupSubtitlePreferenceApplying = true;
+        this.startupSubtitleRestoring = true;
         try {
           this.selectSubtitleOption(option, { focusOptions: false });
         } finally {
           this.startupSubtitlePreferenceApplying = false;
+          this.startupSubtitleRestoring = false;
         }
       }
       const appliedOption = this.collectSubtitleOptionItems().find((entry) => entry.selected);

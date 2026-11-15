@@ -6,8 +6,20 @@ import { retimeAutoSyncSubtitleText } from "../../../core/player/subtitleAutoSyn
 import { confirmsAutoSyncNoFit, isConfirmedAutoSyncNoFit } from "../../../core/player/autosyncOutcome.js";
 
 const AUTO_SYNC_TOAST_MS = 2200;
-// The other same-language subtitles AutoSync tries when the picked one does not fit.
-const AUTO_SYNC_MAX_ALTERNATIVES = 6;
+// Android EXCEPTIONAL_MATCH_TARGET_COVERAGE / _REFERENCE_COVERAGE: a match this complete
+// ends the search for a better same-language subtitle.
+const EXCEPTIONAL_TARGET_COVERAGE = 0.99;
+const EXCEPTIONAL_REFERENCE_COVERAGE = 0.97;
+
+function autoSyncMatchQuality(match) {
+  return match.activityScore - match.averageMatchCost * 0.05;
+}
+
+function isExceptionalAutoSyncMatch(match) {
+  return Boolean(
+    match?.confident && match.targetCoverage >= EXCEPTIONAL_TARGET_COVERAGE && match.referenceCoverage >= EXCEPTIONAL_REFERENCE_COVERAGE
+  );
+}
 
 function normalizeToleranceMs(value) {
   const tolerance = Math.trunc(Number(value));
@@ -31,6 +43,7 @@ export function createPlayerScreenMethods74() {
     Environment,
     localMediaEmbeddedSubtitleRepository,
     convertAssBodyToVtt,
+    isAssSubtitle,
     isTx3gSubtitleTrack,
     normalizeSubtitleLanguageKey,
     t
@@ -46,7 +59,7 @@ export function createPlayerScreenMethods74() {
       this.autoSyncedSubtitleUrl = "";
       this.currentAddonSubtitleSource = null;
       if (resetStartupKey) {
-        this.automaticSubtitleSyncSearchedUrls = null;
+        this.automaticSubtitleSyncResolved = null;
         this.automaticSubtitleSyncStartupKey = "";
       }
     },
@@ -191,72 +204,47 @@ export function createPlayerScreenMethods74() {
       this.applySubtitlePresentationSettings({ refreshTrackRendering: true });
       return true;
     },
-    /**
-     * Android STARTUP_SEARCH / SELECTED_THEN_SEARCH: when the subtitle picked at start-up
-     * (or restored from the series preference) does not fit, try the other subtitles in
-     * its language and switch to the first one that fits. A manual pick never switches.
-     */
-    async findFittingAlternativeSubtitle({ subtitle, references, isStillRelevant }) {
+    /** The same-language add-on subtitles AutoSync may weigh against the picked one. */
+    getAutoSyncAlternativeSubtitles(subtitle) {
       const languageKey = normalizeSubtitleLanguageKey(subtitle.lang || subtitle.language || subtitle.languageCode || "");
-      const searched = this.automaticSubtitleSyncSearchedUrls || (this.automaticSubtitleSyncSearchedUrls = new Set());
-      searched.add(String(subtitle.url || ""));
-      const candidates = (Array.isArray(this.subtitles) ? this.subtitles : [])
-        .filter(
-          (entry) =>
-            entry?.url &&
-            !searched.has(String(entry.url)) &&
-            normalizeSubtitleLanguageKey(entry.lang || entry.language || entry.languageCode || "") === languageKey
-        )
-        .slice(0, AUTO_SYNC_MAX_ALTERNATIVES);
-      for (const candidate of candidates) {
-        searched.add(String(candidate.url));
-        let cues = [];
-        try {
-          const raw = await this.fetchSubtitleRawBody(candidate.url, {
-            languageHint: candidate.lang || candidate.language || candidate.languageCode || ""
-          });
-          const body = String(raw?.body || "");
-          cues = this.parseSubtitleCues(/\[Script Info\]|\[Events\]/i.test(body) ? convertAssBodyToVtt(body) : body);
-        } catch (_) {
-          cues = [];
-        }
-        if (!isStillRelevant()) {
-          return null;
-        }
-        if (!Array.isArray(cues) || cues.length < 4) {
-          continue;
-        }
-        for (const reference of references) {
-          const match = await alignSubtitleAutoSyncAsync({
-            referenceCues: reference.cues,
-            targetCues: cues.map(toAutoSyncTargetCue)
-          });
-          if (!isStillRelevant()) {
-            return null;
-          }
-          if (match?.confident) {
-            return candidate;
-          }
-        }
-      }
-      return null;
+      const seen = new Set([String(subtitle.url || "")]);
+      return (Array.isArray(this.subtitles) ? this.subtitles : []).filter((entry) => {
+        const url = String(entry?.url || "");
+        if (!url || seen.has(url)) return false;
+        seen.add(url);
+        return normalizeSubtitleLanguageKey(entry.lang || entry.language || entry.languageCode || "") === languageKey;
+      });
     },
+    async loadAutoSyncCandidateCues(candidate) {
+      try {
+        const raw = await this.fetchSubtitleRawBody(candidate.url, {
+          languageHint: candidate.lang || candidate.language || candidate.languageCode || ""
+        });
+        const body = String(raw?.body || "");
+        const isAss = isAssSubtitle(body, { sourceUrl: candidate.url, contentType: raw?.contentType });
+        return this.parseSubtitleCues(isAss ? convertAssBodyToVtt(body) : body);
+      } catch (_) {
+        return [];
+      }
+    },
+    /** Android: picking an alternative also makes it the selected (and remembered) subtitle. */
     switchToAutoSyncAlternative(candidate) {
       const option = this.collectSubtitleOptionItems?.().find((entry) => entry?.entry?.track?.url === candidate.url);
       if (!option) {
         return false;
       }
-      console.info("AutoSync: selected subtitle did not fit, switching to a same-language subtitle that does");
-      // The switch is AutoSync's own choice, so it stays a start-up selection.
-      this.startupSubtitlePreferenceApplying = true;
-      try {
-        this.selectSubtitleOption(option, { focusOptions: false });
-      } finally {
-        this.startupSubtitlePreferenceApplying = false;
-      }
+      this.selectSubtitleOption(option, { focusOptions: false });
       return true;
     },
-    maybeRunAutomaticSubtitleSync(subtitle, { source = null, startup = false, searchAlternatives = false } = {}) {
+    /**
+     * Android maybeRunAutomaticSubtitleSync scopes:
+     * - "startup" (STARTUP_SEARCH): the auto-selected subtitle and every same-language
+     *   add-on subtitle are weighed on equal terms; the best fit is used.
+     * - "restored" (SELECTED_THEN_SEARCH): the series preference is checked first and
+     *   kept when it fits; only otherwise the full search runs.
+     * - "selected" (SELECTED_ONLY): a manual pick is only synced, never swapped.
+     */
+    maybeRunAutomaticSubtitleSync(subtitle, { source = null, scope = "selected" } = {}) {
       const settings = this.getAutomaticSubtitleSyncSettings();
       if (!settings.enabled || !subtitle?.url) {
         return false;
@@ -283,12 +271,12 @@ export function createPlayerScreenMethods74() {
       if (!addonSource || String(addonSource.subtitleUrl || "") !== String(subtitle.url || "")) {
         return false;
       }
-      if (startup) {
-        const startupKey = `${sourceUrl}|${subtitle.url}`;
-        if (this.automaticSubtitleSyncStartupKey === startupKey) {
+      // Android claims the start-up search once per stream.
+      if (scope === "startup") {
+        if (this.automaticSubtitleSyncStartupKey === sourceUrl) {
           return false;
         }
-        this.automaticSubtitleSyncStartupKey = startupKey;
+        this.automaticSubtitleSyncStartupKey = sourceUrl;
       }
 
       const runToken = Number(this.automaticSubtitleSyncRunToken || 0) + 1;
@@ -303,97 +291,138 @@ export function createPlayerScreenMethods74() {
         String(this.activePlaybackUrl || "") === playbackUrlAtStart &&
         String(this.currentAddonSubtitleSource?.subtitleUrl || "") === subtitleUrlAtStart;
 
-      const run = async () => {
-        let targetCues = addonSource.cues;
-        if (addonSource.isAss) {
-          targetCues = this.parseSubtitleCues(convertAssBodyToVtt(addonSource.rawBody || ""));
-        }
-        if (!Array.isArray(targetCues) || targetCues.length < 4) {
+      const applyTimeline = async (timeline) => {
+        if (settings.toleranceMs > 0 && timeline.maxShiftMs <= settings.toleranceMs) {
+          this.markSubtitleAutoSynced(subtitle);
           return;
         }
+        const applied = await this.applyAutomaticSubtitleSyncTimeline({ subtitle, source: addonSource, timeline });
+        if (applied && isStillRelevant()) {
+          this.markSubtitleAutoSynced(subtitle);
+        }
+      };
 
+      const run = async () => {
+        // Android resolvedCache: a result found for this stream and subtitle (e.g. the
+        // alternative a start-up search just switched to) is reused, not analysed again.
+        const cached = this.automaticSubtitleSyncResolved;
+        if (cached?.sourceUrl === sourceUrl && cached.subtitleUrl === subtitleUrlAtStart) {
+          await applyTimeline(cached.timeline);
+          return;
+        }
+        let selectedCues = addonSource.cues;
+        if (addonSource.isAss) {
+          selectedCues = this.parseSubtitleCues(convertAssBodyToVtt(addonSource.rawBody || ""));
+        }
         // Let the current subtitle frame commit before the one-shot alignment.
         await new Promise((resolve) => setTimeout(resolve, 0));
         if (!isStillRelevant()) {
           return;
         }
 
-        let bestMatch = null;
-        const usableReferences = [];
-        let evaluatedReferences = 0;
-        let ambiguousReferences = 0;
-        for (const referenceRequest of referenceRequests) {
-          let reference;
-          try {
-            reference = await localMediaEmbeddedSubtitleRepository.getTimeline({
-              url: sourceUrl,
-              trackNumber: referenceRequest.trackNumber,
-              trackOrdinal: referenceRequest.trackOrdinal
-            });
-          } catch (_) {
-            continue;
+        // Embedded references load once and are shared by every candidate.
+        const references = [];
+        let nextReferenceIndex = 0;
+        const referenceAt = async (index) => {
+          while (references.length <= index && nextReferenceIndex < referenceRequests.length) {
+            const request = referenceRequests[nextReferenceIndex];
+            nextReferenceIndex += 1;
+            try {
+              references.push(
+                await localMediaEmbeddedSubtitleRepository.getTimeline({
+                  url: sourceUrl,
+                  trackNumber: request.trackNumber,
+                  trackOrdinal: request.trackOrdinal
+                })
+              );
+            } catch (_) {
+              // An unreadable reference is skipped, like before.
+            }
           }
-          if (!isStillRelevant()) {
-            return;
+          return references[index] || null;
+        };
+
+        const evaluate = async (cues) => {
+          const outcome = { bestMatch: null, evaluated: 0, ambiguous: 0 };
+          if (!Array.isArray(cues) || cues.length < 4) {
+            return outcome;
           }
-          evaluatedReferences += 1;
-          usableReferences.push(reference);
-          // The alignment runs in a Web Worker when the runtime has one, so a
-          // long scan does not freeze playback on single-core TVs (issue #1208).
-          const candidate = await alignSubtitleAutoSyncAsync({
-            referenceCues: reference.cues,
-            targetCues: targetCues.map(toAutoSyncTargetCue)
-          });
-          if (!isStillRelevant()) {
-            return;
-          }
-          if (!candidate?.confident) {
-            // Only a clearly ambiguous comparison confirms a no-fit; a null result
-            // or a real but weak match proves nothing.
-            if (confirmsAutoSyncNoFit(candidate)) {
-              ambiguousReferences += 1;
+          const targetCues = cues.map(toAutoSyncTargetCue);
+          for (let index = 0; ; index += 1) {
+            const reference = await referenceAt(index);
+            if (!reference || !isStillRelevant()) {
+              break;
+            }
+            outcome.evaluated += 1;
+            // The alignment runs in a Web Worker when the runtime has one, so a
+            // long scan does not freeze playback on single-core TVs (issue #1208).
+            const candidate = await alignSubtitleAutoSyncAsync({ referenceCues: reference.cues, targetCues });
+            if (!isStillRelevant()) {
+              break;
+            }
+            if (!candidate?.confident) {
+              // Only a clearly ambiguous comparison confirms a no-fit; a null result
+              // or a real but weak match proves nothing.
+              if (confirmsAutoSyncNoFit(candidate)) {
+                outcome.ambiguous += 1;
+              }
+            } else {
+              const quality = autoSyncMatchQuality(candidate);
+              const best = outcome.bestMatch;
+              if (!best) {
+                outcome.bestMatch = { timeline: candidate, quality };
+              } else {
+                const firstMs = candidate.cues[0].originalStartTimeMs;
+                const lastMs = candidate.cues[candidate.cues.length - 1].originalStartTimeMs;
+                const disagreement = Math.max(
+                  Math.abs((candidate.scale - best.timeline.scale) * firstMs + candidate.interceptMs - best.timeline.interceptMs),
+                  Math.abs((candidate.scale - best.timeline.scale) * lastMs + candidate.interceptMs - best.timeline.interceptMs)
+                );
+                const candidateIsTighter = candidate.averageMatchCost < best.timeline.averageMatchCost;
+                if ((disagreement > 300 && candidateIsTighter) || (disagreement <= 300 && quality > best.quality)) {
+                  outcome.bestMatch = { timeline: candidate, quality };
+                }
+              }
             }
             if (!settings.thorough) {
               break;
             }
-            continue;
           }
-          const quality = candidate.activityScore - candidate.averageMatchCost * 0.05;
-          if (!bestMatch) {
-            bestMatch = { timeline: candidate, quality };
-          } else {
-            const firstMs = candidate.cues[0].originalStartTimeMs;
-            const lastMs = candidate.cues[candidate.cues.length - 1].originalStartTimeMs;
-            const disagreement = Math.max(
-              Math.abs((candidate.scale - bestMatch.timeline.scale) * firstMs + candidate.interceptMs - bestMatch.timeline.interceptMs),
-              Math.abs((candidate.scale - bestMatch.timeline.scale) * lastMs + candidate.interceptMs - bestMatch.timeline.interceptMs)
-            );
-            const candidateIsTighter = candidate.averageMatchCost < bestMatch.timeline.averageMatchCost;
-            if ((disagreement > 300 && candidateIsTighter) || (disagreement <= 300 && quality > bestMatch.quality)) {
-              bestMatch = { timeline: candidate, quality };
+          return outcome;
+        };
+
+        const selectedOutcome = await evaluate(selectedCues);
+        if (!isStillRelevant()) {
+          return;
+        }
+        let winner = selectedOutcome.bestMatch ? { subtitle, match: selectedOutcome.bestMatch } : null;
+        const searchAll =
+          (scope === "startup" || (scope === "restored" && !winner)) &&
+          // Nothing in the video to compare with: other subtitles cannot fit either.
+          references.length > 0 &&
+          !isExceptionalAutoSyncMatch(winner?.match?.timeline);
+        if (searchAll) {
+          for (const candidate of this.getAutoSyncAlternativeSubtitles(subtitle)) {
+            const outcome = await evaluate(await this.loadAutoSyncCandidateCues(candidate));
+            if (!isStillRelevant()) {
+              return;
             }
-          }
-          if (!settings.thorough) {
-            break;
+            const match = outcome.bestMatch;
+            if (match && (!winner || match.quality > winner.match.quality)) {
+              winner = { subtitle: candidate, match };
+              // Android stops searching once a match is exceptional.
+              if (isExceptionalAutoSyncMatch(match.timeline)) {
+                break;
+              }
+            }
           }
         }
 
-        if (!bestMatch) {
-          // Nothing in the video to compare with means other subtitles cannot fit either.
-          if (searchAlternatives && usableReferences.length && isStillRelevant()) {
-            const alternative = await this.findFittingAlternativeSubtitle({
-              subtitle,
-              references: usableReferences,
-              isStillRelevant
-            });
-            if (alternative && isStillRelevant() && this.switchToAutoSyncAlternative(alternative)) {
-              return;
-            }
-          }
+        if (!winner) {
           if (
             isConfirmedAutoSyncNoFit({
-              evaluatedReferences,
-              ambiguousReferences,
+              evaluatedReferences: selectedOutcome.evaluated,
+              ambiguousReferences: selectedOutcome.ambiguous,
               requestedReferences: referenceRequests.length
             })
           ) {
@@ -401,22 +430,18 @@ export function createPlayerScreenMethods74() {
           }
           return;
         }
-
-        const timeline = bestMatch.timeline;
-        if (settings.toleranceMs > 0 && timeline.maxShiftMs <= settings.toleranceMs) {
-          this.markSubtitleAutoSynced(subtitle);
+        if (winner.subtitle === subtitle) {
+          await applyTimeline(winner.match.timeline);
           return;
         }
-
-        const applied = await this.applyAutomaticSubtitleSyncTimeline({
-          subtitle,
-          source: addonSource,
-          timeline
-        });
-        if (!applied || !isStillRelevant()) {
-          return;
-        }
-        this.markSubtitleAutoSynced(subtitle);
+        // The best fit is another subtitle: select it; its run reuses this result.
+        this.automaticSubtitleSyncResolved = {
+          sourceUrl,
+          subtitleUrl: String(winner.subtitle.url),
+          timeline: winner.match.timeline
+        };
+        console.info("AutoSync: a same-language subtitle fits better, switching to it");
+        this.switchToAutoSyncAlternative(winner.subtitle);
       };
 
       if (this.automaticSubtitleSyncTimer) {
