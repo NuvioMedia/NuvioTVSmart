@@ -3395,4 +3395,6 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl no está conectado</string>
     <string name="library_empty_simkl_not_auth_subtitle">Conecta tu cuenta de Simkl en Ajustes para ver tu biblioteca de Simkl</string>
+    <string name="playback_exo_chapters_title">Mostrar capítulos</string>
+    <string name="playback_exo_chapters_sub">Lee los capítulos de los archivos MKV para mostrarlos en la barra de progreso y permitir avanzar entre ellos.</string>
 </resources>

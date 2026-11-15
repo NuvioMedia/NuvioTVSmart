@@ -66,7 +66,7 @@ export function createPlayerScreenMethods32() {
       this.syncChaptersPanelHighlight?.();
       this.syncStartupGateAndParentalGuide?.();
       if (
-        PlayerSettingsStore.get().skipIntroEnabled &&
+        (PlayerSettingsStore.get().skipIntroEnabled || PlayerSettingsStore.get().chaptersEnabled === true) &&
         !this.chapterSkipIntervalsLoaded &&
         !this.chaptersFetchInFlight &&
         this.hasPresentedPlaybackFrame &&
@@ -191,6 +191,8 @@ export function createPlayerScreenMethods32() {
       const duration = this.getPlaybackDisplayDurationSeconds();
       const position = this.seekPreviewSeconds != null ? Number(this.seekPreviewSeconds) : this.getPlaybackDisplayCurrentSeconds();
       const progress = duration > 0 ? clamp(position / duration, 0, 1) : 0;
+      this.renderPlayerChapterMarks?.();
+      this.syncPlayerChapterTitle?.(position);
       const progressFill = uiRefs.progressFill;
       if (progressFill) {
         const nextWidth = `${Math.round(progress * 10000) / 100}%`;

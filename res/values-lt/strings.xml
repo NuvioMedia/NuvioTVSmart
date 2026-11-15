@@ -3389,4 +3389,6 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl neprijungtas</string>
     <string name="library_empty_simkl_not_auth_subtitle">Nustatymuose prijunkite Simkl paskyrą, kad matytumėte Simkl biblioteką</string>
+    <string name="playback_exo_chapters_title">Rodyti skyrius</string>
+    <string name="playback_exo_chapters_sub">Nuskaityti MKV failų skyrius, pažymėti juos eigos juostoje ir pereiti tarp jų.</string>
 </resources>

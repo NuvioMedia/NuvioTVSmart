@@ -119,6 +119,8 @@ export const player_settings = {
       pause_overlay_enabled: settings.pauseOverlayEnabled !== false,
       parental_guide_enabled: settings.parentalGuideEnabled !== false,
       osd_clock_enabled: settings.osdClockEnabled !== false,
+      exo_chapters_enabled: settings.chaptersEnabled === true,
+      chapter_title_enabled: settings.chapterTitleEnabled !== false,
       subtitle_show_only_preferred_languages: Boolean(settings.subtitleStyle?.showOnlyPreferredLanguages),
       auto_skip_segment_types: Array.isArray(settings.autoSkipSegmentTypes) ? settings.autoSkipSegmentTypes : [],
       skip_intro_enabled: Boolean(settings.skipIntroEnabled),
@@ -180,6 +182,8 @@ export const player_settings = {
       "pause_overlay_enabled",
       "parental_guide_enabled",
       "osd_clock_enabled",
+      "exo_chapters_enabled",
+      "chapter_title_enabled",
       "subtitle_show_only_preferred_languages"
     ].forEach((key) => {
       if (booleanOrNull(raw[key]) != null) {
@@ -329,7 +333,9 @@ export const player_settings = {
       show_player_loading_status: "showPlayerLoadingStatus",
       pause_overlay_enabled: "pauseOverlayEnabled",
       parental_guide_enabled: "parentalGuideEnabled",
-      osd_clock_enabled: "osdClockEnabled"
+      osd_clock_enabled: "osdClockEnabled",
+      exo_chapters_enabled: "chaptersEnabled",
+      chapter_title_enabled: "chapterTitleEnabled"
     };
     Object.entries(playerBooleanFields).forEach(([key, field]) => {
       if (booleanOrNull(raw[key]) != null) partial[field] = Boolean(raw[key]);

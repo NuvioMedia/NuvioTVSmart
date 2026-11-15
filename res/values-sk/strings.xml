@@ -3403,4 +3403,8 @@
     <string name="layout_cw_click_details_desc">Otvoriť stránku s detailmi titulu</string>
     <string name="layout_cw_click_details_upcoming">Detaily iba pre nadchádzajúce</string>
     <string name="layout_cw_click_details_upcoming_desc">Otvoriť detaily pre epizódy, ktoré ešte neboli vysielané, a stream pre ostatné</string>
+    <string name="playback_exo_chapters_title">Zobrazovať kapitoly</string>
+    <string name="playback_exo_chapters_sub">Načítať kapitoly zo súborov MKV, označiť ich na časovej osi a presakovať medzi nimi.</string>
+    <string name="playback_chapter_title_title">Zobrazovať názov kapitoly</string>
+    <string name="playback_chapter_title_sub">Zobrazovať názov aktuálnej kapitoly nad časovou osou.</string>
 </resources>

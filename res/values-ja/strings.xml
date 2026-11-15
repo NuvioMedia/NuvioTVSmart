@@ -3390,4 +3390,6 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simklが接続されていません</string>
     <string name="library_empty_simkl_not_auth_subtitle">設定でSimklアカウントを接続してSimklライブラリを表示</string>
+    <string name="playback_exo_chapters_title">チャプターを表示</string>
+    <string name="playback_exo_chapters_sub">MKVファイルのチャプターを読み取って進行バーにマークし、それらの間をスキップします。</string>
 </resources>

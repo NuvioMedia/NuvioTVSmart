@@ -3403,4 +3403,8 @@
     <string name="layout_cw_click_details_desc">Mở trang chi tiết của nội dung</string>
     <string name="layout_cw_click_details_upcoming">Chỉ chi tiết cho mục Sắp phát sóng</string>
     <string name="layout_cw_click_details_upcoming_desc">Mở chi tiết cho tập chưa phát sóng, mở luồng phát cho các tập còn lại.</string>
+    <string name="playback_exo_chapters_title">Hiển thị chương</string>
+    <string name="playback_exo_chapters_sub">Đọc các chương của tệp MKV để đánh dấu trên thanh tiến trình và chuyển đổi qua lại giữa chúng.</string>
+    <string name="playback_chapter_title_title">Hiển thị tên chương</string>
+    <string name="playback_chapter_title_sub">Hiển thị tên chương hiện tại phía trên thanh tiến trình.</string>
 </resources>

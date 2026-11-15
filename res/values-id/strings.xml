@@ -3389,4 +3389,8 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl tidak terhubung</string>
     <string name="library_empty_simkl_not_auth_subtitle">Hubungkan akun Simkl Anda di Pengaturan untuk melihat pustaka Simkl</string>
+    <string name="playback_exo_chapters_title">Tampilkan Bab</string>
+    <string name="playback_exo_chapters_sub">Baca bab dari file MKV untuk menandainya di bilah progres dan melompat di antaranya.</string>
+    <string name="playback_chapter_title_title">Tampilkan Judul Bab</string>
+    <string name="playback_chapter_title_sub">Tampilkan nama bab saat ini di atas bilah progres.</string>
 </resources>

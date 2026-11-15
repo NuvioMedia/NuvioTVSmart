@@ -109,6 +109,8 @@ export function registerPlaybackActionsPart01(model) {
   togglePlayerSetting("playback:loadingStatus", "showPlayerLoadingStatus");
   togglePlayerSetting("playback:pauseOverlay", "pauseOverlayEnabled");
   togglePlayerSetting("playback:parentalGuide", "parentalGuideEnabled");
+  togglePlayerSetting("playback:chapters", "chaptersEnabled");
+  togglePlayerSetting("playback:chapterTitle", "chapterTitleEnabled");
   ["intro", "recap", "outro", "movie-credits"].forEach((type) =>
     this.actionMap.set(`playback:autoSkip:${type}`, () => {
       const current = PlayerSettingsStore.get().autoSkipSegmentTypes || [];

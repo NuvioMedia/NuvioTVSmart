@@ -3400,4 +3400,8 @@
     <string name="layout_cw_click_details_desc">فتح صفحة التفاصيل</string>
     <string name="layout_cw_click_details_upcoming">التفاصيل للحلقات القادمة فقط</string>
     <string name="layout_cw_click_details_upcoming_desc">يفتح التفاصيل للحلقات التي لم تُعرض بعد، والمصدر لبقية الحلقات</string>
+    <string name="playback_exo_chapters_title">إظهار الفصول</string>
+    <string name="playback_exo_chapters_sub">قراءة فصول ملفات MKV لتمييزها على شريط التقدم والتنقل بينها.</string>
+    <string name="playback_chapter_title_title">إظهار عنوان الفصل</string>
+    <string name="playback_chapter_title_sub">إظهار اسم الفصل الحالي فوق شريط التقدم.</string>
 </resources>

@@ -72,6 +72,23 @@ export function renderPlaybackGeneralBody(model) {
             ${this.renderToggleRow({ focusKey: "playback:loadingStatus", title: t("playback_show_loading_status", {}, "Detailed loading status"), subtitle: t("playback_show_loading_status_sub", {}, "Show detailed player loading progress"), checked: model.player.showPlayerLoadingStatus !== false })}
             ${this.renderToggleRow({ focusKey: "playback:pauseOverlay", title: t("playback_pause_overlay"), subtitle: t("playback_pause_overlay_sub"), checked: model.player.pauseOverlayEnabled !== false })}
             ${this.renderToggleRow({ focusKey: "playback:parentalGuide", title: t("playback_parental_guide"), subtitle: t("playback_parental_guide_sub"), checked: model.player.parentalGuideEnabled !== false })}
+            ${this.renderToggleRow({
+              focusKey: "playback:chapters",
+              title: t("playback_exo_chapters_title", {}, "Show Chapters"),
+              subtitle: t(
+                "playback_exo_chapters_sub",
+                {},
+                "Read the chapters of MKV files to mark them on the progress bar and skip between them."
+              ),
+              checked: model.player.chaptersEnabled === true
+            })}
+            ${this.renderToggleRow({
+              focusKey: "playback:chapterTitle",
+              title: t("playback_chapter_title_title", {}, "Show Chapter Title"),
+              subtitle: t("playback_chapter_title_sub", {}, "Show the name of the current chapter above the progress bar."),
+              checked: model.player.chapterTitleEnabled !== false,
+              disabled: model.player.chaptersEnabled !== true
+            })}
             ${["intro", "recap", "outro", "movie-credits"]
               .map((type) => {
                 const translationType = type.replace(/-/g, "_");

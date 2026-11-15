@@ -548,3 +548,55 @@
   color: var(--player-text-secondary);
   font-variant-numeric: tabular-nums;
 }
+
+/* ATV ProgressBar: 2dp dark chapter marks drawn over the fill. */
+.player-chapter-marks {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.player-chapter-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: min(0.104vw, 4px); /* ATV 2dp -> 4px */
+  margin-left: max(-0.052vw, -2px);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.player-seek-overlay-track {
+  position: relative;
+}
+
+/* ATV ChapterTitle: bodyMedium, white 90%, 4dp above the bar. */
+.player-chapter-current-title {
+  margin-top: min(1.25vw, 24px); /* takes the 12dp metadata spacer of the bar */
+  padding-bottom: min(0.417vw, 8px); /* ATV xs 4dp -> 8px */
+  font-size: var(--player-overlay-label-font);
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-chapter-current-title.hidden {
+  display: none;
+}
+
+.player-chapter-current-title + .player-progress-shell {
+  margin-top: 0;
+}
+
+.player-chapter-current-title.hidden + .player-progress-shell {
+  margin-top: min(1.25vw, 24px);
+}
+
+.player-seek-overlay .player-chapter-current-title {
+  margin-top: 0;
+}

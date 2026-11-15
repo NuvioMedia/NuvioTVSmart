@@ -3391,4 +3391,6 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl не е свързан</string>
     <string name="library_empty_simkl_not_auth_subtitle">Свържете вашия Simkl акаунт в Настройки, за да видите вашата Simkl библиотека</string>
+    <string name="playback_exo_chapters_title">Показване на глави</string>
+    <string name="playback_exo_chapters_sub">Чете главите на MKV файловете, за да ги маркира в лентата за напредък и да прескача между тях.</string>
 </resources>

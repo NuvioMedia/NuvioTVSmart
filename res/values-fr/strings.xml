@@ -3400,4 +3400,8 @@
     <string name="layout_cw_click_details_desc">Ouvrir la page de détail du titre</string>
     <string name="layout_cw_click_details_upcoming">Détails pour les épisodes à venir uniquement</string>
     <string name="layout_cw_click_details_upcoming_desc">Ouvrir les détails des épisodes pas encore diffusés, et les flux pour les autres</string>
+    <string name="playback_exo_chapters_title">Afficher les chapitres</string>
+    <string name="playback_exo_chapters_sub">Lire les chapitres des fichiers MKV pour les repérer sur la barre de progression et passer de l’un à l’autre.</string>
+    <string name="playback_chapter_title_title">Afficher le titre du chapitre</string>
+    <string name="playback_chapter_title_sub">Afficher le nom du chapitre en cours au-dessus de la barre de progression.</string>
 </resources>

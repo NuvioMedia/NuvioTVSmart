@@ -432,7 +432,13 @@ export function createPlayerScreenMethods07() {
       await Promise.all([apiPromise, chaptersPromise]);
     },
     async refreshChapterSkipIntervals() {
-      if (!PlayerSettingsStore.get().skipIntroEnabled || this.chapterSkipIntervalsLoaded || this.chaptersFetchInFlight) {
+      const settings = PlayerSettingsStore.get();
+      // Chapters are read for skip intro, and for the chapter marks and panel when shown.
+      if (
+        (!settings.skipIntroEnabled && settings.chaptersEnabled !== true) ||
+        this.chapterSkipIntervalsLoaded ||
+        this.chaptersFetchInFlight
+      ) {
         return;
       }
       const playbackUrl = String(this.activePlaybackUrl || "").trim();
@@ -449,6 +455,9 @@ export function createPlayerScreenMethods07() {
       // The retry path is the normal one: chapters become readable only after the
       // first frames, so the panel list must be published here too.
       this.applyPlayerChapters?.(chapters);
+      if (!PlayerSettingsStore.get().skipIntroEnabled) {
+        return;
+      }
       const durationMs = Math.round(Number(this.getPlaybackDurationSeconds() || 0) * 1000);
       const chapterIntervals = chapterSkipIntervals(chapters, durationMs);
       if (!chapterIntervals.length) {

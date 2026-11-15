@@ -147,7 +147,8 @@ export function createPlayerScreenMethods15() {
             <div id="playerAssSubtitles" class="player-ass-subtitles hidden" aria-hidden="true"></div>
 
             <div id="playerSeekOverlay" class="player-seek-overlay hidden">
-              <div class="player-seek-overlay-track"><div id="playerSeekFill" class="player-seek-fill"></div></div>
+              <div id="playerSeekChapterTitle" class="player-chapter-current-title hidden"></div>
+              <div class="player-seek-overlay-track"><div id="playerSeekFill" class="player-seek-fill"></div><div id="playerSeekChapterMarks" class="player-chapter-marks"></div></div>
               <div class="player-seek-overlay-bottom">
                 <span id="playerSeekDirection" class="player-seek-direction"></span>
                 <span id="playerSeekPreview" class="player-seek-preview">0:00 / 0:00</span>
@@ -186,10 +187,12 @@ export function createPlayerScreenMethods15() {
                 </div>
 
                 <div class="player-controls-bar">
+                  <div id="playerChapterTitle" class="player-chapter-current-title hidden"></div>
                   <div id="playerProgressShell" class="player-progress-shell focusable${isLivePlayback ? " hidden" : ""}" role="slider" aria-label="${escapeAttribute(t("cd_seek_bar", {}, "Seek bar"))}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="-1" data-player-pointer-action="progress">
                     <div class="player-progress-track">
                       <div id="playerProgressBuffered" class="player-progress-buffered"></div>
                       <div id="playerProgressFill" class="player-progress-fill"></div>
+                      <div id="playerProgressChapterMarks" class="player-chapter-marks"></div>
                     </div>
                   </div>
 
@@ -270,6 +273,10 @@ export function createPlayerScreenMethods15() {
             endsAt: uiRoot.querySelector("#playerEndsAt"),
             progressBuffered: uiRoot.querySelector("#playerProgressBuffered"),
             progressFill: uiRoot.querySelector("#playerProgressFill"),
+            progressChapterMarks: uiRoot.querySelector("#playerProgressChapterMarks"),
+            chapterTitle: uiRoot.querySelector("#playerChapterTitle"),
+            seekChapterMarks: uiRoot.querySelector("#playerSeekChapterMarks"),
+            seekChapterTitle: uiRoot.querySelector("#playerSeekChapterTitle"),
             controlButtons: uiRoot.querySelector("#playerControlButtons"),
             timeLabel: uiRoot.querySelector("#playerTimeLabel"),
             startupErrorButton: uiRoot.querySelector("#playerStartupErrorOverlay .player-startup-error-button")

@@ -3405,4 +3405,8 @@
     <string name="layout_cw_click_details_desc">פתיחת עמוד הפרטים של הכותרת</string>
     <string name="layout_cw_click_details_upcoming">פרטים עבור פרקים עתידיים בלבד</string>
     <string name="layout_cw_click_details_upcoming_desc">פתיחת פרטי הפרקים שטרם שודרו, ומקור הצפייה עבור שאר הפרקים</string>
+    <string name="playback_exo_chapters_title">הצגת מקטעים</string>
+    <string name="playback_exo_chapters_sub">קריאת המקטעים של קובצי MKV כדי לסמן אותם בסרגל ההתקדמות ולדלג ביניהם.</string>
+    <string name="playback_chapter_title_title">הצגת שם המקטע</string>
+    <string name="playback_chapter_title_sub">הצגת שם המקטע הנוכחי מעל סרגל ההתקדמות.</string>
 </resources>

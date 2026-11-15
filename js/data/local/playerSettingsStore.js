@@ -47,6 +47,10 @@ const DEFAULTS = {
   stillWatchingEnabled: false,
   stillWatchingEpisodeThreshold: 3,
   osdClockEnabled: true,
+  // Android "Show Chapters" (exo_chapters_enabled): marks, chapter title and the
+  // chapters panel. Chapters still feed skip intro when it is off.
+  chaptersEnabled: false,
+  chapterTitleEnabled: true,
   subtitleRenderMode: "native",
   subtitleStyle: {
     fontSize: 100,
@@ -371,6 +375,10 @@ export function normalizePlayerSettings(settings = {}) {
       settings.stillWatchingEpisodeThreshold ?? DEFAULTS.stillWatchingEpisodeThreshold
     ),
     osdClockEnabled: Boolean(persistentSettings.osdClockEnabled ?? DEFAULTS.osdClockEnabled),
+    chaptersEnabled: Boolean(persistentSettings.chaptersEnabled ?? DEFAULTS.chaptersEnabled),
+    chapterTitleEnabled: Boolean(
+      persistentSettings.chapterTitleEnabled ?? DEFAULTS.chapterTitleEnabled
+    ),
     subtitlesEnabled: true,
     secondaryPreferredAudioLanguage: (() => {
       const normalized = String(

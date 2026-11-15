@@ -3400,4 +3400,6 @@ Próbálj meg egy másik forrást. [%1$s]</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">A Simkl nincs csatlakoztatva</string>
     <string name="library_empty_simkl_not_auth_subtitle">Csatlakoztasd a Simkl fiókodat a Beállításokban a Simkl könyvtárad megtekintéséhez</string>
+    <string name="playback_exo_chapters_title">Fejezetek megjelenítése</string>
+    <string name="playback_exo_chapters_sub">Az MKV-fájlok fejezeteinek beolvasása, hogy megjelenjenek a folyamatjelzőn, és lehessen köztük lépkedni.</string>
 </resources>

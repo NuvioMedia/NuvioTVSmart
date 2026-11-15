@@ -3404,4 +3404,6 @@ Utilizas esta función bajo tu entera responsabilidad. P2P se puede desactivar e
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl no conectado</string>
     <string name="library_empty_simkl_not_auth_subtitle">Conecta tu cuenta de Simkl en Configuración para ver tu biblioteca de Simkl</string>
+    <string name="playback_exo_chapters_title">Mostrar capítulos</string>
+    <string name="playback_exo_chapters_sub">Lee los capítulos de los archivos MKV para marcarlos en la barra de progreso y saltar entre ellos.</string>
 </resources>

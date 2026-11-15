@@ -3396,4 +3396,6 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl bağlı değil</string>
     <string name="library_empty_simkl_not_auth_subtitle">Simkl kütüphaneni görmek için Ayarlar\'dan Simkl hesabını bağla</string>
+    <string name="playback_exo_chapters_title">Sahneleri göster</string>
+    <string name="playback_exo_chapters_sub">MKV dosyalarındaki sahneleri okuyup ilerleme çubuğunda işaretler ve aralarında atlamayı sağlar.</string>
 </resources>

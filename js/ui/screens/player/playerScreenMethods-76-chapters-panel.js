@@ -13,7 +13,7 @@ function formatChapterTime(ms = 0) {
 }
 
 export function createPlayerScreenMethods76() {
-  const { escapeHtml, contentTextDirection, t, clamp, isSelectKeyCode, isBackEvent } = internals;
+  const { escapeHtml, contentTextDirection, t, clamp, isSelectKeyCode, isBackEvent, PlayerSettingsStore } = internals;
 
   return {
     normalizePlayerChapters(chapters = []) {
@@ -38,7 +38,11 @@ export function createPlayerScreenMethods76() {
         return false;
       }
       const normalized = this.normalizePlayerChapters?.(chapters);
-      this.playerChapters = Array.isArray(normalized) ? normalized : [];
+      // Android "Show Chapters": with it off the chapters only feed skip intro,
+      // so the marks, the title, the button and the panel stay away.
+      const showChapters = PlayerSettingsStore?.get?.().chaptersEnabled === true;
+      this.playerChapters = showChapters && Array.isArray(normalized) ? normalized : [];
+      this.renderPlayerChapterMarks?.();
       if (!this.playerChapters.length) {
         return false;
       }
@@ -48,6 +52,54 @@ export function createPlayerScreenMethods76() {
         this.renderControlButtons?.();
       }
       return true;
+    },
+
+    /** Android ProgressBar: a 2dp dark mark at each chapter start, on the controls and seek bars. */
+    renderPlayerChapterMarks() {
+      const chapters = Array.isArray(this.playerChapters) ? this.playerChapters : [];
+      const durationMs = Math.round(Number(this.getPlaybackDisplayDurationSeconds?.() || 0) * 1000);
+      const signature = chapters.length && durationMs > 0 ? `${durationMs}:${chapters.map((chapter) => chapter.startMs).join(",")}` : "";
+      if (this.playerChapterMarksSignature === signature) {
+        return;
+      }
+      this.playerChapterMarksSignature = signature;
+      const markup = signature
+        ? chapters
+            .map((chapter) => Number(chapter.startMs) / durationMs)
+            .filter((fraction) => fraction > 0 && fraction < 1)
+            .map((fraction) => `<span class="player-chapter-mark" style="left:${Math.round(fraction * 10000) / 100}%"></span>`)
+            .join("")
+        : "";
+      [this.uiRefs?.progressChapterMarks, this.uiRefs?.seekChapterMarks].forEach((node) => {
+        if (node) {
+          node.innerHTML = markup;
+        }
+      });
+    },
+
+    /** Android ChapterTitle: the current chapter's name above the bar, or "Chapter N". */
+    syncPlayerChapterTitle(positionSeconds = 0) {
+      const chapters = Array.isArray(this.playerChapters) ? this.playerChapters : [];
+      const showTitle =
+        chapters.length > 0 && PlayerSettingsStore?.get?.().chapterTitleEnabled !== false && this.isLivePlayback?.() !== true;
+      let label = "";
+      if (showTitle) {
+        const index = this.chapterIndexAt(Number(positionSeconds || 0) * 1000);
+        const title = String(chapters[index]?.title || "").trim();
+        label = title || t("player_chapter_number", [index + 1], `Chapter ${index + 1}`);
+      }
+      if (this.playerChapterTitleText === label) {
+        return;
+      }
+      this.playerChapterTitleText = label;
+      [this.uiRefs?.chapterTitle, this.uiRefs?.seekChapterTitle].forEach((node) => {
+        if (!node) {
+          return;
+        }
+        node.textContent = label;
+        node.setAttribute("dir", label ? contentTextDirection(label) : "auto");
+        node.classList.toggle("hidden", !label);
+      });
     },
 
     chapterIndexAt(positionMs = 0) {
