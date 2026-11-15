@@ -1,3 +1,4 @@
+import { AddonEventDispatcher, AddonLibraryAction } from "./addonEventDispatcher.js";
 import { TraktAuthStore } from "../local/traktAuthStore.js";
 import { requestTraktRefreshAfterWatchAction } from "./traktActivityRefreshState.js";
 import {
@@ -580,6 +581,41 @@ async function writeWatchedItemsToProviders(items = [], mdbScope = null) {
   return succeeded;
 }
 
+/** Android addonEpisodeVideoId: the episode's own video id, else contentId:season:episode. */
+function addonEpisodeVideoId(item = {}) {
+  const videoId = String(item.videoId || "").trim();
+  return videoId && videoId !== item.contentId
+    ? videoId
+    : `${item.contentId}:${item.season ?? 0}:${item.episode ?? 0}`;
+}
+
+/** Android emitAddonWatchedEvents: one event per title, its episodes in chunks of 100. */
+function emitAddonWatchedEvents(items = [], action) {
+  const groups = new Map();
+  items.forEach((item) => {
+    if (!item?.contentId) return;
+    const type = String(
+      item.contentType || item.type || (item.season != null ? "series" : "movie")
+    );
+    const key = `${type}\u0000${item.contentId}`;
+    if (!groups.has(key)) groups.set(key, { type, contentId: item.contentId, items: [] });
+    groups.get(key).items.push(item);
+  });
+  groups.forEach(({ type, contentId, items: groupItems }) => {
+    const episodes = groupItems.filter((item) => item.season != null || item.episode != null);
+    if (episodes.length < groupItems.length) {
+      AddonEventDispatcher.library(type, contentId, action);
+    } else {
+      AddonEventDispatcher.libraryVideos(
+        type,
+        contentId,
+        action,
+        episodes.map(addonEpisodeVideoId)
+      );
+    }
+  });
+}
+
 class WatchedItemsRepository {
   async getAll(limit = 2000, profileId = activeProfileId()) {
     const local = WatchedItemsStore.listForProfile(profileId);
@@ -671,6 +707,22 @@ class WatchedItemsRepository {
     );
     const operation = beginManualWatched(normalizedItems, previous, profileId);
     WatchedItemsStore.upsertMany(normalizedItems, profileId);
+    if (options.skipTrackingWrite !== true) {
+      // Android: a manual mark tells the Stremio add-ons that declare "library",
+      // only for what was not watched before.
+      emitAddonWatchedEvents(
+        normalizedItems.filter(
+          (item) =>
+            !previous.some(
+              (entry) =>
+                entry.contentId === item.contentId &&
+                entry.season === (item.season ?? null) &&
+                entry.episode === (item.episode ?? null)
+            )
+        ),
+        AddonLibraryAction.WATCHED
+      );
+    }
     captureManualWatched(operation);
     invalidateTraktWatchedForItems(normalizedItems);
     const succeeded =
@@ -717,6 +769,16 @@ class WatchedItemsRepository {
           }
         ];
     const operation = beginManualWatched(targets, removedItems, pid);
+    if (options?.skipTrackingWrite !== true && removedItems.length) {
+      // Android: unmarking a whole title sends one event for it, an episode its video id.
+      const wholeTitle = options?.season == null && options?.episode == null;
+      emitAddonWatchedEvents(
+        wholeTitle
+          ? [{ contentId, contentType: options?.contentType || removedItems[0]?.contentType || "movie" }]
+          : removedItems,
+        AddonLibraryAction.UNWATCHED
+      );
+    }
     // Remove the local state first, matching Android's optimistic removal path.
     if (removedItems.length) {
       const remaining = WatchedItemsStore.listForProfile(pid).filter(

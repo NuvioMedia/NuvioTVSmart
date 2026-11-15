@@ -3,7 +3,7 @@ import { syncHtmlSubtitleClearance } from "./subtitleOverlayClearance.js";
 import * as internals from "./playerScreenContext.js";
 
 export function createPlayerScreenMethods31() {
-  const { PlayerController, PlayerSettingsStore, t, escapeHtml, formatNextEpisodeAirDate } = internals;
+  const { PlayerController, PlayerSettingsStore, t, escapeHtml, formatNextEpisodeAirDate, TrackingScrobbleService } = internals;
 
   return {
     seekPlaybackSeconds(seconds, { preserveSkipIntroSuppression = false } = {}) {
@@ -16,6 +16,8 @@ export function createPlayerScreenMethods31() {
       if (!preserveSkipIntroSuppression) {
         this.clearSkipIntroSeekSuppression();
       }
+      // Android resends the current player state to tracking add-ons after a seek.
+      TrackingScrobbleService?.seeked?.(() => this.buildScrobbleContext());
       // Mark user-initiated seeks so the player can stay responsive while it settles.
       this.seekLoadingBaselineSeconds = this.getPlaybackCurrentSeconds();
       this.seekLoadingTargetSeconds = Number(seconds || 0);

@@ -1,3 +1,4 @@
+import { AddonEventDispatcher, AddonLibraryAction } from "./addonEventDispatcher.js";
 import { SavedLibraryStore } from "../local/savedLibraryStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
 import { getSyncBackoffRemainingMs } from "../../core/sync/syncBackoffPolicy.js";
@@ -110,13 +111,17 @@ class SavedLibraryRepository {
       return false;
     }
     const exists = SavedLibraryStore.findByContentId(item.contentId, profileId);
+    const type = String(item.contentType || item.type || "movie");
     if (exists) {
       SavedLibraryStore.remove(item.contentId, profileId);
       queueSavedLibraryCloudSync(profileId);
+      // Android: a user toggle tells the Stremio add-ons that declare "library".
+      AddonEventDispatcher.library(type, item.contentId, AddonLibraryAction.LIBRARY_REMOVE);
       return false;
     }
     SavedLibraryStore.upsert(item, profileId);
     queueSavedLibraryCloudSync(profileId);
+    AddonEventDispatcher.library(type, item.contentId, AddonLibraryAction.LIBRARY_ADD);
     return true;
   }
 
