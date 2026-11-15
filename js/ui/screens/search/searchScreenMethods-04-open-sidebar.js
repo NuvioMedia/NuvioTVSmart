@@ -93,6 +93,12 @@ export function createSearchScreenMethods04() {
       });
       target.classList.add("focused");
       focusWithoutAutoScroll(target);
+      // Android: whichever of voice/text field was focused last is where Up from results returns.
+      if (target.id === "searchInput") {
+        this.lastSearchInputWasVoice = false;
+      } else if (target.classList.contains("search-voice-btn")) {
+        this.lastSearchInputWasVoice = true;
+      }
       const zone = String(target.dataset.navZone || "");
       const currentZone = String(current?.dataset?.navZone || "");
       const sidebarFocused = isRootSidebarNode(target);

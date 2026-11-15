@@ -111,7 +111,7 @@ export function createSearchScreenMethods05() {
           if (nav.recentClear && row === 0) {
             return this.focusNode(current, nav.recentClear) || true;
           }
-          const target = nav.header?.[Math.min(col, (nav.header?.length || 1) - 1)] || nav.header?.[0] || null;
+          const target = this.getLastSearchInputNode() || nav.header?.[0] || null;
           return this.focusNode(current, target) || true;
         }
         return true;

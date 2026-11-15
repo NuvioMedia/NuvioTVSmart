@@ -282,7 +282,13 @@ export function createSearchScreenMethods03() {
         }
       }
     },
-    getDefaultHeaderFocusTarget() {
+    getLastSearchInputNode() {
+      const voice = this.lastSearchInputWasVoice
+        ? this.container?.querySelector(".search-voice-btn.focusable")
+        : null;
+      return voice || this.container?.querySelector("#searchInput.focusable") || null;
+    },
+        getDefaultHeaderFocusTarget() {
       return (
         this.container?.querySelector("#searchInput.focusable") ||
         this.container?.querySelector(".search-discover-btn.focusable") ||
