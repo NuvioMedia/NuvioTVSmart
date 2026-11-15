@@ -346,8 +346,8 @@ export function renderLegacyCatalogRowsMarkup(rows = [], options = {}) {
       </section>
     `;
     sectionsMarkup.push(sectionMarkup);
-    domSectionsMarkup.push(mountedRowMarkups?.get(escapedRowKey) === sectionMarkup ? unchangedHomeRowMarkup(escapedRowKey) : sectionMarkup);
-    rowMarkups.set(escapedRowKey, sectionMarkup);
+    domSectionsMarkup.push(mountedRowMarkups?.get(rowKey) === sectionMarkup ? unchangedHomeRowMarkup(escapedRowKey) : sectionMarkup);
+    rowMarkups.set(rowKey, sectionMarkup);
   });
 
   return {

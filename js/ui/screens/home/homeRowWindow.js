@@ -5,6 +5,8 @@
 // height (scroll geometry is unchanged) and drop their children from layout.
 export const HOME_ROW_PARKED_CLASS = "home-row-parked";
 export const HOME_ROW_WINDOW_SELECTOR = ".home-row-continue, .home-modern-row";
+// Classic and Grid scroll .home-main (Android: LazyColumn / LazyVerticalGrid).
+export const HOME_LEGACY_ROW_WINDOW_SELECTOR = ".home-row, .home-grid-section";
 // 150% of the rows viewport on each side keeps about two rows mounted ahead.
 const DEFAULT_ROOT_MARGIN = "150% 0px";
 
@@ -12,6 +14,30 @@ export function isHomeRowWindowSupported(scope = globalThis) {
   return (
     typeof scope.IntersectionObserver === "function" && scope.__NUVIO_HOME_ROW_WINDOW__ !== false
   );
+}
+
+// Grid rows are grouped by card index (chunkHomeGridCards), which needs equal
+// CSS grid cells; the flex fallback of older engines keeps every row laid out.
+export function supportsHomeGridRowWindow(scope = globalThis) {
+  return !scope.document?.documentElement?.classList?.contains("no-css-grid");
+}
+
+// Without content-visibility (webOS 6 / Chromium 79) a parked track has no
+// box and reads scrollLeft as 0, although the engine restores the offset on
+// unpark. The offset is kept at parking time for the Home return state.
+const PARKED_SCROLL_LEFT = "__nuvioParkedScrollLeft";
+
+export function getHomeTrackScrollLeft(track) {
+  const section = track?.closest?.(`.${HOME_ROW_PARKED_CLASS}`);
+  return section && Number.isFinite(track[PARKED_SCROLL_LEFT])
+    ? track[PARKED_SCROLL_LEFT]
+    : Number(track?.scrollLeft || 0);
+}
+
+function keepTrackScrollLeft(section) {
+  section.querySelectorAll?.(".home-track").forEach((track) => {
+    track[PARKED_SCROLL_LEFT] = Number(track.scrollLeft || 0);
+  });
 }
 
 function isParked(section) {
@@ -34,6 +60,7 @@ function holdsFocus(section) {
 export function createHomeRowWindow({
   root,
   rootMargin = DEFAULT_ROOT_MARGIN,
+  selector = HOME_ROW_WINDOW_SELECTOR,
   scope = globalThis
 } = {}) {
   const observed = new Set();
@@ -49,7 +76,15 @@ export function createHomeRowWindow({
     // Read every height before the first write so parking costs one layout.
     const parked = leaving
       .filter((section) => section.isConnected && !isParked(section) && !holdsFocus(section))
-      .map((section) => [section, Number(section.offsetHeight || 0)])
+      // Fractional height: Grid sections are not whole pixels, and pinning the
+      // rounded offsetHeight shifted everything below by up to half a pixel each.
+      .map((section) => {
+        keepTrackScrollLeft(section);
+        return [
+          section,
+          Number(section.getBoundingClientRect?.().height || section.offsetHeight || 0)
+        ];
+      })
       .filter(([, height]) => height > 0);
     parked.forEach(([section, height]) => {
       section.style.height = `${height}px`;
@@ -86,7 +121,7 @@ export function createHomeRowWindow({
     // Focus moves and geometry reads must see real boxes in the same task; the
     // observer only reports on the next frame.
     ensureReady(node) {
-      const section = node?.closest?.(HOME_ROW_WINDOW_SELECTOR) || null;
+      const section = node?.closest?.(selector) || null;
       if (!section) {
         return false;
       }
