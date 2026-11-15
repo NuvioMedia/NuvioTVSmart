@@ -167,11 +167,14 @@ export class NuvioDialog {
           (btn.danger ? " nuvio-dialog-button-danger" : "") +
           (btn.selected ? " selected" : "") +
           (btn.className ? ` ${btn.className}` : "");
-        this._setButtonSelected(el, Boolean(btn.selected));
+        if (btn.checkPlacement === "end") {
+          el.dataset.checkPlacement = "end";
+        }
         const label = document.createElement("span");
         label.className = "nuvio-dialog-button-label";
         label.textContent = btn.label;
         el.appendChild(label);
+        this._setButtonSelected(el, Boolean(btn.selected));
         el.dataset.key = btn.key || String(i);
         el.addEventListener("click", () => {
           if (btn.onAction) btn.onAction();
@@ -240,7 +243,9 @@ export class NuvioDialog {
     }
     if (selected && !existing) {
       const check = this._createCheckElement();
-      if (el.firstChild) {
+      if (el.dataset.checkPlacement === "end") {
+        el.appendChild(check);
+      } else if (el.firstChild) {
         el.insertBefore(check, el.firstChild);
       } else {
         el.appendChild(check);

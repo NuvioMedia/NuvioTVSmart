@@ -1,3 +1,4 @@
+import { getPosterListPickerOptions } from "../../components/posterOptionsMenu.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 
@@ -109,24 +110,8 @@ export function createMetaDetailsScreenMethods12() {
       return true;
     },
     getLibraryListMenuOptions() {
-      if (!this.libraryListMenu) {
-        return [];
-      }
-      const membership = this.libraryListMenu.membership || {};
-      const tabs = Array.isArray(this.libraryListMenu.tabs) ? this.libraryListMenu.tabs : [];
-      return [
-        ...tabs.map((tab) => ({
-          action: `toggleLibraryList:${tab.key}`,
-          label: tab.title || tab.key,
-          selected: membership[tab.key] === true,
-          className: "poster-list-picker-list-button"
-        })),
-        {
-          action: this.libraryListMenu.destructiveRemovalRequired ? "confirmDestructiveSimklRemoval" : "saveLibraryLists",
-          label: this.libraryListMenu.destructiveRemovalRequired ? "Remove status and clear Simkl history" : t("action_save", {}, "Save"),
-          className: "poster-list-picker-save-button"
-        }
-      ];
+      // One builder for Detail, Home and the poster options menu, as Android shares one picker.
+      return getPosterListPickerOptions(this.libraryListMenu);
     },
     destroyDetailHoldDialog() {
       if (this.detailHoldDialog) {
@@ -294,6 +279,7 @@ export function createMetaDetailsScreenMethods12() {
           key: option.action,
           selected: option.selected,
           className: option.className,
+          checkPlacement: option.checkPlacement,
           onAction: () => {
             void this.activateHeroOptionsMenu(option.action);
           }

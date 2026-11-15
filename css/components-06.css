@@ -219,15 +219,27 @@
   border-radius: 999px;
 }
 
-.nuvio-dialog-button.poster-list-picker-list-button.selected {
-  background: rgba(var(--secondary-color-rgb-legacy), 0.28);
-  color: #ffffff;
-}
-
+/* Android PosterListPickerDialog: same card colour either way; a saved list
+   gets a semibold name and a trailing 20dp check with a 12dp gap. */
 .nuvio-dialog-button.poster-list-picker-list-button {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 19px;
+}
+
+.nuvio-dialog-button.poster-list-picker-list-button .nuvio-dialog-button-label {
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.nuvio-dialog-button.poster-list-picker-list-button.selected .nuvio-dialog-button-label {
+  font-weight: 600;
+}
+
+.nuvio-dialog-button.poster-list-picker-list-button .nuvio-dialog-button-check {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
 }
 
 .nuvio-dialog-button-check {

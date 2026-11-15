@@ -255,6 +255,8 @@ export function getPosterListPickerOptions(picker) {
       action: `toggleLibraryList:${tab.key}`,
       label: tab.title || tab.key,
       selected: membership[tab.key] === true,
+      // Android PosterListPickerDialog: the check follows the list name.
+      checkPlacement: "end",
       className: "poster-list-picker-list-button"
     })),
     {
@@ -370,6 +372,7 @@ export class PosterOptionsDialogController {
         key: option.action,
         selected: option.selected,
         className: option.className,
+        checkPlacement: option.checkPlacement,
         onAction: () => {
           void this.activateListPickerOption(option.action);
         }

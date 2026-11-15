@@ -1,4 +1,5 @@
 import { trackingErrorMessage } from "../../components/trackingErrorMessage.js";
+import { getPosterListPickerOptions } from "../../components/posterOptionsMenu.js";
 import * as internals from "./homeScreenContext.js";
 
 export function createHomeScreenMethods07() {
@@ -76,24 +77,8 @@ export function createHomeScreenMethods07() {
       return true;
     },
     getPosterListPickerOptions() {
-      if (!this.posterListPicker) {
-        return [];
-      }
-      const membership = this.posterListPicker.membership || {};
-      const tabs = Array.isArray(this.posterListPicker.tabs) ? this.posterListPicker.tabs : [];
-      return [
-        ...tabs.map((tab) => ({
-          action: `toggleLibraryList:${tab.key}`,
-          label: tab.title || tab.key,
-          selected: membership[tab.key] === true,
-          className: "poster-list-picker-list-button"
-        })),
-        {
-          action: this.posterListPicker.destructiveRemovalRequired ? "confirmDestructiveSimklRemoval" : "saveLibraryLists",
-          label: this.posterListPicker.destructiveRemovalRequired ? "Remove status and clear Simkl history" : t("action_save", {}, "Save"),
-          className: "poster-list-picker-save-button"
-        }
-      ];
+      // One builder for Home and the poster options menu, as Android shares one picker.
+      return getPosterListPickerOptions(this.posterListPicker);
     },
     mountPosterListPickerDialog() {
       if (!this.posterListPicker) {
@@ -112,6 +97,7 @@ export function createHomeScreenMethods07() {
           key: option.action,
           selected: option.selected,
           className: option.className,
+          checkPlacement: option.checkPlacement,
           onAction: () => {
             void this.activatePosterListPickerOption(option.action);
           }
