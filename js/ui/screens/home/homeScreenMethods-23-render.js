@@ -170,6 +170,7 @@ export function createHomeScreenMethods23() {
 
       let mainContentMarkup = "";
       let modernLayoutPayload = null;
+      let legacyRowsPayload = null;
 
       if (this.isInitialHomeLoading) {
         mainContentMarkup = renderHomeLoadingState();
@@ -234,7 +235,7 @@ export function createHomeScreenMethods23() {
               cardStyle: this.layoutPrefs?.continueWatchingCardStyle || "card"
             })
           : "";
-        const legacyRowsPayload = renderLegacyCatalogRowsMarkup(this.rows, {
+        legacyRowsPayload = renderLegacyCatalogRowsMarkup(this.rows, {
           layoutMode: this.layoutMode,
           showPosterLabels,
           showCatalogAddonName,
@@ -244,7 +245,8 @@ export function createHomeScreenMethods23() {
           expandFocusedPoster: false,
           rowItemLimit: classicCatalogRowItemLimit,
           gridMaxDisplayItems,
-          watchedTitleIds: this.watchedTitleIds
+          watchedTitleIds: this.watchedTitleIds,
+          mountedRowMarkups: canUpdateInPlace ? this.renderedRowMarkups : null
         });
         this.catalogSeeAllMap = legacyRowsPayload.catalogSeeAllMap;
         mainContentMarkup = `
@@ -308,10 +310,9 @@ export function createHomeScreenMethods23() {
           this.expandedPosterNode = null;
         }
         // Rows whose markup is the one already mounted are not parsed again.
-        const domMarkup = modernLayoutPayload
-          ? nextMarkup.replace(modernLayoutPayload.markup, () => modernLayoutPayload.domMarkup)
-          : nextMarkup;
-        this.renderedRowMarkups = modernLayoutPayload?.rowMarkups || null;
+        const rowsPayload = modernLayoutPayload || legacyRowsPayload;
+        const domMarkup = rowsPayload ? nextMarkup.replace(rowsPayload.markup, () => rowsPayload.domMarkup) : nextMarkup;
+        this.renderedRowMarkups = rowsPayload?.rowMarkups || null;
         updatedInPlace = updateHomeDom(this.container, domMarkup, {
           incremental: canUpdateInPlace,
           focusedNode: liveFocusedNode

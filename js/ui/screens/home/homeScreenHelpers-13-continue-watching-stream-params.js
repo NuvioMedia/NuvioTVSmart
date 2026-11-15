@@ -1,6 +1,8 @@
 /* eslint-disable no-unused-vars */
 import { Router } from "../../navigation/routerState.js";
 
+import { unchangedHomeRowMarkup } from "./homeDomUpdate.js";
+
 import { ScreenUtils } from "../../navigation/screen.js";
 
 import { addonRepository } from "../../../data/repository/addonRepository.js";
@@ -242,10 +244,15 @@ export function renderLegacyCatalogRowsMarkup(rows = [], options = {}) {
     rowItemLimit = HOME_MAX_ITEMS_PER_ROW_DEFAULT,
     gridMaxDisplayItems = HOME_GRID_SAFE_MAX_COLUMNS * HOME_GRID_DEFAULT_ROW_COUNT,
     watchedTitleIds = null,
-    posterSettings = null
+    posterSettings = null,
+    // Row key to the markup now in the DOM: as in the Modern layout, rows left
+    // unchanged by a refresh are sent as empty stand-ins and not parsed again.
+    mountedRowMarkups = null
   } = options;
   const catalogSeeAllMap = new Map();
   const sectionsMarkup = [];
+  const domSectionsMarkup = [];
+  const rowMarkups = new Map();
   // One preference read per render pass: get() clones the profile store and
   // rewrites the root card-depth variables, which is far too much per card.
   const cardSettings = posterSettings || LayoutPreferences.get();
@@ -318,32 +325,36 @@ export function renderLegacyCatalogRowsMarkup(rows = [], options = {}) {
       </div>
     `;
 
-    if (layoutMode === "grid") {
-      sectionsMarkup.push(`
+    const escapedRowKey = escapeAttribute(rowKey);
+    const sectionMarkup =
+      layoutMode === "grid"
+        ? `
         <section class="home-grid-section"
-                 data-row-key="${escapeAttribute(rowKey)}"
+                 data-row-key="${escapedRowKey}"
                  data-row-index="${rowIndex}"
                  data-section-title="${escapeAttribute(rowTitle)}">
           <div class="home-grid-section-divider">${escapeHtml(rowTitle)}</div>
           ${trackMarkup}
         </section>
-      `);
-      return;
-    }
-
-    sectionsMarkup.push(`
+      `
+        : `
       <section class="home-row"
-               data-row-key="${escapeAttribute(rowKey)}"
+               data-row-key="${escapedRowKey}"
                data-row-index="${rowIndex}">
         ${renderRowHeader(rowTitle, rowSubtitle)}
         ${trackMarkup}
       </section>
-    `);
+    `;
+    sectionsMarkup.push(sectionMarkup);
+    domSectionsMarkup.push(mountedRowMarkups?.get(escapedRowKey) === sectionMarkup ? unchangedHomeRowMarkup(escapedRowKey) : sectionMarkup);
+    rowMarkups.set(escapedRowKey, sectionMarkup);
   });
 
   return {
     catalogSeeAllMap,
-    markup: sectionsMarkup.join("")
+    rowMarkups,
+    markup: sectionsMarkup.join(""),
+    domMarkup: domSectionsMarkup.join("")
   };
 }
 
