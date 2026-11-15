@@ -10,7 +10,9 @@ export function createHomeScreenMethods06() {
     isPosterWatchedType,
     partitionContinueWatchingRows,
     normalizeContinueWatchingItem,
-    isCloudContinueWatchingItem
+    isCloudContinueWatchingItem,
+    PlayerSettingsStore,
+    isAutoPlayEffectivelyEnabled
   } = internals;
 
   return {
@@ -78,7 +80,8 @@ export function createHomeScreenMethods06() {
           label: t("cw_action_go_to_details", {}, "Go to details")
         });
       }
-      if (!isCloud && this.showContinueWatchingManualPlayOption) {
+      // Android offers manual source selection only while auto-play would pick one.
+      if (!isCloud && isAutoPlayEffectivelyEnabled(PlayerSettingsStore.get())) {
         options.push({ action: "playManually", label: t("play_manually", {}, "Play manually") });
       }
       if (!item.isNextUp) {
