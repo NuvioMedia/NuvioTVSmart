@@ -3469,4 +3469,9 @@
     <string name="sub_shadow_opacity">Opacità ombra</string>
     <string name="sub_shadow_size">Dimensione ombra</string>
     <string name="sub_background">Sfondo</string>
+    <string name="addon_tracking_consent_title">Addon di tracciamento</string>
+    <string name="addon_tracking_consent_body">%1$s è un addon di tracciamento. Nuvio gli invierà la tua attività: cosa riproduci, metti in pausa e interrompi con la posizione di riproduzione, cosa aggiungi o togli dalla libreria e cosa segni come visto o non visto. Questi dati escono da Nuvio e vengono gestiti dallo sviluppatore dell\'addon e dal servizio a cui si collega.</string>
+    <string name="addon_tracking_consent_checkbox">Accetto di condividere con questo addon la mia attività di visione e la mia libreria</string>
+    <string name="addon_tracking_consent_cancel">Annulla</string>
+    <string name="addon_tracking_consent_install">Installa</string>
 </resources>

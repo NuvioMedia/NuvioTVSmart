@@ -7,6 +7,7 @@ import { LibrarySyncService } from "../core/profile/librarySyncService.js";
 import { ProfileSettingsSyncService } from "../core/profile/profileSettingsSyncService.js";
 import { HomeCatalogSettingsSyncService } from "../core/profile/homeCatalogSettingsSyncService.js";
 import { I18n } from "../i18n/index.js";
+import { isTrackingAddon } from "../data/repository/addonEventDispatcher.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -124,6 +125,24 @@ function createShell() {
         }
         .addon-remote-input::placeholder {
           color: rgba(255, 255, 255, 0.28);
+        }
+        .addon-remote-consent {
+          margin-top: 12px;
+          padding: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.04);
+        }
+        .addon-remote-consent-body {
+          margin: 6px 0 10px;
+          line-height: 1.4;
+          opacity: 0.85;
+        }
+        .addon-remote-consent-check {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          margin-bottom: 12px;
         }
         .addon-remote-error {
           min-height: 20px;
@@ -323,10 +342,44 @@ const AddonRemotePage = {
       return;
     }
 
-    this.draftAddons = [...this.draftAddons, result.data];
+    if (isTrackingAddon(result.data)) {
+      // Android: a tracking add-on is added only once the consent box is ticked.
+      this.pendingTrackingAddon = result.data;
+      this.trackingConsentChecked = false;
+      this.render();
+      return;
+    }
+    this.acceptAddon(result.data);
+  },
+
+  acceptAddon(addon) {
+    this.draftAddons = [...this.draftAddons, addon];
     this.addonDraft = "";
     this.rebuildCatalogItems();
     this.render();
+  },
+
+  renderTrackingConsent() {
+    const addon = this.pendingTrackingAddon;
+    if (!addon) {
+      return "";
+    }
+    const name = addon.displayName || addon.name || addon.baseUrl || "";
+    return `
+        <div class="addon-remote-consent" role="dialog" aria-modal="true">
+          <p class="addon-remote-label">${escapeHtml(I18n.t("addon_tracking_consent_title"))}</p>
+          <p class="addon-remote-consent-body">${escapeHtml(I18n.t("addon_tracking_consent_body", [name]))}</p>
+          <label class="addon-remote-consent-check">
+            <input type="checkbox" data-action="tracking-consent" ${this.trackingConsentChecked ? "checked" : ""} />
+            <span>${escapeHtml(I18n.t("addon_tracking_consent_checkbox"))}</span>
+          </label>
+          <div class="addon-remote-add">
+            <button class="addon-remote-btn" data-action="tracking-cancel">${escapeHtml(I18n.t("addon_tracking_consent_cancel"))}</button>
+            <button class="addon-remote-btn" data-action="tracking-install" ${this.trackingConsentChecked ? "" : "disabled"}>${escapeHtml(
+              I18n.t("addon_tracking_consent_install")
+            )}</button>
+          </div>
+        </div>`;
   },
 
   moveAddon(index, delta) {
@@ -429,6 +482,29 @@ const AddonRemotePage = {
 
     this.root.querySelector("[data-action='add']")?.addEventListener("click", async () => {
       await this.addAddon();
+    });
+
+    this.root
+      .querySelector("[data-action='tracking-consent']")
+      ?.addEventListener("change", (event) => {
+        this.trackingConsentChecked = Boolean(event.target?.checked);
+        this.render();
+      });
+
+    this.root.querySelector("[data-action='tracking-cancel']")?.addEventListener("click", () => {
+      this.pendingTrackingAddon = null;
+      this.trackingConsentChecked = false;
+      this.render();
+    });
+
+    this.root.querySelector("[data-action='tracking-install']")?.addEventListener("click", () => {
+      const addon = this.pendingTrackingAddon;
+      if (!addon || !this.trackingConsentChecked) {
+        return;
+      }
+      this.pendingTrackingAddon = null;
+      this.trackingConsentChecked = false;
+      this.acceptAddon(addon);
     });
 
     this.root.querySelector("[data-action='save']")?.addEventListener("click", async () => {
@@ -549,6 +625,7 @@ const AddonRemotePage = {
           <button class="addon-remote-btn" data-action="add">${I18n.t("addon_remote_add")}</button>
         </div>
         <div class="addon-remote-error">${escapeHtml(this.addError)}</div>
+        ${this.renderTrackingConsent()}
       </section>
 
       <section class="addon-remote-section">

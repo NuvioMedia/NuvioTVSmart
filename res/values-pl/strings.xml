@@ -3437,4 +3437,9 @@
     <string name="sub_shadow_size">Rozmiar cienia</string>
     <string name="sub_reset_appearance">Resetuj wygląd</string>
     <string name="sub_background">Tło</string>
+    <string name="addon_tracking_consent_title">Dodatek śledzący</string>
+    <string name="addon_tracking_consent_body">%1$s to dodatek śledzący. Nuvio będzie wysyłać do niego Twoją aktywność: co odtwarzasz, wstrzymujesz i zatrzymujesz wraz z pozycją odtwarzania, co dodajesz do biblioteki lub z niej usuwasz oraz co oznaczasz jako obejrzane lub nieobejrzane. Te dane opuszczają Nuvio i trafiają do twórcy dodatku oraz serwisu, z którym się łączy.</string>
+    <string name="addon_tracking_consent_checkbox">Zgadzam się na udostępnianie temu dodatkowi mojej aktywności oglądania i biblioteki</string>
+    <string name="addon_tracking_consent_cancel">Anuluj</string>
+    <string name="addon_tracking_consent_install">Zainstaluj</string>
 </resources>
