@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createHomeRowWindow,
+  getHomeTrackScrollLeft,
   isHomeRowWindowSupported,
   HOME_ROW_PARKED_CLASS
 } from "./homeRowWindow.js";
@@ -128,4 +129,18 @@ test("the kill switch and missing IntersectionObserver disable the window", () =
     false
   );
   assert.equal(isHomeRowWindowSupported({ IntersectionObserver() {} }), true);
+});
+
+test("a parked track reports the scroll offset it had when parked", () => {
+  // Without content-visibility the parked track has no box and reads 0.
+  const row = section();
+  const track = { scrollLeft: 900, closest: () => (parked(row) ? row : null) };
+  row.querySelectorAll = (selector) => (selector === ".home-track" ? [track] : []);
+  const { report } = setup([row]);
+  report([]);
+  track.scrollLeft = 0;
+  assert.equal(getHomeTrackScrollLeft(track), 900);
+  report([0]);
+  track.scrollLeft = 120;
+  assert.equal(getHomeTrackScrollLeft(track), 120);
 });

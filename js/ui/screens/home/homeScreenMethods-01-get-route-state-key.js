@@ -1,4 +1,5 @@
 import * as internals from "./homeScreenContext.js";
+import { getHomeTrackScrollLeft } from "./homeRowWindow.js";
 
 export function createHomeScreenMethods01() {
   const {
@@ -49,7 +50,7 @@ export function createHomeScreenMethods01() {
       }
       const trackStates = Object.fromEntries(
         this.getNavigationTrackNodes()
-          .map((track) => [String(track.dataset.trackRowKey || ""), track.scrollLeft])
+          .map((track) => [String(track.dataset.trackRowKey || ""), getHomeTrackScrollLeft(track)])
           .filter(([key]) => key)
       );
       const section = focused?.closest?.("[data-row-key]") || null;
@@ -111,7 +112,7 @@ export function createHomeScreenMethods01() {
 
       const trackStates = Object.fromEntries(
         this.getNavigationTrackNodes()
-          .map((track) => [String(track.dataset.trackRowKey || ""), track.scrollLeft])
+          .map((track) => [String(track.dataset.trackRowKey || ""), getHomeTrackScrollLeft(track)])
           .filter(([key]) => key)
       );
       const section = node.closest("[data-row-key]") || null;

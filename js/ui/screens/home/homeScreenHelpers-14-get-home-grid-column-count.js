@@ -194,11 +194,23 @@ export function getHomeGridColumnCount(track, cards = []) {
     return null;
   }
   const styles = typeof getComputedStyle === "function" ? getComputedStyle(track) : null;
+  // The resolved track list is the exact column count, the same as Android's
+  // GridCells.Adaptive for the same minimum width and spacing. Widths are only a
+  // fallback: offsetWidth rounds a 236.56px cell up to 237 and lost a column.
+  if (styles?.display === "grid") {
+    const columns = String(styles.gridTemplateColumns || "")
+      .trim()
+      .split(/\s+/)
+      .filter((value) => value && value !== "none").length;
+    if (columns > 0) {
+      return columns;
+    }
+  }
   const columnGap = parseCssPx(styles?.columnGap, 12);
   const trackRect = track.getBoundingClientRect?.();
   const trackWidth = Number(track.clientWidth || trackRect?.width || 0);
   const firstCardRect = cards[0]?.getBoundingClientRect?.();
-  const cardWidth = Number(cards[0]?.offsetWidth || firstCardRect?.width || 0);
+  const cardWidth = Number(firstCardRect?.width || cards[0]?.offsetWidth || 0);
   if (trackWidth > 0 && cardWidth > 0) {
     return Math.max(1, Math.floor((trackWidth + columnGap) / (cardWidth + columnGap) + 0.001));
   }
@@ -210,17 +222,25 @@ export function getHomeGridColumnCount(track, cards = []) {
   return visualRows.length > 1 ? Math.max(1, visualRows[0].length) : null;
 }
 
+// Returns the column count shared by the Grid tracks (null when none could be
+// measured). Every track has the same width and --home-poster-width, so a
+// section parked by homeRowWindow.js uses the count of a measured one: its
+// cards leave layout (display:none without content-visibility, e.g. webOS 6 /
+// Chromium 79) and cannot be measured themselves.
 export function normalizeHomeGridCatalogSections(
   container,
   { maxDisplayItems = HOME_GRID_SAFE_MAX_COLUMNS * HOME_GRID_DEFAULT_ROW_COUNT, rowCount = 3 } = {}
 ) {
   if (!container || typeof container.querySelectorAll !== "function") {
-    return;
+    return null;
   }
   const safeMaxDisplayItems = Math.max(1, Number(maxDisplayItems) || 1);
   const safeRowCount = Math.max(1, Number(rowCount) || 1);
-  const sections = Array.from(container.querySelectorAll(".home-grid-section"));
-  sections.forEach((section) => {
+  // Every read happens before the first removal, so the pass costs one layout
+  // instead of one per section.
+  const plans = [];
+  let sharedColumnCount = null;
+  Array.from(container.querySelectorAll(".home-grid-section")).forEach((section) => {
     const track = section.querySelector?.(".home-grid-track");
     if (!track) {
       return;
@@ -231,6 +251,14 @@ export function normalizeHomeGridCatalogSections(
       return;
     }
     const columnCount = getHomeGridColumnCount(track, cards);
+    if (columnCount && !sharedColumnCount) {
+      sharedColumnCount = columnCount;
+    }
+    plans.push({ cards, contentCards, columnCount });
+  });
+
+  plans.forEach(({ cards, contentCards, columnCount: measuredColumnCount }) => {
+    const columnCount = measuredColumnCount || sharedColumnCount;
     if (!columnCount || columnCount <= 1) {
       return;
     }
@@ -259,6 +287,18 @@ export function normalizeHomeGridCatalogSections(
       }
     });
   });
+  return sharedColumnCount;
+}
+
+// CSS grid places equal cells in reading order, so a track's visual rows are
+// consecutive runs of columnCount cards, as LazyVerticalGrid lays them out.
+export function chunkHomeGridCards(cards = [], columnCount = 0) {
+  const size = Math.max(1, Math.floor(Number(columnCount) || 0));
+  const rows = [];
+  for (let index = 0; index < cards.length; index += size) {
+    rows.push(cards.slice(index, index + size));
+  }
+  return rows;
 }
 
 export function shouldDeferHomeRowImages(rowIndex = 0, rowKey = "", focusedRowKey = "") {

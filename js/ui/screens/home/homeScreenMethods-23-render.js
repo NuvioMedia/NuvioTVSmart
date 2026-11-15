@@ -1,6 +1,7 @@
 import { ensureHeroMdbListRatings } from "./homeHeroMdbListLoad.js";
 import * as internals from "./homeScreenContext.js";
 import { hasMountedHomeDom, updateHomeDom } from "./homeDomUpdate.js";
+import { supportsHomeGridRowWindow } from "./homeRowWindow.js";
 import { hasMarkedFirstHomePaint, markFirstHomePaint } from "../../../core/diagnostics/bootTiming.js";
 
 export function createHomeScreenMethods23() {
@@ -311,12 +312,25 @@ export function createHomeScreenMethods23() {
         }
         // Rows whose markup is the one already mounted are not parsed again.
         const rowsPayload = modernLayoutPayload || legacyRowsPayload;
+        const previousRowMarkups = this.renderedRowMarkups;
         const domMarkup = rowsPayload ? nextMarkup.replace(rowsPayload.markup, () => rowsPayload.domMarkup) : nextMarkup;
         this.renderedRowMarkups = rowsPayload?.rowMarkups || null;
         updatedInPlace = updateHomeDom(this.container, domMarkup, {
           incremental: canUpdateInPlace,
           focusedNode: liveFocusedNode
         });
+        if (updatedInPlace && legacyRowsPayload && this.homeRowWindow) {
+          // A parked row rewritten in place keeps its old pinned height (a Grid
+          // section can change its number of lines): measure it again, the window
+          // parks it back on the next frame.
+          const changedRowKeys = [];
+          legacyRowsPayload.rowMarkups.forEach((markup, rowKey) => {
+            if (previousRowMarkups?.get(rowKey) !== markup) {
+              changedRowKeys.push(rowKey);
+            }
+          });
+          this.homeRowWindow.ensureRowKeysReady(changedRowKeys);
+        }
         this.renderedMarkup = nextMarkup;
         if (!hasMarkedFirstHomePaint()) {
           // Boot timing only: the first Home DOM commit is about to paint.
@@ -328,11 +342,15 @@ export function createHomeScreenMethods23() {
         }
       }
       this.applyHeroDescriptionAutoScroll?.();
+      this.homeGridColumnCount = null;
       if (this.layoutMode === "grid") {
-        normalizeHomeGridCatalogSections(this.container, {
+        const gridColumnCount = normalizeHomeGridCatalogSections(this.container, {
           maxDisplayItems: gridMaxDisplayItems,
           rowCount: homeGridRowCount
         });
+        // The flex fallback (no CSS grid) can wrap unequal cards: it keeps the
+        // geometric grouping and no row window.
+        this.homeGridColumnCount = supportsHomeGridRowWindow() ? gridColumnCount : null;
       }
       const focusSurvived = Boolean(
         updatedInPlace &&
