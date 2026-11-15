@@ -4,6 +4,7 @@ import { normalizeHdrBrightness } from "../../../core/player/hdrSubtitleStyle.js
 
 export function createPlayerScreenMethods52() {
   const {
+    SubtitleAppearance,
     PlayerController,
     selectStartupAudioFallbackOption,
     resolveSubtitleStyleControlAvailability,
@@ -422,6 +423,14 @@ export function createPlayerScreenMethods52() {
     },
     getSubtitleStyleControls() {
       const style = this.subtitleStyleSettings || {};
+      const appearance = SubtitleAppearance.normalizeSubtitleAppearance(style);
+      const background = SubtitleAppearance.splitSubtitleBackground(style.backgroundColor);
+      const subtitleFontLabel = (fontId) =>
+        fontId === "serif"
+          ? t("sub_font_serif", {}, "Serif")
+          : fontId === "mono"
+            ? t("sub_font_mono", {}, "Monospace")
+            : t("sub_font_default", {}, "Default");
       const selectedEmbeddedTrack = this.webOsEmbeddedTextSubtitleTrack;
       const embeddedAssStyleManaged = Boolean(
         Environment.isWebOS() &&
@@ -448,6 +457,7 @@ export function createPlayerScreenMethods52() {
       const availability = resolveSubtitleStyleControlAvailability({
         isTizenAvPlay: usingTizenAvPlay,
         isWebOsNative: usingWebOsNative,
+        isWebOs: Environment.isWebOS(),
         rendererMode,
         supportsExternalDelay: PlayerController.supportsAvPlayExternalSubtitleDelay?.() === true,
         preserveAssStyles: assStylesManaged,
@@ -464,6 +474,11 @@ export function createPlayerScreenMethods52() {
           id: "delay",
           label: t("subtitle_tab_delay", {}, "Delay"),
           value: formatSubtitleDelay(this.subtitleDelayMs)
+        },
+        {
+          id: "font",
+          label: t("sub_font", {}, "Font"),
+          value: subtitleFontLabel(style.fontId)
         },
         {
           id: "fontSize",
@@ -491,6 +506,21 @@ export function createPlayerScreenMethods52() {
           value: `${normalizeSubtitleTextOpacity(style.textOpacity)}%`
         },
         {
+          id: "backgroundColor",
+          label: t("sub_background", {}, "Background"),
+          value: background.opacity > 0 ? styleChipLabel(background.color) : t("subtitle_style_off", {}, "Off")
+        },
+        {
+          id: "backgroundOpacity",
+          label: t("sub_bg_opacity", {}, "Background Opacity"),
+          value: `${background.opacity}%`
+        },
+        {
+          id: "backgroundRadius",
+          label: t("sub_bg_roundness", {}, "Corner Roundness"),
+          value: String(appearance.backgroundRadius)
+        },
+        {
           id: "outlineEnabled",
           label: t("subtitle_style_outline", {}, "Outline"),
           value: style.outlineEnabled ? t("subtitle_style_on", {}, "On") : t("subtitle_style_off", {}, "Off")
@@ -499,6 +529,21 @@ export function createPlayerScreenMethods52() {
           id: "outlineColor",
           label: t("subtitle_style_outline_color", {}, "Outline Color"),
           value: styleChipLabel(style.outlineColor || "#000000")
+        },
+        {
+          id: "shadowEnabled",
+          label: t("sub_shadow", {}, "Drop Shadow"),
+          value: appearance.shadowEnabled ? t("subtitle_style_on", {}, "On") : t("subtitle_style_off", {}, "Off")
+        },
+        {
+          id: "shadowOpacity",
+          label: t("sub_shadow_opacity", {}, "Shadow Opacity"),
+          value: `${appearance.shadowOpacity}%`
+        },
+        {
+          id: "shadowSize",
+          label: t("sub_shadow_size", {}, "Shadow Size"),
+          value: String(appearance.shadowSize)
         },
         {
           id: "verticalOffset",

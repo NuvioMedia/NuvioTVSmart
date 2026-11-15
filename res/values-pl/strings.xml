@@ -3436,4 +3436,5 @@
     <string name="sub_shadow_opacity">Krycie cienia</string>
     <string name="sub_shadow_size">Rozmiar cienia</string>
     <string name="sub_reset_appearance">Resetuj wygląd</string>
+    <string name="sub_background">Tło</string>
 </resources>

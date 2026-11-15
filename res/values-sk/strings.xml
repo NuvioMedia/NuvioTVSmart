@@ -3434,4 +3434,5 @@
     <string name="sub_shadow_opacity">Priehľadnosť tieňa</string>
     <string name="sub_shadow_size">Veľkosť tieňa</string>
     <string name="sub_reset_appearance">Obnoviť predvolený vzhľad</string>
+    <string name="sub_background">Pozadie</string>
 </resources>

@@ -92,3 +92,36 @@ export function hasVisibleSubtitleBackground(color = "") {
   const rgba = value.match(/^rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)$/i);
   return rgba ? Number(rgba[1]) > 0 : true;
 }
+
+/** "#RRGGBB" or "#RRGGBBAA" split into its color and an opacity in percent. */
+export function splitSubtitleBackground(value = "") {
+  const hex = String(value || "")
+    .trim()
+    .toUpperCase();
+  if (!/^#[0-9A-F]{6}([0-9A-F]{2})?$/.test(hex)) {
+    return { color: "#000000", opacity: 0 };
+  }
+  const alpha = hex.length === 9 ? parseInt(hex.slice(7), 16) : 255;
+  return { color: hex.slice(0, 7), opacity: Math.round((alpha / 255) * 100) };
+}
+
+export function joinSubtitleBackground(color = "#000000", opacity = 0) {
+  const alpha = Math.round((Math.min(100, Math.max(0, Number(opacity) || 0)) / 100) * 255);
+  return `${String(color).slice(0, 7).toUpperCase()}${alpha.toString(16).padStart(2, "0").toUpperCase()}`;
+}
+
+// Android SubtitleBackgroundColorPresets and SUBTITLE_BACKGROUND_DEFAULT_OPACITY.
+export const SUBTITLE_BACKGROUND_COLOR_PRESETS = [
+  "#000000",
+  "#3A3A3A",
+  "#FFFFFF",
+  "#FFD700",
+  "#1E3A8A"
+];
+export const SUBTITLE_BACKGROUND_DEFAULT_OPACITY = 75;
+
+/** Android subtitleBackgroundColorFor: a new background color keeps the opacity, or 75% when it had none. */
+export function subtitleBackgroundColorFor(color, currentBackground) {
+  const { opacity } = splitSubtitleBackground(currentBackground);
+  return joinSubtitleBackground(color, opacity > 0 ? opacity : SUBTITLE_BACKGROUND_DEFAULT_OPACITY);
+}

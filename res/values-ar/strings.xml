@@ -3431,4 +3431,5 @@
     <string name="sub_shadow_opacity">عتامة الظل</string>
     <string name="sub_shadow_size">حجم الظل</string>
     <string name="sub_reset_appearance">إعادة تعيين المظهر</string>
+    <string name="sub_background">الخلفية</string>
 </resources>

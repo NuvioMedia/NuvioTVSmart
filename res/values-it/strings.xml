@@ -3468,4 +3468,5 @@
     <string name="sub_shadow_desc">Stacca il testo dalle scene luminose</string>
     <string name="sub_shadow_opacity">Opacità ombra</string>
     <string name="sub_shadow_size">Dimensione ombra</string>
+    <string name="sub_background">Sfondo</string>
 </resources>

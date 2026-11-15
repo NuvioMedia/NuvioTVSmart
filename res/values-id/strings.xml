@@ -3412,4 +3412,5 @@
     <string name="sub_shadow_opacity">Opasitas Bayangan</string>
     <string name="sub_shadow_size">Ukuran Bayangan</string>
     <string name="sub_reset_appearance">Atur Ulang Tampilan</string>
+    <string name="sub_background">Latar Belakang</string>
 </resources>

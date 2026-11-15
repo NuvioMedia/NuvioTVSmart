@@ -4,6 +4,7 @@ import { HDR_BRIGHTNESS_STEP, normalizeHdrBrightness } from "../../../core/playe
 
 export function createPlayerScreenMethods53() {
   const {
+    SubtitleAppearance,
     PlayerController,
     PlayerSettingsStore,
     Environment,
@@ -55,6 +56,37 @@ export function createPlayerScreenMethods53() {
         );
       } else if (controlId === "resetDelay") {
         this.subtitleDelayMs = 0;
+      } else if (controlId === "font" && delta !== 0) {
+        // Android cycles the fonts both ways.
+        const fonts = SubtitleAppearance.SUBTITLE_BUILT_IN_FONTS;
+        const index = Math.max(0, fonts.indexOf(SubtitleAppearance.normalizeSubtitleFontId(style.fontId)));
+        style.fontId = fonts[(index + delta + fonts.length) % fonts.length];
+      } else if (controlId === "backgroundColor" && delta !== 0) {
+        const presets = SubtitleAppearance.SUBTITLE_BACKGROUND_COLOR_PRESETS;
+        const current = SubtitleAppearance.splitSubtitleBackground(style.backgroundColor);
+        const index = current.opacity > 0 ? presets.indexOf(current.color) : -1;
+        const nextIndex = index < 0 ? 0 : clamp(index + delta, 0, presets.length - 1);
+        style.backgroundColor = SubtitleAppearance.subtitleBackgroundColorFor(presets[nextIndex], style.backgroundColor);
+      } else if (controlId === "backgroundOpacity") {
+        const current = SubtitleAppearance.splitSubtitleBackground(style.backgroundColor);
+        style.backgroundColor = SubtitleAppearance.joinSubtitleBackground(current.color, clamp(current.opacity + delta * 10, 0, 100));
+      } else if (controlId === "backgroundRadius") {
+        style.backgroundRadius = clamp(
+          SubtitleAppearance.normalizeSubtitleAppearance(style).backgroundRadius +
+            delta * SubtitleAppearance.SUBTITLE_BACKGROUND_RADIUS_STEP,
+          0,
+          SubtitleAppearance.SUBTITLE_BACKGROUND_RADIUS_MAX
+        );
+      } else if (controlId === "shadowEnabled" && delta !== 0) {
+        style.shadowEnabled = !SubtitleAppearance.normalizeSubtitleAppearance(style).shadowEnabled;
+      } else if (controlId === "shadowOpacity") {
+        style.shadowOpacity = clamp(SubtitleAppearance.normalizeSubtitleAppearance(style).shadowOpacity + delta * 10, 0, 100);
+      } else if (controlId === "shadowSize") {
+        style.shadowSize = clamp(
+          SubtitleAppearance.normalizeSubtitleAppearance(style).shadowSize + delta,
+          SubtitleAppearance.SUBTITLE_SHADOW_SIZE_MIN,
+          SubtitleAppearance.SUBTITLE_SHADOW_SIZE_MAX
+        );
       } else if (controlId === "fontSize") {
         style.fontSize = normalizeSubtitleFontSize(Number(style.fontSize || 120) + delta * SUBTITLE_FONT_STEP);
       } else if (controlId === "stripSdh" && delta !== 0) {
@@ -92,7 +124,9 @@ export function createPlayerScreenMethods53() {
           verticalOffset: defaults.verticalOffset,
           verticalOffsetContract: defaults.verticalOffsetContract,
           hdrTextColor: defaults.hdrTextColor,
-          hdrBrightness: defaults.hdrBrightness
+          hdrBrightness: defaults.hdrBrightness,
+          backgroundColor: defaults.backgroundColor,
+          ...SubtitleAppearance.SUBTITLE_APPEARANCE_DEFAULTS
         };
       }
       if ((controlId === "delay" || controlId === "resetDelay" || controlId === "reset") && this.isAssAddonSubtitleActive()) {

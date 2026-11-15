@@ -3436,4 +3436,5 @@
     <string name="sub_shadow_opacity">שקיפות הצל</string>
     <string name="sub_shadow_size">גודל הצל</string>
     <string name="sub_reset_appearance">איפוס מראה</string>
+    <string name="sub_background">רקע</string>
 </resources>

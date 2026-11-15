@@ -8,8 +8,14 @@ import {
   normalizeSubtitleAppearance,
   subtitleBackgroundRadiusCss,
   subtitleDropShadowCss,
-  subtitleFontFamilyCss
+  subtitleFontFamilyCss,
+  splitSubtitleBackground,
+  joinSubtitleBackground,
+  subtitleBackgroundColorFor,
+  SUBTITLE_BACKGROUND_COLOR_PRESETS
 } from "../../../core/player/subtitleAppearance.js";
+
+export { SUBTITLE_BACKGROUND_COLOR_PRESETS };
 
 // Android SubtitleAppearanceEditor swatches (settings, not the in-player presets).
 export const SUBTITLE_SETTINGS_TEXT_COLORS = [
@@ -24,14 +30,6 @@ export const SUBTITLE_SETTINGS_TEXT_COLORS = [
   "#90EE90"
 ];
 export const SUBTITLE_SETTINGS_OUTLINE_COLORS = ["#000000", "#1A1A1A", "#333333", "#FFFFFF"];
-export const SUBTITLE_BACKGROUND_COLOR_PRESETS = [
-  "#000000",
-  "#3A3A3A",
-  "#FFFFFF",
-  "#FFD700",
-  "#1E3A8A"
-];
-export const SUBTITLE_BACKGROUND_DEFAULT_OPACITY = 75;
 // Android ranges for size, offset and opacity sliders.
 export const SUBTITLE_SIZE_RANGE = { min: 50, max: 200, step: 10 };
 export const SUBTITLE_OFFSET_RANGE = { min: -20, max: 50, step: 1 };
@@ -51,28 +49,9 @@ function hexChannel(hex, index) {
   return parseInt(hex.slice(1 + index * 2, 3 + index * 2), 16);
 }
 
-/** "#RRGGBB" or "#RRGGBBAA" split into its color and an opacity in percent. */
-export function splitBackgroundColor(value = "") {
-  const hex = String(value || "")
-    .trim()
-    .toUpperCase();
-  if (!/^#[0-9A-F]{6}([0-9A-F]{2})?$/.test(hex)) {
-    return { color: "#000000", opacity: 0 };
-  }
-  const alpha = hex.length === 9 ? parseInt(hex.slice(7), 16) : 255;
-  return { color: hex.slice(0, 7), opacity: Math.round((alpha / 255) * 100) };
-}
-
-export function joinBackgroundColor(color = "#000000", opacity = 0) {
-  const alpha = Math.round((Math.min(100, Math.max(0, Number(opacity) || 0)) / 100) * 255);
-  return `${String(color).slice(0, 7).toUpperCase()}${alpha.toString(16).padStart(2, "0").toUpperCase()}`;
-}
-
-/** Android subtitleBackgroundColorFor: a new background color keeps the opacity, or 75% when it had none. */
-export function backgroundColorFor(color, currentBackground) {
-  const { opacity } = splitBackgroundColor(currentBackground);
-  return joinBackgroundColor(color, opacity > 0 ? opacity : SUBTITLE_BACKGROUND_DEFAULT_OPACITY);
-}
+export const splitBackgroundColor = splitSubtitleBackground;
+export const joinBackgroundColor = joinSubtitleBackground;
+export const backgroundColorFor = subtitleBackgroundColorFor;
 
 function rgba(hex, alpha) {
   return `rgba(${hexChannel(hex, 0)}, ${hexChannel(hex, 1)}, ${hexChannel(hex, 2)}, ${alpha})`;
