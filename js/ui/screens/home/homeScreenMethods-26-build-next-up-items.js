@@ -5,6 +5,7 @@ import { episodeKey } from "../../../core/player/episodeShuffle.js";
 import { ProfileManager } from "../../../core/profile/profileManager.js";
 import { resolveContinueWatchingEpisodeRating } from "./continueWatchingEpisodeRating.js";
 import * as internals from "./homeScreenContext.js";
+import { NoNextUpSeedStore, earliestUpcomingReleaseMs, isNoNextUpStillConfirmed, noNextUpRecheckAt } from "./continueWatchingStability.js";
 
 export function createHomeScreenMethods26() {
   const {
@@ -60,6 +61,14 @@ export function createHomeScreenMethods26() {
       }
 
       const watchedEpisodeIndex = this.buildWatchedEpisodeIndex(watchedItems);
+      // Android: a series an earlier launch found without an episode after its seed is
+      // not looked up again until its next release, at the latest after a day. The key
+      // holds the seed, so watching on is never skipped.
+      const noNextUpBefore = NoNextUpSeedStore.all();
+      const noNextUpSeeds = { ...noNextUpBefore };
+      const showUnairedKey = this.layoutPrefs?.showUnairedNextUp !== false ? "1" : "0";
+      const noNextUpSeedKey = (entry) =>
+        `${String(entry?.contentId || "").trim()}:${entry?.season ?? ""}:${entry?.episode ?? ""}:${showUnairedKey}`;
 
       const nextUpItems = await resolveNextUpCandidates(
         activeCandidates,
@@ -67,6 +76,11 @@ export function createHomeScreenMethods26() {
           const contentType = String(progressEntry?.contentType || "series").toLowerCase();
           const contentId = String(progressEntry?.contentId || "").trim();
           if (!contentId || !isSeriesTypeForContinueWatching(contentType)) {
+            return null;
+          }
+
+          const seedKey = noNextUpSeedKey(progressEntry);
+          if (isNoNextUpStillConfirmed(Number(noNextUpBefore[seedKey]), Date.now())) {
             return null;
           }
 
@@ -105,7 +119,14 @@ export function createHomeScreenMethods26() {
             : this.resolveNextUpEpisode(meta, progressEntry, allProgress, watchedEpisodeKeys, {
                 showUnairedNextUp: this.layoutPrefs?.showUnairedNextUp
               });
-          if (!resolvedNextEpisode || watchProgressRepository.isHiddenForContinueWatching?.(contentId, resolvedNextEpisode.season)) {
+          if (!resolvedNextEpisode) {
+            if (!shuffleSettings.enabled) {
+              noNextUpSeeds[seedKey] = noNextUpRecheckAt(earliestUpcomingReleaseMs(meta.videos), Date.now());
+            }
+            return null;
+          }
+          delete noNextUpSeeds[seedKey];
+          if (watchProgressRepository.isHiddenForContinueWatching?.(contentId, resolvedNextEpisode.season)) {
             return null;
           }
 
@@ -193,6 +214,11 @@ export function createHomeScreenMethods26() {
           concurrency: CW_MAX_NEXT_UP_CONCURRENCY
         }
       );
+
+      if (JSON.stringify(noNextUpSeeds) !== JSON.stringify(noNextUpBefore) && ProfileManager.getActiveProfileId() === shuffleProfileId) {
+        NoNextUpSeedStore.save(noNextUpSeeds);
+      }
+      this.continueWatchingNoNextUpRecheckTimes = Object.values(noNextUpSeeds).map(Number);
 
       // The episode search already applied this setting to the addon release
       // date. Check it again here because TMDB release dates are merged in after

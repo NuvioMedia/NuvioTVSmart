@@ -1,4 +1,5 @@
 import * as internals from "./homeScreenContext.js";
+import { stabilizeImmediateContinueWatchingItems } from "./continueWatchingStability.js";
 
 export function startHomeContinueWatchingLoad(context) {
   const {
@@ -15,7 +16,9 @@ export function startHomeContinueWatchingLoad(context) {
     buildVisibleContinueWatchingItems,
     buildCompleteContinueWatchingDisplay,
     buildContinueWatchingSignature,
-    buildHeroIdentity
+    buildHeroIdentity,
+    sortContinueWatchingItemsForDisplay,
+    ContinueWatchingPreferences
   } = internals;
   const {
     token,
@@ -152,9 +155,24 @@ export function startHomeContinueWatchingLoad(context) {
         // Publish the raw in-progress state immediately. Metadata and Next Up are enriched
         // asynchronously below, matching Android's initial render and avoiding a CW skeleton
         // when the local progress already contains a title or artwork.
-        this.continueWatchingDisplay = buildVisibleContinueWatchingItems(this.continueWatching, {
-          requireArtwork: false
-        });
+        // Android keeps series fields and the cards awaiting their next-up from the row on
+        // screen, so titles do not flip to the raw progress ones and series do not drop out.
+        this.continueWatchingDisplay = buildVisibleContinueWatchingItems(
+          sortContinueWatchingItemsForDisplay(
+            stabilizeImmediateContinueWatchingItems({
+              rawItems: this.continueWatching,
+              shownItems: this.continueWatchingDisplay,
+              seededContentIds: new Set(
+                (this.nextUpProgressCandidates || []).map((entry) => String(entry?.contentId || "").trim()).filter(Boolean)
+              ),
+              dismissedKeys: new Set(ContinueWatchingPreferences.getDismissedNextUpKeys())
+            }),
+            this.layoutPrefs?.continueWatchingSortMode
+          ).slice(0, CW_MAX_VISIBLE_ITEMS),
+          {
+            requireArtwork: false
+          }
+        );
         this.continueWatchingLoading = Boolean(shouldShowLoading && !this.continueWatchingDisplay.length);
         if (this.continueWatchingDisplay.length) {
           this.persistContinueWatchingSnapshot();
@@ -260,6 +278,7 @@ export function startHomeContinueWatchingLoad(context) {
           return;
         }
         this.continueWatchingDisplay = nextDisplay;
+        this.scheduleContinueWatchingReleaseRefresh?.();
         this.continueWatchingInitialResolved = true;
         if (this.hasLoadedOnce) {
           this.releaseInitialHomeLoading();

@@ -48,7 +48,11 @@ const fresh = {
   updatedAt: 123
 };
 const result = apply(fresh);
-for (const key of Object.keys(fresh)) assert.deepEqual(result[key], fresh[key], key);
+// Android 5924f3c95: the episode title last shown for this episode (the cache is keyed
+// by episode) is kept over the remote progress one, so it no longer flips on launch.
+for (const key of Object.keys(fresh)) {
+  assert.deepEqual(result[key], key === "episodeTitle" ? cached.episodeTitle : fresh[key], key);
+}
 const incomplete = {
   contentId: "tt123",
   contentType: "series",
@@ -68,8 +72,8 @@ for (const key of [
   assert.equal(fallback[key], cached[key], key);
 assert.equal(
   apply({ ...incomplete, episodeTitle: "" }).episodeTitle,
-  "",
-  "explicit blank title is preserved"
+  cached.episodeTitle,
+  "the last shown title wins over a blank progress title"
 );
 assert.equal(
   apply({ ...incomplete, episode: 3 }).episodeTitle,
@@ -78,7 +82,7 @@ assert.equal(
 );
 write("fixture", [result]);
 const snapshot = read("fixture")[0];
-assert.equal(snapshot.episodeTitle, "Fresh title");
+assert.equal(snapshot.episodeTitle, cached.episodeTitle);
 assert.equal(continueWatchingRating(snapshot, "SHOW_ALL"), "9.0");
 assert.equal(continueWatchingRating(snapshot, "HIDE_UNWATCHED_EPISODES"), null);
 assert.equal(continueWatchingRating(snapshot, "HIDE_ALL"), null);

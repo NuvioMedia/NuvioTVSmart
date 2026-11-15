@@ -227,7 +227,10 @@ export function applyCachedContinueWatchingEnrichment(item = {}) {
     contentId: item.contentId,
     contentType: item.contentType,
     videoId: firstNonEmpty(item.videoId, cached.videoId),
-    episodeTitle: item.episodeTitle ?? cached.episodeTitle,
+    // The cache is keyed by episode, so its title is the one last shown for this
+    // episode; preferring the remote progress title (Trakt, Simkl) swapped it on
+    // every launch (Android 5924f3c95).
+    episodeTitle: cached.episodeTitle ?? item.episodeTitle,
     episodeThumbnail: item.episodeThumbnail ?? cached.episodeThumbnail,
     thumbnail: item.thumbnail ?? cached.thumbnail,
     episodeDescription: item.episodeDescription ?? cached.episodeDescription,

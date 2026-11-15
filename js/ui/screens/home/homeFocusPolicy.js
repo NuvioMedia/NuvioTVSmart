@@ -23,6 +23,11 @@ export function getHomeFocusIdentity(node) {
   if (!itemId) {
     return null;
   }
+  // Android keys a Continue Watching card by its show (cw_<contentId>), so when it
+  // moves on to another episode it stays the same row item and keeps the focus.
+  if (dataset.action === "resumeProgress") {
+    return { itemId, itemType: normalizeIdentityValue(dataset.itemType) };
+  }
   return {
     itemId,
     itemType: normalizeIdentityValue(dataset.itemType),

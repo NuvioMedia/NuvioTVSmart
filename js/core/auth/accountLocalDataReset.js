@@ -32,6 +32,7 @@ const ACCOUNT_LOCAL_STORAGE_KEYS = new Set([
   "providerCredentialSyncPendingProfiles",
   "homeContinueWatchingDisplaySnapshot",
   "homeContinueWatchingEnrichmentCache",
+  "homeContinueWatchingNoNextUpSeeds",
   "memberAccessCache",
   "manualSyncCode",
   "pluginSources",

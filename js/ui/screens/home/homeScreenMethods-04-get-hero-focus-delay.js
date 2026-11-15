@@ -1,4 +1,9 @@
 import * as internals from "./homeScreenContext.js";
+import {
+  CW_RELEASE_REFRESH_MARGIN_MS,
+  CW_RELEASE_REFRESH_MAX_WAIT_MS,
+  nextContinueWatchingReleaseMs
+} from "./continueWatchingStability.js";
 import { getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
 import { startHomeContinueWatchingLoad } from "./homeContinueWatchingLoad.js";
 
@@ -242,6 +247,38 @@ export function createHomeScreenMethods04() {
         console.warn("Home Continue Watching sync refresh failed", error);
       });
       return true;
+    },
+    /**
+     * Android observeContinueWatchingReleases: runs Continue Watching again when an
+     * upcoming episode airs (or a series without a next-up is due a recheck) while the
+     * app stays open. Waits in steps, since timers stall while the TV sleeps.
+     */
+    scheduleContinueWatchingReleaseRefresh() {
+      clearTimeout(this.continueWatchingReleaseTimer);
+      this.continueWatchingReleaseTimer = null;
+      const nowMs = Date.now();
+      const nextMs = nextContinueWatchingReleaseMs(this.continueWatchingDisplay, this.continueWatchingNoNextUpRecheckTimes, nowMs);
+      if (nextMs == null) {
+        return;
+      }
+      const waitMs = nextMs - nowMs + CW_RELEASE_REFRESH_MARGIN_MS;
+      this.continueWatchingReleaseTimer = setTimeout(
+        () => {
+          this.continueWatchingReleaseTimer = null;
+          if (waitMs > CW_RELEASE_REFRESH_MAX_WAIT_MS) {
+            this.scheduleContinueWatchingReleaseRefresh();
+            return;
+          }
+          if (Router.getCurrent() !== "home") {
+            // Home loads Continue Watching again when it is shown.
+            return;
+          }
+          void this.refreshHomeContinueWatchingAfterSync().catch((error) => {
+            console.warn("Continue Watching release refresh failed", error);
+          });
+        },
+        Math.min(waitMs, CW_RELEASE_REFRESH_MAX_WAIT_MS)
+      );
     },
     refreshHomeContinueWatchingAfterSync() {
       if (Router.getCurrent() !== "home" || this.homeBackgroundRefreshPending || this.homeBackgroundRefreshPromise) {
