@@ -2,6 +2,7 @@ import { LocalStore } from "../../core/storage/localStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
 import { getSyncBackoffRemainingMs } from "../../core/sync/syncBackoffPolicy.js";
 import { registerSessionTeardownHandler } from "../../core/auth/sessionLifecycle.js";
+import { AuthManager } from "../../core/auth/authManager.js";
 
 const PROFILE_SCOPED_VERSION = 1;
 const PROFILES_KEY = "profiles";
@@ -191,6 +192,11 @@ export function queueProfileSettingsCloudSync(
   profileId = null,
   delayMs = SETTINGS_SYNC_DEBOUNCE_MS
 ) {
+  // Like Android, edits made while signed out stay local: a pending mark would
+  // make the first sign-in push them over the account's saved settings.
+  if (!AuthManager.isAuthenticated) {
+    return;
+  }
   const normalizedProfileId = normalizeProfileId(profileId);
   const generation = settingsSyncGeneration;
   const profileVersion = ProfileManager.getProfileDataVersion(normalizedProfileId);

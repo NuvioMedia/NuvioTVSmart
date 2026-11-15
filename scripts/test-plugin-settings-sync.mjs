@@ -23,6 +23,7 @@ if (!globalThis.localStorage) {
 
 const { PluginManager } = await import("../js/core/player/pluginManager.js");
 const { PluginStore } = await import("../js/data/local/pluginStore.js");
+const { TmdbSettingsStore } = await import("../js/data/local/tmdbSettingsStore.js");
 const { ProfileManager } = await import("../js/core/profile/profileManager.js");
 const { AuthManager } = await import("../js/core/auth/authManager.js");
 const { SupabaseApi } = await import("../js/data/remote/supabase/supabaseApi.js");
@@ -129,6 +130,13 @@ try {
       { id: "2", name: "Shared", usesPrimaryPlugins: true }
     ])
   );
+  // Signed-out edits stay local, so the first sign-in pulls the account's settings.
+  AuthManager.state = "signedOut";
+  cancelProfileSettingsCloudSync("1");
+  const previousTmdb = TmdbSettingsStore.getForProfile("1");
+  TmdbSettingsStore.setForProfile("1", { enabled: !previousTmdb.enabled });
+  assert.equal(hasProfileSettingsCloudSyncPending("1"), false);
+  TmdbSettingsStore.replaceForProfile("1", previousTmdb, { silentSync: true });
   AuthManager.state = "authenticated";
   cancelProfileSettingsCloudSync("1");
   cancelProfileSettingsCloudSync("2");
