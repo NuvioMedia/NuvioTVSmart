@@ -3394,4 +3394,6 @@
     <string name="stream_test_label_parallel16">Paralel Bağlantı (16 bağlantı)</string>
     <string name="stream_test_error_connection">Bağlantı başarısız. Son oynatılan video linkinin süresi dolmuş veya sunucuya erişilemiyor olabilir. Lütfen videoyu tekrar oynatıp testi yeniden deneyin.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl bağlı değil</string>
+    <string name="library_empty_simkl_not_auth_subtitle">Simkl kütüphaneni görmek için Ayarlar\'dan Simkl hesabını bağla</string>
 </resources>

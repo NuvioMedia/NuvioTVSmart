@@ -3389,4 +3389,6 @@
     <string name="stream_test_label_parallel16">Параллельное соединение (16 соединений)</string>
     <string name="stream_test_error_connection">Ошибка соединения. Возможно, ссылка на последний воспроизведённый поток устарела или недоступна. Воспроизведите видео заново и повторите попытку.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl не подключён</string>
+    <string name="library_empty_simkl_not_auth_subtitle">Подключите аккаунт Simkl в настройках, чтобы увидеть библиотеку Simkl</string>
 </resources>

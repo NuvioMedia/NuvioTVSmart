@@ -3391,4 +3391,6 @@
     <string name="stream_test_label_parallel16">並行連線 (16個連線)</string>
     <string name="stream_test_error_connection">連線失敗。上次播放的串流連結可能已過期或無法存取。請重新播放影片並重試。</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl 未連線</string>
+    <string name="library_empty_simkl_not_auth_subtitle">在設定中連線您的 Simkl 帳戶以檢視您的 Simkl 媒體庫</string>
 </resources>

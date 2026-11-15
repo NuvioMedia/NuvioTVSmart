@@ -3387,4 +3387,6 @@
     <string name="stream_test_label_parallel16">Lygiagretusis ryšys (16 jungčių)</string>
     <string name="stream_test_error_connection">Nepavyko prisijungti. Paskutinio srauto nuoroda gali būti nebegaliojanti arba nepasiekiama. Paleiskite vaizdo įrašą iš naujo ir bandykite dar kartą.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl neprijungtas</string>
+    <string name="library_empty_simkl_not_auth_subtitle">Nustatymuose prijunkite Simkl paskyrą, kad matytumėte Simkl biblioteką</string>
 </resources>

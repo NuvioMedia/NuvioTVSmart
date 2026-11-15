@@ -3390,4 +3390,6 @@
     <string name="stream_test_label_parallel16">اتصال متوازٍ (الاتصالات: ‎16)</string>
     <string name="stream_test_error_connection">فشل الاتصال. قد تكون انتهت صلاحية رابط آخر بث تم تشغيله، أو أصبح غير قابل للوصول. شغّل الفيديو من جديد وأعد المحاولة.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl غير متصل</string>
+    <string name="library_empty_simkl_not_auth_subtitle">اربط حساب Simkl الخاص بك في الإعدادات لعرض مكتبة Simkl</string>
 </resources>

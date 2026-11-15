@@ -3394,4 +3394,6 @@
     <string name="stream_test_label_parallel16">প্যারালাল কানেক্ট (16টি সংযোগ)</string>
     <string name="stream_test_error_connection">কানেকশন ব্যর্থ হয়েছে। সর্বশেষ প্লে হওয়া স্ট্রীম লিংকের মেয়াদ শেষ হতে পারে বা পৌঁছানো যাচ্ছে না। অনুগ্রহ করে ভিডিওটি আবার প্লে করে পুনরায় ট্রাই করুন।</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl কানেক্ট করা নেই</string>
+    <string name="library_empty_simkl_not_auth_subtitle">আপনার Simkl লাইব্রেরি দেখতে সেটিংসে আপনার Simkl অ্যাকাউন্ট কানেক্ট করুন</string>
 </resources>

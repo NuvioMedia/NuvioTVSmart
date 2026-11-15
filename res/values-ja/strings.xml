@@ -3388,4 +3388,6 @@
     <string name="stream_test_label_parallel16">並列接続(16接続)</string>
     <string name="stream_test_error_connection">接続に失敗しました。最後に再生したストリームリンクの有効期限が切れたか、到達不能の可能性があります。ビデオを再度再生して再試行してください。</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simklが接続されていません</string>
+    <string name="library_empty_simkl_not_auth_subtitle">設定でSimklアカウントを接続してSimklライブラリを表示</string>
 </resources>

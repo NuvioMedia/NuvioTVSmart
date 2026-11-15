@@ -3390,4 +3390,6 @@
     <string name="stream_test_label_parallel16">并行连接 (16个连接)</string>
     <string name="stream_test_error_connection">连接失败。上次播放的流链接可能已过期或无法访问。请重新播放视频并重试。</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl 未连接</string>
+    <string name="library_empty_simkl_not_auth_subtitle">在设置中连接您的 Simkl 账户以查看您的 Simkl 媒体库</string>
 </resources>

@@ -124,6 +124,7 @@ function makeInitialState() {
     lastFocusedPosterKey: persistedPosterFocusKey,
     isNuvioAccount: false,
     isTraktAuthenticated: false,
+    isSimklAuthenticated: false,
     watchedTitleIds: new Set(),
     cloudLibrary: {
       isLoaded: false,
@@ -241,15 +242,6 @@ function optionLabel(option = {}) {
 
 function stripCountSuffix(value) {
   return String(value || "").replace(/\s+\(\d+\)$/, "");
-}
-
-function typeLabelForEmptyState(key) {
-  if (!key || key === ALL_KEY) {
-    return "all";
-  }
-  return libraryTypeLabel(key)
-    .replace(/\s+\(\d+\)$/, "")
-    .toLowerCase();
 }
 
 function itemTypeKey(item = {}) {
@@ -866,43 +858,63 @@ export class LibraryController {
     return labels[this.state.selectedWatchedFilter] || labels[LIBRARY_WATCHED_FILTER.ALL];
   }
 
+  isEmptyStateTrackingSignedOut(sourceMode) {
+    if (sourceMode === LibrarySourceMode.TRAKT) {
+      return !this.state.isTraktAuthenticated;
+    }
+    if (sourceMode === LibrarySourceMode.SIMKL) {
+      return !this.state.isSimklAuthenticated;
+    }
+    return false;
+  }
+
+  // Android LibraryScreen: one title for every type, hints per source.
   getEmptyStateTitle() {
-    const selectedTypeLabel = typeLabelForEmptyState(this.state.selectedTypeKey);
-    if (this.state.sourceMode === LibrarySourceMode.TRAKT && !this.state.isTraktAuthenticated) {
+    const sourceMode = this.state.sourceMode;
+    if (sourceMode === LibrarySourceMode.TRAKT && this.isEmptyStateTrackingSignedOut(sourceMode)) {
       return t("library_empty_trakt_not_auth_title", {}, "Trakt not connected");
     }
-    if (this.state.sourceMode === LibrarySourceMode.TRAKT) {
-      return t(
-        "library_empty_trakt_title",
-        [selectedTypeLabel],
-        `No ${selectedTypeLabel} in this list`
-      );
+    if (sourceMode === LibrarySourceMode.SIMKL && this.isEmptyStateTrackingSignedOut(sourceMode)) {
+      return t("library_empty_simkl_not_auth_title", {}, "Simkl not connected");
     }
-    if (this.state.sourceMode === LibrarySourceMode.SIMKL) {
-      return `No ${selectedTypeLabel} in this Simkl status`;
-    }
-    return t("library_empty_local_title", [selectedTypeLabel], `No ${selectedTypeLabel} yet`);
+    return t("library_empty_title", {}, "No items to display");
   }
 
   getEmptyStateSubtitle() {
-    if (this.state.sourceMode === LibrarySourceMode.TRAKT && !this.state.isTraktAuthenticated) {
+    const sourceMode = this.state.sourceMode;
+    if (sourceMode === LibrarySourceMode.TRAKT && this.isEmptyStateTrackingSignedOut(sourceMode)) {
       return t(
         "library_empty_trakt_not_auth_subtitle",
         {},
         "Connect your Trakt account in Settings to view your Trakt library"
       );
     }
-    if (this.state.sourceMode === LibrarySourceMode.TRAKT) {
+    if (sourceMode === LibrarySourceMode.SIMKL && this.isEmptyStateTrackingSignedOut(sourceMode)) {
       return t(
-        "library_empty_trakt_subtitle",
+        "library_empty_simkl_not_auth_subtitle",
         {},
-        "Use + in details to add items to watchlist or lists"
+        "Connect your Simkl account in Settings to view your Simkl library"
       );
     }
-    if (this.state.sourceMode === LibrarySourceMode.SIMKL) {
-      return "Use + in details to move items between Simkl statuses";
+    if (sourceMode === LibrarySourceMode.TRAKT || sourceMode === LibrarySourceMode.MDBLIST) {
+      return t(
+        "library_empty_trakt_hint",
+        {},
+        "Change your filters or use + in details to add items to watchlist or lists"
+      );
     }
-    return t("library_empty_local_subtitle", {}, "Start saving your favorites to see them here");
+    if (sourceMode === LibrarySourceMode.SIMKL) {
+      return t(
+        "library_empty_simkl_hint",
+        {},
+        "Change your filters or use + in details to add items to a Simkl status"
+      );
+    }
+    return t(
+      "library_empty_local_hint",
+      {},
+      "Change your filters or start saving your favorites to see them here"
+    );
   }
 
   getPickerOptions(picker) {

@@ -3384,4 +3384,6 @@
     <string name="stream_test_label_parallel16">Paralelna veza (16 veza)</string>
     <string name="stream_test_error_connection">Povezivanje nije uspjelo. Poveznica zadnje reproduciranog streama možda je istekla ili nije dostupna. Ponovno reproduciraj video i pokušaj opet.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl nije povezan</string>
+    <string name="library_empty_simkl_not_auth_subtitle">Poveži svoj Simkl račun u Postavkama za prikaz Simkl biblioteke</string>
 </resources>

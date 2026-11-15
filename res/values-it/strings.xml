@@ -3423,4 +3423,6 @@
     <string name="stream_test_label_parallel16">Connessione parallela (16 connessioni)</string>
     <string name="stream_test_error_connection">Connessione fallita. Il link dell\'ultimo stream riprodotto potrebbe essere scaduto o non raggiungibile. Riproduci di nuovo il video e riprova.</string>
     <string name="settings_p2p_cache_unsupported">Non disponibile su questa TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl non connesso</string>
+    <string name="library_empty_simkl_not_auth_subtitle">Collega il tuo account Simkl nelle Impostazioni per visualizzare la tua libreria Simkl</string>
 </resources>

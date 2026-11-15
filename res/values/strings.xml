@@ -3391,4 +3391,10 @@
     <string name="stream_test_label_parallel16">Parallel Connect (16 connections)</string>
     <string name="stream_test_error_connection">Connection failed. The last played stream link may have expired or is unreachable. Please play the video again and retry.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_title">No items to display</string>
+    <string name="library_empty_local_hint">Change your filters or start saving your favorites to see them here</string>
+    <string name="library_empty_trakt_hint">Change your filters or use + in details to add items to watchlist or lists</string>
+    <string name="library_empty_simkl_hint">Change your filters or use + in details to add items to a Simkl status</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl not connected</string>
+    <string name="library_empty_simkl_not_auth_subtitle">Connect your Simkl account in Settings to view your Simkl library</string>
 </resources>

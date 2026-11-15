@@ -378,6 +378,12 @@
   text-align: center;
 }
 
+/* Android LibraryScreen: natural height with spacing.xl above and below, under the filters. */
+.library-empty-state.library-empty-state-items {
+  min-height: 0;
+  padding: 38px 0;
+}
+
 .library-empty-icon {
   width: 86px;
   height: 86px;

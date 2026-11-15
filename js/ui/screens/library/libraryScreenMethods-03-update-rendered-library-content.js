@@ -166,7 +166,7 @@ export function createLibraryScreenMethods03() {
     },
     renderEmptyState() {
       return `
-          <section class="library-empty-state">
+          <section class="library-empty-state library-empty-state-items">
             ${bookmarkOutlineSvg()}
             <h3 class="library-empty-title">${escapeHtml(this.controller.getEmptyStateTitle())}</h3>
             <p class="library-empty-subtitle">${escapeHtml(this.controller.getEmptyStateSubtitle())}</p>

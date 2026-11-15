@@ -3389,4 +3389,6 @@
     <string name="stream_test_label_parallel16">Parallelle verbinding (16 verbindingen)</string>
     <string name="stream_test_error_connection">Verbinding mislukt. De link van de laatst afgespeelde stream is mogelijk verlopen of onbereikbaar. Speel de video opnieuw af en probeer het nogmaals.</string>
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
+    <string name="library_empty_simkl_not_auth_title">Simkl niet verbonden</string>
+    <string name="library_empty_simkl_not_auth_subtitle">Verbind je Simkl-account in de instellingen om je Simkl-bibliotheek te bekijken</string>
 </resources>
