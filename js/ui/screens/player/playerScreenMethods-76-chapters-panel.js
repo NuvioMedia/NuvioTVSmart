@@ -40,8 +40,9 @@ export function createPlayerScreenMethods76() {
       const normalized = this.normalizePlayerChapters?.(chapters);
       // Android "Show Chapters": with it off the chapters only feed skip intro,
       // so the marks, the title, the button and the panel stay away.
-      const showChapters = PlayerSettingsStore?.get?.().chaptersEnabled === true;
-      this.playerChapters = showChapters && Array.isArray(normalized) ? normalized : [];
+      const settings = PlayerSettingsStore?.get?.() || {};
+      this.playerChapters = settings.chaptersEnabled === true && Array.isArray(normalized) ? normalized : [];
+      this.playerChapterTitleEnabled = settings.chapterTitleEnabled !== false;
       this.renderPlayerChapterMarks?.();
       if (!this.playerChapters.length) {
         return false;
@@ -57,13 +58,14 @@ export function createPlayerScreenMethods76() {
     /** Android ProgressBar: a 2dp dark mark at each chapter start, on the controls and seek bars. */
     renderPlayerChapterMarks() {
       const chapters = Array.isArray(this.playerChapters) ? this.playerChapters : [];
-      const durationMs = Math.round(Number(this.getPlaybackDisplayDurationSeconds?.() || 0) * 1000);
-      const signature = chapters.length && durationMs > 0 ? `${durationMs}:${chapters.map((chapter) => chapter.startMs).join(",")}` : "";
-      if (this.playerChapterMarksSignature === signature) {
+      const durationMs = chapters.length ? Math.round(Number(this.getPlaybackDisplayDurationSeconds?.() || 0) * 1000) : 0;
+      const marksFor = durationMs > 0 ? chapters : null;
+      if (this.playerChapterMarksFor === marksFor && this.playerChapterMarksDurationMs === durationMs) {
         return;
       }
-      this.playerChapterMarksSignature = signature;
-      const markup = signature
+      this.playerChapterMarksFor = marksFor;
+      this.playerChapterMarksDurationMs = durationMs;
+      const markup = durationMs > 0
         ? chapters
             .map((chapter) => Number(chapter.startMs) / durationMs)
             .filter((fraction) => fraction > 0 && fraction < 1)
@@ -81,7 +83,7 @@ export function createPlayerScreenMethods76() {
     syncPlayerChapterTitle(positionSeconds = 0) {
       const chapters = Array.isArray(this.playerChapters) ? this.playerChapters : [];
       const showTitle =
-        chapters.length > 0 && PlayerSettingsStore?.get?.().chapterTitleEnabled !== false && this.isLivePlayback?.() !== true;
+        chapters.length > 0 && this.playerChapterTitleEnabled !== false && this.isLivePlayback?.() !== true;
       let label = "";
       if (showTitle) {
         const index = this.chapterIndexAt(Number(positionSeconds || 0) * 1000);
