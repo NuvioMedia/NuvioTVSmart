@@ -234,6 +234,7 @@ export function createSearchScreenMethods05() {
       input.__boundSearchListeners = true;
 
       input.addEventListener("input", (event) => {
+        this.searchBackToFieldLatched = false;
         this.query = trimLeadingWhitespace(event.target?.value || "");
         this.scheduleSearchFromInput(input);
       });

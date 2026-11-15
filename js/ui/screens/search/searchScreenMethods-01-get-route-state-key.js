@@ -175,6 +175,7 @@ export function createSearchScreenMethods01() {
       this.searchRouteEnterPending = true;
       this.activationGuardUntil = Date.now() + 220;
       this.lastSearchInputWasVoice = false;
+      this.searchBackToFieldLatched = false;
       this.layoutPrefs = LayoutPreferences.get();
       const sidebarProfilePromise = getSidebarProfileState().catch((err) => {
         console.warn("Search sidebar profile failed to load", err);

@@ -95,3 +95,33 @@ test("Up from results returns to the text field otherwise, whatever the column",
   screen.handleSearchDpad({ keyCode: 38 });
   assert.equal(focused(), input);
 });
+
+// Android SearchScreen BackHandler: a result past the first goes to the row's first
+// result, the first result returns to the last-used input, then Back goes on.
+function backScreen() {
+  const methods06 = loadFactory(
+    "js/ui/screens/search/searchScreenMethods-06-activate-action-node.js",
+    "createSearchScreenMethods06",
+    {}
+  )();
+  const { screen, input, focused } = screenWith(false);
+  const first = node({ dataset: { navZone: "results", navRow: "0", navCol: "0" } });
+  const second = node({ dataset: { navZone: "results", navRow: "0", navCol: "1" } });
+  screen.navModel.rows = [[first, second]];
+  screen.stepBackWithinSearch = methods06.stepBackWithinSearch;
+  return { screen, input, first, second, focused };
+}
+
+test("Back steps to the row's first result, then the input, then lets Back through", () => {
+  const { screen, input, first, second, focused } = backScreen();
+  assert.equal(screen.stepBackWithinSearch(second), true);
+  assert.equal(focused(), first);
+  assert.equal(screen.stepBackWithinSearch(first), true);
+  assert.equal(focused(), input);
+  assert.equal(screen.stepBackWithinSearch(first), false);
+});
+
+test("Back from the header is not handled by the search screen", () => {
+  const { screen, input } = backScreen();
+  assert.equal(screen.stepBackWithinSearch(input), false);
+});
