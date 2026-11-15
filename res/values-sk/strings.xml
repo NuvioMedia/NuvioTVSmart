@@ -3407,4 +3407,12 @@
     <string name="playback_exo_chapters_sub">Načítať kapitoly zo súborov MKV, označiť ich na časovej osi a presakovať medzi nimi.</string>
     <string name="playback_chapter_title_title">Zobrazovať názov kapitoly</string>
     <string name="playback_chapter_title_sub">Zobrazovať názov aktuálnej kapitoly nad časovou osou.</string>
+    <string name="autoplay_fallback_next_source">V prípade zlyhania použiť ďalší zhodný zdroj</string>
+    <string name="autoplay_fallback_next_source_sub">Ak automaticky vybratý zdroj zlyhá alebo sa nespustí včas, ticho vyskúšať ďalšie zhodné zdroje.</string>
+    <string name="autoplay_fallback_max_sources">Zdroje na vyskúšanie pri zlyhaní</string>
+    <string name="autoplay_fallback_max_sources_sub">Koľko ďalších zhodných zdrojov vyskúšať pred zobrazením chyby.</string>
+    <string name="autoplay_fallback_startup_timeout">Čas na spustenie zdroja</string>
+    <string name="autoplay_fallback_startup_timeout_sub">Ako dlho čakať na spustenie zdroja pred vyskúšaním ďalšieho.</string>
+    <string name="autoplay_fallback_startup_timeout_value">%1$ds</string>
+    <string name="player_error_source_startup_timeout">Zdroj sa nespustil do %1$d sekúnd.</string>
 </resources>

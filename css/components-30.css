@@ -521,3 +521,8 @@
 .player-hdr-dim .nuvio-dialog-backdrop {
   filter: brightness(var(--player-controls-brightness, 1));
 }
+
+/* ATV: the loading overlay replaces the episodes panel while its source is found. */
+#episodeSidePanel.is-autoplay-searching {
+  visibility: hidden;
+}

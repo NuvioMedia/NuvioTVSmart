@@ -367,7 +367,8 @@ export function createPlayerScreenMethods29() {
       setTimeout(run, 0);
     },
     isStartupLoadingVisible() {
-      return Boolean(this.loadingVisible && !this.hasPresentedPlaybackFrame);
+      // Android also shows the loading overlay while an episode picked in the panel finds its source.
+      return Boolean((this.loadingVisible && !this.hasPresentedPlaybackFrame) || this.episodeAutoPlaySearching);
     },
     isBufferingSpinnerVisible() {
       if (Environment.isWebOS() && PlayerController.isWebOsDtsAudioBuffering?.()) {

@@ -170,20 +170,23 @@ export function createPlayerScreenMethods17() {
         details = null
       } = {}
     ) {
-      // A link that has likely expired is fetched again before the error is shown.
+      // A link that has likely expired is fetched again, and a failed auto-selected
+      // source falls back to the next matching one, before the error is shown.
+      const errorOptions = {
+        mediaErrorCode,
+        detail,
+        error,
+        eventDetail,
+        streamCandidate,
+        playbackUrl,
+        reason,
+        resolverStatus,
+        resolverDetail,
+        details
+      };
       if (
-        this.tryRefreshExpiredLinkAfterError?.(message, {
-          mediaErrorCode,
-          detail,
-          error,
-          eventDetail,
-          streamCandidate,
-          playbackUrl,
-          reason,
-          resolverStatus,
-          resolverDetail,
-          details
-        })
+        this.tryRefreshExpiredLinkAfterError?.(message, errorOptions) ||
+        this.tryFallbackToNextSourceAfterError?.(message, errorOptions)
       ) {
         return;
       }

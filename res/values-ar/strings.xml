@@ -3404,4 +3404,12 @@
     <string name="playback_exo_chapters_sub">قراءة فصول ملفات MKV لتمييزها على شريط التقدم والتنقل بينها.</string>
     <string name="playback_chapter_title_title">إظهار عنوان الفصل</string>
     <string name="playback_chapter_title_sub">إظهار اسم الفصل الحالي فوق شريط التقدم.</string>
+    <string name="autoplay_fallback_next_source">الرجوع إلى المصدر المطابق التالي عند الفشل</string>
+    <string name="autoplay_fallback_next_source_sub">إذا فشل المصدر المحدد تلقائيًا أو لم يبدأ في الوقت المناسب، جرّب المصادر المطابقة التالية دون إزعاجك.</string>
+    <string name="autoplay_fallback_max_sources">المصادر التي تُجرَّب عند الفشل</string>
+    <string name="autoplay_fallback_max_sources_sub">عدد المصادر المطابقة الإضافية التي تُجرَّب قبل إظهار الخطأ.</string>
+    <string name="autoplay_fallback_startup_timeout">الوقت اللازم لبدء المصدر</string>
+    <string name="autoplay_fallback_startup_timeout_sub">مدة الانتظار لبدء المصدر قبل تجربة المصدر التالي.</string>
+    <string name="autoplay_fallback_startup_timeout_value">%1$d ث</string>
+    <string name="player_error_source_startup_timeout">لم يبدأ المصدر خلال %1$d ثانية.</string>
 </resources>

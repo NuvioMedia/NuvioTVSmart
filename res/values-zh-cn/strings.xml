@@ -1184,7 +1184,7 @@
     <string name="stream_retry">重试</string>
     <string name="stream_no_streams">未找到源</string>
     <string name="stream_no_streams_hint">尝试安装更多插件以查找源</string>
-    <string name="stream_finding_source">正在查找源</string>
+    <string name="stream_finding_source">正在寻找流来源</string>
     <string name="debrid_resolving_stream">正在解析 Debrid 源</string>
     <string name="debrid_stale_stream">此 Debrid 结果已过期。正在刷新源。</string>
     <string name="debrid_missing_api_key">请在设置中添加 Debrid API Key。</string>

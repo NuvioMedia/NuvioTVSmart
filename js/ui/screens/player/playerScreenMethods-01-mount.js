@@ -1,6 +1,7 @@
 import { canResolveMediaServerStream } from "../../../data/mediaserver/mediaServerRepository.js";
 import { loadPlayerShuffleWatched } from "./playerEpisodeShuffle.js";
 import { activeStreamLinkProfile } from "../../../data/local/streamLinkCacheStore.js";
+import { sourceFallbackKey } from "../../../core/player/sourceFallback.js";
 /* global __NUVIO_APP_VERSION__ */
 import * as internals from "./playerScreenContext.js";
 import { initializePlayerMountState } from "./playerMountStateInitialization.js";
@@ -115,6 +116,12 @@ export function createPlayerScreenMethods01() {
       const initialStreamCandidate = preferredStreamCandidate || this.selectBestStreamCandidate(this.streamCandidates);
       const initialStreamLocator = params.streamUrl || initialStreamCandidate?.url || initialStreamCandidate?.externalUrl || null;
       const initialStreamUrl = directPlaybackUrl(params.streamUrl) || streamDirectPlaybackUrl(initialStreamCandidate);
+      // Android source fallback: only a source auto selection picked falls back.
+      this.autoSelectedSourceKey = params?.autoPlayNav && initialStreamCandidate ? sourceFallbackKey(initialStreamCandidate) : null;
+      this.sourceFallbackAttempts = 0;
+      this.sourceFallbackTriedKeys = new Set();
+      this.sourceFallbackInFlight = false;
+      this.sourceFallbackExhausted = false;
       if (!this.streamCandidates.length && initialStreamLocator) {
         this.streamCandidates = this.normalizeStreamCandidates([
           {

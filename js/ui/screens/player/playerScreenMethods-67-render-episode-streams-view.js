@@ -245,6 +245,22 @@ export function createPlayerScreenMethods67() {
       this.updateModalBackdrop();
       this.resetControlsAutoHide();
     },
+    /**
+     * Android isEpisodeAutoPlaySearching: while an episode picked in the panel finds its
+     * source, the loading overlay ("Finding stream source") replaces the panel. Without
+     * the loading overlay the panel stays, as on Android.
+     */
+    setEpisodeAutoPlaySearching(searching) {
+      const active = Boolean(searching) && PlayerSettingsStore.get().loadingOverlayEnabled !== false;
+      if (!active && !this.episodeAutoPlaySearching) {
+        return;
+      }
+      this.episodeAutoPlaySearching = active;
+      this.uiRefs?.root?.querySelector("#episodeSidePanel")?.classList.toggle("is-autoplay-searching", active);
+      this.loadingTorrentStatus = active ? t("stream_finding_source", {}, "Finding stream source") : "";
+      this.updateLoadingVisibility();
+      this.syncLoadingOverlayStatus();
+    },
     async playEpisodeFromPanel(selectedStream = null, { manualSelection = false } = {}) {
       if (this.switchingEpisode || !this.episodes.length) {
         return;
@@ -266,6 +282,9 @@ export function createPlayerScreenMethods67() {
         }
       }
       this.switchingEpisode = true;
+      if (!selectedStream) {
+        this.setEpisodeAutoPlaySearching(true);
+      }
       try {
         const itemType = this.params?.itemType || "series";
         const streamItems = selectedStream
@@ -275,6 +294,12 @@ export function createPlayerScreenMethods67() {
               episode: selected.episode
             });
         if (!streamItems.length) {
+          if (!selectedStream) {
+            // Android opens the stream picker when the search finds nothing to play.
+            this.setEpisodeAutoPlaySearching(false);
+            this.switchingEpisode = false;
+            await this.openEpisodeStreamsView();
+          }
           return;
         }
         const bestStreamCandidate =
@@ -315,6 +340,8 @@ export function createPlayerScreenMethods67() {
             streamCandidates: streamItems,
             preferredStreamId: bestStreamCandidate.id || null,
             playbackSourceContext: this.getPlaybackSourceContext(bestStreamCandidate),
+            // Only a source auto selection picked falls back; a stream picked in the panel does not.
+            autoPlayNav: !selectedStream,
             returnToStreamOnBack: false,
             returnHomeOnBack: this.buildDetailRouteParamsFromPlayer().returnHomeOnBack,
             nextEpisodeVideoId: nextEpisode?.id || null,
@@ -330,6 +357,7 @@ export function createPlayerScreenMethods67() {
         );
       } finally {
         this.switchingEpisode = false;
+        this.setEpisodeAutoPlaySearching(false);
       }
     }
   };

@@ -3407,4 +3407,12 @@
     <string name="playback_exo_chapters_sub">Đọc các chương của tệp MKV để đánh dấu trên thanh tiến trình và chuyển đổi qua lại giữa chúng.</string>
     <string name="playback_chapter_title_title">Hiển thị tên chương</string>
     <string name="playback_chapter_title_sub">Hiển thị tên chương hiện tại phía trên thanh tiến trình.</string>
+    <string name="autoplay_fallback_next_source">Chuyển sang nguồn phát khớp tiếp theo khi lỗi</string>
+    <string name="autoplay_fallback_next_source_sub">Nếu nguồn phát tự động chọn bị lỗi hoặc không khởi chạy đúng thời gian, thử các nguồn phát khớp tiếp theo.</string>
+    <string name="autoplay_fallback_max_sources">Nguồn phát sẽ thử khi lỗi</string>
+    <string name="autoplay_fallback_max_sources_sub">Số lượng nguồn phát khớp thêm cần thử trước khi hiển thị lỗi.</string>
+    <string name="autoplay_fallback_startup_timeout">Thời gian để nguồn phát khởi chạy</string>
+    <string name="autoplay_fallback_startup_timeout_sub">Thời gian chờ một nguồn phát khởi chạy trước khi chuyển sang thử nguồn phát tiếp theo.</string>
+    <string name="autoplay_fallback_startup_timeout_value">%1$ds</string>
+    <string name="player_error_source_startup_timeout">Nguồn phát đã không khởi chạy trong vòng %1$d giây.</string>
 </resources>

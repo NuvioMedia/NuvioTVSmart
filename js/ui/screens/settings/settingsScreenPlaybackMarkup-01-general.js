@@ -198,6 +198,44 @@ export function renderPlaybackGeneralBody(model) {
             ${
               String(model.player.streamAutoPlayMode || "MANUAL") !== "MANUAL"
                 ? `
+            ${this.renderToggleRow({
+              focusKey: "playback:autoStreamFallback",
+              title: t("autoplay_fallback_next_source", {}, "Fallback to next matching source on failure"),
+              subtitle: t(
+                "autoplay_fallback_next_source_sub",
+                {},
+                "If the auto-selected source fails or does not start in time, quietly try the next matching sources."
+              ),
+              checked: model.player.streamAutoPlayFallbackOnFailure === true
+            })}
+            ${
+              model.player.streamAutoPlayFallbackOnFailure === true
+                ? `${this.renderActionRow({
+                    focusKey: "playback:autoStreamFallbackMaxSources",
+                    title: t("autoplay_fallback_max_sources", {}, "Sources to try on failure"),
+                    subtitle: t(
+                      "autoplay_fallback_max_sources_sub",
+                      {},
+                      "How many more matching sources to try before showing the error."
+                    ),
+                    value: String(model.player.streamAutoPlayFallbackMaxSources)
+                  })}
+            ${this.renderActionRow({
+              focusKey: "playback:autoStreamFallbackTimeout",
+              title: t("autoplay_fallback_startup_timeout", {}, "Time for a source to start"),
+              subtitle: t(
+                "autoplay_fallback_startup_timeout_sub",
+                {},
+                "How long to wait for a source to start before trying the next one."
+              ),
+              value: t(
+                "autoplay_fallback_startup_timeout_value",
+                [model.player.streamAutoPlayFallbackStartupTimeoutSeconds],
+                `${model.player.streamAutoPlayFallbackStartupTimeoutSeconds}s`
+              )
+            })}`
+                : ""
+            }
             ${this.renderActionRow({
               focusKey: "playback:autoStreamSource",
               title: t("autoplay_scope", {}, "Auto-play Source Scope"),

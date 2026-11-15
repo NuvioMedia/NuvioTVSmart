@@ -3409,4 +3409,12 @@
     <string name="playback_exo_chapters_sub">קריאת המקטעים של קובצי MKV כדי לסמן אותם בסרגל ההתקדמות ולדלג ביניהם.</string>
     <string name="playback_chapter_title_title">הצגת שם המקטע</string>
     <string name="playback_chapter_title_sub">הצגת שם המקטע הנוכחי מעל סרגל ההתקדמות.</string>
+    <string name="autoplay_fallback_next_source">מעבר למקור התואם הבא בעת כשל</string>
+    <string name="autoplay_fallback_next_source_sub">אם המקור שנבחר אוטומטית נכשל או אינו מתחיל בזמן, ינוסו בשקט המקורות התואמים הבאים.</string>
+    <string name="autoplay_fallback_max_sources">מספר מקורות לניסיון בעת כשל</string>
+    <string name="autoplay_fallback_max_sources_sub">כמה מקורות תואמים נוספים לנסות לפני הצגת השגיאה.</string>
+    <string name="autoplay_fallback_startup_timeout">זמן להתחלת מקור</string>
+    <string name="autoplay_fallback_startup_timeout_sub">כמה זמן להמתין להתחלת מקור לפני מעבר לבא.</string>
+    <string name="autoplay_fallback_startup_timeout_value">%1$d שנ׳</string>
+    <string name="player_error_source_startup_timeout">המקור לא התחיל תוך %1$d שניות.</string>
 </resources>

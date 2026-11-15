@@ -16,7 +16,7 @@ export function createStreamScreenMethods10() {
   } = internals;
 
   return {
-    async playStream(streamId, { cachedLink = null } = {}) {
+    async playStream(streamId, { cachedLink = null, autoSelected = false } = {}) {
       const loadToken = this.loadToken;
       const profileId = activeStreamLinkProfile();
       this.cancelAutoPlayCountdown();
@@ -103,6 +103,8 @@ export function createStreamScreenMethods10() {
         },
         returnToStreamOnBack: true,
         fromLinkCache: Boolean(cachedLink),
+        // Android autoPlayNav: picked by auto source selection, so it may fall back.
+        autoPlayNav: Boolean(autoSelected),
         streamRouteParams: this.params ? { ...this.params } : null,
         fromDetailRoute: Boolean(this.params?.fromDetailRoute),
         nextEpisodeVideoId: this.params?.nextEpisodeVideoId || null,

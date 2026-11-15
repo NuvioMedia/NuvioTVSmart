@@ -82,6 +82,7 @@ export function createPlayerScreenMethods63() {
             return;
           }
           this.streamCandidates = mergeStreamItems(this.streamCandidates, chunkItems);
+          this.focusPlayingSourceIfUntouched?.({ allowFirstResult: this.sourcesFocus?.zone === "filter" });
           this.scheduleSourcesPanelRender();
           void this.preloadPlayerSourceLogos(chunkItems);
         }
@@ -95,6 +96,7 @@ export function createPlayerScreenMethods63() {
         const merged = mergeStreamItems(this.streamCandidates, flattenStreamGroups(result));
         if (merged.length) {
           this.streamCandidates = merged;
+          this.focusPlayingSourceIfUntouched?.({ allowFirstResult: this.sourcesFocus?.zone === "filter" });
         }
       } catch (error) {
         if (token === this.sourceLoadToken) {

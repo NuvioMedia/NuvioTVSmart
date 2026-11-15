@@ -9,6 +9,15 @@ import {
   SUBTITLE_TEXT_OPACITY_DEFAULT,
   normalizeSubtitleTextOpacity
 } from "../../core/player/subtitleTextOpacity.js";
+import {
+  SOURCE_FALLBACK_MAX_SOURCES_DEFAULT,
+  SOURCE_FALLBACK_MAX_SOURCES_MAX,
+  SOURCE_FALLBACK_MAX_SOURCES_MIN,
+  SOURCE_STARTUP_TIMEOUT_SECONDS_DEFAULT,
+  SOURCE_STARTUP_TIMEOUT_SECONDS_MAX,
+  SOURCE_STARTUP_TIMEOUT_SECONDS_MIN,
+  SOURCE_STARTUP_TIMEOUT_SECONDS_STEP
+} from "../../core/player/sourceFallback.js";
 import { AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../core/player/subtitleAutoSyncEngine.js";
 import {
   HDR_BRIGHTNESS_DEFAULT,
@@ -88,8 +97,21 @@ const DEFAULTS = {
   streamAutoPlayReuseBingeGroup: false,
   streamReuseLastLinkEnabled: false,
   streamReuseLastLinkCacheHours: 24,
-  streamAutoPlayTimeoutSeconds: 3
+  streamAutoPlayTimeoutSeconds: 3,
+  // Android "Fallback to next matching source on failure" (device-local, not synced).
+  streamAutoPlayFallbackOnFailure: false,
+  streamAutoPlayFallbackMaxSources: SOURCE_FALLBACK_MAX_SOURCES_DEFAULT,
+  streamAutoPlayFallbackStartupTimeoutSeconds: SOURCE_STARTUP_TIMEOUT_SECONDS_DEFAULT
 };
+
+function normalizeIntInRange(value, min, max, fallback, step = 1) {
+  const number = Math.trunc(Number(value));
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+  const clamped = Math.min(max, Math.max(min, number));
+  return min + Math.round((clamped - min) / step) * step;
+}
 
 const STREAM_AUTO_PLAY_MODES = ["MANUAL", "FIRST_STREAM", "REGEX_MATCH"];
 const STREAM_AUTO_PLAY_SOURCES = ["ALL_SOURCES", "INSTALLED_ADDONS_ONLY", "ENABLED_PLUGINS_ONLY"];
@@ -350,6 +372,20 @@ export function normalizePlayerSettings(settings = {}) {
     ),
     streamReuseLastLinkCacheHours: normalizeReuseLastLinkCacheHours(
       persistentSettings.streamReuseLastLinkCacheHours
+    ),
+    streamAutoPlayFallbackOnFailure: persistentSettings.streamAutoPlayFallbackOnFailure === true,
+    streamAutoPlayFallbackMaxSources: normalizeIntInRange(
+      persistentSettings.streamAutoPlayFallbackMaxSources,
+      SOURCE_FALLBACK_MAX_SOURCES_MIN,
+      SOURCE_FALLBACK_MAX_SOURCES_MAX,
+      SOURCE_FALLBACK_MAX_SOURCES_DEFAULT
+    ),
+    streamAutoPlayFallbackStartupTimeoutSeconds: normalizeIntInRange(
+      persistentSettings.streamAutoPlayFallbackStartupTimeoutSeconds,
+      SOURCE_STARTUP_TIMEOUT_SECONDS_MIN,
+      SOURCE_STARTUP_TIMEOUT_SECONDS_MAX,
+      SOURCE_STARTUP_TIMEOUT_SECONDS_DEFAULT,
+      SOURCE_STARTUP_TIMEOUT_SECONDS_STEP
     ),
     streamAutoPlayTimeoutSeconds: normalizeStreamAutoPlayTimeout(
       persistentSettings.streamAutoPlayTimeoutSeconds

@@ -542,7 +542,7 @@
     <string name="stream_retry">Reintentar</string>
     <string name="stream_no_streams">No se encontraron transmisiones</string>
     <string name="stream_no_streams_hint">Intenta instalar más complementos para encontrar transmisiones</string>
-    <string name="stream_finding_source">Buscando fuente de transmisión</string>
+    <string name="stream_finding_source">Buscando fuente de vídeo</string>
     <string name="stream_type_torrent">Torrent</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="stream_type_external">Externo</string>

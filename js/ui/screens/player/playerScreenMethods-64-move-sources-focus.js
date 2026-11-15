@@ -17,6 +17,8 @@ export function createPlayerScreenMethods64() {
 
   return {
     moveSourcesFocus(direction) {
+      // Android: any move (Up included) keeps the panel from jumping to the playing stream later.
+      this.sourcesUserMoved = true;
       const orderedSources = this.getOrderedStreamCandidates();
       const filters = this.getSourceFilters(orderedSources);
       const list = this.getFilteredSources(orderedSources);

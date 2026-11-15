@@ -178,6 +178,8 @@ export function createPlayerScreenMethods24() {
             streamCandidates: streamItems,
             preferredStreamId: bestStreamCandidate.id || null,
             playbackSourceContext: this.getPlaybackSourceContext(bestStreamCandidate),
+            // Android: the next episode's auto-selected source falls back too.
+            autoPlayNav: true,
             returnToStreamOnBack: false,
             returnHomeOnBack: this.buildDetailRouteParamsFromPlayer().returnHomeOnBack,
             nextEpisodeVideoId: followingEpisode?.id || null,

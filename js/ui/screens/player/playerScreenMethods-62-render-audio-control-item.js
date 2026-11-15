@@ -225,6 +225,24 @@ export function createPlayerScreenMethods62() {
       }
       return orderedStreams.filter((stream) => stream.addonName === this.sourceFilter);
     },
+    focusPlayingSourceIfUntouched({ allowFirstResult = false } = {}) {
+      if (!this.sourcesPanelVisible || this.sourcesUserMoved) {
+        return false;
+      }
+      const list = this.getFilteredSources();
+      const playingUrl = this.streamCandidates[this.currentStreamIndex]?.url;
+      const playingIndex = playingUrl ? list.findIndex((stream) => stream?.url === playingUrl) : -1;
+      if (playingIndex >= 0) {
+        // Results keep arriving, so the playing stream may show up after the first one.
+        this.sourcesUserMoved = true;
+        this.sourcesFocus = { zone: "list", index: playingIndex };
+        return true;
+      }
+      if (allowFirstResult && list.length) {
+        this.sourcesFocus = { zone: "list", index: 0 };
+      }
+      return false;
+    },
     ensureSourcesFocus(filters = null, list = null) {
       const availableFilters = Array.isArray(filters) ? filters : this.getSourceFilters();
       const availableSources = Array.isArray(list) ? list : this.getFilteredSources();
@@ -311,6 +329,9 @@ export function createPlayerScreenMethods62() {
         zone: "filter",
         index: clamp(filters.indexOf(this.sourceFilter), 0, Math.max(0, filters.length - 1))
       };
+      // Android opens the panel on the stream playing now, else the first result.
+      this.sourcesUserMoved = false;
+      this.focusPlayingSourceIfUntouched({ allowFirstResult: true });
 
       this.renderControlButtons();
       this.renderSubtitleDialog();
