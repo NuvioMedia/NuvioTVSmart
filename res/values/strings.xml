@@ -3417,4 +3417,23 @@
     <string name="autoplay_fallback_startup_timeout_sub">How long to wait for a source to start before trying the next one.</string>
     <string name="autoplay_fallback_startup_timeout_value">%1$ds</string>
     <string name="player_error_source_startup_timeout">The source did not start within %1$d seconds.</string>
+    <string name="sub_languages_label">Languages</string>
+    <string name="sub_style_label">Style</string>
+    <string name="sub_appearance">Subtitle Appearance</string>
+    <string name="sub_appearance_desc">Font, colors, background and shadow</string>
+    <string name="sub_appearance_hint">Applies to text subtitles. Styled ASS and image subtitles keep their original appearance.</string>
+    <string name="sub_preview">Preview</string>
+    <string name="sub_preview_text">Every story begins with a little curiosity.</string>
+    <string name="sub_font">Font</string>
+    <string name="sub_font_default">Default</string>
+    <string name="sub_font_serif">Serif</string>
+    <string name="sub_font_mono">Monospace</string>
+    <string name="sub_font_missing">Font unavailable on this device. Using the default font.</string>
+    <string name="sub_bg_opacity">Background Opacity</string>
+    <string name="sub_bg_roundness">Corner Roundness</string>
+    <string name="sub_shadow">Drop Shadow</string>
+    <string name="sub_shadow_desc">Separate the text from bright scenes</string>
+    <string name="sub_shadow_opacity">Shadow Opacity</string>
+    <string name="sub_shadow_size">Shadow Size</string>
+    <string name="sub_reset_appearance">Reset Appearance</string>
 </resources>

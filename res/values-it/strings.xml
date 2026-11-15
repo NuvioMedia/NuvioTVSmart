@@ -3449,4 +3449,23 @@
     <string name="autoplay_fallback_startup_timeout_sub">Quanto attendere l\'avvio di una sorgente prima di provare la successiva.</string>
     <string name="autoplay_fallback_startup_timeout_value">%1$ds</string>
     <string name="player_error_source_startup_timeout">La sorgente non è partita entro %1$d secondi.</string>
+    <string name="sub_languages_label">Lingue</string>
+    <string name="sub_style_label">Stile</string>
+    <string name="sub_appearance">Aspetto dei sottotitoli</string>
+    <string name="sub_appearance_desc">Font, colori, sfondo e ombra</string>
+    <string name="sub_appearance_hint">Vale per i sottotitoli di testo. I sottotitoli ASS con stile e quelli a immagine mantengono il loro aspetto originale.</string>
+    <string name="sub_bg_opacity">Opacità sfondo</string>
+    <string name="sub_bg_roundness">Arrotondamento angoli</string>
+    <string name="sub_font">Font</string>
+    <string name="sub_font_default">Predefinito</string>
+    <string name="sub_font_missing">Font non disponibile su questo dispositivo. Viene usato il font predefinito.</string>
+    <string name="sub_font_mono">Monospaziato</string>
+    <string name="sub_font_serif">Serif</string>
+    <string name="sub_preview">Anteprima</string>
+    <string name="sub_preview_text">Ogni storia inizia con un po\' di curiosità.</string>
+    <string name="sub_reset_appearance">Ripristina aspetto</string>
+    <string name="sub_shadow">Ombra</string>
+    <string name="sub_shadow_desc">Stacca il testo dalle scene luminose</string>
+    <string name="sub_shadow_opacity">Opacità ombra</string>
+    <string name="sub_shadow_size">Dimensione ombra</string>
 </resources>

@@ -1,6 +1,12 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./settingsScreenContext.js";
 
+// A color sample for an option; only #RRGGBB values reach the style attribute.
+function renderOptionSwatch(color) {
+  const hex = /^#[0-9A-F]{6}$/i.test(String(color || "")) ? String(color) : "";
+  return hex ? `<span class="settings-dialog-option-swatch" style="background-color:${hex}" aria-hidden="true"></span>` : "";
+}
+
 export function createSettingsScreenMethods02() {
   const {
     ThemeColors,
@@ -264,6 +270,10 @@ export function createSettingsScreenMethods02() {
       const onClose = this.optionDialog.onClose;
       this.optionDialog = null;
       if (typeof onClose === "function") onClose();
+      // onClose may open the dialog it came from again (a value list back to its editor).
+      if (this.optionDialog) {
+        return;
+      }
       this.focusZone = "content";
     },
     closeTextDialog({ restoreEditor = true } = {}) {
@@ -335,12 +345,14 @@ export function createSettingsScreenMethods02() {
                         : useMultiRenderer
                           ? `<span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span><span class="settings-language-option-check" aria-hidden="true">${isSelected ? "&#10003;" : ""}</span>`
                           : useSingleChoiceRenderer
-                            ? `${
+                            ? `${option.swatch ? renderOptionSwatch(option.swatch) : ""}${
                                 option.description
                                   ? `<span class="settings-single-choice-option-copy"><span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span><span class="settings-single-choice-option-description">${escapeHtml(String(option.description))}</span></span>`
                                   : `<span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span>`
                               }${isSelected ? '<span class="settings-single-choice-option-check" aria-hidden="true">&#10003;</span>' : ""}`
-                            : `<span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span>`
+                            : `<span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span>${
+                                option.swatch ? renderOptionSwatch(option.swatch) : ""
+                              }${option.value ? `<span class="settings-dialog-option-value">${escapeHtml(String(option.value))}</span>` : ""}`
                     }
                   </button>
                 `;

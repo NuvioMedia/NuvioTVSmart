@@ -1,3 +1,4 @@
+import * as SubtitleAppearance from "../../../core/player/subtitleAppearance.js";
 import { MAX_PAUSE_OVERLAY_CAST } from "./playerScreenHelpers-02-language-code-aliases.js";
 
 import { UNSUPPORTED_EMBEDDED_SUBTITLE_CODECS } from "./playerScreenHelpers-02-language-code-aliases.js";
@@ -295,6 +296,7 @@ import { resolveUrl } from "./playerScreenHelpers-12-build-skip-interval-label.j
 import { uniqueNonEmptyValues } from "./playerScreenHelpers-12-build-skip-interval-label.js";
 
 export {
+  SubtitleAppearance,
   MAX_PAUSE_OVERLAY_CAST,
   UNSUPPORTED_EMBEDDED_SUBTITLE_CODECS,
   UNSUPPORTED_EMBEDDED_SUBTITLE_CODEC_PATTERNS,

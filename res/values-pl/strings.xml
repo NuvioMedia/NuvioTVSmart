@@ -3417,4 +3417,23 @@
     <string name="autoplay_fallback_startup_timeout_sub">Jak długo czekać na uruchomienie źródła, zanim zostanie sprawdzone kolejne.</string>
     <string name="autoplay_fallback_startup_timeout_value">%1$ds</string>
     <string name="player_error_source_startup_timeout">Źródło nie uruchomiło się w ciągu %1$d sekund.</string>
+    <string name="sub_languages_label">Języki</string>
+    <string name="sub_style_label">Styl</string>
+    <string name="sub_appearance">Wygląd napisów</string>
+    <string name="sub_appearance_desc">Czcionka, kolory, tło i cień</string>
+    <string name="sub_appearance_hint">Dotyczy napisów tekstowych. Stylizowane napisy ASS i napisy graficzne zachowują oryginalny wygląd.</string>
+    <string name="sub_preview">Podgląd</string>
+    <string name="sub_preview_text">Każda historia zaczyna się od odrobiny ciekawości.</string>
+    <string name="sub_font">Czcionka</string>
+    <string name="sub_font_default">Domyślna</string>
+    <string name="sub_font_serif">Szeryfowa</string>
+    <string name="sub_font_mono">O stałej szerokości</string>
+    <string name="sub_font_missing">Czcionka jest niedostępna na tym urządzeniu. Używana jest czcionka domyślna.</string>
+    <string name="sub_bg_opacity">Krycie tła</string>
+    <string name="sub_bg_roundness">Zaokrąglenie rogów</string>
+    <string name="sub_shadow">Cień</string>
+    <string name="sub_shadow_desc">Oddziel tekst od jasnych scen</string>
+    <string name="sub_shadow_opacity">Krycie cienia</string>
+    <string name="sub_shadow_size">Rozmiar cienia</string>
+    <string name="sub_reset_appearance">Resetuj wygląd</string>
 </resources>

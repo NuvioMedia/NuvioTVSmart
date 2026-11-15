@@ -3397,4 +3397,6 @@
     <string name="library_empty_simkl_not_auth_subtitle">Conecta tu cuenta de Simkl en Ajustes para ver tu biblioteca de Simkl</string>
     <string name="playback_exo_chapters_title">Mostrar capítulos</string>
     <string name="playback_exo_chapters_sub">Lee los capítulos de los archivos MKV para mostrarlos en la barra de progreso y permitir avanzar entre ellos.</string>
+    <string name="sub_languages_label">Idiomas</string>
+    <string name="sub_style_label">Estilo</string>
 </resources>

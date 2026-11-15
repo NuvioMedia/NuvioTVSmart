@@ -3402,4 +3402,6 @@ Próbálj meg egy másik forrást. [%1$s]</string>
     <string name="library_empty_simkl_not_auth_subtitle">Csatlakoztasd a Simkl fiókodat a Beállításokban a Simkl könyvtárad megtekintéséhez</string>
     <string name="playback_exo_chapters_title">Fejezetek megjelenítése</string>
     <string name="playback_exo_chapters_sub">Az MKV-fájlok fejezeteinek beolvasása, hogy megjelenjenek a folyamatjelzőn, és lehessen köztük lépkedni.</string>
+    <string name="sub_languages_label">Nyelvek</string>
+    <string name="sub_style_label">Stílus</string>
 </resources>

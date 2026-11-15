@@ -3417,4 +3417,23 @@
     <string name="autoplay_fallback_startup_timeout_sub">כמה זמן להמתין להתחלת מקור לפני מעבר לבא.</string>
     <string name="autoplay_fallback_startup_timeout_value">%1$d שנ׳</string>
     <string name="player_error_source_startup_timeout">המקור לא התחיל תוך %1$d שניות.</string>
+    <string name="sub_languages_label">שפות</string>
+    <string name="sub_style_label">סגנון</string>
+    <string name="sub_appearance">מראה הכתוביות</string>
+    <string name="sub_appearance_desc">גופן, צבעים, רקע וצל</string>
+    <string name="sub_appearance_hint">חל על כתוביות טקסט. כתוביות ASS מעוצבות וכתוביות תמונה שומרות על מראן המקורי.</string>
+    <string name="sub_preview">תצוגה מקדימה</string>
+    <string name="sub_preview_text">כל סיפור מתחיל בקצת סקרנות.</string>
+    <string name="sub_font">גופן</string>
+    <string name="sub_font_default">ברירת מחדל</string>
+    <string name="sub_font_serif">סריף</string>
+    <string name="sub_font_mono">מונוספייס</string>
+    <string name="sub_font_missing">הגופן אינו זמין במכשיר זה. משתמשים בגופן ברירת המחדל.</string>
+    <string name="sub_bg_opacity">שקיפות הרקע</string>
+    <string name="sub_bg_roundness">עיגול פינות</string>
+    <string name="sub_shadow">צל</string>
+    <string name="sub_shadow_desc">הפרדת הטקסט מסצנות בהירות</string>
+    <string name="sub_shadow_opacity">שקיפות הצל</string>
+    <string name="sub_shadow_size">גודל הצל</string>
+    <string name="sub_reset_appearance">איפוס מראה</string>
 </resources>

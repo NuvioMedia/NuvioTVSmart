@@ -3398,4 +3398,6 @@
     <string name="library_empty_simkl_not_auth_subtitle">Simkl kütüphaneni görmek için Ayarlar\'dan Simkl hesabını bağla</string>
     <string name="playback_exo_chapters_title">Sahneleri göster</string>
     <string name="playback_exo_chapters_sub">MKV dosyalarındaki sahneleri okuyup ilerleme çubuğunda işaretler ve aralarında atlamayı sağlar.</string>
+    <string name="sub_languages_label">Diller</string>
+    <string name="sub_style_label">Stil</string>
 </resources>

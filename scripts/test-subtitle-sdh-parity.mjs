@@ -7,6 +7,7 @@ import {
 } from "../js/core/player/subtitleSdhFilter.js";
 import { resolveSubtitleStyleControlAvailability as availability } from "../js/core/player/subtitlePresentationCapabilities.js";
 import { resolveHdrSubtitleStyle } from "../js/core/player/hdrSubtitleStyle.js";
+import * as SubtitleAppearance from "../js/core/player/subtitleAppearance.js";
 import { createAssRenderer } from "../js/core/player/assRenderer.js";
 import { convertAssDialogueToVttCues } from "../js/core/player/assSubtitle.js";
 import {
@@ -246,7 +247,9 @@ class Element {
     this.classList = {
       add: (value) => this.classes.add(value),
       remove: (value) => this.classes.delete(value),
-      contains: (value) => this.classes.has(value)
+      contains: (value) => this.classes.has(value),
+      toggle: (value, force) =>
+        (force ?? !this.classes.has(value)) ? this.classes.add(value) : this.classes.delete(value)
     };
   }
   set textContent(text) {
@@ -351,6 +354,7 @@ assert.equal(assScreen.assSubtitleRenderer, winner);
 // A live ASS style change rebuilds from the original; parse failures use the existing HTML fallback.
 const properties = { setProperty() {}, removeProperty() {} };
 const presentation = await methods("24", "createPlayerScreenMethods24", {
+  SubtitleAppearance,
   PlayerController: { video: { style: properties } },
   Environment: { isWebOS: () => false, isTizen: () => false },
   resolveHdrSubtitleStyle,

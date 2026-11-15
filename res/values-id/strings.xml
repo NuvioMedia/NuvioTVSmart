@@ -3393,4 +3393,23 @@
     <string name="playback_exo_chapters_sub">Baca bab dari file MKV untuk menandainya di bilah progres dan melompat di antaranya.</string>
     <string name="playback_chapter_title_title">Tampilkan Judul Bab</string>
     <string name="playback_chapter_title_sub">Tampilkan nama bab saat ini di atas bilah progres.</string>
+    <string name="sub_languages_label">Bahasa</string>
+    <string name="sub_style_label">Gaya</string>
+    <string name="sub_appearance">Tampilan Subtitle</string>
+    <string name="sub_appearance_desc">Font, warna, latar belakang, dan bayangan</string>
+    <string name="sub_appearance_hint">Berlaku untuk subtitle teks. Subtitle ASS bergaya dan subtitle gambar mempertahankan tampilan aslinya.</string>
+    <string name="sub_preview">Pratinjau</string>
+    <string name="sub_preview_text">Setiap cerita dimulai dari sedikit rasa penasaran.</string>
+    <string name="sub_font">Font</string>
+    <string name="sub_font_default">Default</string>
+    <string name="sub_font_serif">Serif</string>
+    <string name="sub_font_mono">Monospace</string>
+    <string name="sub_font_missing">Font tidak tersedia di perangkat ini. Menggunakan font default.</string>
+    <string name="sub_bg_opacity">Opasitas Latar Belakang</string>
+    <string name="sub_bg_roundness">Kebulatan Sudut</string>
+    <string name="sub_shadow">Bayangan</string>
+    <string name="sub_shadow_desc">Memisahkan teks dari adegan terang</string>
+    <string name="sub_shadow_opacity">Opasitas Bayangan</string>
+    <string name="sub_shadow_size">Ukuran Bayangan</string>
+    <string name="sub_reset_appearance">Atur Ulang Tampilan</string>
 </resources>

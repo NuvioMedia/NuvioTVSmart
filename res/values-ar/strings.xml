@@ -3412,4 +3412,23 @@
     <string name="autoplay_fallback_startup_timeout_sub">مدة الانتظار لبدء المصدر قبل تجربة المصدر التالي.</string>
     <string name="autoplay_fallback_startup_timeout_value">%1$d ث</string>
     <string name="player_error_source_startup_timeout">لم يبدأ المصدر خلال %1$d ثانية.</string>
+    <string name="sub_languages_label">اللغات</string>
+    <string name="sub_style_label">النمط</string>
+    <string name="sub_appearance">مظهر الترجمة</string>
+    <string name="sub_appearance_desc">الخط والألوان والخلفية والظل</string>
+    <string name="sub_appearance_hint">ينطبق على الترجمة النصية. الترجمة المنسقة ASS وترجمة الصور تحتفظ بمظهرها الأصلي.</string>
+    <string name="sub_preview">معاينة</string>
+    <string name="sub_preview_text">كل قصة تبدأ بفضول صغير.</string>
+    <string name="sub_font">الخط</string>
+    <string name="sub_font_default">الافتراضي</string>
+    <string name="sub_font_serif">Serif</string>
+    <string name="sub_font_mono">Monospace</string>
+    <string name="sub_font_missing">الخط غير متاح على هذا الجهاز. يُستخدم الخط الافتراضي.</string>
+    <string name="sub_bg_opacity">عتامة الخلفية</string>
+    <string name="sub_bg_roundness">استدارة الزوايا</string>
+    <string name="sub_shadow">ظل منسدل</string>
+    <string name="sub_shadow_desc">يفصل النص عن المشاهد الساطعة</string>
+    <string name="sub_shadow_opacity">عتامة الظل</string>
+    <string name="sub_shadow_size">حجم الظل</string>
+    <string name="sub_reset_appearance">إعادة تعيين المظهر</string>
 </resources>

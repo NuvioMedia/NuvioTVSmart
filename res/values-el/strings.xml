@@ -634,7 +634,7 @@
     <string name="sub_outline">Περίγραμμα</string>
     <string name="sub_outline_sub">Προσθήκη περιγράμματος γύρω από το κείμενο υπότιτλων για καλύτερη ορατότητα</string>
     <string name="sub_outline_color">Χρώμα περιγράμματος</string>
-    <string name="sub_advanced_section">Για προχωρημένους απόδοση υπότιτλων</string>
+    <string name="sub_advanced_section">Προχωρημένη απόδοση υποτίτλων</string>
     <string name="sub_libass">Χρήση libass για υπότιτλους ASS/SSA</string>
     <string name="sub_libass_sub">Πειραματικό: προχωρημένη απόδοση ASS/SSA (στυλ, τοποθέτηση, κινούμενα σχέδια)</string>
     <string name="sub_libass_mode">Λειτουργία απόδοσης Libass</string>
@@ -3405,4 +3405,6 @@
     <string name="library_empty_simkl_not_auth_subtitle">Συνδέστε τον λογαριασμό Simkl στις Ρυθμίσεις για να δείτε τη βιβλιοθήκη Simkl</string>
     <string name="playback_exo_chapters_title">Εμφάνιση κεφαλαίων</string>
     <string name="playback_exo_chapters_sub">Ανάγνωση των κεφαλαίων των αρχείων MKV για σήμανσή τους στη γραμμή προόδου και μετάβαση μεταξύ τους.</string>
+    <string name="sub_languages_label">Γλώσσες</string>
+    <string name="sub_style_label">Στυλ</string>
 </resources>

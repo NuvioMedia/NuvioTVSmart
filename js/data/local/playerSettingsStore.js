@@ -18,6 +18,10 @@ import {
   SOURCE_STARTUP_TIMEOUT_SECONDS_MIN,
   SOURCE_STARTUP_TIMEOUT_SECONDS_STEP
 } from "../../core/player/sourceFallback.js";
+import {
+  SUBTITLE_APPEARANCE_DEFAULTS,
+  normalizeSubtitleAppearance
+} from "../../core/player/subtitleAppearance.js";
 import { AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../core/player/subtitleAutoSyncEngine.js";
 import {
   HDR_BRIGHTNESS_DEFAULT,
@@ -82,7 +86,8 @@ const DEFAULTS = {
     hdrStyleEnabled: false,
     hdrTextColor: "#FFFFFF",
     hdrBrightness: HDR_BRIGHTNESS_DEFAULT,
-    hdrDimPlayerControls: false
+    hdrDimPlayerControls: false,
+    ...SUBTITLE_APPEARANCE_DEFAULTS
   },
   audioAmplificationDb: 0,
   persistAudioAmplification: false,
@@ -112,6 +117,9 @@ function normalizeIntInRange(value, min, max, fallback, step = 1) {
   const clamped = Math.min(max, Math.max(min, number));
   return min + Math.round((clamped - min) / step) * step;
 }
+
+/** The stored subtitle style defaults, for "Reset Appearance". */
+export const DEFAULT_SUBTITLE_STYLE = Object.freeze({ ...DEFAULTS.subtitleStyle });
 
 const STREAM_AUTO_PLAY_MODES = ["MANUAL", "FIRST_STREAM", "REGEX_MATCH"];
 const STREAM_AUTO_PLAY_SOURCES = ["ALL_SOURCES", "INSTALLED_ADDONS_ONLY", "ENABLED_PLUGINS_ONLY"];
@@ -286,6 +294,7 @@ export function normalizePlayerSettings(settings = {}) {
   );
   subtitleStyle.verticalOffsetContract = SUBTITLE_VERTICAL_OFFSET_CONTRACT;
   subtitleStyle.textOpacity = normalizeSubtitleTextOpacity(subtitleStyle.textOpacity);
+  Object.assign(subtitleStyle, normalizeSubtitleAppearance(subtitleStyle));
   let preferredLanguage = normalizeSelectableSubtitleLanguageCode(
     subtitleStyle.preferredLanguage ?? persistentSettings.subtitleLanguage,
     DEFAULTS.subtitleStyle.preferredLanguage

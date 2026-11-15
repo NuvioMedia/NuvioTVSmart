@@ -2,6 +2,23 @@
 import * as internals from "./settingsScreenContext.js";
 import { AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../../core/player/subtitleAutoSyncEngine.js";
 import { normalizeHdrBrightness } from "../../../core/player/hdrSubtitleStyle.js";
+import { DEFAULT_SUBTITLE_STYLE } from "../../../data/local/playerSettingsStore.js";
+import { normalizeSubtitleAppearance } from "../../../core/player/subtitleAppearance.js";
+import {
+  SUBTITLE_APPEARANCE_LIMITS,
+  SUBTITLE_BACKGROUND_COLOR_PRESETS,
+  SUBTITLE_OFFSET_RANGE,
+  SUBTITLE_OPACITY_RANGE,
+  SUBTITLE_SETTINGS_OUTLINE_COLORS,
+  SUBTITLE_SETTINGS_TEXT_COLORS,
+  SUBTITLE_SIZE_RANGE,
+  backgroundColorFor,
+  buildSubtitleAppearancePreviewHtml,
+  joinBackgroundColor,
+  rangeValues,
+  splitBackgroundColor,
+  subtitleAppearanceResetValues
+} from "./subtitleAppearanceEditor.js";
 
 export function registerPlaybackActionsPart02(model) {
   const {
@@ -161,6 +178,207 @@ export function registerPlaybackActionsPart02(model) {
       subtitleStyle: { ...current.subtitleStyle, ...partial }
     });
   };
+  // Android SubtitleAppearanceDialog: one editor for font, colors, background and
+  // shadow, with a live preview beside the controls.
+  const openSubtitleAppearanceDialog = (focusRowId = "font") => {
+    const style = PlayerSettingsStore.get().subtitleStyle || {};
+    const appearance = normalizeSubtitleAppearance(style);
+    const background = splitBackgroundColor(style.backgroundColor);
+    const onOff = (on) => (on ? t("subtitle_on", {}, "On") : t("subtitle_off", {}, "Off"));
+    const fontLabel = (id) =>
+      id === "serif"
+        ? t("sub_font_serif", {}, "Serif")
+        : id === "mono"
+          ? t("sub_font_mono", {}, "Monospace")
+          : t("sub_font_default", {}, "Default");
+    const rows = [
+      { id: "font", label: t("sub_font", {}, "Font"), value: fontLabel(appearance.fontId) },
+      { id: "size", label: t("sub_size", {}, "Size"), value: `${clampSubtitleSize(style.fontSize ?? 120)}%` },
+      { id: "bold", label: t("sub_bold", {}, "Bold"), value: onOff(style.bold) },
+      { id: "textColor", label: t("sub_text_color", {}, "Text Color"), swatch: style.textColor || "#FFFFFF" },
+      {
+        id: "textOpacity",
+        label: t("subtitle_style_text_opacity", {}, "Text Opacity"),
+        value: `${clampSubtitleTextOpacity(style.textOpacity)}%`
+      },
+      {
+        id: "backgroundColor",
+        label: t("sub_bg_color", {}, "Background Color"),
+        swatch: background.opacity > 0 ? background.color : null,
+        value: background.opacity > 0 ? "" : onOff(false)
+      },
+      { id: "backgroundOpacity", label: t("sub_bg_opacity", {}, "Background Opacity"), value: `${background.opacity}%` },
+      { id: "backgroundRadius", label: t("sub_bg_roundness", {}, "Corner Roundness"), value: String(appearance.backgroundRadius) },
+      { id: "outline", label: t("sub_outline", {}, "Outline"), value: onOff(style.outlineEnabled) },
+      ...(style.outlineEnabled
+        ? [{ id: "outlineColor", label: t("sub_outline_color", {}, "Outline Color"), swatch: style.outlineColor || "#000000" }]
+        : []),
+      { id: "shadow", label: t("sub_shadow", {}, "Drop Shadow"), value: onOff(appearance.shadowEnabled) },
+      ...(appearance.shadowEnabled
+        ? [
+            { id: "shadowOpacity", label: t("sub_shadow_opacity", {}, "Shadow Opacity"), value: `${appearance.shadowOpacity}%` },
+            { id: "shadowSize", label: t("sub_shadow_size", {}, "Shadow Size"), value: String(appearance.shadowSize) }
+          ]
+        : []),
+      {
+        id: "verticalOffset",
+        label: t("sub_vertical_offset", {}, "Vertical Offset"),
+        value: `${clampSubtitleOffset(style.verticalOffset ?? SUBTITLE_VERTICAL_OFFSET_DEFAULT)}%`
+      },
+      { id: "reset", label: t("sub_reset_appearance", {}, "Reset Appearance") }
+    ];
+    const reopen = (rowId) => {
+      openSubtitleAppearanceDialog(rowId);
+      return false;
+    };
+    const choose = (rowId, title, options, selectedId, apply) => {
+      this.openOptionDialog({
+        title,
+        options,
+        selectedId,
+        returnFocusKey: "playback:subtitleAppearance",
+        optionRenderer: "single-choice",
+        onSelect: (option) => {
+          apply(option.id);
+          return reopen(rowId);
+        },
+        // Back from a value list returns to the editor, as on Android.
+        onClose: () => openSubtitleAppearanceDialog(rowId)
+      });
+      return false;
+    };
+    const numberOptions = (range, format = (value) => `${value}%`) =>
+      rangeValues(range).map((value) => ({ id: value, label: format(value) }));
+    const colorOptions = (colors) => colors.map((color) => ({ id: color, label: color, swatch: color }));
+    this.openOptionDialog({
+      title: t("sub_appearance", {}, "Subtitle Appearance"),
+      messageHtml: buildSubtitleAppearancePreviewHtml(style, { t, escapeHtml }),
+      options: rows,
+      selectedId: null,
+      returnFocusKey: "playback:subtitleAppearance",
+      dialogClassName: "settings-subtitle-appearance-dialog",
+      onSelect: (option) => {
+        const current = PlayerSettingsStore.get().subtitleStyle || {};
+        switch (option.id) {
+          case "font":
+            return choose(
+              "font",
+              t("sub_font", {}, "Font"),
+              ["default", "serif", "mono"].map((id) => ({ id, label: fontLabel(id) })),
+              normalizeSubtitleAppearance(current).fontId,
+              (fontId) => updateSubtitleStyle({ fontId })
+            );
+          case "size":
+            return choose(
+              "size",
+              t("sub_size", {}, "Size"),
+              numberOptions(SUBTITLE_SIZE_RANGE),
+              clampSubtitleSize(current.fontSize ?? 120),
+              (value) => updateSubtitleStyle({ fontSize: clampSubtitleSize(value) })
+            );
+          case "bold":
+            updateSubtitleStyle({ bold: !current.bold });
+            return reopen("bold");
+          case "textColor":
+            return choose(
+              "textColor",
+              t("sub_text_color", {}, "Text Color"),
+              colorOptions(SUBTITLE_SETTINGS_TEXT_COLORS),
+              normalizeSubtitleStyleHex(current.textColor, "#FFFFFF"),
+              (value) => updateSubtitleStyle({ textColor: value })
+            );
+          case "textOpacity":
+            return choose(
+              "textOpacity",
+              t("subtitle_style_text_opacity", {}, "Text Opacity"),
+              numberOptions(SUBTITLE_OPACITY_RANGE),
+              clampSubtitleTextOpacity(current.textOpacity),
+              (value) => updateSubtitleStyle({ textOpacity: clampSubtitleTextOpacity(value) })
+            );
+          case "backgroundColor":
+            return choose(
+              "backgroundColor",
+              t("sub_bg_color", {}, "Background Color"),
+              colorOptions(SUBTITLE_BACKGROUND_COLOR_PRESETS),
+              splitBackgroundColor(current.backgroundColor).opacity > 0 ? splitBackgroundColor(current.backgroundColor).color : null,
+              (value) => updateSubtitleStyle({ backgroundColor: backgroundColorFor(value, current.backgroundColor) })
+            );
+          case "backgroundOpacity":
+            return choose(
+              "backgroundOpacity",
+              t("sub_bg_opacity", {}, "Background Opacity"),
+              numberOptions(SUBTITLE_OPACITY_RANGE),
+              splitBackgroundColor(current.backgroundColor).opacity,
+              (value) =>
+                updateSubtitleStyle({
+                  backgroundColor: joinBackgroundColor(splitBackgroundColor(current.backgroundColor).color, value)
+                })
+            );
+          case "backgroundRadius":
+            // Android disables roundness while the background is fully transparent.
+            if (splitBackgroundColor(current.backgroundColor).opacity <= 0) {
+              return reopen("backgroundRadius");
+            }
+            return choose(
+              "backgroundRadius",
+              t("sub_bg_roundness", {}, "Corner Roundness"),
+              numberOptions({ min: 0, max: SUBTITLE_APPEARANCE_LIMITS.radiusMax, step: SUBTITLE_APPEARANCE_LIMITS.radiusStep }, String),
+              normalizeSubtitleAppearance(current).backgroundRadius,
+              (value) => updateSubtitleStyle({ backgroundRadius: Number(value) })
+            );
+          case "outline":
+            updateSubtitleStyle({ outlineEnabled: !current.outlineEnabled });
+            return reopen("outline");
+          case "outlineColor":
+            return choose(
+              "outlineColor",
+              t("sub_outline_color", {}, "Outline Color"),
+              colorOptions(SUBTITLE_SETTINGS_OUTLINE_COLORS),
+              normalizeSubtitleStyleHex(current.outlineColor, "#000000"),
+              (value) => updateSubtitleStyle({ outlineColor: value })
+            );
+          case "shadow":
+            updateSubtitleStyle({ shadowEnabled: !normalizeSubtitleAppearance(current).shadowEnabled });
+            return reopen("shadow");
+          case "shadowOpacity":
+            return choose(
+              "shadowOpacity",
+              t("sub_shadow_opacity", {}, "Shadow Opacity"),
+              numberOptions(SUBTITLE_OPACITY_RANGE),
+              normalizeSubtitleAppearance(current).shadowOpacity,
+              (value) => updateSubtitleStyle({ shadowOpacity: Number(value) })
+            );
+          case "shadowSize":
+            return choose(
+              "shadowSize",
+              t("sub_shadow_size", {}, "Shadow Size"),
+              numberOptions(
+                { min: SUBTITLE_APPEARANCE_LIMITS.shadowSizeMin, max: SUBTITLE_APPEARANCE_LIMITS.shadowSizeMax, step: 1 },
+                String
+              ),
+              normalizeSubtitleAppearance(current).shadowSize,
+              (value) => updateSubtitleStyle({ shadowSize: Number(value) })
+            );
+          case "verticalOffset":
+            return choose(
+              "verticalOffset",
+              t("sub_vertical_offset", {}, "Vertical Offset"),
+              numberOptions(SUBTITLE_OFFSET_RANGE),
+              clampSubtitleOffset(current.verticalOffset ?? SUBTITLE_VERTICAL_OFFSET_DEFAULT),
+              (value) => updateSubtitleStyle({ verticalOffset: clampSubtitleOffset(value) })
+            );
+          case "reset":
+            updateSubtitleStyle(subtitleAppearanceResetValues(DEFAULT_SUBTITLE_STYLE));
+            return reopen("reset");
+          default:
+            return undefined;
+        }
+      }
+    });
+    const focusIndex = rows.findIndex((row) => row.id === focusRowId);
+    this.dialogFocusIndex = focusIndex >= 0 ? focusIndex : 0;
+  };
+  this.actionMap.set("playback:subtitleAppearance", () => openSubtitleAppearanceDialog("font"));
   this.actionMap.set("playback:subtitleSize", () => {
     this.openOptionDialog({
       title: t("settings.playback.subtitleSize.title", {}, "Subtitle size"),

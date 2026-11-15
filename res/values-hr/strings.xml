@@ -3386,4 +3386,6 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl nije povezan</string>
     <string name="library_empty_simkl_not_auth_subtitle">Poveži svoj Simkl račun u Postavkama za prikaz Simkl biblioteke</string>
+    <string name="sub_languages_label">Jezici</string>
+    <string name="sub_style_label">Stil</string>
 </resources>

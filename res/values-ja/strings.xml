@@ -3392,4 +3392,6 @@
     <string name="library_empty_simkl_not_auth_subtitle">設定でSimklアカウントを接続してSimklライブラリを表示</string>
     <string name="playback_exo_chapters_title">チャプターを表示</string>
     <string name="playback_exo_chapters_sub">MKVファイルのチャプターを読み取って進行バーにマークし、それらの間をスキップします。</string>
+    <string name="sub_languages_label">言語</string>
+    <string name="sub_style_label">スタイル</string>
 </resources>

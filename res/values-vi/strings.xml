@@ -3415,4 +3415,23 @@
     <string name="autoplay_fallback_startup_timeout_sub">Thời gian chờ một nguồn phát khởi chạy trước khi chuyển sang thử nguồn phát tiếp theo.</string>
     <string name="autoplay_fallback_startup_timeout_value">%1$ds</string>
     <string name="player_error_source_startup_timeout">Nguồn phát đã không khởi chạy trong vòng %1$d giây.</string>
+    <string name="sub_languages_label">Ngôn ngữ</string>
+    <string name="sub_style_label">Kiểu</string>
+    <string name="sub_appearance">Giao diện phụ đề</string>
+    <string name="sub_appearance_desc">Phông chữ, màu sắc, nền và đổ bóng</string>
+    <string name="sub_appearance_hint">Áp dụng cho phụ đề văn bản. Phụ đề ASS có kiểu định dạng và phụ đề hình ảnh vẫn giữ nguyên giao diện gốc.</string>
+    <string name="sub_preview">Xem trước</string>
+    <string name="sub_preview_text">Mọi câu chuyện đều bắt đầu từ một chút tò mò.</string>
+    <string name="sub_font">Phông chữ</string>
+    <string name="sub_font_default">Mặc định</string>
+    <string name="sub_font_serif">Có chân</string>
+    <string name="sub_font_mono">Đơn cách</string>
+    <string name="sub_font_missing">Phông chữ không có sẵn trên thiết bị này. Đang sử dụng phông chữ mặc định.</string>
+    <string name="sub_bg_opacity">Độ mờ nền</string>
+    <string name="sub_bg_roundness">Độ bo góc</string>
+    <string name="sub_shadow">Đổ bóng</string>
+    <string name="sub_shadow_desc">Tách chữ khỏi các cảnh sáng</string>
+    <string name="sub_shadow_opacity">Độ mờ bóng</string>
+    <string name="sub_shadow_size">Kích thước bóng</string>
+    <string name="sub_reset_appearance">Đặt lại giao diện</string>
 </resources>

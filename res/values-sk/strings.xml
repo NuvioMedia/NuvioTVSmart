@@ -3415,4 +3415,23 @@
     <string name="autoplay_fallback_startup_timeout_sub">Ako dlho čakať na spustenie zdroja pred vyskúšaním ďalšieho.</string>
     <string name="autoplay_fallback_startup_timeout_value">%1$ds</string>
     <string name="player_error_source_startup_timeout">Zdroj sa nespustil do %1$d sekúnd.</string>
+    <string name="sub_languages_label">Jazyky</string>
+    <string name="sub_style_label">Štýl</string>
+    <string name="sub_appearance">Vzhľad titulkov</string>
+    <string name="sub_appearance_desc">Písmo, farby, pozadie a tieň</string>
+    <string name="sub_appearance_hint">Vzťahuje sa na textové titulky. Štýlované ASS a obrázkové titulky si zachovávajú svoj pôvodný vzhľad.</string>
+    <string name="sub_preview">Ukážka</string>
+    <string name="sub_preview_text">Každý príbeh sa začína trochou zvedavosti.</string>
+    <string name="sub_font">Písmo</string>
+    <string name="sub_font_default">Predvolené</string>
+    <string name="sub_font_serif">S pätkou (Serif)</string>
+    <string name="sub_font_mono">S pevnou šírkou (Monospace)</string>
+    <string name="sub_font_missing">Písmo nie je v tomto zariadení k dispozícii. Používa sa predvolené písmo.</string>
+    <string name="sub_bg_opacity">Priehľadnosť pozadia</string>
+    <string name="sub_bg_roundness">Zaoblenie rohov</string>
+    <string name="sub_shadow">Vrvrhnutý tieň</string>
+    <string name="sub_shadow_desc">Oddeliť text od jasných scén</string>
+    <string name="sub_shadow_opacity">Priehľadnosť tieňa</string>
+    <string name="sub_shadow_size">Veľkosť tieňa</string>
+    <string name="sub_reset_appearance">Obnoviť predvolený vzhľad</string>
 </resources>
