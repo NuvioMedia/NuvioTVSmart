@@ -1090,6 +1090,211 @@ function memoryUsage() {
   return {};
 }
 
+// Header proxy for playback on TVs whose runtime cannot run EngineFS (Node 4
+// on Tizen 5.5). Same URL contract as EngineFS: /proxy/<options>/<path>, with
+// d=<origin> and repeated h=<name>:<value>. HLS playlists are rewritten so
+// every nested playlist and segment also goes through the proxy.
+var PROXY_MAX_REDIRECTS = 10;
+var PROXY_MAX_PLAYLIST_BYTES = 5 * 1024 * 1024;
+var PROXY_CONNECT_TIMEOUT_MS = 30000;
+var PROXY_FORWARDED_RESPONSE_HEADERS = [
+  "content-type",
+  "content-length",
+  "content-range",
+  "accept-ranges",
+  "last-modified",
+  "etag"
+];
+
+function parseProxyRequestUrl(requestUrl) {
+  var rest = String(requestUrl || "").slice("/proxy/".length);
+  var slash = rest.indexOf("/");
+  if (slash <= 0) return null;
+  var options;
+  try {
+    options = require("querystring").parse(decodeURIComponent(rest.slice(0, slash)));
+  } catch (_) {
+    return null;
+  }
+  var origin = parseUrl(String(options.d || ""));
+  if (!origin) return null;
+  var headers = {};
+  [].concat(options.h || []).forEach(function (entry) {
+    var text = String(entry || "");
+    var colon = text.indexOf(":");
+    var name = colon > 0 ? text.slice(0, colon).trim() : "";
+    var value = colon > 0 ? text.slice(colon + 1).trim() : "";
+    if (!name || !value || /[\r\n]/.test(name + value)) return;
+    if (
+      ["host", "connection", "content-length", "transfer-encoding", "range"].indexOf(
+        name.toLowerCase()
+      ) >= 0
+    )
+      return;
+    headers[name] = value;
+  });
+  return { url: origin.protocol + "//" + origin.host + rest.slice(slash), headers: headers };
+}
+
+function buildProxyPath(targetUrl, headers) {
+  var target = parseUrl(targetUrl);
+  if (!target) return "";
+  var params = ["d=" + encodeURIComponent(target.protocol + "//" + target.host)];
+  Object.keys(headers || {}).forEach(function (name) {
+    params.push("h=" + encodeURIComponent(name + ":" + encodeURIComponent(headers[name])));
+  });
+  // Same layering as the app's URLSearchParams form: the options segment is
+  // decoded once, then parsed as a query string.
+  return "/proxy/" + params.join("&") + (target.pathname || "/") + (target.search || "");
+}
+
+function isPlaylistResponse(url, contentType) {
+  return /mpegurl/i.test(String(contentType || "")) || /\.m3u8?(?:$|\?)/i.test(String(url || ""));
+}
+
+function rewritePlaylist(text, baseUrl, headers) {
+  function proxied(uri) {
+    try {
+      return buildProxyPath(resolveUrl(uri, baseUrl), headers) || uri;
+    } catch (_) {
+      return uri;
+    }
+  }
+  return String(text)
+    .split(/\r?\n/)
+    .map(function (line) {
+      var trimmed = line.trim();
+      if (!trimmed) return line;
+      if (trimmed.charAt(0) !== "#") return proxied(trimmed);
+      return line.replace(/URI="([^"]+)"/g, function (_, uri) {
+        return 'URI="' + proxied(uri) + '"';
+      });
+    })
+    .join("\n");
+}
+
+function handleProxyRequest(request, response) {
+  var target = parseProxyRequestUrl(request.url);
+  if (!target) {
+    response.writeHead(400, { "Access-Control-Allow-Origin": "*" });
+    response.end();
+    return;
+  }
+  var upstreamRequest = null;
+  var finished = false;
+  function fail(status) {
+    if (finished) return;
+    finished = true;
+    if (!response.headersSent) {
+      response.writeHead(status, { "Access-Control-Allow-Origin": "*" });
+    }
+    response.end();
+  }
+  request.on("close", function () {
+    finished = true;
+    if (upstreamRequest) upstreamRequest.abort();
+  });
+  function fetchUrl(url, redirects) {
+    var parsed = parseUrl(url);
+    if (!parsed) return fail(400);
+    var transport;
+    try {
+      transport = parsed.protocol === "https:" ? getHttpsModule() : http;
+    } catch (_) {
+      return fail(502);
+    }
+    var headers = Object.assign({}, target.headers);
+    if (request.headers.range) headers.Range = request.headers.range;
+    headers.Host = parsed.host;
+    var options = {
+      protocol: parsed.protocol,
+      hostname: String(parsed.hostname || "").replace(/^\[|\]$/g, ""),
+      port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+      path: String(parsed.pathname || "/") + String(parsed.search || ""),
+      method: request.method === "HEAD" ? "HEAD" : "GET",
+      headers: headers,
+      servername: String(parsed.hostname || "").replace(/^\[|\]$/g, "")
+    };
+    var legacyCa = parsed.protocol === "https:" ? legacyTrustedCa() : null;
+    if (legacyCa) options.ca = legacyCa;
+    upstreamRequest = transport.request(options, function (upstream) {
+      var status = Number(upstream.statusCode || 0);
+      var location = upstream.headers.location;
+      if (status >= 300 && status < 400 && location) {
+        upstream.resume();
+        if (redirects >= PROXY_MAX_REDIRECTS) return fail(508);
+        var next;
+        try {
+          next = resolveUrl(location, url);
+        } catch (_) {
+          return fail(502);
+        }
+        return fetchUrl(next, redirects + 1);
+      }
+      if (finished) {
+        upstream.resume();
+        return;
+      }
+      var responseHeaders = { "Access-Control-Allow-Origin": "*" };
+      PROXY_FORWARDED_RESPONSE_HEADERS.forEach(function (name) {
+        if (upstream.headers[name] != null) responseHeaders[name] = upstream.headers[name];
+      });
+      if (
+        status === 200 &&
+        options.method === "GET" &&
+        isPlaylistResponse(url, upstream.headers["content-type"])
+      ) {
+        var chunks = [];
+        var size = 0;
+        upstream.on("data", function (chunk) {
+          size += chunk.length;
+          if (size > PROXY_MAX_PLAYLIST_BYTES) {
+            upstream.destroy();
+            return fail(502);
+          }
+          chunks.push(chunk);
+        });
+        upstream.on("end", function () {
+          if (finished) return;
+          var body = bufferFrom(
+            rewritePlaylist(Buffer.concat(chunks).toString("utf8"), url, target.headers),
+            "utf8"
+          );
+          delete responseHeaders["content-length"];
+          delete responseHeaders["content-range"];
+          delete responseHeaders["accept-ranges"];
+          responseHeaders["content-length"] = String(body.length);
+          finished = true;
+          response.writeHead(200, responseHeaders);
+          response.end(body);
+        });
+        upstream.on("error", function () {
+          fail(502);
+        });
+        return;
+      }
+      response.writeHead(status || 502, responseHeaders);
+      upstream.pipe(response);
+      upstream.on("end", function () {
+        finished = true;
+      });
+      upstream.on("error", function () {
+        finished = true;
+        response.end();
+      });
+    });
+    upstreamRequest.setTimeout(PROXY_CONNECT_TIMEOUT_MS, function () {
+      upstreamRequest.abort();
+      fail(504);
+    });
+    upstreamRequest.on("error", function () {
+      fail(502);
+    });
+    upstreamRequest.end();
+  }
+  fetchUrl(target.url, 0);
+}
+
 function createPluginHttpServer(options) {
   var serverOptions = options || {};
   var port = serverOptions.port === undefined ? 2711 : serverOptions.port;
@@ -1368,6 +1573,13 @@ function createPluginHttpServer(options) {
       });
       return;
     }
+    if (
+      String(request.url || "").indexOf("/proxy/") === 0 &&
+      (request.method === "GET" || request.method === "HEAD")
+    ) {
+      handleProxyRequest(request, response);
+      return;
+    }
     if (request.url === "/health" && request.method === "GET") {
       var memory = memoryUsage();
       send(response, 200, {
@@ -1385,6 +1597,8 @@ function createPluginHttpServer(options) {
         memory: { rssBytes: Number(memory.rss || 0), heapUsedBytes: Number(memory.heapUsed || 0) },
         jsPluginCapability: true,
         networkBoundary: true,
+        nodeVersion: String((process.versions && process.versions.node) || ""),
+        playbackProxy: true,
         port: port
       });
       return;
@@ -1495,4 +1709,9 @@ function createPluginHttpServer(options) {
   return server;
 }
 
-module.exports = { createPluginHttpServer: createPluginHttpServer };
+module.exports = {
+  createPluginHttpServer: createPluginHttpServer,
+  parseProxyRequestUrl: parseProxyRequestUrl,
+  buildProxyPath: buildProxyPath,
+  rewritePlaylist: rewritePlaylist
+};

@@ -1,6 +1,7 @@
 import { Platform } from "../index.js";
 import { TizenCapabilities } from "./tizenCapabilities.js";
 import { getWrtServiceClass, startWithWrtServiceClass } from "./tizenWrtService.js";
+import { TizenPluginService } from "./tizenPluginService.js";
 
 const LOCAL_BASE_URLS = ["http://127.0.0.1:2710", "http://localhost:2710"];
 
@@ -288,6 +289,39 @@ async function waitForLocalBaseUrl(timeoutMs = START_TIMEOUT_MS) {
   throw lastError || new Error("Timed out waiting for local Tizen EngineFS service");
 }
 
+// EngineFS needs Node 8.10+ (its bundle uses a lookbehind regex). Some TVs
+// (a Tizen 5.5 one runs Node 4) cannot even load it, so the plugin service,
+// which runs on the same runtime, tells us the Node version first.
+export function nodeTooOldForEngineFs(version = "") {
+  const match = String(version || "").match(/^v?(\d+)\.(\d+)/);
+  if (!match) return false;
+  const major = Number(match[1]);
+  return major < 8 || (major === 8 && Number(match[2]) < 10);
+}
+
+let legacyRuntimeCheck = null;
+
+function legacyServiceNodeVersion() {
+  // Only Tizen 5.x has shipped such a runtime; newer TVs keep their startup.
+  if (TizenCapabilities.get().tizenMajorVersion !== 5 || !TizenCapabilities.canUsePlugins()) {
+    return Promise.resolve("");
+  }
+  if (!legacyRuntimeCheck) {
+    legacyRuntimeCheck = TizenPluginService.ensureStarted().then(
+      (result) => {
+        const version = String(result?.payload?.nodeVersion || "");
+        if (!version) legacyRuntimeCheck = null;
+        return nodeTooOldForEngineFs(version) ? version : "";
+      },
+      () => {
+        legacyRuntimeCheck = null;
+        return "";
+      }
+    );
+  }
+  return legacyRuntimeCheck;
+}
+
 export const TizenEngineFsService = {
   getLocalBaseUrls() {
     return [...LOCAL_BASE_URLS];
@@ -305,6 +339,14 @@ export const TizenEngineFsService = {
     if (!Platform.isTizen()) {
       diagnostic("ensure skipped", { reason: "not running on Tizen", purpose });
       return { status: "unsupported", detail: "Not running on Tizen" };
+    }
+    const legacyNodeVersion = await legacyServiceNodeVersion();
+    if (legacyNodeVersion) {
+      return {
+        status: "unsupported",
+        reason: "legacy-node",
+        detail: `This TV's service runtime (Node ${legacyNodeVersion}) cannot run EngineFS: P2P is unavailable, use a debrid service`
+      };
     }
     const capabilities = TizenCapabilities.get();
     diagnostic("ensure begin", {
