@@ -27,6 +27,8 @@ const tizenEngineFsServiceRelativePath = "services/tizen/enginefs-service.js";
 const tizenEngineFsRuntimeDirRelativePath = "services/tizen/runtime";
 const tizenPluginServiceRelativePath = "services/tizen/plugin-service.js";
 const tizenPluginServiceSourceRelativePath = "services/plugin-http.cjs";
+// Mozilla root store for the Node 4 service runtime of Tizen 5.5 (see plugin-http.cjs).
+const tizenPluginServiceCaRelativePath = "services/plugin-ca.pem";
 const tizenEngineFsServicePort = 2710;
 const tizenPluginServicePort = 2711;
 
@@ -303,6 +305,10 @@ async function stageTizenPluginService() {
     cp(
       path.join(rootDir, tizenPluginServiceSourceRelativePath),
       path.join(stagingDir, tizenPluginServiceSourceRelativePath)
+    ),
+    cp(
+      path.join(rootDir, tizenPluginServiceCaRelativePath),
+      path.join(stagingDir, tizenPluginServiceCaRelativePath)
     )
   ]);
 }
@@ -618,7 +624,11 @@ function requiredTizenServiceFiles({
         ]
       : []),
     ...(requirePluginService
-      ? [tizenPluginServiceRelativePath, tizenPluginServiceSourceRelativePath]
+      ? [
+          tizenPluginServiceRelativePath,
+          tizenPluginServiceSourceRelativePath,
+          tizenPluginServiceCaRelativePath
+        ]
       : [])
   ];
 }

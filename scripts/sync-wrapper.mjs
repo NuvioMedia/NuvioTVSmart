@@ -21,6 +21,7 @@ const tizenEngineFsServiceRelativePath = "services/tizen/enginefs-service.js";
 const tizenEngineFsRuntimeDirRelativePath = "services/tizen/runtime";
 const tizenPluginServiceRelativePath = "services/tizen/plugin-service.js";
 const tizenPluginServiceSourceRelativePath = "services/plugin-http.cjs";
+const tizenPluginServiceCaRelativePath = "services/plugin-ca.pem";
 const obsoleteTizenPluginServiceSourceRelativePath = "services/tizen/plugin-http.cjs";
 const obsoleteTizenServiceBridgeRelativePath = "services/tizen/wrt-service-bridge.js";
 
@@ -451,6 +452,10 @@ async function syncTizenPluginService(targetDir) {
     cp(
       path.join(rootDir, tizenPluginServiceSourceRelativePath),
       path.join(targetDir, tizenPluginServiceSourceRelativePath)
+    ),
+    cp(
+      path.join(rootDir, tizenPluginServiceCaRelativePath),
+      path.join(targetDir, tizenPluginServiceCaRelativePath)
     ),
     rm(path.join(targetDir, obsoleteTizenPluginServiceSourceRelativePath), { force: true }),
     rm(path.join(targetDir, obsoleteTizenServiceBridgeRelativePath), { force: true })

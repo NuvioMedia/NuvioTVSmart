@@ -56,7 +56,20 @@ function loadFactory(relPath, factoryName, internals, globals) {
     .readFileSync(path.join(ROOT, relPath), "utf8")
     .replace(/^import \* as internals from .*$/m, "")
     .replace(/^export function/m, "function");
-  const sandbox = { internals, console, Date, Number, String, Boolean, Object, Array, Math, Set, Map, ...globals };
+  const sandbox = {
+    internals,
+    console,
+    Date,
+    Number,
+    String,
+    Boolean,
+    Object,
+    Array,
+    Math,
+    Set,
+    Map,
+    ...globals
+  };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
   vm.runInContext(`${source}; globalThis.__factory = ${factoryName};`, sandbox);
@@ -87,10 +100,16 @@ async function createRouter(dropTraversal) {
     WEBOS_NON_RESTORABLE_ROUTES: new Set(),
     getStackEntryRoute: (entry) => (typeof entry === "string" ? entry : String(entry?.route || "")),
     getStackEntryParams: (entry) => (typeof entry === "string" ? {} : entry?.params || {}),
-    resolvePendingHistoryReturnParams: (pending, state, entry) => entry?.params || pending.params || {}
+    resolvePendingHistoryReturnParams: (pending, state, entry) =>
+      entry?.params || pending.params || {}
   };
-  const load = (file, name) => loadFactory(`js/ui/navigation/${file}`, name, internals, { window })();
-  const screen = () => ({ mount: async () => {}, cleanup: () => {}, consumeBackRequest: () => false });
+  const load = (file, name) =>
+    loadFactory(`js/ui/navigation/${file}`, name, internals, { window })();
+  const screen = () => ({
+    mount: async () => {},
+    cleanup: () => {},
+    consumeBackRequest: () => false
+  });
   const router = {
     current: null,
     currentParams: {},
