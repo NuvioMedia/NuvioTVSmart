@@ -1,6 +1,7 @@
 import { DebridSettingsStore } from "../../data/local/debridSettingsStore.js";
 import { DebridApi } from "../../data/remote/api/debridApi.js";
 import { DEBRID_CAPABILITIES, DEBRID_PROVIDER_IDS, DebridProviders } from "./debridProviders.js";
+import { resolveAlternativeHashMatches, torboxCachedEntries } from "./torboxCacheAliases.js";
 
 const FINAL_STATES = new Set(["CACHED", "NOT_CACHED"]);
 
@@ -64,13 +65,14 @@ async function checkCached(account, hashes = []) {
     if (!response.ok || response.data?.success === false) {
       return null;
     }
-    return Object.entries(response.data?.data || {}).reduce((accumulator, [hash, item]) => {
-      accumulator[String(hash || "").toLowerCase()] = {
-        name: item?.name || null,
-        size: item?.size || null
-      };
-      return accumulator;
-    }, {});
+    return resolveAlternativeHashMatches(
+      torboxCachedEntries(response),
+      normalized,
+      async (hash) => {
+        const single = await DebridApi.torboxCheckCached(account.apiKey, [hash]);
+        return single.ok && single.data?.success !== false ? torboxCachedEntries(single) : null;
+      }
+    );
   }
   if (account.provider.id === DEBRID_PROVIDER_IDS.PREMIUMIZE) {
     const response = await DebridApi.premiumizeCheckCache(account.apiKey, normalized);

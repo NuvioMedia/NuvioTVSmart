@@ -6,6 +6,7 @@ import {
   getDebridFileSize,
   selectDebridFile
 } from "./debridFileSelection.js";
+import { resolveAlternativeHashMatches, torboxCachedEntries } from "./torboxCacheAliases.js";
 
 const RESOLVE_CACHE_TTL_MS = 15 * 60 * 1000;
 const RESOLVE_CACHE_MAX_ENTRIES = 100;
@@ -346,7 +347,8 @@ async function getLocalTorrentCacheStatus(provider, apiKey, hash) {
     if (!response.ok || response.data?.success === false) {
       return { status: "unknown" };
     }
-    return { status: "success", cached: Boolean(response.data?.data?.[normalized]) };
+    const cached = await resolveAlternativeHashMatches(torboxCachedEntries(response), [normalized]);
+    return { status: "success", cached: Boolean(cached[normalized]) };
   }
   if (provider.id === DEBRID_PROVIDER_IDS.PREMIUMIZE) {
     const response = await DebridApi.premiumizeCheckCache(apiKey, [normalized]);
