@@ -3395,4 +3395,12 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl nie je pripojený</string>
     <string name="library_empty_simkl_not_auth_subtitle">Pripojte svoj účet Simkl v Nastaveniach, aby ste si moli zobraziť svoju knižnicu Simkl</string>
+    <string name="layout_cw_click_action">Pri výbere</string>
+    <string name="layout_cw_click_action_sub">Čo sa otvorí po výbere položky Pokračovať v sledovaní</string>
+    <string name="layout_cw_click_stream">Otvoriť stream</string>
+    <string name="layout_cw_click_stream_desc">Vybrať zdroj alebo pokračovať v prehrávaní</string>
+    <string name="layout_cw_click_details">Otvoriť detaily</string>
+    <string name="layout_cw_click_details_desc">Otvoriť stránku s detailmi titulu</string>
+    <string name="layout_cw_click_details_upcoming">Detaily iba pre nadchádzajúce</string>
+    <string name="layout_cw_click_details_upcoming_desc">Otvoriť detaily pre epizódy, ktoré ešte neboli vysielané, a stream pre ostatné</string>
 </resources>

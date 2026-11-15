@@ -416,6 +416,30 @@
   flex: 1;
 }
 
+/* Android SettingsSingleChoiceDialog: an option may carry a description under its title. */
+.settings-single-choice-option-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.settings-single-choice-option-described {
+  border-radius: 16px;
+}
+
+.settings-single-choice-option-description {
+  margin-top: 6px;
+  font-size: 22px;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.settings-single-choice-option.focused .settings-single-choice-option-description {
+  color: rgba(17, 17, 17, 0.72);
+}
+
 .settings-single-choice-option-check {
   margin-left: 12px;
   color: var(--secondary-color);

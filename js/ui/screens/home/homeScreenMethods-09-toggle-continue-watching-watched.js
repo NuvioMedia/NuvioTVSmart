@@ -321,7 +321,7 @@ export function createHomeScreenMethods09() {
     openContinueWatchingFromNode(node) {
       const item = this.getContinueWatchingItemFromNode(node);
       this.rememberReturnFocusForNode(node);
-      this.openContinueWatchingFromItem(item);
+      this.openContinueWatchingSelection(item);
     }
   };
 }

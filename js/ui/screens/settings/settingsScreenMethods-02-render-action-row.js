@@ -314,7 +314,7 @@ export function createSettingsScreenMethods02() {
                       ? this.optionDialog.selectedIds?.has?.(optionId)
                       : optionId === String(this.optionDialog.selectedId);
                     return `
-                  <button class="settings-dialog-option settings-content-focusable focusable${useLanguageRenderer ? " settings-language-option" : ""}${useSingleChoiceRenderer ? " settings-single-choice-option" : ""}${isSelected ? " is-selected" : ""}"
+                  <button class="settings-dialog-option settings-content-focusable focusable${useLanguageRenderer ? " settings-language-option" : ""}${useSingleChoiceRenderer ? " settings-single-choice-option" : ""}${useSingleChoiceRenderer && option.description ? " settings-single-choice-option-described" : ""}${isSelected ? " is-selected" : ""}"
                           data-zone="dialog"
                           data-dialog-index="${index}"
                           role="${useMultiRenderer ? "checkbox" : selectable ? "radio" : "button"}" ${selectable ? `aria-checked="${isSelected ? "true" : "false"}"` : ""}
@@ -335,7 +335,11 @@ export function createSettingsScreenMethods02() {
                         : useMultiRenderer
                           ? `<span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span><span class="settings-language-option-check" aria-hidden="true">${isSelected ? "&#10003;" : ""}</span>`
                           : useSingleChoiceRenderer
-                            ? `<span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span>${isSelected ? '<span class="settings-single-choice-option-check" aria-hidden="true">&#10003;</span>' : ""}`
+                            ? `${
+                                option.description
+                                  ? `<span class="settings-single-choice-option-copy"><span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span><span class="settings-single-choice-option-description">${escapeHtml(String(option.description))}</span></span>`
+                                  : `<span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span>`
+                              }${isSelected ? '<span class="settings-single-choice-option-check" aria-hidden="true">&#10003;</span>' : ""}`
                             : `<span class="settings-dialog-option-label">${escapeHtml(translateOptionLabel(option))}</span>`
                     }
                   </button>

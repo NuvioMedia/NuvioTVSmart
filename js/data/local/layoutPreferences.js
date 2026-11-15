@@ -65,6 +65,7 @@ const DEFAULTS = {
   showUnairedNextUp: true,
   nextUpFromFurthestEpisode: true,
   continueWatchingSortMode: "default",
+  continueWatchingClickAction: "STREAM",
   homeImdbRatingsVisibility: "SHOW_ALL",
   detailImdbRatingsVisibility: "SHOW_ALL"
 };
@@ -85,6 +86,16 @@ function normalizeContinueWatchingSortMode(value) {
     normalized === "streamingstyle"
     ? "streaming_style"
     : "default";
+}
+
+const CONTINUE_WATCHING_CLICK_ACTIONS = ["STREAM", "DETAILS", "DETAILS_FOR_UPCOMING"];
+
+// Android ContinueWatchingClickAction: unknown values fall back to STREAM.
+export function normalizeContinueWatchingClickAction(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase();
+  return CONTINUE_WATCHING_CLICK_ACTIONS.includes(normalized) ? normalized : "STREAM";
 }
 
 function normalizeLayoutPreferences(value = {}) {
@@ -122,6 +133,9 @@ function normalizeLayoutPreferences(value = {}) {
     ],
     modernLandscapePostersEnabled: Boolean(merged.modernLandscapePostersEnabled),
     heroDescriptionAutoScrollEnabled: Boolean(merged.heroDescriptionAutoScrollEnabled),
+    continueWatchingClickAction: normalizeContinueWatchingClickAction(
+      merged.continueWatchingClickAction
+    ),
     alwaysShowLandscapeClearlogo: Boolean(merged.alwaysShowLandscapeClearlogo),
     modernHeroFullScreenBackdropEnabled: Boolean(merged.modernHeroFullScreenBackdropEnabled),
     focusedPosterBackdropExpandEnabled: Boolean(merged.focusedPosterBackdropExpandEnabled),

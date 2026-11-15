@@ -3392,4 +3392,12 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl غير متصل</string>
     <string name="library_empty_simkl_not_auth_subtitle">اربط حساب Simkl الخاص بك في الإعدادات لعرض مكتبة Simkl</string>
+    <string name="layout_cw_click_action">عند التحديد</string>
+    <string name="layout_cw_click_action_sub">ما الذي يفتح عند تحديد عنصر من «متابعة المشاهدة»</string>
+    <string name="layout_cw_click_stream">فتح المصدر</string>
+    <string name="layout_cw_click_stream_desc">اختيار مصدر أو استئناف التشغيل</string>
+    <string name="layout_cw_click_details">فتح التفاصيل</string>
+    <string name="layout_cw_click_details_desc">فتح صفحة التفاصيل</string>
+    <string name="layout_cw_click_details_upcoming">التفاصيل للحلقات القادمة فقط</string>
+    <string name="layout_cw_click_details_upcoming_desc">يفتح التفاصيل للحلقات التي لم تُعرض بعد، والمصدر لبقية الحلقات</string>
 </resources>

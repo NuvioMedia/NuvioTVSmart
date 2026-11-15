@@ -160,6 +160,42 @@ export function registerLayoutActions(model) {
   this.actionMap.set("layout:showUnairedNextUp", () => {
     LayoutPreferences.set({ showUnairedNextUp: !LayoutPreferences.get().showUnairedNextUp });
   });
+  this.actionMap.set("layout:continueWatchingClickAction", () => {
+    const options = [
+      {
+        id: "STREAM",
+        labelKey: "layout_cw_click_stream",
+        label: "Open Stream",
+        description: t("layout_cw_click_stream_desc", {}, "Pick a source or resume playback")
+      },
+      {
+        id: "DETAILS",
+        labelKey: "layout_cw_click_details",
+        label: "Open Details",
+        description: t("layout_cw_click_details_desc", {}, "Open the details page of the title")
+      },
+      {
+        id: "DETAILS_FOR_UPCOMING",
+        labelKey: "layout_cw_click_details_upcoming",
+        label: "Details for Upcoming Only",
+        description: t(
+          "layout_cw_click_details_upcoming_desc",
+          {},
+          "Open details for episodes that have not aired yet, the stream for the rest"
+        )
+      }
+    ];
+    this.openOptionDialog({
+      title: t("layout_cw_click_action", {}, "On Select"),
+      options,
+      selectedId: String(model.layout.continueWatchingClickAction || "STREAM"),
+      returnFocusKey: "layout:continueWatchingClickAction",
+      optionRenderer: "single-choice",
+      onSelect: (option) => {
+        LayoutPreferences.set({ continueWatchingClickAction: String(option.id || "STREAM") });
+      }
+    });
+  });
   this.actionMap.set("layout:continueWatchingSortMode", () => {
     const options = [
       {

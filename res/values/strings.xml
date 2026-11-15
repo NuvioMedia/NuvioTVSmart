@@ -3397,4 +3397,12 @@
     <string name="library_empty_simkl_hint">Change your filters or use + in details to add items to a Simkl status</string>
     <string name="library_empty_simkl_not_auth_title">Simkl not connected</string>
     <string name="library_empty_simkl_not_auth_subtitle">Connect your Simkl account in Settings to view your Simkl library</string>
+    <string name="layout_cw_click_action">On Select</string>
+    <string name="layout_cw_click_action_sub">What opens when you select a Continue Watching item</string>
+    <string name="layout_cw_click_stream">Open Stream</string>
+    <string name="layout_cw_click_stream_desc">Pick a source or resume playback</string>
+    <string name="layout_cw_click_details">Open Details</string>
+    <string name="layout_cw_click_details_desc">Open the details page of the title</string>
+    <string name="layout_cw_click_details_upcoming">Details for Upcoming Only</string>
+    <string name="layout_cw_click_details_upcoming_desc">Open details for episodes that have not aired yet, the stream for the rest</string>
 </resources>

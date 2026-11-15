@@ -1,3 +1,4 @@
+import { continueWatchingClickOpensDetails } from "./continueWatchingClickAction.js";
 import * as internals from "./homeScreenContext.js";
 
 export function createHomeScreenMethods08() {
@@ -126,7 +127,7 @@ export function createHomeScreenMethods08() {
       if (!item?.contentId) {
         return false;
       }
-      this.openContinueWatchingFromItem(item);
+      this.openContinueWatchingSelection(item);
       return true;
     },
     scheduleContinueWatchingEnter(node) {
@@ -158,9 +159,21 @@ export function createHomeScreenMethods08() {
           return;
         }
         this.rememberReturnFocusForNode(current);
-        this.openContinueWatchingFromItem(focusedItem);
+        this.openContinueWatchingSelection(focusedItem);
       }, CW_ENTER_DELAY_MS);
       return true;
+    },
+    // Selecting a card follows the "On Select" setting; the item menu does not.
+    openContinueWatchingSelection(item) {
+      const normalized = normalizeContinueWatchingItem(item);
+      if (
+        normalized?.contentId &&
+        !isCloudContinueWatchingItem(normalized) &&
+        continueWatchingClickOpensDetails(this.layoutPrefs?.continueWatchingClickAction, normalized)
+      ) {
+        return this.openContinueWatchingDetails(item);
+      }
+      return this.openContinueWatchingFromItem(item);
     },
     openContinueWatchingFromItem(item, options = {}) {
       const normalized = normalizeContinueWatchingItem(item);

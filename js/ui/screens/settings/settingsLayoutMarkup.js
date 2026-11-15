@@ -17,6 +17,13 @@ export function renderLayoutMarkup(model) {
       : continueWatchingSortMode === "streaming_style"
         ? t("settings.layout.continueWatchingSort.streamingStyle", {}, "Streaming Style")
         : t("settings.layout.continueWatchingSort.default", {}, "Default");
+  const continueWatchingClickAction = String(model.layout.continueWatchingClickAction || "STREAM");
+  const continueWatchingClickLabel =
+    continueWatchingClickAction === "DETAILS"
+      ? t("layout_cw_click_details", {}, "Open Details")
+      : continueWatchingClickAction === "DETAILS_FOR_UPCOMING"
+        ? t("layout_cw_click_details_upcoming", {}, "Details for Upcoming Only")
+        : t("layout_cw_click_stream", {}, "Open Stream");
   const homeRatingsShown = model.layout.homeImdbRatingsVisibility !== "HIDE_ALL";
   const detailRatingsVisibility = String(model.layout.detailImdbRatingsVisibility || "SHOW_ALL");
   const detailRatingsVisibilityLabel =
@@ -250,6 +257,16 @@ export function renderLayoutMarkup(model) {
               title: t("settings.layout.showUnairedNextUp.title", {}, "Show Unaired Next Up Episodes"),
               subtitle: t("settings.layout.showUnairedNextUp.subtitle", {}, "Allow upcoming episodes to appear in Continue Watching."),
               checked: model.layout.showUnairedNextUp !== false
+            })}
+            ${this.renderActionRow({
+              focusKey: "layout:continueWatchingClickAction",
+              title: t("layout_cw_click_action", {}, "On Select"),
+              subtitle: t(
+                "layout_cw_click_action_sub",
+                {},
+                "What opens when you select a Continue Watching item"
+              ),
+              value: continueWatchingClickLabel
             })}
             ${this.renderActionRow({
               focusKey: "layout:continueWatchingSortMode",
