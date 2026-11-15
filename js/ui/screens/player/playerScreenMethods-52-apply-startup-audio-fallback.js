@@ -459,7 +459,6 @@ export function createPlayerScreenMethods52() {
       const availability = resolveSubtitleStyleControlAvailability({
         isTizenAvPlay: usingTizenAvPlay,
         isWebOsNative: usingWebOsNative,
-        isWebOs: Environment.isWebOS(),
         rendererMode,
         supportsExternalDelay: PlayerController.supportsAvPlayExternalSubtitleDelay?.() === true,
         preserveAssStyles: assStylesManaged,

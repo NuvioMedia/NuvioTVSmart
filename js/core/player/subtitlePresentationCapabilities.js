@@ -38,7 +38,6 @@ const ASS_STYLE_CONTROL_IDS = [
 export function resolveSubtitleStyleControlAvailability({
   isTizenAvPlay = false,
   isWebOsNative = false,
-  isWebOs = false,
   rendererMode = "none",
   supportsExternalDelay = false,
   preserveAssStyles = false,
@@ -58,11 +57,7 @@ export function resolveSubtitleStyleControlAvailability({
   }
   if (isWebOsNative && !["html", "html-callback"].includes(rendererMode)) {
     availability.textOpacity = false;
-  }
-  // webOS keeps subtitle backgrounds off, and native cues cannot round them.
-  if (isWebOs) {
-    availability.backgroundColor = false;
-    availability.backgroundOpacity = false;
+    // Native cues draw the background color but cannot round its corners.
     availability.backgroundRadius = false;
   }
   if (

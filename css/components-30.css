@@ -44,7 +44,8 @@
 
 .player-platform-webos #videoPlayer::cue {
   font-family: "Roboto", Arial, sans-serif;
-  background-color: transparent !important;
+  /* The setting's background (transparent by default), not the engine's own box. */
+  background-color: var(--player-subtitle-background, transparent) !important;
 }
 
 .player-platform-webos #videoPlayer::-webkit-media-text-track-display-backdrop {
@@ -63,7 +64,6 @@
 .player-platform-webos .player-html-subtitle-line {
   --player-html-subtitle-padding-block: 0;
   --player-html-subtitle-padding-inline: 0.08em;
-  background-color: transparent !important;
 }
 
 .player-loading-overlay {
@@ -563,9 +563,4 @@
 
 #videoPlayer::cue {
   font-family: var(--player-subtitle-font-family, inherit);
-}
-
-/* webOS keeps subtitle backgrounds off, as for the per-line strips above. */
-.player-platform-webos .player-html-subtitles-block-background .player-html-subtitle-default {
-  background: transparent;
 }
