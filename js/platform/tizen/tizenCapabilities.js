@@ -2,7 +2,10 @@ const TIZEN_PLATFORM_VERSION_CAPABILITY = "http://tizen.org/feature/platform.ver
 const TIZEN_WEB_SERVICE_CAPABILITY = "http://tizen.org/feature/web.service";
 const TIZEN_P2P_MIN_MAJOR_VERSION = 5;
 const TIZEN_P2P_MIN_CHROMIUM_VERSION = 63;
-const TIZEN_PLUGIN_MIN_MAJOR_VERSION = 6;
+// Tizen 5.5 is the first firmware whose web engine (Chromium 69) runs the
+// lowered QuickJS WASM and whose Node 4 service runtime the plugin HTTP layer
+// supports (bundled CA store). Tizen 5.0 and older stay unsupported.
+const TIZEN_PLUGIN_MIN_VERSION = [5, 5];
 
 let cachedCapabilities = null;
 
@@ -47,6 +50,11 @@ function parseMajorVersion(value) {
   }
   const major = Number(match[1]);
   return Number.isFinite(major) && major > 0 ? major : 0;
+}
+
+function parseMinorVersion(value) {
+  const match = normalizedText(value).match(/^\d+\.(\d+)/);
+  return match ? Number(match[1]) : 0;
 }
 
 function readTizenVersion(runtime) {
@@ -142,9 +150,12 @@ export function getTizenCapabilities(runtime = globalThis) {
   const supportsP2p = isTizen && engineFsServicePackaged && p2pVersionSupported;
   // The Tizen plugin runtime is intentionally disabled on older firmware.
   // Keep this independent from EngineFS: P2P/media proxy support remains
-  // available on Tizen 5.x even though executable plugins are not.
+  // available on Tizen 5.0 even though executable plugins are not.
   const tizenPluginVersionSupported =
-    !isTizen || tizenVersion.major >= TIZEN_PLUGIN_MIN_MAJOR_VERSION;
+    !isTizen ||
+    tizenVersion.major > TIZEN_PLUGIN_MIN_VERSION[0] ||
+    (tizenVersion.major === TIZEN_PLUGIN_MIN_VERSION[0] &&
+      parseMinorVersion(tizenVersion.version) >= TIZEN_PLUGIN_MIN_VERSION[1]);
 
   const capabilities = Object.freeze({
     isTizen,

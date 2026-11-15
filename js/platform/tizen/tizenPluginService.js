@@ -432,7 +432,7 @@ export const TizenPluginService = {
       return {
         returnValue: false,
         status: "unsupported",
-        detail: "Tizen plugin support starts at Tizen 6.0"
+        detail: "Tizen plugin support starts at Tizen 5.5"
       };
     }
     const reachable = await findBaseUrl();
@@ -456,11 +456,11 @@ export const TizenPluginService = {
     const capabilities = TizenCapabilities.get();
     if (!capabilities.tizenPluginVersionSupported) {
       diagnostic("ensure skipped", {
-        reason: "Tizen plugin support starts at Tizen 6.0",
+        reason: "Tizen plugin support starts at Tizen 5.5",
         tizenVersion: capabilities.tizenVersion || "",
         tizenMajorVersion: capabilities.tizenMajorVersion || 0
       });
-      return { status: "unsupported", detail: "Tizen plugin support starts at Tizen 6.0" };
+      return { status: "unsupported", detail: "Tizen plugin support starts at Tizen 5.5" };
     }
     if (cachedReachable) return { status: "success", ...cachedReachable, started: false };
     const serviceId = getServiceId();

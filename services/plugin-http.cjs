@@ -34,6 +34,133 @@ function getZlibModule() {
   return zlib;
 }
 
+// The Tizen 5.5 Web Service runs Node 4.4.3 (OpenSSL 1.0.2g): no WHATWG URL,
+// no Buffer.from/alloc, and a 2016 root store that rejects current Let's
+// Encrypt and GitHub chains. The helpers below keep one code path everywhere.
+var NODE_MAJOR =
+  Number(
+    String(
+      (typeof process !== "undefined" && process.versions && process.versions.node) || ""
+    ).split(".")[0]
+  ) || 0;
+var LEGACY_NODE = NODE_MAJOR > 0 && NODE_MAJOR < 6;
+var legacyCaList;
+
+// Mozilla roots shipped with the Tizen package, so TLS verification stays on.
+function legacyTrustedCa() {
+  if (!LEGACY_NODE) return null;
+  if (legacyCaList === undefined) {
+    legacyCaList = null;
+    try {
+      var pem = loadRuntimeModule("fs").readFileSync(
+        loadRuntimeModule("path").join(__dirname, "plugin-ca.pem"),
+        "utf8"
+      );
+      legacyCaList =
+        pem.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g) || null;
+    } catch (_) {
+      legacyCaList = null;
+    }
+  }
+  return legacyCaList;
+}
+
+function bufferFrom(value, encoding) {
+  return typeof Buffer.alloc === "function"
+    ? Buffer.from(value, encoding)
+    : new Buffer(value, encoding);
+}
+
+function emptyBuffer() {
+  return typeof Buffer.alloc === "function" ? Buffer.alloc(0) : new Buffer(0);
+}
+
+function destroyStream(stream) {
+  // Node 4 zlib streams have no destroy(), and close() during a pending write
+  // aborts the process; once unpiped they are left to the garbage collector.
+  if (stream && typeof stream.destroy === "function") stream.destroy();
+}
+
+// OpenSSL 1.0.2 cannot speak TLS 1.3 or ChaCha20-only servers; name the
+// cause instead of the raw "alert" text so provider failures are readable.
+function legacyTlsFailure(error) {
+  if (!LEGACY_NODE) return "";
+  var message = String((error && error.message) || "");
+  var reason = /alert protocol version|unsupported protocol/i.test(message)
+    ? "the provider requires TLS 1.3"
+    : /alert handshake failure|no ciphers available|no shared cipher/i.test(message)
+      ? "the provider offers no TLS cipher this runtime supports"
+      : "";
+  if (!reason) return "";
+  return (
+    "TLS handshake failed: " +
+    reason +
+    ", which this TV's network runtime (Node " +
+    process.versions.node +
+    ", OpenSSL " +
+    process.versions.openssl +
+    ") cannot negotiate"
+  );
+}
+
+// WHATWG percent-encodes non-ASCII path/query/fragment text as UTF-8;
+// url.parse leaves it raw.
+function encodeNonAscii(text) {
+  return String(text || "").replace(/[^\x00-\x7f]+/g, function (match) {
+    try {
+      return encodeURIComponent(match);
+    } catch (_) {
+      return "%EF%BF%BD";
+    }
+  });
+}
+
+// WHATWG-shaped subset used by this module, built from url.parse on Node 4.
+// shortcut: url.parse also escapes {}|^` and ' in queries where WHATWG keeps
+// them; servers decode both forms alike. Port WHATWG rules if a provider differs.
+function legacyUrl(value, base) {
+  var urlModule = getUrlModule();
+  var parsed = urlModule.parse(base ? urlModule.resolve(base, value) : value);
+  if (!parsed.protocol || !parsed.hostname) throw new TypeError("Invalid URL");
+  var protocol = parsed.protocol.toLowerCase();
+  var port = parsed.port || "";
+  if ((protocol === "https:" && port === "443") || (protocol === "http:" && port === "80")) {
+    port = "";
+  }
+  var hostname = parsed.hostname.indexOf(":") >= 0 ? "[" + parsed.hostname + "]" : parsed.hostname;
+  var host = hostname + (port ? ":" + port : "");
+  var pathname = encodeNonAscii(parsed.pathname || "/");
+  var search = parsed.search && parsed.search !== "?" ? encodeNonAscii(parsed.search) : "";
+  var href =
+    protocol +
+    "//" +
+    (parsed.auth ? parsed.auth + "@" : "") +
+    host +
+    pathname +
+    search +
+    encodeNonAscii(parsed.hash);
+  return {
+    protocol: protocol,
+    hostname: hostname,
+    host: host,
+    port: port,
+    pathname: pathname,
+    search: search,
+    href: href,
+    toString: function () {
+      return href;
+    }
+  };
+}
+
+function createUrl(value, base) {
+  var URLClass = getUrlModule().URL;
+  if (typeof URLClass !== "function") return legacyUrl(String(value || ""), base);
+  return base === undefined
+    ? new URLClass(String(value || ""))
+    : new URLClass(String(value || ""), String(base || ""));
+}
+
 var MAX_REQUEST_BYTES = 1024 * 1024;
 var MAX_SERVICE_REQUEST_BYTES = Math.ceil(MAX_REQUEST_BYTES / 3) * 4 + 64 * 1024;
 var DEFAULT_RESPONSE_BYTES = 1024 * 1024;
@@ -117,7 +244,7 @@ function isLoopbackRequest(request) {
 function parseUrl(value) {
   var parsed;
   try {
-    parsed = new (getUrlModule().URL)(String(value || ""));
+    parsed = createUrl(value);
   } catch (_) {
     return null;
   }
@@ -126,7 +253,7 @@ function parseUrl(value) {
 }
 
 function resolveUrl(value, base) {
-  return new (getUrlModule().URL)(String(value || ""), String(base || "")).toString();
+  return createUrl(value, String(base || "")).toString();
 }
 
 function normalizeHeaders(headers) {
@@ -199,10 +326,10 @@ function validatePayload(payload) {
     return { ok: false, error: "Invalid binary request body" };
   var requestBody =
     bodyKind === "base64"
-      ? Buffer.from(encodedBody, "base64")
+      ? bufferFrom(encodedBody, "base64")
       : bodyKind === "text"
-        ? Buffer.from(body, "utf8")
-        : Buffer.alloc(0);
+        ? bufferFrom(body, "utf8")
+        : emptyBuffer();
   if (requestBody.length > MAX_REQUEST_BYTES)
     return { ok: false, error: "Request body exceeds the plugin quota" };
   var headers = normalizeHeaders(payload && payload.headers);
@@ -417,6 +544,13 @@ function requestAgent(networkState, transport, parsed, address) {
     maxSockets: MAX_ACTIVE_REQUESTS,
     maxFreeSockets: 1
   });
+  if (transport !== http && legacyTrustedCa()) {
+    // Node 4 folds the request's CA list (~200 KB) into every pool key; this
+    // agent serves a single route, so its key is constant.
+    agent.getName = function () {
+      return key;
+    };
+  }
   agents.set(key, agent);
   return agent;
 }
@@ -620,6 +754,11 @@ function performFetch(payload, callback, redirects, trace, networkState) {
       servername: String(parsed.hostname || "").replace(/^\[|\]$/g, ""),
       agent: requestAgent(networkState, transport, parsed, address)
     };
+    var legacyCa = parsed.protocol === "https:" ? legacyTrustedCa() : null;
+    if (legacyCa) requestOptions.ca = legacyCa;
+    else if (LEGACY_NODE && parsed.protocol === "https:") {
+      emitTrace(trace, "fetch tls root store unavailable", requestTrace);
+    }
     var requestSent = false;
     try {
       emitTrace(
@@ -785,7 +924,8 @@ function performFetch(payload, callback, redirects, trace, networkState) {
             headers: headers,
             truncated: true
           });
-          stream.destroy();
+          if (stream !== response) response.unpipe(stream);
+          destroyStream(stream);
           if (stream !== response) response.destroy();
         };
         stream.on("data", function (chunk) {
@@ -833,7 +973,10 @@ function performFetch(payload, callback, redirects, trace, networkState) {
         Object.assign({}, requestTrace, { address: address })
       );
       request.on("socket", function (socket) {
-        if (!socket || socket.connecting === false) {
+        // Node 4 exposes the connect state as _connecting only.
+        var connecting =
+          socket && (socket.connecting !== undefined ? socket.connecting : socket._connecting);
+        if (!socket || connecting === false) {
           clearConnectTimer();
           return;
         }
@@ -874,6 +1017,19 @@ function performFetch(payload, callback, redirects, trace, networkState) {
         request.destroy(timeoutError);
       });
       request.on("error", function (error) {
+        var tlsFailure = legacyTlsFailure(error);
+        if (tlsFailure) {
+          emitTrace(
+            trace,
+            "fetch tls unsupported",
+            Object.assign({}, requestTrace, {
+              address: address,
+              reason: tlsFailure,
+              error: traceError(error)
+            })
+          );
+          error.message = tlsFailure;
+        }
         emitTrace(
           trace,
           "fetch transport error",
@@ -934,7 +1090,11 @@ function memoryUsage() {
   return {};
 }
 
-function createPluginHttpServer({ port = 2711, logger = console, trace } = {}) {
+function createPluginHttpServer(options) {
+  var serverOptions = options || {};
+  var port = serverOptions.port === undefined ? 2711 : serverOptions.port;
+  var logger = serverOptions.logger === undefined ? console : serverOptions.logger;
+  var trace = serverOptions.trace;
   var networkState = { failedRoutes: new Map(), agents: new Map() };
   var activeRequests = {};
   var inFlightRequests = {};
