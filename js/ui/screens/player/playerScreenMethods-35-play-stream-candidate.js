@@ -1,8 +1,12 @@
 import { newerServerResume } from "../../../data/mediaserver/mediaServerUserState.js";
 import { WatchProgressStore } from "../../../data/local/watchProgressStore.js";
 import { MediaServerRepository, canResolveMediaServerStream } from "../../../data/mediaserver/mediaServerRepository.js";
+import { StreamLinkCacheStore } from "../../../data/local/streamLinkCacheStore.js";
+import { findSourceRefreshCandidate, hasLikelyExpiringPlaybackCredentials } from "../../../core/player/playbackUrlCredentials.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+
+const EXPIRED_LINK_REFRESH_TIMEOUT_MS = 15000;
 
 export function createPlayerScreenMethods35() {
   const {
@@ -14,7 +18,10 @@ export function createPlayerScreenMethods35() {
     logEngineFsDebug,
     getP2pInfoHash,
     t,
-    streamDirectPlaybackUrl
+    streamDirectPlaybackUrl,
+    normalizeItemType,
+    flattenStreamGroups,
+    mergeStreamItems
   } = internals;
 
   return {
@@ -121,6 +128,8 @@ export function createPlayerScreenMethods35() {
             Object.assign(streamCandidate, {
               url: targetUrl,
               externalUrl: null,
+              // Android Stream.debridResolved: the URL came from Nuvio's resolver, not the add-on.
+              debridResolved: true,
               mimeType: result.stream.mimeType || streamCandidate.mimeType,
               sourceType: result.stream.sourceType || streamCandidate.sourceType,
               behaviorHints: result.stream.behaviorHints || streamCandidate.behaviorHints,
@@ -290,6 +299,109 @@ export function createPlayerScreenMethods35() {
         mountToken,
         sourceCandidate: streamCandidate
       });
+    },
+    /**
+     * Android tryRefreshExpiredLinkAfterError: a link reopened from the reuse-last-link
+     * cache, or one with expiring credentials, is fetched again from its add-on (debrid
+     * resolved anew) and continues from the saved position. Each URL is refreshed once.
+     * Returns true when a refresh started and the error must not be shown yet.
+     */
+    tryRefreshExpiredLinkAfterError(message = "", errorOptions = {}) {
+      const candidate = this.getCurrentStreamCandidate?.() || null;
+      // The source's own URL; a candidate without one (an unresolved debrid result) has nothing to refresh.
+      const failedUrl = String(candidate ? streamDirectPlaybackUrl(candidate) : this.activePlaybackUrl || "").trim();
+      if (!/^https?:\/\//i.test(failedUrl) || this.isLivePlayback?.() === true) {
+        return false;
+      }
+      const fromLinkCache = Boolean(this.linkCacheSourceUrl) && failedUrl === this.linkCacheSourceUrl;
+      if (!fromLinkCache && !hasLikelyExpiringPlaybackCredentials(failedUrl)) {
+        return false;
+      }
+      if (failedUrl === this.linkRefreshAttemptedUrl) {
+        return false;
+      }
+      this.linkRefreshAttemptedUrl = failedUrl;
+      this.linkCacheSourceUrl = null;
+      const hints = candidate?.behaviorHints || candidate?.raw?.behaviorHints || {};
+      const expected = {
+        addonName: String(candidate?.addonName || "").trim(),
+        streamName: String(candidate?.name || "").trim() || String(candidate?.addonName || "").trim(),
+        infoHash: String(candidate?.infoHash || candidate?.raw?.infoHash || "").trim(),
+        filename: hints.filename || null,
+        bingeGroup: this.getCurrentStreamBingeGroup?.() || null
+      };
+      const mountToken = this.playerMountToken;
+      const resolveContext = {
+        season: this.params?.season == null ? null : Number(this.params.season),
+        episode: this.params?.episode == null ? null : Number(this.params.episode)
+      };
+      console.info("Link likely expired, fetching the source again", { addon: expected.addonName });
+      this.loadingVisible = true;
+      this.updateLoadingVisibility?.();
+      this.refreshLoadingOverlayPresentation?.();
+      const showError = () => {
+        if (this.isActiveMountToken(mountToken)) {
+          this.showStartupError(message, errorOptions);
+        }
+      };
+      void (async () => {
+        try {
+          StreamLinkCacheStore.remove(this.params?.streamRouteParams || this.params || {});
+          const type = normalizeItemType(this.params?.itemType || "movie");
+          const videoId = String(this.params?.videoId || this.params?.itemId || "");
+          const result = videoId
+            ? await Promise.race([
+                streamRepository.getStreamsFromAllAddons(type, videoId, {
+                  itemId: String(this.params?.itemId || ""),
+                  season: this.params?.season ?? null,
+                  episode: this.params?.episode ?? null,
+                  forceRefresh: true
+                }),
+                // Android polls the reloaded sources for up to 15 seconds.
+                new Promise((resolve) => setTimeout(() => resolve(null), EXPIRED_LINK_REFRESH_TIMEOUT_MS))
+              ])
+            : null;
+          if (!this.isActiveMountToken(mountToken)) {
+            return;
+          }
+          const freshStreams = result ? flattenStreamGroups(result) : [];
+          const found = findSourceRefreshCandidate(freshStreams, failedUrl, expected, (stream) =>
+            DirectDebridResolver.canResolveStream(stream, resolveContext)
+          );
+          // Debrid links are always requested anew; a prepared one may be the expired link.
+          let refreshed = found
+            ? found.debridResolved
+              ? { ...found, url: null, externalUrl: null, debridResolved: false }
+              : { ...found }
+            : null;
+          if (refreshed && !streamDirectPlaybackUrl(refreshed)) {
+            const resolved = await DirectDebridResolver.resolve(refreshed, { ...resolveContext, forceRefresh: true });
+            if (!this.isActiveMountToken(mountToken)) {
+              return;
+            }
+            refreshed =
+              resolved?.status === "success" && resolved.stream
+                ? { ...refreshed, ...resolved.stream, externalUrl: null, debridResolved: true }
+                : null;
+          }
+          const refreshedUrl = refreshed ? String(streamDirectPlaybackUrl(refreshed) || "").trim() : "";
+          if (!refreshedUrl || refreshedUrl === failedUrl) {
+            console.warn("No fresh link was found for the failed source");
+            showError();
+            return;
+          }
+          this.streamCandidates = mergeStreamItems(this.streamCandidates, [refreshed]);
+          if (!this.streamCandidates.some((entry) => entry?.url === refreshedUrl)) {
+            this.streamCandidates = [...this.streamCandidates, refreshed];
+          }
+          // Continues from the saved position; the new link is saved for reuse once it starts.
+          await this.playStreamCandidate(refreshed, { preservePlaybackState: true, mountToken });
+        } catch (error) {
+          console.warn("Expired link refresh failed", error);
+          showError();
+        }
+      })();
+      return true;
     },
     async switchStream(direction) {
       if (!this.streamCandidates.length) {

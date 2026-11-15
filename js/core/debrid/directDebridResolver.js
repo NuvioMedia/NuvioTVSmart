@@ -425,7 +425,8 @@ export const DirectDebridResolver = {
     return cached ? withResolvedUrl(stream, cached) : null;
   },
 
-  async resolve(stream = {}, { season = null, episode = null } = {}) {
+  // forceRefresh drops the remembered link first, so the provider is asked for a new one.
+  async resolve(stream = {}, { season = null, episode = null, forceRefresh = false } = {}) {
     if (getStreamUrl(stream)) {
       return { status: "success", stream };
     }
@@ -467,6 +468,9 @@ export const DirectDebridResolver = {
     }
 
     const key = cacheKeyFor(stream, season, episode, settings);
+    if (key && forceRefresh) {
+      resolvedCache.delete(key);
+    }
     if (key) {
       const cached = cachedResult(key);
       if (cached) {

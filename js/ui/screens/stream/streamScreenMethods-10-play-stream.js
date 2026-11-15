@@ -102,6 +102,7 @@ export function createStreamScreenMethods10() {
           selectedStreamId: selected.id || ""
         },
         returnToStreamOnBack: true,
+        fromLinkCache: Boolean(cachedLink),
         streamRouteParams: this.params ? { ...this.params } : null,
         fromDetailRoute: Boolean(this.params?.fromDetailRoute),
         nextEpisodeVideoId: this.params?.nextEpisodeVideoId || null,

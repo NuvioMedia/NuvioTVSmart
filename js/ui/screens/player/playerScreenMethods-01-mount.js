@@ -77,6 +77,9 @@ export function createPlayerScreenMethods01() {
       }
       this.params = params;
       this.streamLinkCacheProfileId = activeStreamLinkProfile();
+      // Android: a link reopened from the reuse-last-link cache is fetched again after an error.
+      this.linkCacheSourceUrl = params?.fromLinkCache ? String(params.streamUrl || "").trim() || null : null;
+      this.linkRefreshAttemptedUrl = null;
       this.trackPreferenceContentId = this.getTrackPreferenceContentId();
       this.subtitleDelayPreferenceVideoId = this.getSubtitleDelayPreferenceVideoId();
       this.rememberedAudioTrackPreference = TrackPreferencesStore.getAudio(this.trackPreferenceContentId);

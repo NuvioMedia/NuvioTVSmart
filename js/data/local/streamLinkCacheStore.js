@@ -80,6 +80,17 @@ export const StreamLinkCacheStore = {
     LocalStore.set(KEY, all);
     return true;
   },
+  remove(params, profileId = activeStreamLinkProfile()) {
+    const key = contentKey(params || {});
+    if (!key || !profileId) return false;
+    const all = readAll();
+    const entries = Array.isArray(all[profileId]) ? all[profileId] : [];
+    const next = entries.filter((item) => item?.key !== key);
+    if (next.length === entries.length) return false;
+    all[profileId] = next;
+    LocalStore.set(KEY, all);
+    return true;
+  },
   getValid(params, maxAgeMs, profileId = activeStreamLinkProfile()) {
     const key = contentKey(params);
     if (!key || !Number.isFinite(maxAgeMs) || maxAgeMs <= 0) return null;

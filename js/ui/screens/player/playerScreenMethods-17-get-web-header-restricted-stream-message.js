@@ -170,6 +170,23 @@ export function createPlayerScreenMethods17() {
         details = null
       } = {}
     ) {
+      // A link that has likely expired is fetched again before the error is shown.
+      if (
+        this.tryRefreshExpiredLinkAfterError?.(message, {
+          mediaErrorCode,
+          detail,
+          error,
+          eventDetail,
+          streamCandidate,
+          playbackUrl,
+          reason,
+          resolverStatus,
+          resolverDetail,
+          details
+        })
+      ) {
+        return;
+      }
       this.startupErrorMessage = String(message || "").trim() || t("player_error_playback_fallback", {}, "Playback error");
       this.startupErrorMediaCode = Number(mediaErrorCode || 0);
       this.startupErrorDetails = Array.isArray(details)
