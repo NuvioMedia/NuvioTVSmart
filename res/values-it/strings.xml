@@ -3425,4 +3425,20 @@
     <string name="settings_p2p_cache_unsupported">Non disponibile su questa TV.</string>
     <string name="library_empty_simkl_not_auth_title">Simkl non connesso</string>
     <string name="library_empty_simkl_not_auth_subtitle">Collega il tuo account Simkl nelle Impostazioni per visualizzare la tua libreria Simkl</string>
+    <string name="library_empty_title">Nessun elemento da mostrare</string>
+    <string name="library_empty_local_hint">Cambia i filtri o inizia a salvare i tuoi preferiti per vederli qui</string>
+    <string name="library_empty_trakt_hint">Cambia i filtri o usa il tasto + nei dettagli per aggiungere elementi alla lista da guardare o alle tue liste</string>
+    <string name="library_empty_simkl_hint">Cambia i filtri o usa il tasto + nei dettagli per aggiungere elementi a uno stato Simkl</string>
+    <string name="layout_cw_click_action">Alla selezione</string>
+    <string name="layout_cw_click_action_sub">Cosa si apre quando selezioni un elemento di \"Continua a guardare\"</string>
+    <string name="layout_cw_click_stream">Apri lo stream</string>
+    <string name="layout_cw_click_stream_desc">Scegli una sorgente o riprendi la riproduzione</string>
+    <string name="layout_cw_click_details">Apri i dettagli</string>
+    <string name="layout_cw_click_details_desc">Apri la pagina dei dettagli del titolo</string>
+    <string name="layout_cw_click_details_upcoming">Dettagli solo per gli episodi in arrivo</string>
+    <string name="layout_cw_click_details_upcoming_desc">Apri i dettagli per gli episodi non ancora usciti e lo stream per gli altri</string>
+    <string name="playback_exo_chapters_title">Mostra capitoli</string>
+    <string name="playback_exo_chapters_sub">Leggi i capitoli dei file MKV per segnarli sulla barra di avanzamento e saltare da uno all\'altro.</string>
+    <string name="playback_chapter_title_title">Mostra titolo del capitolo</string>
+    <string name="playback_chapter_title_sub">Mostra il nome del capitolo corrente sopra la barra di avanzamento.</string>
 </resources>
