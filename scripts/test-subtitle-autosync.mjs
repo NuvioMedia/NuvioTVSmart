@@ -6,6 +6,7 @@ import {
   normalizeAutoSyncCues
 } from "../js/core/player/subtitleAutoSyncEngine.js";
 import { retimeAutoSyncSubtitleText } from "../js/core/player/subtitleAutoSyncRetimer.js";
+import { confirmsAutoSyncNoFit } from "../js/core/player/autosyncOutcome.js";
 
 const require = createRequire(import.meta.url);
 const subtitles = require("../services/webos/src/bitmapSubtitles.js");
@@ -328,4 +329,10 @@ testRetimerSrtAndVtt();
 testRetimerAss();
 testWebOsTimelinePayload();
 testTx3gTimelinePayload();
+
+// Issue #1346: a real but weak match just under the 0.02 acceptance gate is not a no-fit.
+assert.equal(confirmsAutoSyncNoFit(null), false);
+assert.equal(confirmsAutoSyncNoFit({ confident: true, activityMargin: 0 }), false);
+assert.equal(confirmsAutoSyncNoFit({ confident: false, activityMargin: 0.015 }), false);
+assert.equal(confirmsAutoSyncNoFit({ confident: false, activityMargin: 0.004 }), true);
 console.log("subtitle AutoSync tests passed");
