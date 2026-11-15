@@ -42,6 +42,28 @@ function logImageFailure(url, reason) {
   lastImageFailure = key;
   console.warn("Ambient image failed", { reason, host });
 }
+const NON_TEXT_INPUT_TYPES = new Set([
+  "button",
+  "checkbox",
+  "color",
+  "file",
+  "hidden",
+  "image",
+  "radio",
+  "range",
+  "reset",
+  "submit"
+]);
+
+// An element that opens the TV's on-screen keyboard while it has focus.
+function isTextEntryElement(element) {
+  if (!element) return false;
+  if (element.isContentEditable) return true;
+  const tag = String(element.tagName || "").toUpperCase();
+  if (tag === "TEXTAREA") return true;
+  return tag === "INPUT" && !NON_TEXT_INPUT_TYPES.has(String(element.type || "text").toLowerCase());
+}
+
 function shuffled(values) {
   const copy = [...values];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -280,6 +302,11 @@ export const AmbientMode = {
     this.previousScreen = screen;
     this.previousProfileId = ProfileManager.getActiveProfileId();
     this.previousFocus = document.activeElement;
+    // Android hides the on-screen keyboard when Ambient Mode starts. On TVs the
+    // keyboard follows the focused text field, so release it; the field keeps
+    // its D-pad highlight and is not refocused afterwards, so it stays closed.
+    this.previousFocusWasTextEntry = isTextEntryElement(this.previousFocus);
+    if (this.previousFocusWasTextEntry) this.previousFocus.blur?.();
     const root = document.createElement("div");
     root.className = "ambient-mode";
     root.setAttribute("role", "presentation");
@@ -381,7 +408,9 @@ export const AmbientMode = {
     const canRestoreFocus =
       Router.getCurrentScreen?.() === this.previousScreen &&
       ProfileManager.getActiveProfileId() === this.previousProfileId;
-    if (
+    if (canRestoreFocus && this.previousFocusWasTextEntry) {
+      // Leave the keyboard closed, as Android does.
+    } else if (
       canRestoreFocus &&
       this.previousFocus?.isConnected &&
       this.previousFocus !== document.body &&
@@ -392,6 +421,7 @@ export const AmbientMode = {
       this.previousScreen?.applyFocus?.();
     }
     this.previousFocus = null;
+    this.previousFocusWasTextEntry = false;
     this.previousScreen = null;
     this.previousProfileId = null;
   }
