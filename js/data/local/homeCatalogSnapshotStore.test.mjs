@@ -144,7 +144,7 @@ test("only successful catalog rows are written, with bounded items and no loadin
 
 test("snapshot freshness rejects another version, missing rows and expired records", () => {
   const now = 1_000_000_000;
-  const fresh = { version: 2, savedAt: now - 1000, rows: [row("a")] };
+  const fresh = { version: 3, savedAt: now - 1000, rows: [row("a")] };
   assert.equal(isHomeCatalogSnapshotFresh(fresh, now), true);
   assert.equal(isHomeCatalogSnapshotFresh({ ...fresh, version: 1 }, now), false);
   assert.equal(isHomeCatalogSnapshotFresh({ ...fresh, rows: null }, now), false);

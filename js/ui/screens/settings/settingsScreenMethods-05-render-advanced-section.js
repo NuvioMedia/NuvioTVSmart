@@ -255,7 +255,11 @@ export function createSettingsScreenMethods05() {
                       }),
                       ...[1, 4, 8, 16].map((connections) =>
                         this.renderInformationRow({
-                          title: t(`stream_test_label_parallel${connections}`, {}, `Parallel Connect (${connections} ${connections === 1 ? "connection" : "connections"})`),
+                          title: t(
+                            `stream_test_label_parallel${connections}`,
+                            {},
+                            `Parallel Connect (${connections} ${connections === 1 ? "connection" : "connections"})`
+                          ),
                           value: this.formatNetworkMbps(this.streamSpeedTestParallel?.[connections])
                         })
                       )
