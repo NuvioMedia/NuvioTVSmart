@@ -96,9 +96,13 @@ export function createPlayerScreenMethods23() {
         return [];
       }
       const forceRefresh = options.forceRefresh === true;
-      const cacheKey =
-        this.getStreamCacheKey(normalizedVideoId, normalizedType, options.season, options.episode) +
-        (options.preferredPluginOnly === true ? "|pluginOnly" : "");
+      const cacheKey = this.getStreamCacheKey(
+        normalizedVideoId,
+        normalizedType,
+        options.season,
+        options.episode,
+        options.preferredPluginOnly === true
+      );
       const cache = this.streamCandidatesByVideoId || (this.streamCandidatesByVideoId = new Map());
       if (!forceRefresh && cache.has(cacheKey)) {
         const cached = cache.get(cacheKey);
