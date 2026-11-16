@@ -261,11 +261,7 @@ export function renderLayoutMarkup(model) {
             ${this.renderActionRow({
               focusKey: "layout:continueWatchingClickAction",
               title: t("layout_cw_click_action", {}, "On Select"),
-              subtitle: t(
-                "layout_cw_click_action_sub",
-                {},
-                "What opens when you select a Continue Watching item"
-              ),
+              subtitle: t("layout_cw_click_action_sub", {}, "What opens when you select a Continue Watching item"),
               value: continueWatchingClickLabel
             })}
             ${this.renderActionRow({
