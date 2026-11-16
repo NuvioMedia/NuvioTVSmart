@@ -533,6 +533,11 @@ export function createPlayerScreenMethods52() {
           value: styleChipLabel(style.outlineColor || "#000000")
         },
         {
+          id: "outlineSize",
+          label: t("sub_outline_width", {}, "Outline Width"),
+          value: String(appearance.outlineSize)
+        },
+        {
           id: "shadowEnabled",
           label: t("sub_shadow", {}, "Drop Shadow"),
           value: appearance.shadowEnabled ? t("subtitle_style_on", {}, "On") : t("subtitle_style_off", {}, "Off")
