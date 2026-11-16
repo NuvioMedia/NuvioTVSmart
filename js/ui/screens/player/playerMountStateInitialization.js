@@ -201,6 +201,7 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.nextEpisodeCardSourceName = "";
   this.nextEpisodeCardCountdownSec = null;
   this.nextEpisodeAutoplayAttemptedKey = "";
+  this.nextEpisodePrefetchAttemptedKey = "";
   this.consecutiveAutoPlayCount = Math.max(0, Math.trunc(Number(params.consecutiveAutoPlayCount || 0) || 0));
   this.stillWatchingPromptVisible = false;
   this.stillWatchingPromptCountdownSec = 0;

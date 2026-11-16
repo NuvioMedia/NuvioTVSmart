@@ -114,26 +114,31 @@ export function createPlayerScreenMethods22() {
         durationSeconds - currentSeconds <= leadSeconds
       );
     },
-    getStreamCacheKey(videoId, itemType, season = null, episode = null) {
+    getStreamCacheKey(videoId, itemType, season = null, episode = null, preferredPluginOnly = false) {
       const normalizedVideoId = String(videoId || "").trim();
       if (!normalizedVideoId) {
         return "";
       }
-      return JSON.stringify([
-        normalizeItemType(itemType || this.params?.itemType || "movie"),
-        normalizedVideoId,
-        season == null ? null : Number(season),
-        episode == null ? null : Number(episode)
-      ]);
+      return (
+        JSON.stringify([
+          normalizeItemType(itemType || this.params?.itemType || "movie"),
+          normalizedVideoId,
+          season == null ? null : Number(season),
+          episode == null ? null : Number(episode)
+        ]) + (preferredPluginOnly === true ? "|pluginOnly" : "")
+      );
     },
-    getCachedPlayableStreamsForVideo(videoId, itemType, season = null, episode = null) {
-      const cacheKey = this.getStreamCacheKey(videoId, itemType, season, episode);
+    getCachedPlayableStreamsForVideo(videoId, itemType, season = null, episode = null, preferredPluginOnly = false) {
+      const cacheKey = this.getStreamCacheKey(videoId, itemType, season, episode, preferredPluginOnly);
       const cache = this.streamCandidatesByVideoId || (this.streamCandidatesByVideoId = new Map());
       if (!cacheKey || !cache.has(cacheKey)) {
         return null;
       }
       const cached = cache.get(cacheKey);
       return Array.isArray(cached) ? cached.map((stream) => ({ ...stream })) : [];
+    },
+    isNextEpisodeStreamPrefetchPluginOnly() {
+      return Boolean(scraperIdFromPluginBingeGroup(this.getCurrentStreamBingeGroup()));
     },
     hasCachedPlayableStreamsForNextEpisode(nextEpisode = this.resolveNextEpisodeInfo()) {
       if (!nextEpisode?.videoId || nextEpisode.hasAired === false) {
@@ -143,7 +148,8 @@ export function createPlayerScreenMethods22() {
         nextEpisode.videoId,
         this.params?.itemType || "series",
         nextEpisode.season,
-        nextEpisode.episode
+        nextEpisode.episode,
+        this.isNextEpisodeStreamPrefetchPluginOnly()
       );
       return Array.isArray(cached) && cached.length > 0;
     },
@@ -156,20 +162,39 @@ export function createPlayerScreenMethods22() {
       if (!force && !this.shouldPrefetchNextEpisodeStreams()) {
         return;
       }
-      const cacheKey = this.getStreamCacheKey(nextEpisode.videoId, itemType, nextEpisode.season, nextEpisode.episode);
+      const priorityBingeGroup = this.getCurrentStreamBingeGroup();
+      const preferredPluginOnly = Boolean(scraperIdFromPluginBingeGroup(priorityBingeGroup));
+      // The prefetch stores plugin-only searches under their own key, and the
+      // card render must use that same key or it restarts the finished search
+      // forever (a frozen main thread).
+      const cacheKey = this.getStreamCacheKey(nextEpisode.videoId, itemType, nextEpisode.season, nextEpisode.episode, preferredPluginOnly);
       const loadPromises = this.streamCandidatesLoadPromises || (this.streamCandidatesLoadPromises = new Map());
       if (
-        this.getCachedPlayableStreamsForVideo(nextEpisode.videoId, itemType, nextEpisode.season, nextEpisode.episode) ||
+        this.getCachedPlayableStreamsForVideo(
+          nextEpisode.videoId,
+          itemType,
+          nextEpisode.season,
+          nextEpisode.episode,
+          preferredPluginOnly
+        ) ||
         loadPromises.has(cacheKey)
       ) {
         return;
+      }
+      // One prefetch per next episode and search mode, like Android's
+      // nextEpisodePreloadTriggered; an empty answer must not start it again.
+      if (!force && this.nextEpisodePrefetchAttemptedKey === cacheKey) {
+        return;
+      }
+      if (!force) {
+        this.nextEpisodePrefetchAttemptedKey = cacheKey;
       }
       void this.getPlayableStreamsForVideo(nextEpisode.videoId, itemType, {
         season: nextEpisode.season,
         episode: nextEpisode.episode,
         // Match the search the player will run when the episode actually starts.
-        priorityBingeGroup: this.getCurrentStreamBingeGroup(),
-        preferredPluginOnly: Boolean(scraperIdFromPluginBingeGroup(this.getCurrentStreamBingeGroup()))
+        priorityBingeGroup,
+        preferredPluginOnly
       })
         .then(() => this.renderNextEpisodeCard())
         .catch((error) => console.warn("Next episode stream prefetch failed", error));
