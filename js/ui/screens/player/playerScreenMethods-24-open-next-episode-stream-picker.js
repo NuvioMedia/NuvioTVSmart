@@ -316,8 +316,7 @@ export function createPlayerScreenMethods24() {
         : "";
       // Android drop shadow (offset, blurred black) under the text fill.
       const dropShadow = SubtitleAppearance.subtitleDropShadowCss(style);
-      const subtitleShadow =
-        [outlineShadow, boldShadow, dropShadow === "none" ? "" : dropShadow].filter(Boolean).join(", ") || "none";
+      const subtitleShadow = [outlineShadow, boldShadow, dropShadow === "none" ? "" : dropShadow].filter(Boolean).join(", ") || "none";
       const htmlSubtitleShadow = Environment.isWebOS()
         ? outlineShadow || "none"
         : [outlineShadow, boldShadow].filter(Boolean).join(", ") || "none";

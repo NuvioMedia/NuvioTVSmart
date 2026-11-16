@@ -6,12 +6,7 @@
   "main": "index.html",
   "title": "Nuvio TV",
   "appDescription": "Bring your sources together in one TV library.",
-  "keywords": [
-    "streaming",
-    "video",
-    "media",
-    "tv"
-  ],
+  "keywords": ["streaming", "video", "media", "tv"],
   "category": "entertainment",
   "icon": "icon.png",
   "largeIcon": "largeIcon.png",
@@ -20,14 +15,8 @@
   "handlesRelaunch": true,
   "resolution": "1920x1080",
   "transparent": false,
-  "services": [
-    "space.nuvio.webos.service"
-  ],
-  "requiredPermissions": [
-    "internet",
-    "media.operation",
-    "media.query"
-  ],
+  "services": ["space.nuvio.webos.service"],
+  "requiredPermissions": ["internet", "media.operation", "media.query"],
   "requiredACG": [
     "application.launcher",
     "application.query",
