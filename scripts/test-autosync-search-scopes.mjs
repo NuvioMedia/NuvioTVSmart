@@ -16,7 +16,7 @@ function load(qualityByUrl) {
     path.join(ROOT, "js/ui/screens/player/playerScreenMethods-74-automatic-subtitle-sync.js"),
     "utf8"
   )
-    .replace(/^import[\s\S]*?;\n/gm, "")
+    .replace(/^import[\s\S]*?;\r?\n/gm, "")
     .replace(/^export function/m, "function");
   const aligned = [];
   const sandbox = {
