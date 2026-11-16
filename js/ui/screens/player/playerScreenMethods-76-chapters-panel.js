@@ -65,13 +65,14 @@ export function createPlayerScreenMethods76() {
       }
       this.playerChapterMarksFor = marksFor;
       this.playerChapterMarksDurationMs = durationMs;
-      const markup = durationMs > 0
-        ? chapters
-            .map((chapter) => Number(chapter.startMs) / durationMs)
-            .filter((fraction) => fraction > 0 && fraction < 1)
-            .map((fraction) => `<span class="player-chapter-mark" style="left:${Math.round(fraction * 10000) / 100}%"></span>`)
-            .join("")
-        : "";
+      const markup =
+        durationMs > 0
+          ? chapters
+              .map((chapter) => Number(chapter.startMs) / durationMs)
+              .filter((fraction) => fraction > 0 && fraction < 1)
+              .map((fraction) => `<span class="player-chapter-mark" style="left:${Math.round(fraction * 10000) / 100}%"></span>`)
+              .join("")
+          : "";
       [this.uiRefs?.progressChapterMarks, this.uiRefs?.seekChapterMarks].forEach((node) => {
         if (node) {
           node.innerHTML = markup;
@@ -82,8 +83,7 @@ export function createPlayerScreenMethods76() {
     /** Android ChapterTitle: the current chapter's name above the bar, or "Chapter N". */
     syncPlayerChapterTitle(positionSeconds = 0) {
       const chapters = Array.isArray(this.playerChapters) ? this.playerChapters : [];
-      const showTitle =
-        chapters.length > 0 && this.playerChapterTitleEnabled !== false && this.isLivePlayback?.() !== true;
+      const showTitle = chapters.length > 0 && this.playerChapterTitleEnabled !== false && this.isLivePlayback?.() !== true;
       let label = "";
       if (showTitle) {
         const index = this.chapterIndexAt(Number(positionSeconds || 0) * 1000);

@@ -189,7 +189,7 @@ const dash = {
 assert.match(text(info(dash), [info(dash).language]), /1080p.*AVC.*AAC.*2\.0 de/);
 // Tizen AVPlay (#1235): extra_info uses Width/Height and exposes no colour or JOC info.
 const { matchPlayerBadges } = await import("../js/core/streams/streamBadgeRules.js");
-const { metadataDynamicRange, refinePlaybackText } =
+const { metadataDynamicRange, readPlaybackHdrState, refinePlaybackText } =
   await import("../js/ui/screens/player/playerPlaybackBadges.js");
 const release = "The.Morning.Show.S03E04.2160p.ATVP.WEB-DL.DDP5.1.Atmos.HDR.DV.HEVC-MZABI.mkv";
 const tizen = info({
@@ -229,6 +229,57 @@ assert.deepEqual(
 );
 assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.HDRip.mkv"]), []);
 assert.deepEqual(metadataDynamicRange("AVC", ["Movie.HDR.DV.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2160p.HDR-to-SDR.HEVC.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2160p.HDR.to.SDR.HEVC.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2160p.HDR_to_SDR.HEVC.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2160p.HDR10+.to.SDR.HEVC.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2160p.DV-to-SDR.HEVC.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2160p.HDR2SDR.HEVC.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2160p.HDR.Tone-Mapped.HEVC.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2160p.tonemapped.DV.HEVC.mkv"]), []);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Back.to.the.Future.2160p.HDR.DV.HEVC.mkv"]), [
+  "DV",
+  "HDR10"
+]);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Movie.2.2160p.HDR10.HEVC.mkv"]), ["HDR10"]);
+assert.deepEqual(metadataDynamicRange("HEVC", ["Tone.Loc.2160p.HLG.HEVC.mkv"]), ["HLG"]);
+const tizenNoColor = {
+  ...av,
+  getAvPlay: () => ({
+    getCurrentStreamInfo: () => [
+      { type: "VIDEO", extra_info: { fourCC: "HEVC", Width: "3840", Height: "2160" } }
+    ]
+  })
+};
+assert.equal(
+  readPlaybackHdrState(
+    { getCurrentStreamCandidate: () => ({ filename: "Movie.2160p.HDR-to-SDR.HEVC.mkv" }) },
+    tizenNoColor
+  ),
+  false
+);
+assert.equal(
+  readPlaybackHdrState(
+    { getCurrentStreamCandidate: () => ({ filename: "Movie.2160p.HDR10.HEVC.mkv" }) },
+    tizenNoColor
+  ),
+  true
+);
+assert.equal(
+  readPlaybackHdrState(
+    { getCurrentStreamCandidate: () => ({ filename: "Movie.2160p.HDR10.HEVC.mkv" }) },
+    {
+      video: {},
+      hlsInstance: {
+        currentLevel: 0,
+        levels: [{ videoCodec: "hev1.2.4", videoRange: "SDR" }],
+        audioTrack: -1,
+        audioTracks: []
+      }
+    }
+  ),
+  false
+);
 assert.doesNotMatch(refinePlaybackText("AAC 2.0", ["Movie.Atmos.mkv"]), /Atmos/);
 console.log(
   "Player badges passed: independent packs/cloud, actual metadata, selected audio, engine changes, defaults and stable ticks"

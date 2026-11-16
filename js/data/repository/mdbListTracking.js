@@ -25,7 +25,8 @@ import { MdbListEpisodeMappingService } from "./mdbListEpisodeMappingService.js"
 
 const PLAYBACK_KEY = "mdbListTrackingPlayback";
 const KEY = "mdbListTracking",
-  TTL = 15 * 60 * 1000;
+  TTL = 15 * 60 * 1000,
+  SNAPSHOT_SCHEMA = 2;
 const queues = new Map(),
   refreshes = new Map(),
   retries = new Map();
@@ -44,7 +45,7 @@ const scopeKey = (scope) =>
 function read(scope) {
   const identity = cacheIdentity(scope);
   if (cachedRead?.identity === identity) return cachedRead.snapshot;
-  const cached = LocalStore.get(KEY, {})?.[scope.profileId];
+  const cached = unpackSnapshot(LocalStore.get(KEY, {})?.[scope.profileId]);
   let snapshot =
     validSnapshot(cached) &&
     cached.generation === scope.generation &&
@@ -61,7 +62,7 @@ function read(scope) {
           initialized: false,
           invalidated: false
         };
-  const sidecar = LocalStore.get(PLAYBACK_KEY, {})?.[scope.profileId];
+  const sidecar = unpackPlayback(LocalStore.get(PLAYBACK_KEY, {})?.[scope.profileId]);
   if (
     snapshot.storageRevision &&
     sidecar?.storageRevision === snapshot.storageRevision &&
@@ -106,6 +107,58 @@ function validSnapshot(snapshot) {
   }
 }
 
+// Persist one media record per title instead of copying it into every watched
+// episode. A large history otherwise exceeds the webOS localStorage quota.
+function mediaKey(row) {
+  return `${row.type === "movie" ? "movie" : "show"}:${mdbContentId(row.media.ids)}`;
+}
+function packRows(rows, media) {
+  return rows.map((row) => {
+    const { media: rowMedia, ...rest } = row,
+      key = mediaKey(row);
+    media[key] ||= rowMedia;
+    return { ...rest, mediaKey: key };
+  });
+}
+function unpackRows(rows, media) {
+  return (rows || []).map(({ mediaKey, ...row }) => ({ ...row, media: media?.[mediaKey] }));
+}
+function packSnapshot(snapshot) {
+  const media = {};
+  return {
+    ...snapshot,
+    schemaVersion: SNAPSHOT_SCHEMA,
+    media,
+    watched: packRows(snapshot.watched, media),
+    playback: packRows(snapshot.playback, media)
+  };
+}
+function unpackSnapshot(snapshot) {
+  if (!snapshot || snapshot.schemaVersion !== SNAPSHOT_SCHEMA) return snapshot;
+  const { media, ...rest } = snapshot;
+  return {
+    ...rest,
+    schemaVersion: 1,
+    watched: unpackRows(snapshot.watched, media),
+    playback: unpackRows(snapshot.playback, media)
+  };
+}
+function packPlayback(snapshot) {
+  const media = {};
+  return {
+    schemaVersion: SNAPSHOT_SCHEMA,
+    generation: snapshot.generation,
+    accountId: snapshot.accountId,
+    storageRevision: snapshot.storageRevision,
+    media,
+    playback: packRows(snapshot.playback, media)
+  };
+}
+function unpackPlayback(sidecar) {
+  if (!sidecar || sidecar.schemaVersion !== SNAPSHOT_SCHEMA) return sidecar;
+  const { media, ...rest } = sidecar;
+  return { ...rest, playback: unpackRows(sidecar.playback, media) };
+}
 function cacheIdentity(scope) {
   return `${scopeKey(scope)}:${LocalStore.revision(KEY)}:${LocalStore.revision(PLAYBACK_KEY)}:${MdbListAccount.user(scope.profileId)?.id}`;
 }
@@ -124,15 +177,19 @@ function save(scope, snapshot) {
     previous.storageRevision &&
     Object.keys(snapshot).every((key) => key === "playback" || snapshot[key] === previous[key]);
   if (playbackOnly) {
-    setSnapshotMap(PLAYBACK_KEY, scope.profileId, {
-      generation: scope.generation,
-      accountId: snapshot.accountId,
-      storageRevision: previous.storageRevision,
-      playback: snapshot.playback
-    });
+    setSnapshotMap(
+      PLAYBACK_KEY,
+      scope.profileId,
+      packPlayback({
+        generation: scope.generation,
+        accountId: snapshot.accountId,
+        storageRevision: previous.storageRevision,
+        playback: snapshot.playback
+      })
+    );
   } else {
     snapshot = { ...snapshot, storageRevision: `${Date.now()}:${Math.random()}` };
-    setSnapshotMap(KEY, scope.profileId, snapshot);
+    setSnapshotMap(KEY, scope.profileId, packSnapshot(snapshot));
   }
   cachedRead = { identity: cacheIdentity(scope), snapshot };
 }

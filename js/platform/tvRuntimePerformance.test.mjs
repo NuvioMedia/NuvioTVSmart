@@ -13,7 +13,7 @@ function loadProfile({
   forced = null
 }) {
   const source = readFileSync(new URL("./tvRuntimePerformance.js", import.meta.url), "utf8")
-    .replace(/^import[\s\S]*?;\n/gm, "")
+    .replace(/^import[\s\S]*?;\r?\n/gm, "")
     .replace(/^export /gm, "");
   return vm.runInNewContext(`${source}\n;({ getTvRuntimePerformanceProfile })`, {
     Platform: {

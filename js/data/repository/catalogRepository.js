@@ -2,6 +2,7 @@ import { MediaServerRepository, isMediaServerBase } from "../mediaserver/mediaSe
 import { safeApiCall } from "../../core/network/safeApiCall.js";
 import { selectCatalogEntries } from "../../core/util/catalogEntryMapper.js";
 import { CatalogApi } from "../remote/api/catalogApi.js";
+import { normalizeTmdbLogoUrl } from "../../core/tmdb/tmdbImageUrl.js";
 import { addonRepository } from "./addonRepository.js";
 
 // Each cached page holds up to a hundred mapped metas. Browsing Discover and
@@ -198,7 +199,7 @@ class CatalogRepository {
       type: meta.type || "",
       poster: meta.poster || null,
       background: meta.background || null,
-      logo: meta.logo || null,
+      logo: normalizeTmdbLogoUrl(meta.logo) || null,
       description: meta.description || "",
       releaseInfo: meta.releaseInfo || "",
       runtime: meta.runtime ?? null,

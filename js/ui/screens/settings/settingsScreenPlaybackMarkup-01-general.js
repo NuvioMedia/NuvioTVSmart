@@ -213,11 +213,7 @@ export function renderPlaybackGeneralBody(model) {
                 ? `${this.renderActionRow({
                     focusKey: "playback:autoStreamFallbackMaxSources",
                     title: t("autoplay_fallback_max_sources", {}, "Sources to try on failure"),
-                    subtitle: t(
-                      "autoplay_fallback_max_sources_sub",
-                      {},
-                      "How many more matching sources to try before showing the error."
-                    ),
+                    subtitle: t("autoplay_fallback_max_sources_sub", {}, "How many more matching sources to try before showing the error."),
                     value: String(model.player.streamAutoPlayFallbackMaxSources)
                   })}
             ${this.renderActionRow({

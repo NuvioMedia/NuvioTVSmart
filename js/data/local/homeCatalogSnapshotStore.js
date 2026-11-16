@@ -7,9 +7,10 @@ import { SessionStore } from "../../core/storage/sessionStore.js";
 const DATABASE_NAME = "nuvio_home_catalog_cache";
 const DATABASE_VERSION = 1;
 const STORE_NAME = "snapshots";
-// Bump this whenever the compact row shape changes; old records are ignored
-// and deleted on read instead of being interpreted as the new shape.
-const SNAPSHOT_VERSION = 2;
+// Bump this whenever the compact row shape changes, or when the artwork URLs
+// it stores are normalized differently; old records are ignored and deleted on
+// read instead of being interpreted as the new shape.
+const SNAPSHOT_VERSION = 3;
 const SNAPSHOT_TTL_MS = 12 * 60 * 60 * 1000;
 const MAX_ROWS = 40;
 const MAX_ITEMS_PER_ROW = 60;
