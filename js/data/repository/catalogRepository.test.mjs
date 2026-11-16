@@ -99,3 +99,22 @@ test("a catalog page with items is still served from the response cache", async 
   assert.equal(second.data.items.length, 1);
   assert.equal(stub.calls.length, 1);
 });
+
+test("addon metas never hand the TV a TMDB logo original (#1362)", async () => {
+  const { metaRepository } = await import("./metaRepository.js");
+  const { normalizeTmdbLogoUrl } = await import("../../core/tmdb/tmdbImageUrl.js");
+  const original = "https://image.tmdb.org/t/p/original/dGMb0iSnNp7UMAHkKX63Kh6AJvy.png";
+  const clamped = "https://image.tmdb.org/t/p/w500/dGMb0iSnNp7UMAHkKX63Kh6AJvy.png";
+
+  assert.equal(normalizeTmdbLogoUrl(original), clamped);
+  assert.equal(normalizeTmdbLogoUrl(clamped), clamped);
+  assert.equal(
+    normalizeTmdbLogoUrl("https://artworks.thetvdb.com/banners/v4/movie/1/logo.png"),
+    "https://artworks.thetvdb.com/banners/v4/movie/1/logo.png"
+  );
+  assert.equal(normalizeTmdbLogoUrl(null), "");
+  assert.equal(catalogRepository.mapMeta({ logo: original }).logo, clamped);
+  assert.equal(metaRepository.mapMeta({ logo: original }).logo, clamped);
+  assert.equal(catalogRepository.mapMeta({}).logo, null);
+  assert.equal(metaRepository.mapMeta({}), null);
+});
