@@ -1,6 +1,10 @@
 import { Platform } from "../index.js";
 import { TizenCapabilities } from "./tizenCapabilities.js";
-import { getWrtServiceClass, startWithWrtServiceClass } from "./tizenWrtService.js";
+import {
+  getTizenServiceStartMethods,
+  getWrtServiceClass,
+  startWithWrtServiceClass
+} from "./tizenWrtService.js";
 
 const LOCAL_BASE_URLS = ["http://127.0.0.1:2711", "http://localhost:2711"];
 const START_TIMEOUT_MS = 12000;
@@ -260,34 +264,25 @@ async function startWithWrtService(serviceId) {
   return service.startService.call(service, serviceId);
 }
 
-function getStartAttempts(serviceId, webServiceSupported, tizenMajorVersion = 0) {
-  const wrtAttempt = {
-    method: "wrt-service",
-    start: () => startWithWrtService(serviceId)
+function getStartAttempts(
+  serviceId,
+  webServiceSupported,
+  tizenMajorVersion = 0,
+  tizenMinorVersion = 0
+) {
+  const starters = {
+    "wrt-service": () => startWithWrtService(serviceId),
+    "tizen-application-control-default": () => startWithApplicationControl(serviceId),
+    "tizen-application-launch": () => startWithApplication(serviceId)
   };
-  const applicationControlAttempt = {
-    method: "tizen-application-control-default",
-    start: () => startWithApplicationControl(serviceId)
-  };
-  const applicationLaunchAttempt = {
-    method: "tizen-application-launch",
-    start: () => startWithApplication(serviceId)
-  };
-
-  // Samsung documents wrt:service.startService() as the Web Service API. Its
-  // TV guidance also warns that launchAppControl() can disturb the foreground
-  // application when the web.service capability is unavailable. Therefore
-  // use the application-control fallback only for an explicit true capability;
-  // application.launch remains the final generic-ID fallback and is accepted
-  // only after the real PluginService /health endpoint becomes reachable.
-  // On Tizen 5.x wrt:service acknowledges the call but never starts the
-  // service (seen on a 5.5 TV: 12 s lost on /health), so launch it directly.
-  const attempts =
-    webServiceSupported === true
-      ? [wrtAttempt, applicationControlAttempt, applicationLaunchAttempt]
-      : tizenMajorVersion === 5
-        ? [applicationLaunchAttempt, wrtAttempt]
-        : [wrtAttempt, applicationLaunchAttempt];
+  // The same order as EngineFS: the health probe after each attempt decides,
+  // so an acknowledged call that did not start the service falls through.
+  const attempts = getTizenServiceStartMethods({
+    webServiceSupported,
+    tizenMajorVersion,
+    tizenMinorVersion,
+    hasServiceClass: Boolean(getWrtServiceClass())
+  }).map((method) => ({ method, start: starters[method] }));
   diagnostic("launcher attempts selected", {
     serviceId,
     webServiceSupported,
@@ -296,9 +291,19 @@ function getStartAttempts(serviceId, webServiceSupported, tizenMajorVersion = 0)
   return attempts;
 }
 
-async function requestServiceStart(serviceId, webServiceSupported = null, tizenMajorVersion = 0) {
+async function requestServiceStart(
+  serviceId,
+  webServiceSupported = null,
+  tizenMajorVersion = 0,
+  tizenMinorVersion = 0
+) {
   const errors = [];
-  const attempts = getStartAttempts(serviceId, webServiceSupported, tizenMajorVersion);
+  const attempts = getStartAttempts(
+    serviceId,
+    webServiceSupported,
+    tizenMajorVersion,
+    tizenMinorVersion
+  );
   diagnostic("startup sequence begin", {
     serviceId,
     webServiceSupported,
@@ -510,7 +515,8 @@ export const TizenPluginService = {
           const startResult = await requestServiceStart(
             serviceId,
             capabilities.webServiceSupported,
-            capabilities.tizenMajorVersion || 0
+            capabilities.tizenMajorVersion || 0,
+            capabilities.tizenMinorVersion || 0
           );
           const reachable = startResult.reachable;
           diagnostic("explicit startup success", {

@@ -49,6 +49,18 @@ export function normalizeTmdbBackdropUrl(value) {
   return normalized.replace(/(\/t\/p\/)(?:original|w780)\//i, "$1w1280/");
 }
 
+// Addon metas (AIOMetadata, ...) hand the hero logo over as the TMDB original,
+// which is often a multi-megapixel PNG: the TV decodes all of it to paint a
+// 440x200 box. w500 is TMDB's largest logo size and what Android TV's Coil
+// target already produces, so the visible result is unchanged.
+export function normalizeTmdbLogoUrl(value) {
+  const normalized = String(value || "").trim();
+  if (!normalized || !TMDB_IMAGE_HOST_PATTERN.test(normalized)) {
+    return normalized;
+  }
+  return normalized.replace(/(\/t\/p\/)original\//i, "$1w500/");
+}
+
 export function normalizeTmdbPosterUrl(value) {
   const normalized = String(value || "").trim();
   if (!normalized || !TMDB_IMAGE_HOST_PATTERN.test(normalized)) {

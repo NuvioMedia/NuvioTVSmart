@@ -1,7 +1,10 @@
 import { Platform } from "../index.js";
 import { TizenCapabilities } from "./tizenCapabilities.js";
-import { getWrtServiceClass, startWithWrtServiceClass } from "./tizenWrtService.js";
-import { TizenPluginService } from "./tizenPluginService.js";
+import {
+  getTizenServiceStartMethods,
+  getWrtServiceClass,
+  startWithWrtServiceClass
+} from "./tizenWrtService.js";
 
 const LOCAL_BASE_URLS = ["http://127.0.0.1:2710", "http://localhost:2710"];
 
@@ -164,34 +167,22 @@ async function startViaTizenApplication(serviceId) {
 
 async function requestServiceStart(serviceId) {
   const errors = [];
-  // Tizen 9/10 accept launch calls for a service id without starting it; only
-  // the wrt:service Service class starts it there.
-  const legacyServiceFirst =
-    TizenCapabilities.get().webServiceSupported === false || Boolean(getWrtServiceClass());
-  const officialAttempts = [
-    {
-      method: "tizen-application-control-default",
-      start: () => startViaApplicationControl(serviceId, TIZEN_DEFAULT_OPERATION)
-    },
-    {
-      method: "tizen-application-launch",
-      start: () => startViaTizenApplication(serviceId)
-    },
-    {
-      method: "wrt-service-legacy",
-      start: () => startViaWrtService(serviceId)
-    }
-  ];
-  // Samsung warns that application-control launches can disturb the
-  // foreground app when web.service is reported as unavailable. Preserve the
-  // legacy path that worked on older firmware first and only use the official
-  // application-control path when the capability is true or unknown.
-  const attempts = legacyServiceFirst
-    ? officialAttempts.slice(2).concat(officialAttempts.slice(1, 2))
-    : officialAttempts;
+  const capabilities = TizenCapabilities.get();
+  const starters = {
+    "wrt-service": () => startViaWrtService(serviceId),
+    "tizen-application-control-default": () =>
+      startViaApplicationControl(serviceId, TIZEN_DEFAULT_OPERATION),
+    "tizen-application-launch": () => startViaTizenApplication(serviceId)
+  };
+  const attempts = getTizenServiceStartMethods({
+    webServiceSupported: capabilities.webServiceSupported,
+    tizenMajorVersion: capabilities.tizenMajorVersion || 0,
+    tizenMinorVersion: capabilities.tizenMinorVersion || 0,
+    hasServiceClass: Boolean(getWrtServiceClass())
+  }).map((method) => ({ method, start: starters[method] }));
   diagnostic("launcher attempts selected", {
     serviceId,
-    webServiceSupported: TizenCapabilities.get().webServiceSupported,
+    webServiceSupported: capabilities.webServiceSupported,
     methods: attempts.map((attempt) => attempt.method)
   });
 
@@ -208,7 +199,9 @@ async function requestServiceStart(serviceId) {
         method: attempt.method,
         resultType: startResult === undefined ? "undefined" : typeof startResult
       });
-      return { method: attempt.method };
+      // An acknowledged start call does not guarantee a running service on
+      // every firmware, so the health probe decides before trying the next.
+      return { method: attempt.method, reachable: await waitForLocalBaseUrl() };
     } catch (error) {
       diagnostic("launcher attempt failed", {
         serviceId,
@@ -289,39 +282,6 @@ async function waitForLocalBaseUrl(timeoutMs = START_TIMEOUT_MS) {
   throw lastError || new Error("Timed out waiting for local Tizen EngineFS service");
 }
 
-// EngineFS needs Node 8.10+ (its bundle uses a lookbehind regex). Some TVs
-// (a Tizen 5.5 one runs Node 4) cannot even load it, so the plugin service,
-// which runs on the same runtime, tells us the Node version first.
-export function nodeTooOldForEngineFs(version = "") {
-  const match = String(version || "").match(/^v?(\d+)\.(\d+)/);
-  if (!match) return false;
-  const major = Number(match[1]);
-  return major < 8 || (major === 8 && Number(match[2]) < 10);
-}
-
-let legacyRuntimeCheck = null;
-
-function legacyServiceNodeVersion() {
-  // Only Tizen 5.x has shipped such a runtime; newer TVs keep their startup.
-  if (TizenCapabilities.get().tizenMajorVersion !== 5 || !TizenCapabilities.canUsePlugins()) {
-    return Promise.resolve("");
-  }
-  if (!legacyRuntimeCheck) {
-    legacyRuntimeCheck = TizenPluginService.ensureStarted().then(
-      (result) => {
-        const version = String(result?.payload?.nodeVersion || "");
-        if (!version) legacyRuntimeCheck = null;
-        return nodeTooOldForEngineFs(version) ? version : "";
-      },
-      () => {
-        legacyRuntimeCheck = null;
-        return "";
-      }
-    );
-  }
-  return legacyRuntimeCheck;
-}
-
 export const TizenEngineFsService = {
   getLocalBaseUrls() {
     return [...LOCAL_BASE_URLS];
@@ -339,14 +299,6 @@ export const TizenEngineFsService = {
     if (!Platform.isTizen()) {
       diagnostic("ensure skipped", { reason: "not running on Tizen", purpose });
       return { status: "unsupported", detail: "Not running on Tizen" };
-    }
-    const legacyNodeVersion = await legacyServiceNodeVersion();
-    if (legacyNodeVersion) {
-      return {
-        status: "unsupported",
-        reason: "legacy-node",
-        detail: `This TV's service runtime (Node ${legacyNodeVersion}) cannot run EngineFS: P2P is unavailable, use a debrid service`
-      };
     }
     const capabilities = TizenCapabilities.get();
     diagnostic("ensure begin", {
@@ -414,23 +366,17 @@ export const TizenEngineFsService = {
           throw new Error("Tizen EngineFS service id is unavailable");
         }
         diagnostic("service start requested", { serviceId });
-        const startResult = await requestServiceStart(serviceId);
-        diagnostic("explicit startup acknowledged", {
-          purpose,
-          serviceId,
-          method: startResult.method
-        });
-        const reachable = await waitForLocalBaseUrl();
+        const { method, reachable } = await requestServiceStart(serviceId);
         diagnostic("explicit startup health success", {
           purpose,
           serviceId,
-          method: startResult.method,
+          method,
           baseUrl: reachable.baseUrl
         });
         return {
           ...reachable,
           serviceId,
-          startMethod: startResult.method
+          startMethod: method
         };
       })().finally(() => {
         startPromise = null;

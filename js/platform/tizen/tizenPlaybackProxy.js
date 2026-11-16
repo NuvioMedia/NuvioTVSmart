@@ -1,6 +1,5 @@
 import { createPlaybackProxyRedirectTrace } from "../playbackProxyRedirectTrace.js";
 import { TizenEngineFsService } from "./tizenEngineFsService.js";
-import { TizenPluginService } from "./tizenPluginService.js";
 
 const NATIVE_AVPLAY_REQUEST_HEADERS = new Set(["cookie", "user-agent"]);
 const HLS_BROWSER_RESTRICTED_HEADERS = new Set(["cookie", "user-agent"]);
@@ -92,14 +91,8 @@ export const TizenPlaybackProxy = {
     }
 
     let service;
-    let viaPluginService = false;
     try {
       service = await TizenEngineFsService.ensureStarted({ purpose: "playback-proxy" });
-      if (service?.reason === "legacy-node") {
-        // The plugin service runs on that old runtime and proxies the headers.
-        service = await TizenPluginService.ensureStarted();
-        viaPluginService = true;
-      }
     } catch (error) {
       return {
         status: "unavailable",
@@ -118,7 +111,7 @@ export const TizenPlaybackProxy = {
       };
     }
 
-    const redirectTrace = viaPluginService ? null : createPlaybackProxyRedirectTrace(baseUrl);
+    const redirectTrace = createPlaybackProxyRedirectTrace(baseUrl);
     const proxyUrl = buildTizenPlaybackProxyUrl(baseUrl, originalUrl, headers, redirectTrace?.id);
     if (!proxyUrl) {
       return {
