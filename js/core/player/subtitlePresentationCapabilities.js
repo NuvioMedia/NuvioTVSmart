@@ -15,6 +15,7 @@ const SUBTITLE_STYLE_CONTROL_IDS = [
   "shadowOpacity",
   "shadowSize",
   "verticalOffset",
+  "hdrBrightness",
   "reset"
 ];
 const ASS_STYLE_CONTROL_IDS = [
@@ -32,6 +33,7 @@ const ASS_STYLE_CONTROL_IDS = [
   "shadowOpacity",
   "shadowSize",
   "verticalOffset",
+  "hdrBrightness",
   "reset"
 ];
 
