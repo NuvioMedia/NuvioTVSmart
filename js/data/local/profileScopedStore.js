@@ -12,6 +12,7 @@ const SETTINGS_SYNC_PENDING_KEY = "profileSettingsSyncPendingProfiles";
 const scheduledSettingsSyncTimers = new Map();
 const settingsSyncInFlightByProfile = new Map();
 let settingsSyncGeneration = 0;
+let loggedSignedOutSettingsEdit = false;
 // Normalized envelopes keyed by storage key and memoized on the raw localStorage
 // string. Hot-path readers (Home card render, player and ambient ticks) call
 // readEnvelope every second on single-core TVs; reparsing, re-normalizing and
@@ -193,8 +194,13 @@ export function queueProfileSettingsCloudSync(
   delayMs = SETTINGS_SYNC_DEBOUNCE_MS
 ) {
   // Like Android, edits made while signed out stay local: a pending mark would
-  // make the first sign-in push them over the account's saved settings.
+  // make the first sign-in push them over the account's saved settings. Say so
+  // once per session, so a missing setting after a reinstall is explainable.
   if (!AuthManager.isAuthenticated) {
+    if (!loggedSignedOutSettingsEdit) {
+      loggedSignedOutSettingsEdit = true;
+      console.info("[Nuvio] Settings changed while signed out stay on this TV");
+    }
     return;
   }
   const normalizedProfileId = normalizeProfileId(profileId);

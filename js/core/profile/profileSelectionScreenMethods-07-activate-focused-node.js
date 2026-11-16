@@ -1,5 +1,5 @@
-/* eslint-disable no-unused-vars */
 import * as internals from "./profileSelectionScreen.js";
+import { ProfileSettingsSyncService } from "./profileSettingsSyncService.js";
 
 export function createProfileSelectionScreenMethods07() {
   const {
@@ -172,6 +172,9 @@ export function createProfileSelectionScreenMethods07() {
         // results into the newly selected profile's stream screen.
         PluginRuntime.cancelAll();
         await ProfileManager.setActiveProfile(profileId);
+        // The account wins at sign-in. Load its settings before Home so an
+        // edit made right after login cannot be pushed over them first.
+        await ProfileSettingsSyncService.pull(profileId).catch(() => false);
         StartupSyncService.enableProfileScopedSync();
         detailWatchedEnrichmentService.invalidateAllCache();
         await I18n.init();
