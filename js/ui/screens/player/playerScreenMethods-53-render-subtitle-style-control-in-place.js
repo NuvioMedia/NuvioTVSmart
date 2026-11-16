@@ -117,6 +117,12 @@ export function createPlayerScreenMethods53() {
       } else if (controlId === "outlineColor" && delta !== 0) {
         const currentIndex = Math.max(0, SUBTITLE_OUTLINE_COLORS.indexOf(String(style.outlineColor || "#000000").toUpperCase()));
         style.outlineColor = SUBTITLE_OUTLINE_COLORS[clamp(currentIndex + delta, 0, SUBTITLE_OUTLINE_COLORS.length - 1)];
+      } else if (controlId === "outlineSize") {
+        style.outlineSize = clamp(
+          SubtitleAppearance.normalizeSubtitleAppearance(style).outlineSize + delta,
+          SubtitleAppearance.SUBTITLE_OUTLINE_SIZE_MIN,
+          SubtitleAppearance.SUBTITLE_OUTLINE_SIZE_MAX
+        );
       } else if (controlId === "verticalOffset") {
         style.verticalOffset = normalizeSubtitleVerticalOffset(
           Number(style.verticalOffset ?? SUBTITLE_VERTICAL_OFFSET_DEFAULT) + delta * SUBTITLE_VERTICAL_OFFSET_STEP
