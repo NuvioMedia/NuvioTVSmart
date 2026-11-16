@@ -69,10 +69,13 @@ export function refinePlaybackText(decoderText = "", metadata = []) {
   return extra.length ? `${decoderText} ${extra.join(" ")}` : decoderText;
 }
 
+const TONE_MAPPED_TO_SDR = /\bto[ ._-]*sdr\b|\b(?:hdr(?:10)?|dv|dovi)-?2-?sdr\b|\b2-?sdr\b|\btone[ ._-]?map(?:ped|ping)\b/i;
+
 // AVPlay and <video> expose no colour info, so an HDR-capable codec takes its dynamic range from the filename.
 export function metadataDynamicRange(videoCodec, metadata = []) {
   if (!/h26[5]|h\.265|hev[1c]|hvc1|dvh[1e]|av01|av1|vp09|vp9/i.test(String(videoCodec || ""))) return [];
   const text = metadata.join(" ").replace(/[._]/g, " ");
+  if (TONE_MAPPED_TO_SDR.test(text)) return [];
   const hdr = [];
   if (/\b(dv|dovi|dolby ?vision)\b/i.test(text)) hdr.push("DV");
   if (/\bhdr(10)?\b|\bhdr10(\+|plus)/i.test(text)) hdr.push("HDR10");
@@ -162,7 +165,7 @@ export function readPlaybackHdrState(screen, controller) {
     ]
       .map((value) => String(value || "").trim())
       .filter(Boolean);
-    const hdr = Array.isArray(info.hdr) && info.hdr.length ? info.hdr : metadataDynamicRange(info.videoCodec, metadata);
+    const hdr = Array.isArray(info.hdr) ? info.hdr : metadataDynamicRange(info.videoCodec, metadata);
     return isHdrMediaInfo({ videoCodec: info.videoCodec, hdr });
   } catch (_) {
     return false;
