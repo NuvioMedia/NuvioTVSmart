@@ -108,6 +108,24 @@ const snapshot = reloadedTracking.getSnapshot();
 assert.equal(snapshot.watched.length, 12400);
 assert.equal(snapshot.watched[0].media.ids.imdb, "tt100001");
 assert.equal(snapshot.watched[1].media, snapshot.watched[0].media);
+
+const scope = account.scope();
+LocalStore.set("mdbListTracking", {
+  1: {
+    schemaVersion: 1,
+    generation: scope.generation,
+    accountId: 7,
+    watched: [{ type: "movie", media: { ids: { imdb: "tt999999" } }, updatedAt: 1 }],
+    playback: [],
+    dropped: [],
+    checkedAt: 1,
+    initialized: true,
+    invalidated: false
+  }
+});
+const { MdbListTracking: legacyTracking } =
+  await import("../js/data/repository/mdbListTracking.js?storage-migration=1");
+assert.equal(legacyTracking.getSnapshot().watched[0].media.ids.imdb, "tt999999");
 console.log(
   `MDBList storage compaction passed: 12,400 watched rows packed into ${raw.length} bytes under a 3 MB quota.`
 );
