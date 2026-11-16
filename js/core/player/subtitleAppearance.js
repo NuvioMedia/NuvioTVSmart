@@ -1,4 +1,4 @@
-// Android SubtitleStyleSettings font, background roundness and drop shadow.
+// Android SubtitleStyleSettings font, background roundness, outline and drop shadow.
 export const SUBTITLE_FONT_DEFAULT = "default";
 export const SUBTITLE_FONT_SERIF = "serif";
 export const SUBTITLE_FONT_MONO = "mono";
@@ -13,6 +13,10 @@ export const SUBTITLE_SHADOW_OPACITY_DEFAULT = 75;
 export const SUBTITLE_SHADOW_SIZE_MIN = 1;
 export const SUBTITLE_SHADOW_SIZE_MAX = 8;
 export const SUBTITLE_SHADOW_SIZE_DEFAULT = 2;
+// Android SubtitleStyleSettings.OUTLINE_WIDTH_*.
+export const SUBTITLE_OUTLINE_SIZE_MIN = 1;
+export const SUBTITLE_OUTLINE_SIZE_MAX = 5;
+export const SUBTITLE_OUTLINE_SIZE_DEFAULT = 2;
 // Android StyledSubtitle: sizes are in units of a 24sp base text.
 export const SUBTITLE_BASE_TEXT_UNITS = 24;
 
@@ -37,6 +41,12 @@ export function normalizeSubtitleAppearance(style = {}) {
       SUBTITLE_SHADOW_SIZE_MIN,
       SUBTITLE_SHADOW_SIZE_MAX,
       SUBTITLE_SHADOW_SIZE_DEFAULT
+    ),
+    outlineSize: intInRange(
+      style.outlineSize,
+      SUBTITLE_OUTLINE_SIZE_MIN,
+      SUBTITLE_OUTLINE_SIZE_MAX,
+      SUBTITLE_OUTLINE_SIZE_DEFAULT
     )
   };
 }
@@ -70,13 +80,40 @@ export function subtitleBackgroundRadiusCss(style = {}) {
   return `${radius.toFixed(4)}em`;
 }
 
+/**
+ * Android outline width as a text shadow. Size 2 keeps the existing 2px edge:
+ * eight crisp offsets on webOS, a two-pass blur where the cue renderer needs it.
+ */
+export function subtitleOutlineShadowCss(style = {}, { color = "#000000", crisp = false } = {}) {
+  if (!style.outlineEnabled) {
+    return "";
+  }
+  const size = normalizeSubtitleAppearance(style).outlineSize;
+  if (!crisp) {
+    return `0 0 ${size}px ${color}, 0 0 ${size * 2}px ${color}`;
+  }
+  return [
+    `-${size}px -${size}px`,
+    `0 -${size}px`,
+    `${size}px -${size}px`,
+    `-${size}px 0`,
+    `${size}px 0`,
+    `-${size}px ${size}px`,
+    `0 ${size}px`,
+    `${size}px ${size}px`
+  ]
+    .map((offset) => `${offset} 0 ${color}`)
+    .join(", ");
+}
+
 /** The appearance defaults Android "Reset Appearance" restores, besides the colors and size. */
 export const SUBTITLE_APPEARANCE_DEFAULTS = Object.freeze({
   fontId: SUBTITLE_FONT_DEFAULT,
   backgroundRadius: 0,
   shadowEnabled: false,
   shadowOpacity: SUBTITLE_SHADOW_OPACITY_DEFAULT,
-  shadowSize: SUBTITLE_SHADOW_SIZE_DEFAULT
+  shadowSize: SUBTITLE_SHADOW_SIZE_DEFAULT,
+  outlineSize: SUBTITLE_OUTLINE_SIZE_DEFAULT
 });
 
 /** Whether a #RRGGBB / #RRGGBBAA background color draws anything. */

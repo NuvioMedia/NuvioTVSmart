@@ -60,6 +60,7 @@ const supported = resolveSubtitleStyleControlAvailability({
 });
 assert.equal(supported.verticalOffset, true);
 assert.equal(supported.fontSize, false);
+assert.equal(supported.outlineSize, false);
 assert.equal(
   resolveSubtitleStyleControlAvailability({ preserveAssStyles: true }).verticalOffset,
   false
