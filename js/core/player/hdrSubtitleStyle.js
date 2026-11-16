@@ -74,6 +74,11 @@ export function isHdrMediaInfo(info = {}) {
   return DV_CODEC_PATTERN.test(String(info?.videoCodec || "").trim());
 }
 
+/** Whether in-player subtitle style editors target the HDR override instead of the base color. */
+export function isEditingHdrSubtitleStyle(style = {}, isHdrVideo = false) {
+  return Boolean(isHdrVideo && style?.hdrStyleEnabled === true);
+}
+
 /**
  * Colors to render subtitles with: on HDR video with the override enabled the HDR text
  * color replaces the text color and every color is scaled by the HDR brightness.
@@ -84,7 +89,7 @@ export function resolveHdrSubtitleStyle(style = {}, isHdrVideo = false) {
     backgroundColor: normalizeHexColor(style?.backgroundColor, "#00000000"),
     outlineColor: normalizeHexColor(style?.outlineColor, "#000000")
   };
-  if (!isHdrVideo || style?.hdrStyleEnabled !== true) {
+  if (!isEditingHdrSubtitleStyle(style, isHdrVideo)) {
     return colors;
   }
   const factor = hdrBrightnessFactor(style?.hdrBrightness);
@@ -97,7 +102,7 @@ export function resolveHdrSubtitleStyle(style = {}, isHdrVideo = false) {
 
 /** Brightness for the player controls and menus over the video; 1 means no dimming. */
 export function playerControlsBrightness(style = {}, isHdrVideo = false) {
-  if (!isHdrVideo || style?.hdrStyleEnabled !== true || style?.hdrDimPlayerControls !== true) {
+  if (!isEditingHdrSubtitleStyle(style, isHdrVideo) || style?.hdrDimPlayerControls !== true) {
     return 1;
   }
   return hdrBrightnessFactor(style?.hdrBrightness);
