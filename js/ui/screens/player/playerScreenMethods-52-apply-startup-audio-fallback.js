@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
-import { normalizeHdrBrightness } from "../../../core/player/hdrSubtitleStyle.js";
+import { isEditingHdrSubtitleStyle, normalizeHdrBrightness, normalizeHdrTextColor } from "../../../core/player/hdrSubtitleStyle.js";
 
 export function createPlayerScreenMethods52() {
   const {
@@ -470,6 +470,7 @@ export function createPlayerScreenMethods52() {
         : TizenCapabilities.isAdvancedSubtitleStylingLimited()
           ? t("player_subtitle_tizen_advanced_unavailable_short", {}, "Not fully supported on this TV")
           : t("subtitle_style_unavailable_native", {}, "Unavailable with native subtitles");
+      const isEditingHdrStyle = isEditingHdrSubtitleStyle(style, this.isCurrentPlaybackHdr?.() === true);
       return [
         {
           id: "delay",
@@ -498,8 +499,8 @@ export function createPlayerScreenMethods52() {
         },
         {
           id: "textColor",
-          label: t("subtitle_style_text_color", {}, "Text Color"),
-          value: styleChipLabel(style.textColor || "#FFFFFF")
+          label: isEditingHdrStyle ? t("sub_hdr_text_color", {}, "HDR Text Color") : t("subtitle_style_text_color", {}, "Text Color"),
+          value: styleChipLabel(isEditingHdrStyle ? normalizeHdrTextColor(style.hdrTextColor) : style.textColor || "#FFFFFF")
         },
         {
           id: "textOpacity",
@@ -551,7 +552,7 @@ export function createPlayerScreenMethods52() {
           label: t("subtitle_style_bottom_offset", {}, "Bottom Offset"),
           value: formatSubtitleVerticalOffset(style.verticalOffset)
         },
-        ...(style.hdrStyleEnabled === true && this.isCurrentPlaybackHdr?.() === true
+        ...(isEditingHdrStyle
           ? [
               {
                 id: "hdrBrightness",
