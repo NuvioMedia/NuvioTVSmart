@@ -145,6 +145,15 @@ account.api = async (scope, path, options = {}) => {
 };
 assert.equal(await tracking.refresh({ strict: true }), true);
 assert.equal(watchedCalls, 1);
+const storedTracking = JSON.parse(localStorage.getItem("mdbListTracking"))["1"];
+assert.equal(storedTracking.schemaVersion, 2);
+assert.equal(storedTracking.watched[0].media, undefined);
+assert(storedTracking.media[storedTracking.watched[0].mediaKey]);
+const { MdbListTracking: reloadedTracking } =
+  await import("../js/data/repository/mdbListTracking.js?storage-test=1");
+const reloaded = reloadedTracking.getSnapshot();
+assert.equal(reloaded.watched.length, 2);
+assert(reloaded.watched.some((row) => row.media.ids.imdb === "tt123"));
 const projection = await tracking.getProgressSnapshot();
 assert.equal(projection.playbackItems[0].progressPercent, 42);
 assert.equal(projection.watchedShowSeedItems[0].episode, 1);
@@ -192,7 +201,11 @@ const context = {
 const watchedStorageBeforePause = localStorage.getItem("mdbListTracking");
 await tracking.scrobble(account.scope(), "pause", context);
 assert.equal(localStorage.getItem("mdbListTracking"), watchedStorageBeforePause);
-assert(LocalStore.get("mdbListTrackingPlayback")["1"].playback.length > 0);
+const storedPlayback = LocalStore.get("mdbListTrackingPlayback")["1"];
+assert.equal(storedPlayback.schemaVersion, 2);
+assert.equal(storedPlayback.playback[0].media, undefined);
+assert(storedPlayback.media[storedPlayback.playback[0].mediaKey]);
+assert(storedPlayback.playback.length > 0);
 assert.equal(tracking.getSnapshot().playback[0].progress, 42);
 assert.deepEqual(writes.at(-1).body.show, { ids: show.ids, season: 1, episode: 2 });
 receipt = { ...receipt, show: { ids: { imdb: "tt999" } } };
