@@ -120,6 +120,7 @@ export const AmbientMode = {
   generation: 0,
   lastInteraction: 0,
   swallowedKey: null,
+  exiting: false,
   start() {
     if (this.started) return;
     this.started = true;
@@ -152,14 +153,18 @@ export const AmbientMode = {
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         this.dismiss();
-        this.setTizenScreenSaverBlocked(false);
+        if (!this.exiting) this.setTizenScreenSaverBlocked(false);
       }
       this.lastInteraction = now();
     });
     if (Platform.isTizen())
-      document.addEventListener("nuvio:beforeExitApp", () =>
-        this.setTizenScreenSaverBlocked(false)
-      );
+      document.addEventListener("nuvio:beforeExitApp", () => {
+        // Android drops keepScreenOn with the window; the launcher then owns
+        // the screensaver. Re-enabling the Samsung one here lets the TV's
+        // black screensaver cover the exit and Smart Hub on sets where it is
+        // due, which is the exit black screen reported on Tizen 6 (#1375).
+        this.exiting = true;
+      });
     this.interval = setInterval(() => this.tick(), 1000);
     this.tick();
   },
@@ -176,7 +181,7 @@ export const AmbientMode = {
     this.swallowedKey = null;
   },
   setTizenScreenSaverBlocked(blocked) {
-    if (!Platform.isTizen()) return;
+    if (!Platform.isTizen() || this.exiting) return;
     if (blocked) TizenScreenSaver.block();
     else TizenScreenSaver.unblock();
   },
@@ -191,6 +196,7 @@ export const AmbientMode = {
     );
   },
   tick() {
+    if (this.exiting) return;
     const route = Router.getCurrent();
     if (BLOCKED_ROUTES.has(route)) {
       // Playback and sign-in routes never show Ambient Mode. Skip the settings
