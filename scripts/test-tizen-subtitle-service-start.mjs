@@ -105,7 +105,7 @@ try {
   };
   const subtitle = await TizenEngineFsService.ensureStarted({ purpose: "subtitle" });
   assert.equal(subtitle.status, "success");
-  assert.equal(subtitle.startMethod, "wrt-service-legacy");
+  assert.equal(subtitle.startMethod, "wrt-service");
   assert.equal(bridgeStartCalls, 1);
   assert.equal(applicationLaunchCalls, 0);
 
@@ -126,7 +126,7 @@ try {
   };
   const defaultBridge = await TizenEngineFsService.ensureStarted({ purpose: "subtitle" });
   assert.equal(defaultBridge.status, "success");
-  assert.equal(defaultBridge.startMethod, "wrt-service-legacy");
+  assert.equal(defaultBridge.startMethod, "wrt-service");
   assert.equal(bridgeStartCalls, 1);
 
   // The same packaged service remains available to P2P and the proxy.
@@ -144,7 +144,7 @@ try {
   };
   const p2p = await TizenEngineFsService.ensureStarted({ purpose: "p2p" });
   assert.equal(p2p.status, "success");
-  assert.equal(p2p.startMethod, "wrt-service-legacy");
+  assert.equal(p2p.startMethod, "wrt-service");
   assert.equal(bridgeStartCalls, 1);
 
   // If the bridge is absent, the documented application launch fallback still
@@ -182,7 +182,7 @@ try {
     globalThis.__NUVIO_TIZEN_WRT_SERVICE__ = { Service: TizenTenService };
     const tizenTen = await TizenEngineFsService.ensureStarted({ purpose: "p2p" });
     assert.equal(tizenTen.status, "success");
-    assert.equal(tizenTen.startMethod, "wrt-service-legacy");
+    assert.equal(tizenTen.startMethod, "wrt-service");
     assert.equal(bridgeStartCalls, 1);
     assert.equal(applicationLaunchCalls, 0);
     assert.equal(applicationControlCalls, 0);

@@ -774,7 +774,12 @@ class WatchedItemsRepository {
       const wholeTitle = options?.season == null && options?.episode == null;
       emitAddonWatchedEvents(
         wholeTitle
-          ? [{ contentId, contentType: options?.contentType || removedItems[0]?.contentType || "movie" }]
+          ? [
+              {
+                contentId,
+                contentType: options?.contentType || removedItems[0]?.contentType || "movie"
+              }
+            ]
           : removedItems,
         AddonLibraryAction.UNWATCHED
       );
