@@ -67,6 +67,9 @@ export function createPlayerScreenMethods75() {
       if (wasHdr !== isHdr || this.hdrPresentationSignature !== signature || force) {
         this.hdrPresentationSignature = signature;
         this.applySubtitlePresentationSettings({ refreshTrackRendering: wasHdr !== isHdr });
+        if (wasHdr !== isHdr && this.subtitleDialogVisible) {
+          this.renderSubtitleDialog?.();
+        }
       }
     }
   };

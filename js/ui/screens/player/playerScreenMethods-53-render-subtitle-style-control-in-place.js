@@ -1,6 +1,11 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
-import { HDR_BRIGHTNESS_STEP, normalizeHdrBrightness } from "../../../core/player/hdrSubtitleStyle.js";
+import {
+  HDR_BRIGHTNESS_STEP,
+  isEditingHdrSubtitleStyle,
+  normalizeHdrBrightness,
+  normalizeHdrTextColor
+} from "../../../core/player/hdrSubtitleStyle.js";
 
 export function createPlayerScreenMethods53() {
   const {
@@ -34,10 +39,10 @@ export function createPlayerScreenMethods53() {
       const styleControls = this.getSubtitleStyleControls();
       const items = controlId === "reset" ? styleControls : styleControls.filter((c) => c.id === controlId);
       items.forEach((item) => {
-        const subNode = dialog
-          .querySelector(`button[data-style-id="${item.id}"]`)
-          ?.closest(".player-dialog-style-item")
-          ?.querySelector(".player-dialog-item-sub");
+        const rowNode = dialog.querySelector(`button[data-style-id="${item.id}"]`)?.closest(".player-dialog-style-item");
+        const mainNode = rowNode?.querySelector(".player-dialog-item-main");
+        if (mainNode) mainNode.textContent = item.label || "";
+        const subNode = rowNode?.querySelector(".player-dialog-item-sub");
         if (subNode) subNode.textContent = item.value || "";
       });
       return items.length > 0;
@@ -94,8 +99,17 @@ export function createPlayerScreenMethods53() {
       } else if (controlId === "bold" && delta !== 0) {
         style.bold = !style.bold;
       } else if (controlId === "textColor" && delta !== 0) {
-        const currentIndex = Math.max(0, SUBTITLE_TEXT_COLORS.indexOf(String(style.textColor || "#FFFFFF").toUpperCase()));
-        style.textColor = SUBTITLE_TEXT_COLORS[clamp(currentIndex + delta, 0, SUBTITLE_TEXT_COLORS.length - 1)];
+        const isEditingHdrStyle = isEditingHdrSubtitleStyle(style, this.isCurrentPlaybackHdr?.() === true);
+        const currentColor = isEditingHdrStyle
+          ? normalizeHdrTextColor(style.hdrTextColor)
+          : String(style.textColor || "#FFFFFF").toUpperCase();
+        const currentIndex = Math.max(0, SUBTITLE_TEXT_COLORS.indexOf(currentColor));
+        const nextColor = SUBTITLE_TEXT_COLORS[clamp(currentIndex + delta, 0, SUBTITLE_TEXT_COLORS.length - 1)];
+        if (isEditingHdrStyle) {
+          style.hdrTextColor = nextColor;
+        } else {
+          style.textColor = nextColor;
+        }
       } else if (controlId === "textOpacity") {
         style.textOpacity = normalizeSubtitleTextOpacity(Number(style.textOpacity ?? 100) + delta * SUBTITLE_TEXT_OPACITY_STEP);
       } else if (controlId === "outlineEnabled" && delta !== 0) {
