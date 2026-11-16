@@ -161,6 +161,7 @@ export function getTizenCapabilities(runtime = globalThis) {
     isTizen,
     tizenVersion: tizenVersion.version,
     tizenMajorVersion: tizenVersion.major,
+    tizenMinorVersion: parseMinorVersion(tizenVersion.version),
     tizenVersionKnown: tizenVersion.known,
     chromiumMajorVersion,
     hasIntersectionObserver: typeof runtime?.IntersectionObserver === "function",
