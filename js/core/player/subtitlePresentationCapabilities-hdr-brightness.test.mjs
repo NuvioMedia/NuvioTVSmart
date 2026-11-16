@@ -5,7 +5,9 @@ import { resolveSubtitleStyleControlAvailability } from "./subtitlePresentationC
 import {
   HDR_BRIGHTNESS_STEP,
   hdrBrightnessFactor,
+  isEditingHdrSubtitleStyle,
   normalizeHdrBrightness,
+  normalizeHdrTextColor,
   resolveHdrSubtitleStyle
 } from "./hdrSubtitleStyle.js";
 import * as SubtitleAppearance from "./subtitleAppearance.js";
@@ -16,7 +18,7 @@ function loadPlayerMethods(fileName, exportName, internals, extraBindings = {}) 
     "utf8"
   );
   const stripped = source
-    .replace(/^import .*;\r?\n/gm, "")
+    .replace(/^import[\s\S]*?from\s+["'][^"']+["'];\r?\n/gm, "")
     .replace(/export function /g, "function ");
   const extraKeys = Object.keys(extraBindings);
   const extraValues = Object.values(extraBindings);
@@ -159,13 +161,18 @@ function createScreenHarness({
     "playerScreenMethods-52-apply-startup-audio-fallback.js",
     "createPlayerScreenMethods52",
     internals,
-    { normalizeHdrBrightness }
+    { isEditingHdrSubtitleStyle, normalizeHdrBrightness, normalizeHdrTextColor }
   );
   const methods53 = loadPlayerMethods(
     "playerScreenMethods-53-render-subtitle-style-control-in-place.js",
     "createPlayerScreenMethods53",
     internals,
-    { HDR_BRIGHTNESS_STEP, normalizeHdrBrightness }
+    {
+      HDR_BRIGHTNESS_STEP,
+      isEditingHdrSubtitleStyle,
+      normalizeHdrBrightness,
+      normalizeHdrTextColor
+    }
   );
   const methods24 = loadPlayerMethods(
     "playerScreenMethods-24-open-next-episode-stream-picker.js",
