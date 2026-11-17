@@ -1,5 +1,15 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
+import { MdbListSettingsStore, MDBLIST_PROVIDER_SETTINGS } from "../../../data/local/mdbListSettingsStore.js";
+
+const RATING_ICONS = {
+  trakt: "assets/icons/mdblist_trakt.svg",
+  imdb: "assets/icons/imdb_logo_2016.svg",
+  tmdb: "assets/icons/mdblist_tmdb.svg",
+  letterboxd: "assets/icons/mdblist_letterboxd.svg",
+  metacritic: "assets/icons/mdblist_metacritic.png",
+  mal: "assets/icons/mdblist_mal.svg"
+};
 
 export function createMetaDetailsScreenMethods08() {
   const {
@@ -13,7 +23,6 @@ export function createMetaDetailsScreenMethods08() {
     resolveDetailBackdropUrl,
     isSeriesDetailMeta,
     formatMdbListRating,
-    getAddonIconPath,
     escapeHtml,
     escapeAttribute,
     resolveTrailerItems,
@@ -23,15 +32,20 @@ export function createMetaDetailsScreenMethods08() {
   return {
     renderExternalRatingsRow(meta = {}) {
       const ratings = meta?.mdbListRatings || {};
-      const items = [
-        ["trakt", getAddonIconPath("trakt"), ratings.trakt],
-        ["imdb", "assets/icons/imdb_logo_2016.svg", ratings.imdb],
-        ["tmdb", "assets/icons/mdblist_tmdb.svg", ratings.tmdb],
-        ["letterboxd", "assets/icons/mdblist_letterboxd.svg", ratings.letterboxd],
-        ["tomatoes", mdbListRatingIcon("tomatoes", ratings.tomatoes, ratings), ratings.tomatoes],
-        ["audience", mdbListRatingIcon("audience", ratings.audience, ratings), ratings.audience],
-        ["metacritic", "assets/icons/mdblist_metacritic.png", ratings.metacritic]
-      ].filter(([, , value]) => value != null && String(value).trim() !== "");
+      const settings = MdbListSettingsStore.get();
+      // Android: MDBListSettings.enabledRatingOrder() drives the detail hero row.
+      const items = settings.ratingOrder
+        .filter(
+          (provider) =>
+            settings[MDBLIST_PROVIDER_SETTINGS[provider]] !== false &&
+            ratings[provider] != null &&
+            String(ratings[provider]).trim() !== ""
+        )
+        .map((provider) => [
+          provider,
+          RATING_ICONS[provider] || mdbListRatingIcon(provider, ratings[provider], ratings),
+          ratings[provider]
+        ]);
       if (!items.length) {
         return "";
       }

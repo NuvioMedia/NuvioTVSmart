@@ -130,7 +130,7 @@ export function formatMdbListRating(provider, rating) {
 }
 
 export function hasMdbListRatings(ratings = {}) {
-  return ["trakt", "imdb", "tmdb", "letterboxd", "tomatoes", "audience", "metacritic"].some(
+  return ["trakt", "imdb", "tmdb", "letterboxd", "tomatoes", "audience", "metacritic", "mal"].some(
     (key) => ratings?.[key] != null && String(ratings[key]).trim() !== ""
   );
 }
