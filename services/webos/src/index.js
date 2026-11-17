@@ -16,6 +16,29 @@ var prepareBitmapSubtitleSource = bitmapSubtitles.prepareBitmapSubtitleSource;
 var RUNTIME_PATH = path.resolve(__dirname, "..", "runtime", "media-http.cjs");
 var RUNTIME_RESTART_COOLDOWN_MS = 1500;
 
+// The embedded-track reader understands Matroska and MP4 only. These containers
+// can never answer: reject them before booting the local runtime. Unknown
+// extensions still go through (3GP/F4V share the MP4 box structure).
+// Keep in sync with js/data/repository/embeddedTrackSupport.js.
+var UNSUPPORTED_TRACK_CONTAINER_PATTERN =
+  /\.(avi|divx|wmv|asf|mpg|mpeg|mpe|m1v|m2v|vob|flv|ogv|rm|rmvb|ts|m2ts|mts|mxf|wtv)$/i;
+
+function getTrackContainerName(mediaUrl, filename) {
+  for (var index = 0; index < 2; index += 1) {
+    var name = String((index === 0 ? filename : mediaUrl) || "")
+      .trim()
+      .split(/[?#]/)[0];
+    if (/\.[a-z0-9]{2,5}$/i.test(name)) {
+      return name;
+    }
+  }
+  return "";
+}
+
+function isUnsupportedTrackContainer(mediaUrl, filename) {
+  return UNSUPPORTED_TRACK_CONTAINER_PATTERN.test(getTrackContainerName(mediaUrl, filename));
+}
+
 function createService() {
   try {
     var Service = require("webos-service");
@@ -366,9 +389,23 @@ function registerPlaybackServiceKeepAliveCommands() {
 
 function registerTracksCommand() {
   service.register("tracks", function (message) {
-    var mediaUrl = String(getMessagePayload(message).url || "").trim();
+    var payload = getMessagePayload(message);
+    var mediaUrl = String(payload.url || "").trim();
+    var filename = String(payload.filename || "").trim();
     if (!mediaUrl) {
       respond(message, buildErrorPayload("Missing required parameter: url"));
+      return;
+    }
+
+    if (isUnsupportedTrackContainer(mediaUrl, filename)) {
+      respond(
+        message,
+        buildErrorPayload("Track discovery is not supported for this file type", {
+          statusCode: 415,
+          terminal: true,
+          unsupportedContainer: true
+        })
+      );
       return;
     }
 

@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { isEmbeddedTrackContainerSupported } from "../../../data/repository/embeddedTrackSupport.js";
 
 export function createPlayerScreenMethods11() {
   const {
@@ -80,6 +81,13 @@ export function createPlayerScreenMethods11() {
       const currentCandidate = this.getCurrentStreamCandidate();
       return String(this.activePlaybackUrl || currentCandidate?.url || PlayerController.video?.currentSrc || "").trim();
     },
+    getCurrentStreamFilenameHint() {
+      const candidate = this.getCurrentStreamCandidate();
+      return String(candidate?.behaviorHints?.filename || candidate?.raw?.behaviorHints?.filename || "").trim();
+    },
+    isEmbeddedTrackDiscoverySupported(url = this.getTrackProbeUrl()) {
+      return isEmbeddedTrackContainerSupported(url, this.getCurrentStreamFilenameHint());
+    },
     isCurrentSourceAdaptiveManifest() {
       const probeUrl = this.getTrackProbeUrl();
       const runtimeUrl = String(PlayerController.currentPlaybackUrl || "").trim();
@@ -144,6 +152,9 @@ export function createPlayerScreenMethods11() {
       if (!probeUrl || this.isCurrentSourceAdaptiveManifest()) {
         return false;
       }
+      if (!this.isEmbeddedTrackDiscoverySupported(probeUrl)) {
+        return false;
+      }
 
       if (Environment.isTizen()) {
         // AVPlay is the native engine on Tizen, but its name is "tizen-avplay"
@@ -178,7 +189,7 @@ export function createPlayerScreenMethods11() {
       }
       // Warm the shared cache before AVPlay publishes its track list. The
       // startup audio gate then sees the languages while it is still closed.
-      void localMediaTracksRepository.getTracks(targetUrl).catch(() => []);
+      void localMediaTracksRepository.getTracks(targetUrl, { filename: this.getCurrentStreamFilenameHint() }).catch(() => []);
     },
     shouldUseEmbeddedSubtitleTracks() {
       if (!this.canDiscoverEmbeddedSubtitleTracks() || this.embeddedSubtitleTracks.length <= 0) {

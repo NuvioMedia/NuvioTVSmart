@@ -58,7 +58,10 @@ export function createPlayerScreenMethods40() {
           Environment.isWebOS() && typeof PlayerController.refreshWebOsDeviceInfo === "function"
             ? PlayerController.refreshWebOsDeviceInfo()
             : Promise.resolve();
-        const [, tracks] = await Promise.all([capabilityPromise, localMediaTracksRepository.getTracks(probeUrl)]);
+        const [, tracks] = await Promise.all([
+          capabilityPromise,
+          localMediaTracksRepository.getTracks(probeUrl, { filename: this.getCurrentStreamFilenameHint() })
+        ]);
         if (requestToken !== this.embeddedSubtitleLoadToken) {
           return;
         }

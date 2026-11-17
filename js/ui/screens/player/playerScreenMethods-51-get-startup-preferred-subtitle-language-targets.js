@@ -265,9 +265,17 @@ export function createPlayerScreenMethods51() {
       // so the option list can still hold nothing but the synthetic startup entry.
       // Concluding there means falling back to the runtime's first audio track and
       // latching that choice, which is why the preferred language never applied.
-      const isStillLoading = this.isAudioPreferenceDiscoveryPending() || hasOnlyImplicitStartupAudioOptions(this.collectAudioOptionItems());
+      const embeddedTrackDiscoverySupported = this.isEmbeddedTrackDiscoverySupported?.() !== false;
+      const isStillLoading =
+        embeddedTrackDiscoverySupported &&
+        (this.isAudioPreferenceDiscoveryPending() || hasOnlyImplicitStartupAudioOptions(this.collectAudioOptionItems()));
       const matchedRememberedOption = this.findRememberedAudioOption();
-      const rememberedOption = isStillLoading && matchedRememberedOption?.entry?.implicitAudioTrack ? null : matchedRememberedOption;
+      // The implicit entry is the runtime's untitled default: selecting it
+      // over Luna only costs a timeout. Real native tracks stay selectable.
+      const rememberedOption =
+        matchedRememberedOption?.entry?.implicitAudioTrack && (isStillLoading || !embeddedTrackDiscoverySupported)
+          ? null
+          : matchedRememberedOption;
       if (rememberedOption?.entry && Number.isFinite(rememberedOption.entryIndex)) {
         this.startupAudioFallbackApplied = false;
         if (selectionReady(rememberedOption)) {

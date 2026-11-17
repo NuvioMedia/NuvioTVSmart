@@ -28,6 +28,12 @@ export function createPlayerScreenMethods52() {
       this.clearStartupAudioPreferenceRetry();
       this.startupAudioFallbackApplied = true;
       const fallbackOption = selectStartupAudioFallbackOption(this.collectAudioOptionItems());
+      if (!this.isEmbeddedTrackDiscoverySupported?.() && fallbackOption?.entry?.implicitAudioTrack) {
+        // Nothing to select: the container cannot expose its tracks, so the
+        // runtime's default audio track is already the only fallback.
+        this.startupAudioPreferenceApplied = true;
+        return true;
+      }
       if (!fallbackOption?.entry || !Number.isFinite(fallbackOption.entryIndex)) {
         this.startupAudioPreferenceApplied = true;
         return true;
