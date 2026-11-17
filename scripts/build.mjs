@@ -599,8 +599,9 @@ async function buildPluginRuntimeAssets() {
 }
 
 // The QuickJS WASM embedded in quickjs-emscripten needs sign-ext, non-trapping
-// float-to-int and bulk memory (Chrome 74/75). webOS 5 and Tizen 5.5 ship
-// Chromium 68/69, so the worker loads this lowered MVP copy there instead.
+// float-to-int and bulk memory (Chrome 74/75), and passes i64 to its imports,
+// which needs wasm BigInt integration (Chrome 85). Older engines (Tizen 5.0-6.0,
+// webOS 5/6) get this lowered copy with f64 imports instead.
 async function buildQuickJsMvpWasm() {
   const { default: binaryen } = await import("binaryen");
   const source = await readFile(
@@ -624,11 +625,48 @@ async function buildQuickJsMvpWasm() {
     "llvm-nontrapping-fptoint-lowering",
     "llvm-memory-copy-fill-lowering"
   ]);
+  passI64ImportsAsF64(binaryen, module);
   module.setFeatures(F.MVP);
   if (!module.validate()) throw new Error("QuickJS MVP WASM lowering failed validation");
   const output = module.emitBinary();
   module.dispose();
   await writeFile(path.join(distDir, "assets", "libs", "quickjs-mvp.wasm"), output);
+}
+
+// Engines before wasm BigInt integration (Chrome 85) throw when an import takes
+// an i64. The glue reads those arguments (localtime's time_t, fd_seek's offset)
+// with Number(), so each import gets an f64 instead behind a converting stub.
+function passI64ImportsAsF64(binaryen, module) {
+  const imports = [];
+  for (let i = 0; i < module.getNumFunctions(); i++) {
+    const info = binaryen.getFunctionInfo(module.getFunctionByIndex(i));
+    if (info.module && binaryen.expandType(info.params).includes(binaryen.i64)) imports.push(info);
+  }
+  for (const info of imports) {
+    if (info.results === binaryen.i64) throw new Error(`QuickJS import ${info.base} returns i64`);
+    const params = binaryen.expandType(info.params);
+    const target = `${info.name}$f64`;
+    module.addFunctionImport(
+      target,
+      info.module,
+      info.base,
+      binaryen.createType(params.map((type) => (type === binaryen.i64 ? binaryen.f64 : type))),
+      info.results
+    );
+    module.removeFunction(info.name);
+    const args = params.map((type, index) =>
+      type === binaryen.i64
+        ? module.f64.convert_s.i64(module.local.get(index, type))
+        : module.local.get(index, type)
+    );
+    module.addFunction(
+      info.name,
+      info.params,
+      info.results,
+      [],
+      module.call(target, args, info.results)
+    );
+  }
 }
 
 // The worker hands the lowered file to the embedded glue as wasmModule, so its

@@ -39,7 +39,7 @@ function serviceForPlatform() {
   return null;
 }
 
-const TIZEN_PLUGIN_UNSUPPORTED_DETAIL = "Tizen plugin support starts at Tizen 5.5";
+const TIZEN_PLUGIN_UNSUPPORTED_DETAIL = "Tizen plugin support starts at Tizen 5.0";
 
 function areTizenPluginsSupported() {
   return !Platform.isTizen() || TizenCapabilities.canUsePlugins();

@@ -2,10 +2,10 @@ const TIZEN_PLATFORM_VERSION_CAPABILITY = "http://tizen.org/feature/platform.ver
 const TIZEN_WEB_SERVICE_CAPABILITY = "http://tizen.org/feature/web.service";
 const TIZEN_P2P_MIN_MAJOR_VERSION = 5;
 const TIZEN_P2P_MIN_CHROMIUM_VERSION = 63;
-// Tizen 5.5 is the first firmware whose web engine (Chromium 69) runs the
-// lowered QuickJS WASM and whose Node 4 service runtime the plugin HTTP layer
-// supports (bundled CA store). Tizen 5.0 and older stay unsupported.
-const TIZEN_PLUGIN_MIN_VERSION = [5, 5];
+// Tizen 5.0 (Chromium 63) runs the lowered QuickJS WASM, which takes i64
+// imports as f64, and the plugin HTTP layer supports its Node service runtime
+// (bundled CA store for Node 4). Tizen 4 and older stay unsupported.
+const TIZEN_PLUGIN_MIN_VERSION = [5, 0];
 
 let cachedCapabilities = null;
 

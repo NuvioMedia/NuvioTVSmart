@@ -117,7 +117,7 @@ export function getPluginCapabilitySnapshot() {
         ...snapshotFields(platform, PLUGIN_QUOTAS.limited, {
           appSupported,
           normalAddonsSupported: appSupported,
-          reason: "Tizen plugin support starts at Tizen 5.5"
+          reason: "Tizen plugin support starts at Tizen 5.0"
         }),
         tizenVersion: capabilities.tizenVersion,
         chromiumMajorVersion: chrome,

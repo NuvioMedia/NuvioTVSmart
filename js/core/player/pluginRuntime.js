@@ -89,6 +89,58 @@ function workerUrl() {
   }
 }
 
+// Exports f(i64). Until wasm BigInt integration (Chrome 85) a JS <-> WASM call
+// with an i64 throws, and the stock QuickJS WASM passes time_t to localtime that
+// way, breaking local Date methods. Those engines (Tizen 5.0-6.0, webOS 5/6)
+// get the lowered MVP build, whose i64 imports take f64. The page loads it
+// because Tizen 5.0 workers cannot read file:// (webOS 5 ones can).
+const I64_EXPORT_PROBE = new Uint8Array([
+  0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 1, 126, 0, 3, 2, 1, 0, 7, 5, 1, 1, 102, 0, 0, 10, 4, 1,
+  2, 0, 11
+]);
+
+let wasmBigIntSupported = null;
+
+function supportsWasmBigInt() {
+  if (wasmBigIntSupported !== null) return wasmBigIntSupported;
+  try {
+    // Without BigInt (Chrome < 67) this throws a ReferenceError: also "no".
+    new WebAssembly.Instance(new WebAssembly.Module(I64_EXPORT_PROBE)).exports.f(BigInt(0));
+    wasmBigIntSupported = true;
+  } catch (_) {
+    wasmBigIntSupported = false;
+  }
+  return wasmBigIntSupported;
+}
+
+let quickJSMvpBytesPromise = null;
+// A worker keeps the module it compiled, so it receives the ~500 KB once.
+const workersWithQuickJSWasm = new WeakSet();
+
+function loadQuickJSMvpBytes() {
+  if (typeof WebAssembly !== "object" || supportsWasmBigInt()) return Promise.resolve(null);
+  if (!quickJSMvpBytesPromise) {
+    // XHR, not fetch: packaged webOS apps run from file://, which fetch rejects.
+    quickJSMvpBytesPromise = new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", new URL("../libs/quickjs-mvp.wasm", workerUrl()).toString());
+      xhr.responseType = "arraybuffer";
+      xhr.onload = () => {
+        // status 0 is a successful file:// load
+        if ((xhr.status === 0 || xhr.status === 200) && xhr.response?.byteLength) {
+          resolve(xhr.response);
+        } else reject(new Error(`QuickJS MVP WASM failed to load (${xhr.status})`));
+      };
+      xhr.onerror = () => reject(new Error("QuickJS MVP WASM failed to load"));
+      xhr.send();
+    }).catch((error) => {
+      quickJSMvpBytesPromise = null;
+      throw error;
+    });
+  }
+  return quickJSMvpBytesPromise;
+}
+
 function byteLength(value) {
   const input = String(value || "");
   return typeof TextEncoder === "function"
@@ -217,6 +269,8 @@ export const PluginRuntime = {
       throw error;
     }
 
+    // bytes, not a compiled Module: Chromium 63 cannot post a WebAssembly.Module
+    const quickJSWasm = await loadQuickJSMvpBytes();
     let worker;
     try {
       worker = acquireWorker();
@@ -375,11 +429,13 @@ export const PluginRuntime = {
           profileId: String(profileId || ""),
           repositoryId: String(repositoryId || ""),
           tmdbApiKey: TMDB_API_KEY,
+          quickJSWasm: workersWithQuickJSWasm.has(worker) ? null : quickJSWasm,
           args: defaultArgs(args),
           quota,
           timeoutMs,
           deadline: Date.now() + Number(timeoutMs || 60000)
         });
+        if (quickJSWasm) workersWithQuickJSWasm.add(worker);
       } catch (error) {
         emitPluginDiagnosticEvent(
           "plugin worker message failed",

@@ -20,7 +20,7 @@ The startup compatibility baseline is Samsung Tizen 4.0 / Chromium 56 and LG web
 Platform capabilities are intentionally version-dependent:
 
 - **Samsung Tizen 4.x** — the app and direct playback are supported, but torrent/P2P playback is unavailable by design. Some advanced audio and subtitle features may also be limited.
-- **Samsung Tizen 5.x** — torrent/P2P playback is supported through the bundled local EngineFS service. Tizen 5.5 is the first firmware that also runs the packaged PluginService, plugin execution and remote plugin synchronization on its Node 4.4.3 runtime; Tizen 5.0 has no plugin support.
+- **Samsung Tizen 5.x** — torrent/P2P playback is supported through the bundled local EngineFS service. The packaged PluginService, plugin execution and remote plugin synchronization also run on Tizen 5.x, including the Node 4.4.3 service runtime of Tizen 5.5.
 - **Samsung Tizen 6+** — torrent/P2P and the packaged PluginService are supported. Plugin execution requires the packaged service plus the TV runtime's Worker and WebAssembly support. Tizen 6 and later use the same current Tizen service pipeline.
 - **LG webOS 5.x** — torrent/P2P and the packaged plugin service are supported, with the limited plugin resource quotas used by the older webOS runtime.
 - **LG webOS 6+** — torrent/P2P and the packaged plugin service are supported with the modern plugin resource quotas.
