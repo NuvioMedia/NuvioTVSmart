@@ -187,7 +187,7 @@ import {
   uniqueNonEmptyValues
 } from "./homeUtils.js";
 
-import { preloadImageSource, prepareHeroImageEnter } from "./homeScreenHelpers-02-extract-release-date-text.js";
+import { preloadHeroBackdrop, prepareHeroImageEnter } from "./homeScreenHelpers-02-extract-release-date-text.js";
 
 export function animateHeroBackdropSwap(
   backdrop,
@@ -204,13 +204,26 @@ export function animateHeroBackdropSwap(
   // Decorative: the logo/brand carries the title, and a pending backdrop would
   // otherwise paint it as alt text over the hero.
   const normalizedAlt = "";
-  const currentSrc = String(backdrop.getAttribute("src") || "").trim();
+  const currentSrc = String(backdrop.dataset?.canvasSrc || backdrop.getAttribute("src") || "").trim();
   const transitionMode = options?.transitionMode || "crossfade";
   const token = Number(backdrop.heroBackdropTransitionToken || 0) + 1;
   backdrop.heroBackdropTransitionToken = token;
 
+  const getCanvas = () => backdrop.parentElement?.querySelector?.(".home-hero-backdrop-canvas") || null;
+
   const clearGhosts = () => {
     backdrop.parentElement?.querySelectorAll?.(".home-hero-backdrop-transition-ghost")?.forEach((node) => node.remove());
+  };
+
+  const removeCanvas = () => {
+    const canvas = getCanvas();
+    if (canvas) {
+      canvas.remove();
+    }
+    if (backdrop.dataset) {
+      delete backdrop.dataset.canvasSrc;
+    }
+    backdrop.style.opacity = "";
   };
 
   const finalize = () => {
@@ -218,11 +231,13 @@ export function animateHeroBackdropSwap(
       return;
     }
     backdrop.classList.remove("home-hero-backdrop-transition-enter", "is-visible");
+    getCanvas()?.classList?.remove("home-hero-backdrop-transition-enter", "is-visible");
     clearGhosts();
   };
 
   if (!normalizedSrc) {
     finalize();
+    removeCanvas();
     backdrop.removeAttribute("src");
     backdrop.setAttribute("alt", normalizedAlt);
     backdrop.classList.add("placeholder");
@@ -236,18 +251,70 @@ export function animateHeroBackdropSwap(
     return;
   }
 
-  if (transitionMode === "single-layer") {
-    preloadImageSource(normalizedSrc).then((loaded) => {
+  const revealCanvas = (canvas) => {
+    const step = () => {
       if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
         return;
       }
-      if (!loaded) {
-        finalize();
-        backdrop.setAttribute("src", normalizedSrc);
-        backdrop.setAttribute("alt", normalizedAlt);
-        backdrop.classList.remove("placeholder");
+      canvas.classList.add("is-visible");
+      setTimeout(() => finalize(), durationMs);
+    };
+    if (transitionMode === "single-layer") {
+      requestAnimationFrame(step);
+      return;
+    }
+    requestAnimationFrame(() => {
+      if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
         return;
       }
+      requestAnimationFrame(step);
+    });
+  };
+
+  preloadHeroBackdrop(normalizedSrc).then((result) => {
+    if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
+      return;
+    }
+
+    const parent = backdrop.parentElement;
+    if (result?.bitmap && parent) {
+      clearGhosts();
+      let canvas = getCanvas();
+      if (!canvas) {
+        canvas = document.createElement("canvas");
+        canvas.className = `${backdrop.className} home-hero-backdrop-canvas`;
+        canvas.style.cssText = backdrop.style.cssText;
+        parent.insertBefore(canvas, backdrop.nextSibling);
+      }
+      canvas.width = result.bitmap.width;
+      canvas.height = result.bitmap.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(result.bitmap, 0, 0);
+      }
+      if (backdrop.dataset) {
+        backdrop.dataset.canvasSrc = normalizedSrc;
+      }
+      backdrop.removeAttribute("src");
+      backdrop.setAttribute("alt", normalizedAlt);
+      backdrop.style.opacity = "0";
+      backdrop.classList.remove("placeholder");
+      prepareHeroImageEnter(canvas, "home-hero-backdrop-transition-enter");
+      revealCanvas(canvas);
+      return;
+    }
+
+    removeCanvas();
+    const loaded = Boolean(result?.loaded);
+    if (!loaded) {
+      finalize();
+      backdrop.setAttribute("src", normalizedSrc);
+      backdrop.setAttribute("alt", normalizedAlt);
+      backdrop.classList.remove("placeholder");
+      return;
+    }
+
+    if (transitionMode === "single-layer") {
       prepareHeroImageEnter(backdrop, "home-hero-backdrop-transition-enter");
       backdrop.classList.remove("placeholder");
       backdrop.setAttribute("src", normalizedSrc);
@@ -259,25 +326,10 @@ export function animateHeroBackdropSwap(
         backdrop.classList.add("is-visible");
         setTimeout(() => finalize(), durationMs);
       });
-    });
-    return;
-  }
-
-  preloadImageSource(normalizedSrc).then((loaded) => {
-    if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
-      return;
-    }
-
-    if (!loaded) {
-      finalize();
-      backdrop.setAttribute("src", normalizedSrc);
-      backdrop.setAttribute("alt", normalizedAlt);
-      backdrop.classList.remove("placeholder");
       return;
     }
 
     clearGhosts();
-    const parent = backdrop.parentElement;
     let ghost = null;
     if (parent && currentSrc) {
       ghost = backdrop.cloneNode(false);
