@@ -52,7 +52,8 @@ export function createHomeScreenMethods05() {
       if (backdrop) {
         const src = display.backdrop || "";
         if (backdrop instanceof HTMLImageElement) {
-          const shouldFreezeBackdrop = Boolean(hero?.heroMetaEnriching) && String(backdrop.getAttribute("src") || "").trim();
+          const shouldFreezeBackdrop =
+            Boolean(hero?.heroMetaEnriching) && String(backdrop.heroBackdropCanvasSrc || backdrop.getAttribute("src") || "").trim();
           if (!shouldFreezeBackdrop) {
             animateHeroBackdropSwap(backdrop, src, display.title || "featured", heroCrossfadeMs, {
               transitionMode: heroTransitionMode

@@ -231,9 +231,66 @@ export function shouldEnrichModernHero(hero) {
 
 export const HERO_IMAGE_PRELOAD_CACHE_LIMIT = 32;
 
+export const HERO_BACKDROP_BITMAP_CACHE_LIMIT = 4;
+
 export const HERO_IMAGE_PRELOAD_TIMEOUT_MS = 1500;
 
 export const heroImagePreloadCache = new Map();
+
+export const heroBackdropBitmapCache = new Map();
+
+function canDecodeHeroBackdropBitmap(src) {
+  // Tizen's in-process renderer decodes a full-size <img> inside Commit; a
+  // screen-sized ImageBitmap mirrors Android's Coil request sized to the hero.
+  return (
+    Platform.isTizen() &&
+    !getTvRuntimePerformanceProfile()?.isPerformanceConstrained &&
+    typeof globalThis.fetch === "function" &&
+    typeof globalThis.createImageBitmap === "function" &&
+    /^https?:\/\//i.test(src)
+  );
+}
+
+export function preloadHeroBackdrop(src) {
+  const normalized = String(src || "").trim();
+  if (!normalized || !canDecodeHeroBackdropBitmap(normalized)) {
+    return preloadImageSource(normalized).then((loaded) => ({ loaded, bitmap: null }));
+  }
+  const cached = heroBackdropBitmapCache.get(normalized);
+  if (cached) {
+    heroBackdropBitmapCache.delete(normalized);
+    heroBackdropBitmapCache.set(normalized, cached);
+    return cached;
+  }
+  if (heroBackdropBitmapCache.size >= HERO_BACKDROP_BITMAP_CACHE_LIMIT) {
+    const oldestSource = heroBackdropBitmapCache.keys().next().value;
+    const oldest = heroBackdropBitmapCache.get(oldestSource);
+    heroBackdropBitmapCache.delete(oldestSource);
+    // Swaps already waiting on this entry draw it before the close runs.
+    oldest.then((entry) => entry.bitmap?.close?.());
+  }
+  const resizeWidth = Math.max(1, Math.round((globalThis.innerWidth || 1920) * (globalThis.devicePixelRatio || 1)));
+  const preload = globalThis
+    .fetch(normalized, { mode: "cors", credentials: "omit" })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.blob();
+    })
+    .then((blob) => globalThis.createImageBitmap(blob, { resizeWidth, resizeQuality: "medium" }))
+    .then(
+      (bitmap) => ({ loaded: true, bitmap }),
+      () => {
+        if (heroBackdropBitmapCache.get(normalized) === preload) {
+          heroBackdropBitmapCache.delete(normalized);
+        }
+        return preloadImageSource(normalized).then((loaded) => ({ loaded, bitmap: null }));
+      }
+    );
+  heroBackdropBitmapCache.set(normalized, preload);
+  return preload;
+}
 
 export function preloadImageSource(src) {
   const normalized = String(src || "").trim();
@@ -306,7 +363,7 @@ export function preloadImageSource(src) {
 
 export function preloadHeroAssets(hero, layoutMode = "modern") {
   const display = layoutMode === "modern" ? buildModernHeroPresentation(hero) : buildHeroDisplayModel(hero, layoutMode);
-  return Promise.all([preloadImageSource(display?.backdrop), preloadImageSource(display?.logo)]);
+  return Promise.all([preloadHeroBackdrop(display?.backdrop), preloadImageSource(display?.logo)]);
 }
 
 export function prepareHeroImageEnter(image, enterClass) {

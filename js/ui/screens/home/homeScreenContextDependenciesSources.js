@@ -223,6 +223,7 @@ export {
   HERO_IMAGE_PRELOAD_CACHE_LIMIT,
   HERO_IMAGE_PRELOAD_TIMEOUT_MS,
   heroImagePreloadCache,
+  preloadHeroBackdrop,
   preloadImageSource,
   preloadHeroAssets,
   prepareHeroImageEnter
