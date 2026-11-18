@@ -156,7 +156,7 @@ export function createHomeScreenMethods20() {
         } else {
           ScreenUtils.setInitialFocus(this.container, this.getInitialFocusSelector());
         }
-        this.syncFocusedCollectionCardState();
+        this.syncFocusedCollectionCardState({ immediate: true });
         if (this.layoutMode === "grid") {
           this.setupGridStickyHeader(Boolean(this.layoutPrefs?.heroSectionEnabled) && Boolean(this.heroItem));
         }

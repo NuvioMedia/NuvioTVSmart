@@ -15,13 +15,23 @@ export function createHomeScreenMethods14() {
           instant: true,
           preserveHeroMedia: this.shouldPreserveCollectionHeroMedia(node)
         });
+        const dwellMs = Number(internals.MODERN_HOME_CONSTANTS?.collectionFocusGifDwellMs) || 140;
         await new Promise((resolve) => {
-          setTimeout(resolve, 140);
+          setTimeout(resolve, dwellMs);
         });
-        if (!node.classList.contains("focused") || Number(this.focusedPosterFlowToken || 0) !== Number(flowToken || 0)) {
+        if (
+          node.isConnected === false ||
+          !node.classList.contains("focused") ||
+          Number(this.focusedPosterFlowToken || 0) !== Number(flowToken || 0) ||
+          this.modernVerticalFastScrollState ||
+          (typeof this.getCurrentFocusedNode === "function" && this.getCurrentFocusedNode() !== node)
+        ) {
           return;
         }
         this.hydrateCollectionFocusGif(node, true);
+        if (this && typeof this === "object") {
+          this.activeCollectionFocusGifNode = node;
+        }
         return;
       }
       const prefs = this.layoutPrefs || {};

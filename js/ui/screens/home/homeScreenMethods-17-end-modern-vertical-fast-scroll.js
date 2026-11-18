@@ -55,6 +55,13 @@ export function createHomeScreenMethods17() {
         return true;
       }
       this.endModernVerticalFastScroll({ land: false });
+      this.cancelCollectionFocusGifDwell?.();
+      if (this.activeCollectionFocusGifNode) {
+        if (this.activeCollectionFocusGifNode.isConnected !== false) {
+          this.hydrateCollectionFocusGif?.(this.activeCollectionFocusGifNode, false);
+        }
+        this.activeCollectionFocusGifNode = null;
+      }
       if (this.homeViewportFocusSyncTimer) {
         clearTimeout(this.homeViewportFocusSyncTimer);
         this.homeViewportFocusSyncTimer = null;
@@ -134,6 +141,9 @@ export function createHomeScreenMethods17() {
         this.focusNode(current, target, direction > 0 ? "down" : "up", { repeat: true });
       } else if (target) {
         this.syncMainFocusToViewport({ suppressFlows: false });
+        if (this.isCollectionFolderNode?.(target) || target.classList?.contains?.("home-collection-card")) {
+          this.scheduleCollectionFocusGifDwell?.(target);
+        }
       }
     },
     ensureMainVerticalVisibility(target, direction = null, current = null, layoutAdjustment = 0) {

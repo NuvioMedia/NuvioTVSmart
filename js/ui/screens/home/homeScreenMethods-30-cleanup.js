@@ -55,6 +55,13 @@ export function createHomeScreenMethods30() {
       this.heroDescriptionScrollHolding = false;
       this.cancelPendingHeroFocus();
       this.cancelFocusedPosterFlow();
+      this.cancelCollectionFocusGifDwell?.();
+      if (this.activeCollectionFocusGifNode) {
+        if (this.activeCollectionFocusGifNode.isConnected !== false) {
+          this.hydrateCollectionFocusGif?.(this.activeCollectionFocusGifNode, false);
+        }
+        this.activeCollectionFocusGifNode = null;
+      }
       this.clearFocusedPosterFlowState();
       this.collapseFocusedPoster();
       this.clearHomeTrailerLayers();

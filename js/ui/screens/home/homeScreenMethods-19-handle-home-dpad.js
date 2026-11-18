@@ -149,6 +149,7 @@ export function createHomeScreenMethods19() {
           }
           if (target.closest(".home-sidebar .focusable, .modern-sidebar-panel .focusable")) {
             this.setSidebarExpanded(true);
+            this.syncFocusedCollectionCardState?.({ target: null });
             return;
           }
           if (!target.closest(".home-main .focusable")) {
@@ -157,7 +158,7 @@ export function createHomeScreenMethods19() {
           if (this.isMainNode(target)) {
             this.lastMainFocus = target;
           }
-          this.syncFocusedCollectionCardState();
+          this.syncFocusedCollectionCardState({ target });
           this.scheduleModernHeroUpdate(target);
           this.scheduleFocusedPosterFlow(target);
         };

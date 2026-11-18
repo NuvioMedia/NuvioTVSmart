@@ -499,7 +499,10 @@ export function createHomeScreenMethods23() {
       if (!this.container?.querySelector(".home-poster-card.focused")) {
         this.clearFocusedPosterFlowState();
       }
-      this.syncFocusedCollectionCardState();
+      const preservePendingCollectionGifDwell = Boolean(
+        focusSurvived && (this.collectionFocusGifTimer || this.modernVerticalFastScrollState)
+      );
+      this.syncFocusedCollectionCardState({ immediate: !preservePendingCollectionGifDwell });
       if (!this.layoutPrefs?.modernSidebar && !this.isSidebarFocusActive()) {
         this.setSidebarExpanded(false);
       }

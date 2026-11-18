@@ -282,22 +282,116 @@ export function createHomeScreenMethods11() {
       // Preserve data-src so the asset can be loaded again on the next focus.
       gifNode.removeAttribute("src");
     },
-    syncFocusedCollectionCardState() {
-      const focused = this.getCurrentFocusedNode();
-      const focusedCollection = focused?.classList?.contains("home-collection-card") ? focused : null;
+    cancelCollectionFocusGifDwell() {
+      if (this.collectionFocusGifTimer) {
+        clearTimeout(this.collectionFocusGifTimer);
+        this.collectionFocusGifTimer = null;
+      }
+      this.collectionFocusGifToken = Number(this.collectionFocusGifToken || 0) + 1;
+      this.pendingCollectionFocusGifNode = null;
+      this.pendingCollectionFocusGifDeferVertical = false;
+    },
+    scheduleCollectionFocusGifDwell(node, { deferUntilVerticalSettle = false } = {}) {
+      const isCollection =
+        (typeof this.isCollectionFolderNode === "function" && this.isCollectionFolderNode(node)) ||
+        Boolean(node?.classList?.contains?.("home-collection-card"));
+      if (!node || !isCollection) {
+        return;
+      }
+      if (this.activeCollectionFocusGifNode && this.activeCollectionFocusGifNode !== node) {
+        if (this.activeCollectionFocusGifNode.isConnected !== false) {
+          this.hydrateCollectionFocusGif(this.activeCollectionFocusGifNode, false);
+        }
+        this.activeCollectionFocusGifNode = null;
+      }
+      const gifNode = node.querySelector?.(".home-poster-focus-gif") || null;
+      if (!(gifNode instanceof HTMLImageElement)) {
+        this.cancelCollectionFocusGifDwell();
+        return;
+      }
+      if (this.modernVerticalFastScrollState) {
+        this.cancelCollectionFocusGifDwell();
+        return;
+      }
+      if (
+        this.activeCollectionFocusGifNode === node &&
+        node.classList?.contains?.("is-focus-gif-active") &&
+        gifNode.getAttribute?.("src")
+      ) {
+        this.cancelCollectionFocusGifDwell();
+        return;
+      }
+      if (this.pendingCollectionFocusGifNode === node && this.collectionFocusGifTimer) {
+        if (deferUntilVerticalSettle) {
+          this.pendingCollectionFocusGifDeferVertical = true;
+        }
+        return;
+      }
+      this.cancelCollectionFocusGifDwell();
+      const token = Number(this.collectionFocusGifToken || 0);
+      this.pendingCollectionFocusGifNode = node;
+      this.pendingCollectionFocusGifDeferVertical = Boolean(deferUntilVerticalSettle);
+      const dwellMs = Number(internals.MODERN_HOME_CONSTANTS?.collectionFocusGifDwellMs) || 140;
+      const pollMs = Number(internals.MODERN_HOME_CONSTANTS?.verticalScrollSettlePollMs) || 60;
+      const tryHydrate = () => {
+        this.collectionFocusGifTimer = null;
+        if (Number(this.collectionFocusGifToken || 0) !== token || this.pendingCollectionFocusGifNode !== node) {
+          return;
+        }
+        if (node.isConnected === false || !node.classList?.contains?.("focused")) {
+          return;
+        }
+        if (typeof this.getCurrentFocusedNode === "function" && this.getCurrentFocusedNode() !== node) {
+          return;
+        }
+        if (Router?.getCurrent && !["home", "folderDetail"].includes(Router.getCurrent())) {
+          return;
+        }
+        if (this.modernVerticalFastScrollState) {
+          return;
+        }
+        if (this.pendingCollectionFocusGifDeferVertical && this.isModernVerticalScrollActive?.()) {
+          this.collectionFocusGifTimer = setTimeout(tryHydrate, pollMs);
+          return;
+        }
+        this.pendingCollectionFocusGifNode = null;
+        this.pendingCollectionFocusGifDeferVertical = false;
+        this.hydrateCollectionFocusGif(node, true);
+        this.activeCollectionFocusGifNode = node;
+      };
+      this.collectionFocusGifTimer = setTimeout(tryHydrate, dwellMs);
+    },
+    syncFocusedCollectionCardState({ immediate = false, target = undefined } = {}) {
+      const focused = target !== undefined ? target : this.getCurrentFocusedNode();
+      const focusedCollection =
+        focused &&
+        ((typeof this.isCollectionFolderNode === "function" && this.isCollectionFolderNode(focused)) ||
+          focused?.classList?.contains?.("home-collection-card"))
+          ? focused
+          : null;
       if (
         this.activeCollectionFocusGifNode &&
         this.activeCollectionFocusGifNode !== focusedCollection &&
-        this.activeCollectionFocusGifNode.isConnected
+        this.activeCollectionFocusGifNode.isConnected !== false
       ) {
         this.hydrateCollectionFocusGif(this.activeCollectionFocusGifNode, false);
-      }
-      if (focusedCollection) {
-        this.hydrateCollectionFocusGif(focusedCollection, true);
-        this.activeCollectionFocusGifNode = focusedCollection;
-      } else {
         this.activeCollectionFocusGifNode = null;
       }
+      if (!focusedCollection || this.modernVerticalFastScrollState) {
+        this.cancelCollectionFocusGifDwell();
+        if (this.activeCollectionFocusGifNode && this.activeCollectionFocusGifNode.isConnected !== false) {
+          this.hydrateCollectionFocusGif(this.activeCollectionFocusGifNode, false);
+        }
+        this.activeCollectionFocusGifNode = null;
+        return;
+      }
+      if (immediate) {
+        this.cancelCollectionFocusGifDwell();
+        this.hydrateCollectionFocusGif(focusedCollection, true);
+        this.activeCollectionFocusGifNode = focusedCollection;
+        return;
+      }
+      this.scheduleCollectionFocusGifDwell(focusedCollection);
     }
   };
 }

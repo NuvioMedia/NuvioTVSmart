@@ -23,7 +23,7 @@ export function createHomeScreenMethods15() {
           instant: true,
           preserveHeroMedia: this.shouldPreserveCollectionHeroMedia(node)
         });
-        this.hydrateCollectionFocusGif(node, true);
+        this.scheduleCollectionFocusGifDwell?.(node, { deferUntilVerticalSettle });
         return;
       }
       const prefs = this.layoutPrefs || {};

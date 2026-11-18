@@ -177,6 +177,13 @@ export function createHomeScreenMethods06() {
     },
     lockHomeHoldFocus() {
       this.homeHoldFocusLocked = true;
+      this.cancelCollectionFocusGifDwell?.();
+      if (this.activeCollectionFocusGifNode) {
+        if (this.activeCollectionFocusGifNode.isConnected !== false) {
+          this.hydrateCollectionFocusGif?.(this.activeCollectionFocusGifNode, false);
+        }
+        this.activeCollectionFocusGifNode = null;
+      }
       const current = this.getCurrentFocusedNode();
       if (current?.isConnected) {
         current.classList.remove("focused");

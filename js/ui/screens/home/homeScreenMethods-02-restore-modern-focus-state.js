@@ -49,7 +49,7 @@ export function createHomeScreenMethods02() {
       }
 
       this.setFocusedNode(target);
-      this.syncFocusedCollectionCardState();
+      this.syncFocusedCollectionCardState({ immediate: true });
       this.lastMainFocus = target;
       this.rememberMainRowFocus(target);
       if (!this.isRestoringFocusFromBack) {
@@ -102,7 +102,7 @@ export function createHomeScreenMethods02() {
       }
 
       this.setFocusedNode(target);
-      this.syncFocusedCollectionCardState();
+      this.syncFocusedCollectionCardState({ immediate: true });
       this.lastMainFocus = target;
       this.rememberMainRowFocus(target);
       if (!this.isRestoringFocusFromBack && target.closest(".home-track, .home-grid-track")) {
@@ -122,7 +122,7 @@ export function createHomeScreenMethods02() {
         return false;
       }
       this.setFocusedNode(target);
-      this.syncFocusedCollectionCardState();
+      this.syncFocusedCollectionCardState({ immediate: true });
       this.lastMainFocus = target;
       this.rememberMainRowFocus(target);
       this.ensureTrackHorizontalVisibility(target);

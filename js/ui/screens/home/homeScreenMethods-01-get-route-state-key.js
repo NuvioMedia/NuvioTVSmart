@@ -213,7 +213,7 @@ export function createHomeScreenMethods01() {
       viewport.scrollTop = Math.max(0, Math.min(maxScrollTop, Number(focusState.mainScrollTop || 0)));
       this.lastMainFocus = target;
       this.rememberMainRowFocus(target);
-      this.syncFocusedCollectionCardState();
+      this.syncFocusedCollectionCardState({ immediate: true });
       this.scheduleModernHeroUpdate(target, { immediate: true });
       this.scheduleFocusedPosterFlow(target);
       return true;

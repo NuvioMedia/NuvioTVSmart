@@ -307,6 +307,21 @@ export function createHomeScreenMethods05() {
       const current = this.getCurrentFocusedNode();
       if (current && current !== target && current.isConnected) {
         current.classList.remove("focused");
+        if (this.isCollectionFolderNode?.(current) || current.classList?.contains?.("home-collection-card")) {
+          this.hydrateCollectionFocusGif?.(current, false);
+          if (this.activeCollectionFocusGifNode === current) {
+            this.activeCollectionFocusGifNode = null;
+          }
+        }
+      }
+      if (current !== target) {
+        this.cancelCollectionFocusGifDwell?.();
+        if (this.activeCollectionFocusGifNode && this.activeCollectionFocusGifNode !== target) {
+          if (this.activeCollectionFocusGifNode.isConnected !== false) {
+            this.hydrateCollectionFocusGif?.(this.activeCollectionFocusGifNode, false);
+          }
+          this.activeCollectionFocusGifNode = null;
+        }
       }
       if (!(target instanceof HTMLElement)) {
         this.setCurrentFocusedNode(null);

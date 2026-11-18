@@ -16,6 +16,7 @@ export const MODERN_HOME_CONSTANTS = {
   trackPaginationPrefetchDwellConstrainedMs: 400,
   trackPaginationLoadAheadItems: 4,
   cameraFollowDelayMs: 140,
+  collectionFocusGifDwellMs: 140,
   cameraFollowDurationXMs: 440,
   cameraFollowDurationYMs: 440,
   cameraSafetyDurationMs: 180,
