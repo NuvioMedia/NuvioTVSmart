@@ -170,11 +170,11 @@ export function createPlayerScreenMethods73() {
 
         if (this.aspectToastTimer) {
           clearTimeout(this.aspectToastTimer);
-          clearTimeout(this.sourceStartupTimeoutTimer);
-          this.sourceStartupTimeoutTimer = null;
-          this.sourceFallbackInFlight = false;
           this.aspectToastTimer = null;
         }
+        clearTimeout(this.sourceStartupTimeoutTimer);
+        this.sourceStartupTimeoutTimer = null;
+        this.sourceFallbackInFlight = false;
 
         if (this.parentalGuideTimer) {
           clearTimeout(this.parentalGuideTimer);
