@@ -324,20 +324,39 @@ export function createPlayerScreenMethods65() {
       this.episodePanelFocusZone = "episodes";
       this.renderEpisodePanel();
     },
-    moveEpisodePanelSeason(delta) {
+    isEpisodePanelCurrentEpisode(episode) {
+      return Boolean(
+        (episode?.id && episode.id === this.params?.videoId) ||
+        (Number(episode?.season) === Number(this.params?.season) && Number(episode?.episode) === Number(this.params?.episode))
+      );
+    },
+    focusEpisodePanelSeasonEntry() {
+      // Android focuses the episode whose streams were last opened, else the playing one, else the first.
+      const entries = this.getEpisodePanelEntries();
+      const streamVideoId = String(this.episodePanelStreamVideoId || "");
+      const target =
+        (streamVideoId && entries.find(({ episode }) => String(episode?.id || "") === streamVideoId)) ||
+        entries.find(({ episode }) => this.isEpisodePanelCurrentEpisode(episode)) ||
+        entries[0];
+      if (target) {
+        this.episodePanelIndex = target.index;
+      }
+    },
+    moveEpisodePanelSeason(delta, { focusZone = "seasons" } = {}) {
       const seasons = this.getEpisodePanelSeasons();
       if (seasons.length <= 1) {
         return;
       }
       const currentIndex = seasons.indexOf(Number(this.episodePanelSeason));
-      const nextIndex = clamp((currentIndex >= 0 ? currentIndex : this.episodePanelSeasonIndex) + delta, 0, seasons.length - 1);
+      const fromIndex = currentIndex >= 0 ? currentIndex : this.episodePanelSeasonIndex;
+      const nextIndex = clamp(fromIndex + delta, 0, seasons.length - 1);
+      if (nextIndex === fromIndex && currentIndex >= 0) {
+        return;
+      }
       this.episodePanelSeasonIndex = nextIndex;
       this.episodePanelSeason = seasons[nextIndex];
-      const firstEntry = this.getEpisodePanelEntries()[0];
-      if (firstEntry) {
-        this.episodePanelIndex = firstEntry.index;
-      }
-      this.episodePanelFocusZone = "seasons";
+      this.focusEpisodePanelSeasonEntry();
+      this.episodePanelFocusZone = focusZone;
       this.renderEpisodePanel();
     },
     getEpisodePanelStreamFilters() {

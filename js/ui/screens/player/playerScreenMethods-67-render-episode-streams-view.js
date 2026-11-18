@@ -171,9 +171,7 @@ export function createPlayerScreenMethods67() {
           const selected = index === this.episodePanelIndex;
           const focused = focusedZone === "episodes" && selected;
           const selectedClass = `${selected ? " selected" : ""}${focused ? " focused" : ""}`;
-          const current =
-            (episode?.id && episode.id === this.params?.videoId) ||
-            (Number(episode?.season) === Number(this.params?.season) && Number(episode?.episode) === Number(this.params?.episode));
+          const current = this.isEpisodePanelCurrentEpisode(episode);
           const code = episodeDisplayCode(episode);
           const thumbnail = episodeThumbnailUrl(episode);
           const date = formatEpisodePanelDate(episode.released);
