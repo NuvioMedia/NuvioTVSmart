@@ -142,10 +142,7 @@ export function createPlayerScreenMethods69() {
         const seasons = this.getEpisodePanelSeasons();
         this.episodePanelSeasonIndex = clamp(seasonIndex, 0, Math.max(0, seasons.length - 1));
         this.episodePanelSeason = seasons[this.episodePanelSeasonIndex] ?? this.episodePanelSeason;
-        const firstEntry = this.getEpisodePanelEntries()[0];
-        if (firstEntry) {
-          this.episodePanelIndex = firstEntry.index;
-        }
+        this.focusEpisodePanelSeasonEntry();
         this.episodePanelFocusZone = "seasons";
         return;
       }

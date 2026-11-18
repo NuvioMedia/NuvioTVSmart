@@ -75,6 +75,16 @@ export function createPlayerScreenMethods64() {
       }
 
       if (zone === "list") {
+        if (direction === "left" || direction === "right") {
+          // Android: Left/Right in the source list switch to the previous/next addon filter.
+          const current = filters.indexOf(this.sourceFilter);
+          const next = filters[current + (direction === "right" ? 1 : -1)];
+          if (current >= 0 && next) {
+            this.setSourceFilter(next);
+            this.renderSourcesPanel();
+          }
+          return;
+        }
         if (direction === "up") {
           if (index > 0) {
             this.sourcesFocus = { zone: "list", index: index - 1 };

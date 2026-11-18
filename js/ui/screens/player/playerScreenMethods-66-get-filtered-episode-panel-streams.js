@@ -156,6 +156,17 @@ export function createPlayerScreenMethods66() {
         return;
       }
       if (focus.zone === "streams") {
+        if (direction === "left" || direction === "right") {
+          // Android: Left/Right in the stream list switch to the previous/next addon filter.
+          const current = filters.indexOf(this.episodePanelStreamFilter);
+          const next = filters[current + (direction === "right" ? 1 : -1)];
+          if (current >= 0 && next) {
+            this.episodePanelStreamFilter = next;
+            this.episodePanelStreamFocus = { zone: "filters", index: filters.indexOf(next) };
+            this.renderEpisodePanel();
+          }
+          return;
+        }
         if (direction === "up") {
           this.episodePanelStreamFocus =
             index > 0
@@ -276,6 +287,14 @@ export function createPlayerScreenMethods66() {
       if (keyCode === 37 || keyCode === 39) {
         if (this.episodePanelFocusZone === "seasons") {
           this.moveEpisodePanelSeason(keyCode === 37 ? -1 : 1);
+        } else if (this.episodePanelFocusZone === "episodes" && hasSeasonTabs) {
+          // Android: Left/Right on an episode switch season; Left on the first season moves up to the tabs.
+          if (keyCode === 37 && seasons.indexOf(Number(this.episodePanelSeason)) <= 0) {
+            this.episodePanelFocusZone = "seasons";
+            this.renderEpisodePanel();
+          } else {
+            this.moveEpisodePanelSeason(keyCode === 37 ? -1 : 1, { focusZone: "episodes" });
+          }
         }
         return true;
       }
