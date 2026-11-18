@@ -513,12 +513,27 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
   return job.promise;
 }
 
+// The worker only rescales JPEG, so a source that is plainly something else
+// would cost a full fetch and a worker slot just to learn "not jpeg" while the
+// card waits. The extension check ignores the query and fragment.
+const NON_JPEG_PATH_RE = /\.(?:gifv?|webp|png|svg|avif)$/i;
+const DATA_URL_RE = /^data:/i;
+const JPEG_DATA_URL_RE = /^data:image\/jpe?g[;,]/i;
+
+function isObviousNonJpegUrl(url) {
+  const value = String(url);
+  if (DATA_URL_RE.test(value)) return !JPEG_DATA_URL_RE.test(value);
+  return NON_JPEG_PATH_RE.test(value.split(/[?#]/, 1)[0]);
+}
+
 /**
  * Resolve a card-sized object url for `url`, or null when the original should
  * be used as-is. Never rejects: every failure path falls back to the original.
  */
-function shouldQueueRescale(url, { width, height, fit } = {}) {
-  return Boolean(url && width > 0 && height > 0 && isRescalableArtworkFit(fit));
+export function shouldQueueRescale(url, { width, height, fit } = {}) {
+  return Boolean(
+    url && width > 0 && height > 0 && isRescalableArtworkFit(fit) && !isObviousNonJpegUrl(url)
+  );
 }
 
 export function rescaleHomeArtwork(url, options) {
