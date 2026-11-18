@@ -504,10 +504,15 @@ function resolvePreferredLocale(preferred = null) {
 function interpolate(template, params = {}) {
   const values = Array.isArray(params) ? params : Object.values(params || {});
   let sequentialIndex = 0;
+  // Like Android's String.format, "%%" becomes "%" only when the string is
+  // formatted with arguments; a plain getString() keeps the text as written.
+  const formatted = values.length > 0;
   return String(template || "")
     .replace(/\{\{(\w+)\}\}/g, (_, key) => String(params?.[key] ?? ""))
-    .replace(/%(\d+)\$[a-z]/gi, (_, index) => String(values[Number(index) - 1] ?? ""))
-    .replace(/%[a-z]/gi, () => String(values[sequentialIndex++] ?? ""))
+    .replace(/%%|%(\d+)\$[a-z]|%[a-z]/gi, (match, index) => {
+      if (match === "%%") return formatted ? "%" : match;
+      return String((index ? values[Number(index) - 1] : values[sequentialIndex++]) ?? "");
+    })
     .replace(/\\'/g, "'")
     .replace(/\\"/g, '"');
 }
