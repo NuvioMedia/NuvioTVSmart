@@ -6,7 +6,7 @@ import vm from "node:vm";
 const NEXT_EPISODE = { videoId: "tt1:1:2", season: 1, episode: 2, hasAired: true };
 const PLUGIN_GROUP = "local-plugin-easystreams|1080p";
 
-async function loadMethods(streamRepository) {
+async function loadMethods(streamRepository, overrides = {}) {
   const [cardSource, autoplaySource] = await Promise.all([
     readFile(
       new URL(
@@ -42,7 +42,8 @@ async function loadMethods(streamRepository) {
       result?.status === "success"
         ? (result.data || []).flatMap((group) => group.streams || [])
         : [],
-    mergeStreamItems: (left, right) => [...left, ...right]
+    mergeStreamItems: (left, right) => [...left, ...right],
+    ...overrides
   };
   const context = vm.createContext({
     internals,
@@ -154,4 +155,54 @@ test("an addon prefetch keeps the plain cache key and is reused", async () => {
     [...screen.streamCandidatesByVideoId.keys()],
     [screen.getStreamCacheKey(NEXT_EPISODE.videoId, "series", 1, 2, false)]
   );
+});
+
+test("a dismissed next-episode card survives a backward seek, like Android", async () => {
+  let position = 1300;
+  const methods = await loadMethods(repository(() => ({ status: "success", data: [] })), {
+    PlayerController: { video: { paused: false } },
+    PlayerSettingsStore: { get: () => ({ autoplayNextEpisode: true }) },
+    // Outro starts at 1290s of a 1400s episode.
+    shouldShowNextEpisodeCardRule: ({ positionSeconds }) => positionSeconds >= 1290,
+    Router: { getCurrent: () => "player" }
+  });
+  const screen = Object.create(methods);
+  let launches = 0;
+  Object.assign(screen, {
+    params: { itemType: "series" },
+    hasPresentedPlaybackFrame: true,
+    nextEpisodeAutoplayAttemptedKey: "",
+    resolveNextEpisodeInfo: () => NEXT_EPISODE,
+    getPlaybackDurationSeconds: () => 1400,
+    getPlaybackCurrentSeconds: () => position,
+    isStartupErrorVisible: () => false,
+    renderNextEpisodeCard: () => {},
+    setControlsVisible: () => {},
+    playNextEpisode: async () => {
+      launches += 1;
+      screen.nextEpisodeLaunching = true;
+    }
+  });
+
+  assert.equal(screen.maybeAutoplayNextEpisode(), true);
+  assert.equal(launches, 1);
+  screen.dismissNextEpisodeCard({ revealControls: true, armExitOnNextBack: true });
+  assert.equal(screen.nextEpisodeLaunching, false);
+
+  screen.nextEpisodeCardTriggered = true;
+  screen.resetNextEpisodeCardAfterBackwardSeek(1200);
+  position = 1200;
+  assert.equal(screen.maybeAutoplayNextEpisode(), false);
+  position = 1295;
+  assert.equal(screen.maybeAutoplayNextEpisode(), false, "rewinding must not re-arm auto-play");
+  assert.equal(launches, 1);
+  assert.equal(screen.isNextEpisodeCardVisible(), false);
+
+  // A new stream's first frame clears the dismissal, as Android does.
+  screen.resetNextEpisodeCardDismissal();
+  position = 10;
+  assert.equal(screen.maybeAutoplayNextEpisode(), false);
+  position = 1295;
+  assert.equal(screen.maybeAutoplayNextEpisode(), true);
+  assert.equal(launches, 2);
 });

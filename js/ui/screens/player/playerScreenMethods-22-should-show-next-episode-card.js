@@ -214,14 +214,13 @@ export function createPlayerScreenMethods22() {
     resetNextEpisodeCardCycle({ render = true } = {}) {
       const hadState =
         this.nextEpisodeCardTriggered ||
-        this.nextEpisodeCardDismissed ||
         this.nextEpisodeBackExitArmed ||
         this.controlFocusZone === "nextEpisode";
       if (!hadState) {
         return false;
       }
       this.nextEpisodeCardTriggered = false;
-      this.nextEpisodeCardDismissed = false;
+      // Seeking back keeps a dismissal, like Android's postPlayDismissedForCurrentEpisode.
       this.nextEpisodeBackExitArmed = false;
       if (this.controlFocusZone === "nextEpisode") {
         this.controlFocusZone = this.controlsVisible && this.isSeekBarAvailable() ? "progress" : "buttons";
