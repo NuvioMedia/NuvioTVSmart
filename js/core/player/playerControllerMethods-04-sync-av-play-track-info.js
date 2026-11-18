@@ -133,15 +133,21 @@ export function createPlayerControllerMethods04() {
       const resolvedSelectedAudioIndex = this.resolveAvPlayAudioTrackIndex(selectedAudioIndex);
       const resolvedSelectedTextIndex = this.resolveAvPlaySubtitleTrackIndex(selectedTextIndex);
 
+      const pendingAudioIndex = Number(this.pendingAvPlayAudioTrackIndex);
+      // A selection made before PLAYING waits for setSelectTrack; READY still
+      // reports the default track, which must not discard that selection.
+      const pendingAudioActive =
+        Number.isFinite(pendingAudioIndex) && pendingAudioIndex >= 0 && pendingAudioIndex !== resolvedSelectedAudioIndex;
+
       if (desiredAudioActive) {
         this.selectedAvPlayAudioTrackIndex = desiredAudioIndex;
+      } else if (pendingAudioActive) {
+        this.selectedAvPlayAudioTrackIndex = pendingAudioIndex;
       } else if (Number.isFinite(resolvedSelectedAudioIndex) && resolvedSelectedAudioIndex >= 0) {
         this.selectedAvPlayAudioTrackIndex = resolvedSelectedAudioIndex;
         this.pendingAvPlayAudioTrackIndex = -1;
         this.desiredAvPlayAudioTrackIndex = -1;
         this.desiredAvPlayAudioTrackUntil = 0;
-      } else if (Number.isFinite(this.pendingAvPlayAudioTrackIndex) && this.pendingAvPlayAudioTrackIndex >= 0) {
-        this.selectedAvPlayAudioTrackIndex = this.pendingAvPlayAudioTrackIndex;
       } else if (this.avplayAudioTracks.length && this.selectedAvPlayAudioTrackIndex < 0) {
         this.selectedAvPlayAudioTrackIndex = this.avplayAudioTracks[0].avplayTrackIndex;
       } else if (!this.avplayAudioTracks.length) {

@@ -384,6 +384,35 @@ assert.equal(
 assert.equal(screen.startupAudioPreferenceApplied, false);
 screen.findRememberedAudioOption = () => null;
 
+// AVPlay alone exposes the tracks (companion service not running): a reopened
+// source that came back on the wrong language is still corrected once.
+const serviceAudioTracks = screen.embeddedAudioTracks;
+screen.embeddedAudioTracks = [];
+screen.startupAudioPreferenceApplied = true;
+screen.tizenLateAudioPreferenceAttempted = false;
+screen.getAudioEntries = () => [
+  { id: "0", track: merged[0], selected: true, supported: true },
+  { id: "1", track: merged[1], selected: false, supported: true }
+];
+assert.equal(
+  screen.maybeReapplyTizenStartupAudioPreference(),
+  true,
+  "correct AVPlay-only tracks too"
+);
+assert.equal(screen.startupAudioPreferenceApplied, false);
+screen.startupAudioPreferenceApplied = true;
+screen.tizenLateAudioPreferenceAttempted = false;
+screen.getAudioEntries = () => [
+  { id: "0", track: {}, selected: true, supported: true, implicitAudioTrack: true }
+];
+assert.equal(
+  screen.maybeReapplyTizenStartupAudioPreference(),
+  false,
+  "nothing to correct before real tracks exist"
+);
+screen.embeddedAudioTracks = serviceAudioTracks;
+screen.tizenLateAudioPreferenceAttempted = false;
+
 let lateAppliedIndex = -1;
 screen.getAudioEntries = () => [
   { id: "0", track: merged[0], selected: lateAppliedIndex !== 1, supported: true },
