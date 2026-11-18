@@ -1,5 +1,6 @@
 import { Platform } from "../../platform/index.js";
 import { TizenEngineFsService } from "../../platform/tizen/tizenEngineFsService.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 import { fetchMatroskaTracks } from "./matroskaTrackMetadata.js";
 import {
   isWebOsCompanionServiceAvailable,
@@ -18,6 +19,7 @@ const UNSUPPORTED_TRACK_CACHE_TTL_MS = 10 * 60 * 1000;
 const WEBOS_LUNA_TRACK_ATTEMPTS = 6;
 const WEBOS_LUNA_TRACK_RETRY_DELAY_MS = 700;
 const TIZEN_TRACK_SERVICE_GRACE_MS = 2000;
+const pendingTizenServiceTracks = new Map();
 
 class TerminalTrackDiscoveryError extends Error {
   constructor(message) {
@@ -207,24 +209,16 @@ async function requestTracksViaLunaWithRetry(mediaUrl, filename = "") {
   return [];
 }
 
-async function fetchJson(url) {
-  const controller = typeof AbortController === "function" ? new AbortController() : null;
-  const timeoutId = controller ? setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS) : 0;
-
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      signal: controller?.signal
-    });
+async function fetchJson(url, { timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+  // withRequestTimeout also settles the call where AbortController is missing
+  // (Chromium before 66), although the connection itself then stays open.
+  return withRequestTimeout(async (signal) => {
+    const response = await fetch(url, { method: "GET", ...(signal ? { signal } : {}) });
     if (!response.ok) {
       throw new Error(`Track request failed with HTTP ${response.status}`);
     }
-    return await response.json();
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
+    return response.json();
+  }, timeoutMs);
 }
 
 export const localMediaTracksRepository = {
@@ -280,20 +274,34 @@ export const localMediaTracksRepository = {
         // answer, so read the container header at the same time instead of
         // serializing the two sources.
         const headerPromise = fetchMatroskaTracks(targetUrl);
-        const servicePromise = (async () => {
-          try {
-            const service = await TizenEngineFsService.ensureStarted();
-            const baseUrl = String(service?.baseUrl || "").replace(/\/+$/, "");
-            if (service?.status === "success" && baseUrl) {
-              const payload = await fetchJson(`${baseUrl}/tracks/${encodeURIComponent(targetUrl)}`);
-              rememberLocalMediaServerUrl(baseUrl);
-              return Array.isArray(payload) ? payload : [];
+        // Without AbortController a timed-out request stays open, so there the
+        // request is not timed out at all: retries share it until the service
+        // answers, and the grace races below keep startup bounded.
+        const servicePromise =
+          pendingTizenServiceTracks.get(targetUrl) ||
+          (async () => {
+            try {
+              const service = await TizenEngineFsService.ensureStarted();
+              const baseUrl = String(service?.baseUrl || "").replace(/\/+$/, "");
+              if (service?.status === "success" && baseUrl) {
+                const payload = await fetchJson(
+                  `${baseUrl}/tracks/${encodeURIComponent(targetUrl)}`,
+                  {
+                    timeoutMs: typeof AbortController === "function" ? REQUEST_TIMEOUT_MS : 0
+                  }
+                );
+                rememberLocalMediaServerUrl(baseUrl);
+                return Array.isArray(payload) ? payload : [];
+              }
+            } catch (_) {
+              // Older Tizen TVs may have AVPlay but no usable packaged web service.
             }
-          } catch (_) {
-            // Older Tizen TVs may have AVPlay but no usable packaged web service.
-          }
-          return [];
-        })();
+            return [];
+          })();
+        if (!pendingTizenServiceTracks.has(targetUrl)) {
+          pendingTizenServiceTracks.set(targetUrl, servicePromise);
+          void servicePromise.finally(() => pendingTizenServiceTracks.delete(targetUrl));
+        }
         const serviceTracks = await Promise.race([
           servicePromise,
           delay(TIZEN_TRACK_SERVICE_GRACE_MS).then(() => null)

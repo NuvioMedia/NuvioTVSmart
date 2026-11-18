@@ -160,15 +160,26 @@ export function matroskaTracksOffset(bytes) {
 }
 
 export async function fetchMatroskaTracks(url) {
-  if (!/^https?:\/\//i.test(url) || typeof AbortController !== "function") return [];
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+  if (!/^https?:\/\//i.test(url)) return [];
+  // Chromium before 66 (Tizen 5.0 and older) has no AbortController. The probe
+  // still runs there: the timer settles it and cancels the body being read.
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  let activeReader = null;
+  let finishTimeout = () => {};
+  let expired = false;
+  const timeout = setTimeout(() => {
+    expired = true;
+    controller?.abort();
+    if (activeReader) void activeReader.cancel().catch(() => {});
+    finishTimeout([]);
+  }, PROBE_TIMEOUT_MS);
   const readRange = async (offset, size) => {
+    if (expired) return null;
     let reader;
     try {
       const response = await fetch(url, {
         headers: { Range: `bytes=${offset}-${offset + size - 1}` },
-        signal: controller.signal,
+        ...(controller ? { signal: controller.signal } : {}),
         credentials: "omit"
       });
       const range = response.headers.get("content-range");
@@ -178,7 +189,9 @@ export async function fetchMatroskaTracks(url) {
         !response.body?.getReader
       )
         return null;
+      if (expired) return null;
       reader = response.body.getReader();
+      activeReader = reader;
       const bytes = new Uint8Array(size);
       let length = 0;
       while (true) {
@@ -193,7 +206,7 @@ export async function fetchMatroskaTracks(url) {
       if (reader) void reader.cancel().catch(() => {});
     }
   };
-  try {
+  const probe = async () => {
     const header = await readRange(0, INITIAL_HEADER_BYTES);
     // Skip the larger read for containers that cannot carry Matroska tracks.
     if (
@@ -223,10 +236,16 @@ export async function fetchMatroskaTracks(url) {
     combined.set(header);
     combined.set(tail, header.length);
     return parseMatroskaTracks(combined);
-  } catch (_) {
-    return [];
+  };
+  try {
+    return await Promise.race([
+      probe().catch(() => []),
+      new Promise((resolve) => {
+        finishTimeout = resolve;
+      })
+    ]);
   } finally {
     clearTimeout(timeout);
-    controller.abort();
+    controller?.abort();
   }
 }
