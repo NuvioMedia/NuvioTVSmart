@@ -37,9 +37,7 @@ export function createMetaDetailsScreenMethods08() {
       const items = settings.ratingOrder
         .filter(
           (provider) =>
-            settings[MDBLIST_PROVIDER_SETTINGS[provider]] !== false &&
-            ratings[provider] != null &&
-            String(ratings[provider]).trim() !== ""
+            settings[MDBLIST_PROVIDER_SETTINGS[provider]] !== false && ratings[provider] != null && String(ratings[provider]).trim() !== ""
         )
         .map((provider) => [
           provider,

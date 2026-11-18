@@ -224,9 +224,13 @@ export function createPlayerScreenMethods51() {
         !Environment.isTizen() ||
         !this.startupAudioPreferenceApplied ||
         this.userAudioTrackSelected ||
-        this.tizenLateAudioPreferenceAttempted ||
-        !this.embeddedAudioTracks?.length
+        this.tizenLateAudioPreferenceAttempted
       ) {
+        return false;
+      }
+      // AVPlay publishes its own tracks; the companion-service list stays empty
+      // when that service is not running, so either source counts here.
+      if (!this.embeddedAudioTracks?.length && !this.collectAudioOptionItems().some((entry) => !entry.entry?.implicitAudioTrack)) {
         return false;
       }
       const targets = this.getStartupPreferredAudioLanguageTargets();

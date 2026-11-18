@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { fetchMatroskaChapters } from "../js/data/repository/matroskaChapters.js";
+import { fetchRange, runRangeProbe } from "../js/data/repository/rangeProbe.js";
 
 function sizeVint(value) {
   let length = 1;
@@ -113,6 +114,49 @@ try {
     { startMs: 90_000, title: "Opening" }
   ]);
   console.log("Matroska chapter range fetch passed: SeekHead beyond the initial probe.");
+
+  // Tizen 5.0 and older (Chromium before 66) have no AbortController: the
+  // probe returned [] there before reading anything. Node's own fetch needs
+  // AbortController, so this pass serves the same file through a fetch stub.
+  const savedAbortController = globalThis.AbortController;
+  const savedFetch = globalThis.fetch;
+  const signals = [];
+  globalThis.fetch = async (_url, options = {}) => {
+    signals.push(options.signal);
+    const [, from, to] = /bytes=(\d+)-(\d+)/.exec(options.headers.Range);
+    const start = Number(from);
+    const end = Math.min(Number(to), file.length - 1);
+    const body = new Uint8Array(file.subarray(start, end + 1));
+    let sent = false;
+    return {
+      status: 206,
+      headers: {
+        get: (name) => (name === "content-range" ? `bytes ${start}-${end}/${file.length}` : null)
+      },
+      body: {
+        getReader: () => ({
+          read: async () => (sent ? { done: true } : ((sent = true), { done: false, value: body })),
+          cancel: async () => {}
+        })
+      }
+    };
+  };
+  delete globalThis.AbortController;
+  try {
+    assert.deepEqual(await fetchMatroskaChapters("http://tv.test/movie.mkv"), parsed);
+    assert.ok(signals.length > 1 && signals.every((signal) => signal === undefined));
+    globalThis.fetch = () => new Promise(() => {});
+    const started = Date.now();
+    assert.deepEqual(
+      await runRangeProbe(50, (probe) => fetchRange("http://tv.test/", {}, 0, 16, probe)),
+      []
+    );
+    assert.ok(Date.now() - started < 1000, "a source that never answers still settles");
+  } finally {
+    globalThis.AbortController = savedAbortController;
+    globalThis.fetch = savedFetch;
+  }
+  console.log("Matroska chapter range fetch passed without AbortController.");
 } finally {
   server.close();
 }

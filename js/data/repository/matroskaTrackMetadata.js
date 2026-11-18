@@ -1,6 +1,10 @@
+import { fetchRange, runRangeProbe } from "./rangeProbe.js";
+
 const INITIAL_HEADER_BYTES = 64 * 1024;
 const MAX_HEADER_BYTES = 1024 * 1024;
 const PROBE_TIMEOUT_MS = 3000;
+// Never consume a full-file response while looking for the header.
+const PARTIAL_ONLY = { partialOnly: true };
 
 export function readElement(bytes, offset, limit) {
   const readVint = (start, isId) => {
@@ -160,41 +164,9 @@ export function matroskaTracksOffset(bytes) {
 }
 
 export async function fetchMatroskaTracks(url) {
-  if (!/^https?:\/\//i.test(url) || typeof AbortController !== "function") return [];
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
-  const readRange = async (offset, size) => {
-    let reader;
-    try {
-      const response = await fetch(url, {
-        headers: { Range: `bytes=${offset}-${offset + size - 1}` },
-        signal: controller.signal,
-        credentials: "omit"
-      });
-      const range = response.headers.get("content-range");
-      if (
-        response.status !== 206 ||
-        (range && !new RegExp(`^bytes ${offset}-\\d+/\\d+$`, "i").test(range)) ||
-        !response.body?.getReader
-      )
-        return null;
-      reader = response.body.getReader();
-      const bytes = new Uint8Array(size);
-      let length = 0;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) return bytes.subarray(0, length);
-        if (length + value.length > size) return null;
-        bytes.set(value, length);
-        length += value.length;
-        if (length === size) return bytes;
-      }
-    } finally {
-      if (reader) void reader.cancel().catch(() => {});
-    }
-  };
-  try {
-    const header = await readRange(0, INITIAL_HEADER_BYTES);
+  if (!/^https?:\/\//i.test(url)) return [];
+  return runRangeProbe(PROBE_TIMEOUT_MS, async (probe) => {
+    const header = await fetchRange(url, {}, 0, INITIAL_HEADER_BYTES, probe, PARTIAL_ONLY);
     // Skip the larger read for containers that cannot carry Matroska tracks.
     if (
       !header ||
@@ -210,23 +182,24 @@ export async function fetchMatroskaTracks(url) {
     if (tracks.length) return tracks;
     const offset = matroskaTracksOffset(header);
     if (offset != null) {
-      const indexed = await readRange(offset, INITIAL_HEADER_BYTES);
+      const indexed = await fetchRange(url, {}, offset, INITIAL_HEADER_BYTES, probe, PARTIAL_ONLY);
       // The advertised position must contain Tracks, never another Segment or index.
       if (!indexed || readElement(indexed, 0, indexed.length).id !== 0x1654ae6b) return [];
       return parseMatroskaTracks(indexed);
     }
     // Large attachments can push Tracks past the first chunk.
     if (header.length < INITIAL_HEADER_BYTES) return [];
-    const tail = await readRange(INITIAL_HEADER_BYTES, MAX_HEADER_BYTES - INITIAL_HEADER_BYTES);
+    const tail = await fetchRange(
+      url,
+      {},
+      INITIAL_HEADER_BYTES,
+      MAX_HEADER_BYTES - INITIAL_HEADER_BYTES,
+      probe
+    );
     if (!tail) return [];
     const combined = new Uint8Array(header.length + tail.length);
     combined.set(header);
     combined.set(tail, header.length);
     return parseMatroskaTracks(combined);
-  } catch (_) {
-    return [];
-  } finally {
-    clearTimeout(timeout);
-    controller.abort();
-  }
+  });
 }
