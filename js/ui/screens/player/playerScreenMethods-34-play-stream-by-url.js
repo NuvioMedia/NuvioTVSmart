@@ -132,9 +132,6 @@ export function createPlayerScreenMethods34() {
       }
       this.playbackRecoveryActive = preservePresentedPlaybackFrame;
       this.hasPresentedPlaybackFrame = preservePresentedPlaybackFrame;
-      if (!preservePresentedPlaybackFrame) {
-        this.scheduleSourceStartupTimeout?.();
-      }
       this.webOsNativeStartupLoadingExtended = false;
       if (!preserveStartupRecoveryState) {
         this.webOsNativeReadyStartupRetries = 0;
@@ -233,6 +230,9 @@ export function createPlayerScreenMethods34() {
       this.trackDiscoveryDeadline = 0;
       const previousPlaybackUrl = this.activePlaybackUrl;
       this.activePlaybackUrl = streamUrl;
+      if (!preservePresentedPlaybackFrame) {
+        this.scheduleSourceStartupTimeout?.();
+      }
       if (previousPlaybackUrl !== streamUrl) {
         this.hasRetriedCurrentStreamAfter416 = false;
         this.resetLivePlaybackState?.();

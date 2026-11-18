@@ -236,6 +236,7 @@ export function createPlayerScreenMethods01() {
         if (!this.currentEngineFsStream) {
           this.prefetchTizenEmbeddedAudioTracks(initialStreamUrl, sourceCandidate);
         }
+        this.scheduleSourceStartupTimeout?.();
         const playbackStartPromise = this.startPlayerControllerPlayback(
           this.activePlaybackUrl,
           this.buildPlaybackContext(sourceCandidate),
