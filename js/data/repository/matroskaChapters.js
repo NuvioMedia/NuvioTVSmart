@@ -186,7 +186,38 @@ export function requestHeaders(headers = {}) {
   return result;
 }
 
-export async function fetchRange(url, headers, start, length, signal) {
+// Chromium before 66 (Tizen 5.0 and older) has no AbortController. Range
+// probes still run there: the timer settles the probe and cancels the bodies
+// still being read, and an expired probe starts no further request.
+export async function runRangeProbe(timeoutMs, task) {
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const probe = { signal: controller?.signal, expired: false, readers: new Set() };
+  let settle = () => {};
+  const timeout = setTimeout(() => {
+    probe.expired = true;
+    controller?.abort();
+    probe.readers.forEach((reader) => void reader.cancel().catch(() => {}));
+    settle([]);
+  }, timeoutMs);
+  try {
+    return await Promise.race([
+      Promise.resolve()
+        .then(() => task(probe))
+        .catch(() => []),
+      new Promise((resolve) => {
+        settle = resolve;
+      })
+    ]);
+  } finally {
+    clearTimeout(timeout);
+    controller?.abort();
+  }
+}
+
+export async function fetchRange(url, headers, start, length, probe = null) {
+  if (probe?.expired) {
+    return null;
+  }
   let reader;
   try {
     const response = await fetch(url, {
@@ -195,9 +226,12 @@ export async function fetchRange(url, headers, start, length, signal) {
         Range: `bytes=${start}-${start + length - 1}`,
         "Accept-Encoding": "identity"
       },
-      signal,
+      ...(probe?.signal ? { signal: probe.signal } : {}),
       credentials: "omit"
     });
+    if (probe?.expired) {
+      return null;
+    }
     const range = response.headers.get("content-range");
     const validStatus = response.status === 206 || (response.status === 200 && start === 0);
     if (
@@ -209,6 +243,7 @@ export async function fetchRange(url, headers, start, length, signal) {
       return null;
     }
     reader = response.body.getReader();
+    probe?.readers.add(reader);
     const bytes = new Uint8Array(length);
     let read = 0;
     while (true) {
@@ -229,20 +264,21 @@ export async function fetchRange(url, headers, start, length, signal) {
     return null;
   } finally {
     if (reader) {
+      probe?.readers.delete(reader);
       void reader.cancel().catch(() => {});
     }
   }
 }
 
-async function elementAt(url, headers, initial, position, maxBytes, signal) {
+async function elementAt(url, headers, initial, position, maxBytes, probe) {
   let header = position < initial.length ? readElement(initial, position, initial.length) : null;
   let headerStart = position;
   if (!header) {
-    const probe = await fetchRange(url, headers, position, 64, signal);
-    if (!probe) {
+    const probeBytes = await fetchRange(url, headers, position, 64, probe);
+    if (!probeBytes) {
       return null;
     }
-    header = readElement(probe, 0, probe.length);
+    header = readElement(probeBytes, 0, probeBytes.length);
     headerStart = 0;
     if (!header) {
       return null;
@@ -258,7 +294,7 @@ async function elementAt(url, headers, initial, position, maxBytes, signal) {
   if (position + totalSize <= initial.length) {
     return initial.subarray(position, position + totalSize);
   }
-  const element = await fetchRange(url, headers, position, totalSize, signal);
+  const element = await fetchRange(url, headers, position, totalSize, probe);
   return element && element.length === totalSize ? element : null;
 }
 
@@ -280,13 +316,11 @@ export function isMatroskaSource(url = "", stream = null) {
 
 /** Best-effort chapters over HTTP ranges; any failure leaves playback untouched. */
 export async function fetchMatroskaChapters(url, headers = {}) {
-  if (!/^https?:\/\//i.test(String(url || "")) || typeof AbortController !== "function") {
+  if (!/^https?:\/\//i.test(String(url || ""))) {
     return [];
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
-  try {
-    const initial = await fetchRange(url, headers, 0, MAX_HEADER_BYTES, controller.signal);
+  return runRangeProbe(PROBE_TIMEOUT_MS, async (probe) => {
+    const initial = await fetchRange(url, headers, 0, MAX_HEADER_BYTES, probe);
     if (!initial) {
       return [];
     }
@@ -302,7 +336,7 @@ export async function fetchMatroskaChapters(url, headers = {}) {
         initial,
         layout.seekHeadPosition,
         MAX_HEADER_BYTES,
-        controller.signal
+        probe
       );
       if (seekHead) {
         const relative = matroskaSeekHeadPositions(seekHead).get(ID_CHAPTERS);
@@ -320,13 +354,8 @@ export async function fetchMatroskaChapters(url, headers = {}) {
       initial,
       chaptersPosition,
       MAX_CHAPTERS_BYTES,
-      controller.signal
+      probe
     );
     return chapters ? parseMatroskaChapters(chapters) : [];
-  } catch (_) {
-    return [];
-  } finally {
-    clearTimeout(timeout);
-    controller.abort();
-  }
+  });
 }
