@@ -45,6 +45,7 @@ function patchWebOsMediaRuntimeCode(code, filename) {
 
   source = require("../../tizen/runtime/proxy-redirect-report-patch.cjs")(source);
   source = require("../../tizen/runtime/enginefs-cache-routes-patch.cjs")(source);
+  source = require("../../tizen/runtime/enginefs-tracks-reader-patch.cjs")(source);
   source = patchWebOsPlaybackTransport(source);
 
   // The vendored proxy always passes an https.Agent to node-fetch. node-fetch
@@ -113,6 +114,13 @@ function patchWebOsMediaRuntimeCode(code, filename) {
 
 function loadCommonJsScript(filename) {
   var code = fs.readFileSync(filename, "utf8");
+  if (/media-http\.cjs$/i.test(String(filename || ""))) {
+    // webOS 4/5 run Node 8, before readable.readableHighWaterMark (9.3).
+    require("../../tizen/runtime/node-runtime-compat.cjs")({
+      Buffer: Buffer,
+      stream: require("stream")
+    });
+  }
   code = patchWebOsMediaRuntimeCode(code, filename);
   var mod = new Module(filename, module);
   mod.filename = filename;
