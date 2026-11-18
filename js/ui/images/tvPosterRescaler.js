@@ -440,7 +440,7 @@ function getGenericPool() {
 function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale = null } = {}) {
   // Check the request before touching the pool, so artwork that can never be
   // rescaled does not spin up workers on its way to the fallback.
-  if (!state || !shouldQueueRescale(url, { width, height, fit })) {
+  if (!state || !url || !(width > 0) || !(height > 0) || !isRescalableArtworkFit(fit)) {
     return Promise.resolve(null);
   }
   // The fit belongs in the key: the same artwork in the same box is cropped
@@ -513,25 +513,17 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
   return job.promise;
 }
 
-const OBVIOUS_NON_JPEG_EXTENSION_RE = /\.(?:gifv?|webp|png|svg|avif)$/i;
+// The worker only rescales JPEG, so a source that is plainly something else
+// would cost a full fetch and a worker slot just to learn "not jpeg" while the
+// card waits. The extension check ignores the query and fragment.
+const NON_JPEG_PATH_RE = /\.(?:gifv?|webp|png|svg|avif)$/i;
 const DATA_URL_RE = /^data:/i;
-const JPEG_DATA_IMAGE_RE = /^data:image\/jpe?g(?:[;,]|$)/i;
+const JPEG_DATA_URL_RE = /^data:image\/jpe?g[;,]/i;
 
 function isObviousNonJpegUrl(url) {
-  const raw = String(url || "").trim();
-  if (!raw) {
-    return false;
-  }
-  if (DATA_URL_RE.test(raw)) {
-    return !JPEG_DATA_IMAGE_RE.test(raw);
-  }
-  let pathname = "";
-  try {
-    pathname = new URL(raw, "http://localhost/").pathname;
-  } catch (_) {
-    pathname = raw.split(/[?#]/, 1)[0];
-  }
-  return OBVIOUS_NON_JPEG_EXTENSION_RE.test(pathname);
+  const value = String(url);
+  if (DATA_URL_RE.test(value)) return !JPEG_DATA_URL_RE.test(value);
+  return NON_JPEG_PATH_RE.test(value.split(/[?#]/, 1)[0]);
 }
 
 /**
@@ -539,13 +531,8 @@ function isObviousNonJpegUrl(url) {
  * be used as-is. Never rejects: every failure path falls back to the original.
  */
 export function shouldQueueRescale(url, { width, height, fit } = {}) {
-  const trimmed = String(url || "").trim();
   return Boolean(
-    trimmed &&
-    !isObviousNonJpegUrl(trimmed) &&
-    width > 0 &&
-    height > 0 &&
-    isRescalableArtworkFit(fit)
+    url && width > 0 && height > 0 && isRescalableArtworkFit(fit) && !isObviousNonJpegUrl(url)
   );
 }
 
