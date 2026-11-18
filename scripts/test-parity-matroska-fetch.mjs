@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import {
-  fetchMatroskaChapters,
-  fetchRange,
-  runRangeProbe
-} from "../js/data/repository/matroskaChapters.js";
+import { fetchMatroskaChapters } from "../js/data/repository/matroskaChapters.js";
+import { fetchRange, runRangeProbe } from "../js/data/repository/rangeProbe.js";
 
 function sizeVint(value) {
   let length = 1;

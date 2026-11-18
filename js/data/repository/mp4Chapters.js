@@ -1,4 +1,4 @@
-import { fetchRange, requestHeaders, runRangeProbe } from "./matroskaChapters.js";
+import { fetchRange, runRangeProbe } from "./rangeProbe.js";
 
 // MP4/MOV chapters over HTTP ranges. Two layouts are supported, in the order
 // players usually expose them: Nero's `moov/udta/chpl` list, and the QuickTime
