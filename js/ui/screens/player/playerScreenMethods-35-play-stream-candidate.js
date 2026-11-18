@@ -417,17 +417,14 @@ export function createPlayerScreenMethods35() {
      * frame within the configured time counts as failed and falls back. The last source
      * allowed keeps loading, as it would without the fallback.
      */
-    scheduleSourceStartupTimeout(targetUrl = this.activePlaybackUrl) {
+    scheduleSourceStartupTimeout() {
       clearTimeout(this.sourceStartupTimeoutTimer);
       this.sourceStartupTimeoutTimer = null;
       const settings = PlayerSettingsStore.get();
       if (!isSourceFallbackActive(settings) || !this.autoSelectedSourceKey) {
         return;
       }
-      const url = String(targetUrl || "");
-      if (!url) {
-        return;
-      }
+      const url = String(this.activePlaybackUrl || "");
       const mountToken = this.playerMountToken;
       const seconds = Number(settings.streamAutoPlayFallbackStartupTimeoutSeconds) || 15;
       this.sourceStartupTimeoutTimer = setTimeout(() => {

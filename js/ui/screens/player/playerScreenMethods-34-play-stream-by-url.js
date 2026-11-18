@@ -231,7 +231,7 @@ export function createPlayerScreenMethods34() {
       const previousPlaybackUrl = this.activePlaybackUrl;
       this.activePlaybackUrl = streamUrl;
       if (!preservePresentedPlaybackFrame) {
-        this.scheduleSourceStartupTimeout?.(streamUrl);
+        this.scheduleSourceStartupTimeout?.();
       }
       if (previousPlaybackUrl !== streamUrl) {
         this.hasRetriedCurrentStreamAfter416 = false;
