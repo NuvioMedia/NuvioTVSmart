@@ -151,3 +151,101 @@ test("a startup selection does not expire while AVPlay is still READY", async ()
   assert.equal(controller.retryPendingAvPlayStartupAudioTrackSelection(), false);
   assert.equal(controller.pendingAvPlayAudioTrackIndex, -1);
 });
+
+async function loadControllerMethods03() {
+  const source = await readFile(
+    new URL(
+      "../js/core/player/playerControllerMethods-03-start-av-play-tick-timer.js",
+      import.meta.url
+    ),
+    "utf8"
+  );
+  const context = vm.createContext({
+    internals: { logTizenAvPlayDebug: () => {} },
+    Date,
+    Number,
+    String
+  });
+  vm.runInContext(
+    source.replace(/^import .*$/gm, "").replace(/^export /gm, "") +
+      "\nthis.exports = { createPlayerControllerMethods03 };",
+    context
+  );
+  return context.exports.createPlayerControllerMethods03();
+}
+
+function createStartController(methods, avplay) {
+  return {
+    ...methods,
+    pendingAvPlayAudioTrackIndex: 3,
+    selectedAvPlayAudioTrackIndex: 3,
+    desiredAvPlayAudioTrackIndex: -1,
+    desiredAvPlayAudioTrackUntil: 0,
+    resolveAvPlayAudioTrackIndex: (index) => ([1, 2, 3].includes(index) ? index : -1),
+    getAvPlayAudioTrackSelectionIndex: (index) => index,
+    getAvPlayState: () => avplay.state,
+    getCurrentAvPlayAudioTrackIndex: () => avplay.current
+  };
+}
+
+test("the startup language is switched in PAUSED before playback is heard", async () => {
+  const calls = [];
+  const avplay = {
+    state: "READY",
+    current: 1,
+    play() {
+      calls.push("play");
+      this.state = "PLAYING";
+    },
+    pause() {
+      calls.push("pause");
+      this.state = "PAUSED";
+    },
+    setSelectTrack(type, index) {
+      if (this.state === "READY") throw new Error("PLAYER_ERROR_INVALID_STATE");
+      calls.push(`${type}:${index}`);
+      this.current = index;
+    }
+  };
+  const controller = createStartController(await loadControllerMethods03(), avplay);
+  assert.equal(controller.selectPendingAvPlayAudioTrackBeforeStart(avplay), true);
+  assert.deepEqual(calls, ["play", "pause", "AUDIO:3"]);
+  assert.equal(controller.pendingAvPlayAudioTrackIndex, -1);
+  assert.equal(avplay.current, 3);
+});
+
+test("a firmware that refuses the PAUSED switch keeps the pending index", async () => {
+  const avplay = {
+    state: "READY",
+    current: 1,
+    play() {
+      this.state = "PLAYING";
+    },
+    pause() {
+      this.state = "PAUSED";
+    },
+    setSelectTrack() {
+      throw new Error("PLAYER_ERROR_INVALID_STATE");
+    }
+  };
+  const controller = createStartController(await loadControllerMethods03(), avplay);
+  assert.equal(controller.selectPendingAvPlayAudioTrackBeforeStart(avplay), false);
+  assert.equal(controller.pendingAvPlayAudioTrackIndex, 3, "left for the PLAYING retries");
+});
+
+test("nothing pending or already on the chosen track starts untouched", async () => {
+  const calls = [];
+  const avplay = {
+    state: "READY",
+    current: 3,
+    play: () => calls.push("play"),
+    pause: () => calls.push("pause"),
+    setSelectTrack: () => calls.push("sel")
+  };
+  const controller = createStartController(await loadControllerMethods03(), avplay);
+  assert.equal(controller.selectPendingAvPlayAudioTrackBeforeStart(avplay), false);
+  controller.pendingAvPlayAudioTrackIndex = -1;
+  avplay.current = 1;
+  assert.equal(controller.selectPendingAvPlayAudioTrackBeforeStart(avplay), false);
+  assert.deepEqual(calls, []);
+});

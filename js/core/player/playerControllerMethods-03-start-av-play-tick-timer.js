@@ -143,6 +143,34 @@ export function createPlayerControllerMethods03() {
         this.resumeNativePlaybackAfterStartupGate();
       }
     },
+    // AVPlay rejects setSelectTrack(AUDIO) in READY, so a startup language
+    // chosen behind the loading logo would only switch after audio is already
+    // playing. A play/pause hop reaches PAUSED, where the switch is accepted,
+    // so the first audible frame is already the chosen track. On a firmware
+    // that refuses it the pending index stays for the PLAYING retries.
+    selectPendingAvPlayAudioTrackBeforeStart(avplay) {
+      const targetIndex = this.resolveAvPlayAudioTrackIndex(this.pendingAvPlayAudioTrackIndex);
+      const selectionIndex = this.getAvPlayAudioTrackSelectionIndex(targetIndex);
+      if (selectionIndex < 0 || this.getAvPlayState() !== "READY" || this.getCurrentAvPlayAudioTrackIndex() === targetIndex) {
+        return false;
+      }
+      try {
+        avplay.play();
+        avplay.pause();
+        avplay.setSelectTrack("AUDIO", selectionIndex);
+      } catch (error) {
+        logTizenAvPlayDebug("Tizen AVPlay pre-start audio selection failed", {
+          targetIndex,
+          error: error?.message || String(error || "")
+        });
+        return false;
+      }
+      this.selectedAvPlayAudioTrackIndex = targetIndex;
+      this.pendingAvPlayAudioTrackIndex = -1;
+      this.desiredAvPlayAudioTrackIndex = targetIndex;
+      this.desiredAvPlayAudioTrackUntil = Date.now() + 5000;
+      return true;
+    },
     startPreparedAvPlayPlayback({ syncTracks = true } = {}) {
       const avplay = this.getAvPlay();
       if (!avplay || !this.isUsingAvPlay()) {
@@ -156,6 +184,7 @@ export function createPlayerControllerMethods03() {
         logTizenAvPlayDebug("Tizen AVPlay seek in flight; delaying playback start until it settles");
         return true;
       }
+      this.selectPendingAvPlayAudioTrackBeforeStart(avplay);
       try {
         avplay.play?.();
         // AVPlay can report a startup error and still complete preparation. A
