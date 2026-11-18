@@ -25,7 +25,8 @@ export function createPlayerScreenMethods23() {
     maybeAutoplayNextEpisode() {
       const isAvPlayPlayback = typeof PlayerController.isUsingAvPlay === "function" && PlayerController.isUsingAvPlay();
       const isVideoPaused = !isAvPlayPlayback && Boolean(PlayerController.video?.paused);
-      if (this.nextEpisodeLaunching || this.paused || isVideoPaused || !this.hasPresentedPlaybackFrame) {
+      // Android: a dismissed card keeps auto-play off until the episode really ends.
+      if (this.nextEpisodeLaunching || this.nextEpisodeCardDismissed || this.paused || isVideoPaused || !this.hasPresentedPlaybackFrame) {
         return false;
       }
 
