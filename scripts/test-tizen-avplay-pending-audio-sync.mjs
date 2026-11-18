@@ -249,3 +249,62 @@ test("nothing pending or already on the chosen track starts untouched", async ()
   assert.equal(controller.selectPendingAvPlayAudioTrackBeforeStart(avplay), false);
   assert.deepEqual(calls, []);
 });
+
+test("Tizen 6.5+ switches the startup track in PLAYING with the audio stream disabled", async () => {
+  const calls = [];
+  const avplay = {
+    state: "READY",
+    current: 1,
+    disableAudioStream() {
+      calls.push("disable");
+    },
+    enableAudioStream() {
+      calls.push("enable");
+    },
+    play() {
+      calls.push("play");
+      this.state = "PLAYING";
+    },
+    pause() {
+      calls.push("pause");
+      this.state = "PAUSED";
+    },
+    setSelectTrack(type, index) {
+      if (this.state !== "PLAYING") throw new Error("PLAYER_ERROR_INVALID_STATE");
+      calls.push(`${type}:${index}`);
+      this.current = index;
+    }
+  };
+  const controller = createStartController(await loadControllerMethods03(), avplay);
+  assert.equal(controller.selectPendingAvPlayAudioTrackBeforeStart(avplay), true);
+  assert.deepEqual(calls, ["disable", "play", "AUDIO:3", "pause", "enable"]);
+  assert.equal(avplay.state, "PAUSED", "the normal start can call play()");
+});
+
+test("a failed silent switch restores audio and leaves AVPlay startable", async () => {
+  const calls = [];
+  const avplay = {
+    state: "READY",
+    current: 1,
+    disableAudioStream() {
+      calls.push("disable");
+    },
+    enableAudioStream() {
+      calls.push("enable");
+    },
+    play() {
+      this.state = "PLAYING";
+    },
+    pause() {
+      calls.push("pause");
+      this.state = "PAUSED";
+    },
+    setSelectTrack() {
+      throw new Error("UnknownError");
+    }
+  };
+  const controller = createStartController(await loadControllerMethods03(), avplay);
+  assert.equal(controller.selectPendingAvPlayAudioTrackBeforeStart(avplay), false);
+  assert.deepEqual(calls, ["disable", "pause", "enable"]);
+  assert.equal(controller.pendingAvPlayAudioTrackIndex, 3);
+});
