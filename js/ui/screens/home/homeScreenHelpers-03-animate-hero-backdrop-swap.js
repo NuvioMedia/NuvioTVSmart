@@ -204,26 +204,18 @@ export function animateHeroBackdropSwap(
   // Decorative: the logo/brand carries the title, and a pending backdrop would
   // otherwise paint it as alt text over the hero.
   const normalizedAlt = "";
-  const currentSrc = String(backdrop.dataset?.canvasSrc || backdrop.getAttribute("src") || "").trim();
+  const currentSrc = String(backdrop.heroBackdropCanvasSrc || backdrop.getAttribute("src") || "").trim();
   const transitionMode = options?.transitionMode || "crossfade";
   const token = Number(backdrop.heroBackdropTransitionToken || 0) + 1;
   backdrop.heroBackdropTransitionToken = token;
 
-  const getCanvas = () => backdrop.parentElement?.querySelector?.(".home-hero-backdrop-canvas") || null;
+  const parent = backdrop.parentElement;
+  // The visible bitmap layer on Tizen; the <img> stays the hero's anchor element.
+  const getCanvas = () =>
+    parent?.querySelector?.(".home-hero-backdrop-canvas:not(.home-hero-backdrop-transition-ghost)") || null;
 
   const clearGhosts = () => {
-    backdrop.parentElement?.querySelectorAll?.(".home-hero-backdrop-transition-ghost")?.forEach((node) => node.remove());
-  };
-
-  const removeCanvas = () => {
-    const canvas = getCanvas();
-    if (canvas) {
-      canvas.remove();
-    }
-    if (backdrop.dataset) {
-      delete backdrop.dataset.canvasSrc;
-    }
-    backdrop.style.opacity = "";
+    parent?.querySelectorAll?.(".home-hero-backdrop-transition-ghost")?.forEach((node) => node.remove());
   };
 
   const finalize = () => {
@@ -235,9 +227,33 @@ export function animateHeroBackdropSwap(
     clearGhosts();
   };
 
+  // Turns the layer showing the current artwork into the fading-out ghost.
+  const createGhost = () => {
+    const canvas = getCanvas();
+    if (canvas) {
+      canvas.classList.remove("home-hero-backdrop-transition-enter", "is-visible");
+      canvas.classList.add("home-hero-backdrop-transition-ghost");
+      return canvas;
+    }
+    if (!parent || !currentSrc) {
+      return null;
+    }
+    const ghost = backdrop.cloneNode(false);
+    ghost.classList.remove("home-hero-backdrop-transition-enter", "is-visible");
+    ghost.classList.add("home-hero-backdrop-transition-ghost");
+    parent.insertBefore(ghost, backdrop);
+    return ghost;
+  };
+
+  const showImageLayer = () => {
+    getCanvas()?.remove();
+    backdrop.heroBackdropCanvasSrc = "";
+    backdrop.style.removeProperty("visibility");
+  };
+
   if (!normalizedSrc) {
     finalize();
-    removeCanvas();
+    showImageLayer();
     backdrop.removeAttribute("src");
     backdrop.setAttribute("alt", normalizedAlt);
     backdrop.classList.add("placeholder");
@@ -251,112 +267,70 @@ export function animateHeroBackdropSwap(
     return;
   }
 
-  const revealCanvas = (canvas) => {
-    const step = () => {
-      if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
-        return;
-      }
-      canvas.classList.add("is-visible");
-      setTimeout(() => finalize(), durationMs);
-    };
-    if (transitionMode === "single-layer") {
-      requestAnimationFrame(step);
-      return;
-    }
-    requestAnimationFrame(() => {
-      if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
-        return;
-      }
-      requestAnimationFrame(step);
-    });
-  };
-
   preloadHeroBackdrop(normalizedSrc).then((result) => {
     if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
       return;
     }
+    const bitmap = result.bitmap;
+    const singleLayer = transitionMode === "single-layer";
 
-    const parent = backdrop.parentElement;
-    if (result?.bitmap && parent) {
-      clearGhosts();
-      let canvas = getCanvas();
-      if (!canvas) {
-        canvas = document.createElement("canvas");
-        canvas.className = `${backdrop.className} home-hero-backdrop-canvas`;
-        canvas.style.cssText = backdrop.style.cssText;
-        parent.insertBefore(canvas, backdrop.nextSibling);
-      }
-      canvas.width = result.bitmap.width;
-      canvas.height = result.bitmap.height;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(result.bitmap, 0, 0);
-      }
-      if (backdrop.dataset) {
-        backdrop.dataset.canvasSrc = normalizedSrc;
-      }
-      backdrop.removeAttribute("src");
-      backdrop.setAttribute("alt", normalizedAlt);
-      backdrop.style.opacity = "0";
-      backdrop.classList.remove("placeholder");
-      prepareHeroImageEnter(canvas, "home-hero-backdrop-transition-enter");
-      revealCanvas(canvas);
-      return;
-    }
-
-    removeCanvas();
-    const loaded = Boolean(result?.loaded);
-    if (!loaded) {
+    if (!bitmap && !result.loaded) {
       finalize();
+      showImageLayer();
       backdrop.setAttribute("src", normalizedSrc);
       backdrop.setAttribute("alt", normalizedAlt);
       backdrop.classList.remove("placeholder");
-      return;
-    }
-
-    if (transitionMode === "single-layer") {
-      prepareHeroImageEnter(backdrop, "home-hero-backdrop-transition-enter");
-      backdrop.classList.remove("placeholder");
-      backdrop.setAttribute("src", normalizedSrc);
-      backdrop.setAttribute("alt", normalizedAlt);
-      requestAnimationFrame(() => {
-        if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
-          return;
-        }
-        backdrop.classList.add("is-visible");
-        setTimeout(() => finalize(), durationMs);
-      });
       return;
     }
 
     clearGhosts();
     let ghost = null;
-    if (parent && currentSrc) {
-      ghost = backdrop.cloneNode(false);
-      ghost.classList.remove("home-hero-backdrop-transition-enter", "is-visible");
-      ghost.classList.add("home-hero-backdrop-transition-ghost");
-      parent.insertBefore(ghost, backdrop);
+    if (!singleLayer) {
+      ghost = createGhost();
     }
 
-    prepareHeroImageEnter(backdrop, "home-hero-backdrop-transition-enter");
+    let layer = backdrop;
+    if (bitmap && parent) {
+      const previousCanvas = getCanvas();
+      layer = document.createElement("canvas");
+      layer.className = "home-hero-backdrop home-hero-backdrop-canvas";
+      layer.width = bitmap.width;
+      layer.height = bitmap.height;
+      layer.getContext("2d")?.drawImage(bitmap, 0, 0);
+      // Last in the wrap, so it paints above the fading ghost.
+      parent.appendChild(layer);
+      previousCanvas?.remove();
+      backdrop.heroBackdropCanvasSrc = normalizedSrc;
+      // Dropping src releases the full-size decode; the canvas carries the artwork.
+      backdrop.removeAttribute("src");
+      backdrop.style.setProperty("visibility", "hidden");
+    } else {
+      showImageLayer();
+      backdrop.setAttribute("src", normalizedSrc);
+    }
+    prepareHeroImageEnter(layer, "home-hero-backdrop-transition-enter");
     backdrop.classList.remove("placeholder");
-    backdrop.setAttribute("src", normalizedSrc);
     backdrop.setAttribute("alt", normalizedAlt);
 
-    requestAnimationFrame(() => {
+    const reveal = () => {
       if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
         return;
       }
-      requestAnimationFrame(() => {
-        if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
-          return;
-        }
-        backdrop.classList.add("is-visible");
-        ghost?.classList?.add("is-fading-out");
-        setTimeout(() => {
-          finalize();
-        }, durationMs);
-      });
+      layer.classList.add("is-visible");
+      ghost?.classList?.add("is-fading-out");
+      setTimeout(() => {
+        finalize();
+      }, durationMs);
+    };
+    requestAnimationFrame(() => {
+      if (singleLayer) {
+        reveal();
+        return;
+      }
+      if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
+        return;
+      }
+      requestAnimationFrame(reveal);
     });
   });
 }
