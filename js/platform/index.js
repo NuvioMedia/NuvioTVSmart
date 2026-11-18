@@ -18,17 +18,17 @@ function parseWebOsMajorVersion() {
   ].filter(Boolean);
 
   const patterns = [
-    /web0s\.tv[\s/-]?(\d{1,2})/i,
-    /webos\.tv[\s/-]?(\d{1,2})/i,
-    /web0s[\s/-]?(\d{1,2})/i,
-    /webos[\s/-]?(\d{1,2})/i,
-    /chromium\/(\d{2,3})/i,
-    /chrome\/(\d{2,3})/i
+    { regex: /web0s\.tv[\s/-]?(\d{1,2})/i, isChromium: false },
+    { regex: /webos\.tv[\s/-]?(\d{1,2})/i, isChromium: false },
+    { regex: /web0s[\s/-]?(\d{1,2})/i, isChromium: false },
+    { regex: /webos[\s/-]?(\d{1,2})/i, isChromium: false },
+    { regex: /chromium\/(\d{2,3})/i, isChromium: true },
+    { regex: /chrome\/(\d{2,3})/i, isChromium: true }
   ];
 
   for (const candidate of candidates) {
-    for (const pattern of patterns) {
-      const match = candidate.match(pattern);
+    for (const { regex, isChromium } of patterns) {
+      const match = candidate.match(regex);
       if (!match) {
         continue;
       }
@@ -36,14 +36,14 @@ function parseWebOsMajorVersion() {
       if (!Number.isFinite(value) || value <= 0) {
         continue;
       }
-      if (/chrom(e|ium)\//i.test(pattern.source)) {
-        if (value <= 53) return 3;
-        if (value <= 68) return 4;
-        if (value <= 79) return 5;
-        if (value <= 87) return 6;
-        if (value <= 94) return 22;
-        if (value <= 108) return 23;
-        if (value <= 120) return 24;
+      if (isChromium) {
+        if (value <= 38) return 3;
+        if (value <= 53) return 4;
+        if (value <= 68) return 5;
+        if (value <= 79) return 6;
+        if (value <= 87) return 22;
+        if (value <= 94) return 23;
+        if (value <= 108) return 24;
         return 25;
       }
       return value;

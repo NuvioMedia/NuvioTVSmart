@@ -12,12 +12,16 @@ globalThis.localStorage = {
 };
 globalThis.window = globalThis;
 globalThis.navigator = { userAgent: "node" };
-globalThis.document = { documentElement: { lang: "en" }, addEventListener() {}, createElement: () => ({ style: {} }), querySelector: () => null };
+globalThis.document = {
+  documentElement: { lang: "en" },
+  addEventListener() {},
+  createElement: () => ({ style: {} }),
+  querySelector: () => null
+};
 
 const { MdbListSettingsStore } = await import("../js/data/local/mdbListSettingsStore.js");
-const { createMetaDetailsScreenMethods08 } = await import(
-  "../js/ui/screens/detail/metaDetailsScreenMethods-08-render-external-ratings-row.js"
-);
+const { createMetaDetailsScreenMethods08 } =
+  await import("../js/ui/screens/detail/metaDetailsScreenMethods-08-render-external-ratings-row.js");
 
 const { renderExternalRatingsRow } = createMetaDetailsScreenMethods08();
 const ratings = { trakt: 80, imdb: 7.5, tmdb: 7.2, tomatoes: 90, metacritic: 70, mal: 8.1 };

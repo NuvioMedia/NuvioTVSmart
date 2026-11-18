@@ -83,14 +83,22 @@ export function warmStreamingLibs(options = {}) {
     return;
   }
   streamingLibsWarmupScheduled = true;
-  const delayMs = Math.max(0, Number(options?.delayMs || 1200));
+  const requestedDelay = options?.delayMs ?? 1200;
+  const parsedDelay = Number(requestedDelay);
+  const delayMs = Number.isFinite(parsedDelay) ? Math.max(0, parsedDelay) : 1200;
   const startWarmup = () => {
     streamingLibsWarmupScheduled = false;
     void loadStreamingLibs();
   };
-  if (typeof globalThis.requestIdleCallback === "function") {
-    globalThis.requestIdleCallback(startWarmup, { timeout: Math.max(2000, delayMs + 1200) });
-    return;
-  }
-  setTimeout(startWarmup, delayMs);
+  setTimeout(() => {
+    if (STREAMING_LIBS.every((entry) => entry.isLoaded())) {
+      streamingLibsWarmupScheduled = false;
+      return;
+    }
+    if (typeof globalThis.requestIdleCallback === "function") {
+      globalThis.requestIdleCallback(startWarmup, { timeout: 2000 });
+      return;
+    }
+    startWarmup();
+  }, delayMs);
 }

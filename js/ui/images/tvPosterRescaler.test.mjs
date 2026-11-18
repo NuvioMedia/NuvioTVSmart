@@ -8,7 +8,10 @@ import {
   isArtworkTooLarge,
   isJpegHeader,
   isRescalableArtworkFit,
-  jpegDimensions
+  jpegDimensions,
+  rescaleArtwork,
+  rescaleHomeArtwork,
+  shouldQueueRescale
 } from "./tvPosterRescaler.js";
 import { getTvArtworkPixelRatio } from "../../platform/tvRuntimePerformance.js";
 
@@ -202,4 +205,70 @@ test("only an oversized JPEG asks for a clamped decode", () => {
   assert.equal(artworkResizeTarget(1280, 720), null);
   assert.equal(artworkResizeTarget(640, 480), null);
   assert.equal(artworkResizeTarget(0, 0), null);
+});
+
+test("shouldQueueRescale fast-skips obvious non-JPEG URLs and non-JPEG data URIs", () => {
+  const box = { width: 220, height: 338, fit: "cover" };
+  for (const url of [
+    "https://cdn.example.com/posters/collection.gif",
+    "https://cdn.example.com/posters/collection.gifv?autoplay=1",
+    "https://cdn.example.com/posters/collection.webp?w=600#card",
+    "https://cdn.example.com/posters/collection.WEBP",
+    "https://cdn.example.com/posters/logo.png?size=large",
+    "https://cdn.example.com/posters/mark.svg#icon",
+    "https://cdn.example.com/posters/hero.avif?q=85",
+    "assets/images/local.png",
+    "data:image/png;base64,iVBORw0KGgo=",
+    "data:image/gif;base64,R0lGODlhAQAB",
+    "data:image/webp;base64,UklGRh4AAABXRUJQ",
+    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E",
+    "data:image/avif;base64,AAAA"
+  ]) {
+    assert.equal(shouldQueueRescale(url, box), false, `${url} should skip worker queue`);
+  }
+
+  for (const url of [
+    "https://image.tmdb.org/t/p/w500/poster.jpg",
+    "https://image.tmdb.org/t/p/w500/poster.JPEG?lang=en#hero",
+    "https://cdn.example.com/poster.jpg?fallback=placeholder.png",
+    "https://images.metahub.space/poster/medium/tt1234567/img",
+    "https://cdn.example.com/artwork?id=42",
+    "data:image/jpeg;base64,/9j/4AAQ",
+    "data:image/jpg;base64,/9j/4AAQ"
+  ]) {
+    assert.equal(
+      shouldQueueRescale(url, box),
+      true,
+      `${url} should remain eligible for worker JPEG check`
+    );
+  }
+});
+
+test("rescaleHomeArtwork and rescaleArtwork resolve null without starting workers for non-JPEG URLs", async () => {
+  const box = { width: 220, height: 338, fit: "cover" };
+  const originalWorker = globalThis.Worker;
+  let workerSpawns = 0;
+  globalThis.Worker = class RejectingWorker {
+    constructor() {
+      workerSpawns += 1;
+    }
+  };
+  try {
+    for (const url of [
+      "https://cdn.example.com/focused/action.webp?v=2",
+      "https://cdn.example.com/focused/action.gif#loop",
+      "https://cdn.example.com/focused/action.png",
+      "data:image/webp;base64,UklGRh4AAABXRUJQ"
+    ]) {
+      assert.equal(await rescaleHomeArtwork(url, box), null);
+      assert.equal(await rescaleArtwork(url, box), null);
+    }
+    assert.equal(workerSpawns, 0, "obvious non-JPEG URLs must not instantiate workers");
+  } finally {
+    if (originalWorker === undefined) {
+      delete globalThis.Worker;
+    } else {
+      globalThis.Worker = originalWorker;
+    }
+  }
 });
