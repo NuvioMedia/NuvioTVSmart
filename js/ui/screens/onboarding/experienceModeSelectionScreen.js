@@ -34,9 +34,7 @@ export const ExperienceModeSelectionScreen = {
     this.step = "mode";
     ScreenUtils.show(this.container);
     this.render();
-    this.onKeyDownBound = this.onKeyDown.bind(this);
     this.onClickBound = this.onClick.bind(this);
-    document.addEventListener("keydown", this.onKeyDownBound);
     this.container.addEventListener("click", this.onClickBound);
     ScreenUtils.setInitialFocus(this.container);
   },
@@ -105,28 +103,45 @@ export const ExperienceModeSelectionScreen = {
     if (node.dataset.layout) await this.chooseLayout(node.dataset.layout);
   },
 
+  consumeBackRequest() {
+    if (this.step !== "layout") {
+      return false;
+    }
+    this.step = "mode";
+    this.render();
+    ScreenUtils.setInitialFocus(this.container);
+    return true;
+  },
+
   async onKeyDown(event) {
-    const key = event.key;
-    if (["ArrowLeft", "ArrowRight"].includes(key)) {
-      event.preventDefault();
-      ScreenUtils.moveFocus(this.container, key === "ArrowLeft" ? -1 : 1);
+    const key = event?.key;
+    const code = Number(event?.keyCode || 0);
+    if (
+      key === "ArrowLeft" ||
+      key === "Left" ||
+      code === 37 ||
+      key === "ArrowRight" ||
+      key === "Right" ||
+      code === 39
+    ) {
+      event?.preventDefault?.();
+      const direction = key === "ArrowLeft" || key === "Left" || code === 37 ? -1 : 1;
+      ScreenUtils.moveFocus(this.container, direction);
       return;
     }
-    if (key === "Enter") {
-      event.preventDefault();
+    if (key === "Enter" || code === 13) {
+      event?.preventDefault?.();
       this.container.querySelector(".focusable.focused")?.click();
       return;
     }
-    if ((key === "Escape" || key === "Backspace") && this.step === "layout") {
-      event.preventDefault();
-      this.step = "mode";
-      this.render();
-      ScreenUtils.setInitialFocus(this.container);
+    if (key === "Escape" || key === "Backspace") {
+      if (this.consumeBackRequest()) {
+        event?.preventDefault?.();
+      }
     }
   },
 
   cleanup() {
-    document.removeEventListener("keydown", this.onKeyDownBound);
     this.container?.removeEventListener("click", this.onClickBound);
     ScreenUtils.hide(this.container);
   }

@@ -32,9 +32,7 @@ export const EssentialAddonSetupScreen = {
           <button class="experience-mode-card focusable" data-index="1" data-action="skip"><strong>${escapeHtml(t("essential_addon_continue_for_now", "Continue for now"))}</strong><span>${escapeHtml(t("essential_addon_setup_subtitle", "You can add them later from Settings."))}</span></button>
         </div>
       </main>`;
-    this.onKeyDownBound = this.onKeyDown.bind(this);
     this.onClickBound = this.onClick.bind(this);
-    document.addEventListener("keydown", this.onKeyDownBound);
     this.container.addEventListener("click", this.onClickBound);
     ScreenUtils.setInitialFocus(this.container);
   },
@@ -61,17 +59,26 @@ export const EssentialAddonSetupScreen = {
   },
 
   onKeyDown(event) {
-    if (["ArrowLeft", "ArrowRight"].includes(event.key)) {
-      event.preventDefault();
-      ScreenUtils.moveFocus(this.container, event.key === "ArrowLeft" ? -1 : 1);
-    } else if (event.key === "Enter") {
-      event.preventDefault();
+    const key = event?.key;
+    const code = Number(event?.keyCode || 0);
+    if (
+      key === "ArrowLeft" ||
+      key === "Left" ||
+      code === 37 ||
+      key === "ArrowRight" ||
+      key === "Right" ||
+      code === 39
+    ) {
+      event?.preventDefault?.();
+      const direction = key === "ArrowLeft" || key === "Left" || code === 37 ? -1 : 1;
+      ScreenUtils.moveFocus(this.container, direction);
+    } else if (key === "Enter" || code === 13) {
+      event?.preventDefault?.();
       this.container.querySelector(".focusable.focused")?.click();
     }
   },
 
   cleanup() {
-    document.removeEventListener("keydown", this.onKeyDownBound);
     this.container?.removeEventListener("click", this.onClickBound);
     ScreenUtils.hide(this.container);
   }
