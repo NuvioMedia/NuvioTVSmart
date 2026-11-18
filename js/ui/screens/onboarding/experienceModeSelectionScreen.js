@@ -103,41 +103,15 @@ export const ExperienceModeSelectionScreen = {
     if (node.dataset.layout) await this.chooseLayout(node.dataset.layout);
   },
 
-  consumeBackRequest() {
-    if (this.step !== "layout") {
-      return false;
-    }
-    this.step = "mode";
-    this.render();
-    ScreenUtils.setInitialFocus(this.container);
-    return true;
-  },
-
+  // FocusEngine owns Back: as on Android TV, the layout step leaves onboarding like the mode step.
   async onKeyDown(event) {
-    const key = event?.key;
     const code = Number(event?.keyCode || 0);
-    if (
-      key === "ArrowLeft" ||
-      key === "Left" ||
-      code === 37 ||
-      key === "ArrowRight" ||
-      key === "Right" ||
-      code === 39
-    ) {
-      event?.preventDefault?.();
-      const direction = key === "ArrowLeft" || key === "Left" || code === 37 ? -1 : 1;
-      ScreenUtils.moveFocus(this.container, direction);
-      return;
-    }
-    if (key === "Enter" || code === 13) {
-      event?.preventDefault?.();
+    if (code === 37 || code === 39) {
+      event.preventDefault();
+      ScreenUtils.moveFocus(this.container, code === 37 ? -1 : 1);
+    } else if (code === 13) {
+      event.preventDefault();
       this.container.querySelector(".focusable.focused")?.click();
-      return;
-    }
-    if (key === "Escape" || key === "Backspace") {
-      if (this.consumeBackRequest()) {
-        event?.preventDefault?.();
-      }
     }
   },
 

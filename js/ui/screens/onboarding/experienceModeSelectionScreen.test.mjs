@@ -354,7 +354,7 @@ test("Enter on Advanced stays on layout step, ArrowRight focuses Grid without sk
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(container.querySelector(".focusable.focused")?.dataset.layout, "grid");
 
-  // Pressing Back via FocusEngine on layout step returns to mode step without Router.back().
+  // Back is owned by FocusEngine: like Android TV (mode screen popped from the stack), it leaves onboarding.
   FocusEngine.lastBackHandledAt = 0;
   env.doc.dispatchKeyDown({
     key: "Escape",
@@ -363,20 +363,11 @@ test("Enter on Advanced stays on layout step, ArrowRight focuses Grid without sk
   });
   FocusEngine.activeBackKeyIdentities.clear();
   await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(ExperienceModeSelectionScreen.step, "mode");
-  assert.equal(backCalls, 0);
-  assert.equal(container.querySelector(".focusable.focused")?.dataset.mode, "ESSENTIAL");
-
-  // Pressing Back again via FocusEngine on mode step falls through to Router.back().
-  FocusEngine.lastBackHandledAt = 0;
-  env.doc.dispatchKeyDown({
-    key: "Backspace",
-    keyCode: 8,
-    target: container.querySelector(".focusable.focused")
-  });
-  FocusEngine.activeBackKeyIdentities.clear();
-  await new Promise((resolve) => setImmediate(resolve));
   assert.equal(backCalls, 1);
+  assert.equal(ExperienceModeSelectionScreen.step, "layout");
+
+  ExperienceModeSelectionScreen.cleanup();
+  await ExperienceModeSelectionScreen.mount();
 
   // Re-enter layout step, select Grid, verify layout preference saved & navigates to home once.
   env.doc.dispatchKeyDown({

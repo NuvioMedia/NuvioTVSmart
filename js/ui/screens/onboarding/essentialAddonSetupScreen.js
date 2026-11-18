@@ -59,21 +59,12 @@ export const EssentialAddonSetupScreen = {
   },
 
   onKeyDown(event) {
-    const key = event?.key;
     const code = Number(event?.keyCode || 0);
-    if (
-      key === "ArrowLeft" ||
-      key === "Left" ||
-      code === 37 ||
-      key === "ArrowRight" ||
-      key === "Right" ||
-      code === 39
-    ) {
-      event?.preventDefault?.();
-      const direction = key === "ArrowLeft" || key === "Left" || code === 37 ? -1 : 1;
-      ScreenUtils.moveFocus(this.container, direction);
-    } else if (key === "Enter" || code === 13) {
-      event?.preventDefault?.();
+    if (code === 37 || code === 39) {
+      event.preventDefault();
+      ScreenUtils.moveFocus(this.container, code === 37 ? -1 : 1);
+    } else if (code === 13) {
+      event.preventDefault();
       this.container.querySelector(".focusable.focused")?.click();
     }
   },
