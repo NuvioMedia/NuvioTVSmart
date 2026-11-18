@@ -37,6 +37,7 @@ function parseWebOsMajorVersion() {
         continue;
       }
       if (isChromium) {
+        if (value <= 38) return 3;
         if (value <= 53) return 4;
         if (value <= 68) return 5;
         if (value <= 79) return 6;

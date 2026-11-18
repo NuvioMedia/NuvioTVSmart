@@ -79,6 +79,7 @@ function loadPluginCapabilitySnapshot(PlatformMock, userAgent) {
 
 test("Chromium UA fallback maps LG webOS generations accurately", async () => {
   const cases = [
+    ["Mozilla/5.0 (Web0S; Linux/SmartTV) Chrome/38.0.2125.122 Safari/537.36", 3],
     ["Mozilla/5.0 (Web0S; Linux/SmartTV) Chrome/53.0.2785.143 Safari/537.36", 4],
     ["Mozilla/5.0 (Web0S; Linux/SmartTV) Chrome/68.0.3440.106 Safari/537.36", 5],
     ["Mozilla/5.0 (Web0S; Linux/SmartTV) Chromium/68.0.3440.106 Safari/537.36", 5],
