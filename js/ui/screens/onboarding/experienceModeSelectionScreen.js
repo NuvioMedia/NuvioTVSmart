@@ -34,9 +34,7 @@ export const ExperienceModeSelectionScreen = {
     this.step = "mode";
     ScreenUtils.show(this.container);
     this.render();
-    this.onKeyDownBound = this.onKeyDown.bind(this);
     this.onClickBound = this.onClick.bind(this);
-    document.addEventListener("keydown", this.onKeyDownBound);
     this.container.addEventListener("click", this.onClickBound);
     ScreenUtils.setInitialFocus(this.container);
   },
@@ -105,28 +103,19 @@ export const ExperienceModeSelectionScreen = {
     if (node.dataset.layout) await this.chooseLayout(node.dataset.layout);
   },
 
+  // FocusEngine owns Back: as on Android TV, the layout step leaves onboarding like the mode step.
   async onKeyDown(event) {
-    const key = event.key;
-    if (["ArrowLeft", "ArrowRight"].includes(key)) {
+    const code = Number(event?.keyCode || 0);
+    if (code === 37 || code === 39) {
       event.preventDefault();
-      ScreenUtils.moveFocus(this.container, key === "ArrowLeft" ? -1 : 1);
-      return;
-    }
-    if (key === "Enter") {
+      ScreenUtils.moveFocus(this.container, code === 37 ? -1 : 1);
+    } else if (code === 13) {
       event.preventDefault();
       this.container.querySelector(".focusable.focused")?.click();
-      return;
-    }
-    if ((key === "Escape" || key === "Backspace") && this.step === "layout") {
-      event.preventDefault();
-      this.step = "mode";
-      this.render();
-      ScreenUtils.setInitialFocus(this.container);
     }
   },
 
   cleanup() {
-    document.removeEventListener("keydown", this.onKeyDownBound);
     this.container?.removeEventListener("click", this.onClickBound);
     ScreenUtils.hide(this.container);
   }
