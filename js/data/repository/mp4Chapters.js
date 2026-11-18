@@ -1,4 +1,4 @@
-import { fetchRange, requestHeaders } from "./matroskaChapters.js";
+import { fetchRange, runRangeProbe } from "./rangeProbe.js";
 
 // MP4/MOV chapters over HTTP ranges. Two layouts are supported, in the order
 // players usually expose them: Nero's `moov/udta/chpl` list, and the QuickTime
@@ -453,10 +453,10 @@ export function isMp4Source(url = "", stream = null) {
   );
 }
 
-async function findMoov(url, headers, signal) {
+async function findMoov(url, headers, probe) {
   let offset = 0;
   for (let index = 0; index < MAX_TOP_LEVEL_BOXES; index += 1) {
-    const head = await fetchRange(url, headers, offset, 16, signal);
+    const head = await fetchRange(url, headers, offset, 16, probe);
     if (!head || head.length < 8) {
       return null;
     }
@@ -468,7 +468,7 @@ async function findMoov(url, headers, signal) {
       if (box.size > MAX_MOOV_BYTES) {
         return null;
       }
-      const moov = await fetchRange(url, headers, offset, box.size, signal);
+      const moov = await fetchRange(url, headers, offset, box.size, probe);
       return moov && moov.length === box.size ? moov : null;
     }
     if (box.size <= 0) {
@@ -481,13 +481,11 @@ async function findMoov(url, headers, signal) {
 
 /** Best-effort MP4/MOV chapters over HTTP ranges. */
 export async function fetchMp4Chapters(url, headers = {}) {
-  if (!/^https?:\/\//i.test(String(url || "")) || typeof AbortController !== "function") {
+  if (!/^https?:\/\//i.test(String(url || ""))) {
     return [];
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
-  try {
-    const moov = await findMoov(url, headers, controller.signal);
+  return runRangeProbe(PROBE_TIMEOUT_MS, async (probe) => {
+    const moov = await findMoov(url, headers, probe);
     if (!moov) {
       return [];
     }
@@ -495,13 +493,8 @@ export async function fetchMp4Chapters(url, headers = {}) {
       if (!Number.isFinite(offset) || !Number.isFinite(size) || size <= 0) {
         return null;
       }
-      return fetchRange(url, headers, offset, size, controller.signal);
+      return fetchRange(url, headers, offset, size, probe);
     };
-    return await parseMp4MoovChapters(moov, { readSample });
-  } catch (_) {
-    return [];
-  } finally {
-    clearTimeout(timeout);
-    controller.abort();
-  }
+    return parseMp4MoovChapters(moov, { readSample });
+  });
 }

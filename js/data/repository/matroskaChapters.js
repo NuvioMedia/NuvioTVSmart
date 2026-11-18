@@ -1,4 +1,5 @@
 import { children, readElement } from "./matroskaTrackMetadata.js";
+import { fetchRange, runRangeProbe } from "./rangeProbe.js";
 
 const MAX_HEADER_BYTES = 256 * 1024;
 const MAX_CHAPTERS_BYTES = 1024 * 1024;
@@ -172,77 +173,15 @@ export function matroskaSeekHeadPositions(bytes) {
   }
 }
 
-export function requestHeaders(headers = {}) {
-  const result = {};
-  Object.entries(headers || {}).forEach(([name, value]) => {
-    if (
-      !String(name).toLowerCase().startsWith("range") &&
-      !String(name).toLowerCase().startsWith("accept-encoding") &&
-      value != null
-    ) {
-      result[name] = String(value);
-    }
-  });
-  return result;
-}
-
-export async function fetchRange(url, headers, start, length, signal) {
-  let reader;
-  try {
-    const response = await fetch(url, {
-      headers: {
-        ...requestHeaders(headers),
-        Range: `bytes=${start}-${start + length - 1}`,
-        "Accept-Encoding": "identity"
-      },
-      signal,
-      credentials: "omit"
-    });
-    const range = response.headers.get("content-range");
-    const validStatus = response.status === 206 || (response.status === 200 && start === 0);
-    if (
-      !validStatus ||
-      (start > 0 && !range) ||
-      (range && !new RegExp(`^bytes ${start}-\\d+/\\d+$`, "i").test(range)) ||
-      !response.body?.getReader
-    ) {
-      return null;
-    }
-    reader = response.body.getReader();
-    const bytes = new Uint8Array(length);
-    let read = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        return bytes.subarray(0, read);
-      }
-      if (read + value.length > length) {
-        return null;
-      }
-      bytes.set(value, read);
-      read += value.length;
-      if (read === length) {
-        return bytes;
-      }
-    }
-  } catch (_) {
-    return null;
-  } finally {
-    if (reader) {
-      void reader.cancel().catch(() => {});
-    }
-  }
-}
-
-async function elementAt(url, headers, initial, position, maxBytes, signal) {
+async function elementAt(url, headers, initial, position, maxBytes, probe) {
   let header = position < initial.length ? readElement(initial, position, initial.length) : null;
   let headerStart = position;
   if (!header) {
-    const probe = await fetchRange(url, headers, position, 64, signal);
-    if (!probe) {
+    const probeBytes = await fetchRange(url, headers, position, 64, probe);
+    if (!probeBytes) {
       return null;
     }
-    header = readElement(probe, 0, probe.length);
+    header = readElement(probeBytes, 0, probeBytes.length);
     headerStart = 0;
     if (!header) {
       return null;
@@ -258,7 +197,7 @@ async function elementAt(url, headers, initial, position, maxBytes, signal) {
   if (position + totalSize <= initial.length) {
     return initial.subarray(position, position + totalSize);
   }
-  const element = await fetchRange(url, headers, position, totalSize, signal);
+  const element = await fetchRange(url, headers, position, totalSize, probe);
   return element && element.length === totalSize ? element : null;
 }
 
@@ -280,13 +219,11 @@ export function isMatroskaSource(url = "", stream = null) {
 
 /** Best-effort chapters over HTTP ranges; any failure leaves playback untouched. */
 export async function fetchMatroskaChapters(url, headers = {}) {
-  if (!/^https?:\/\//i.test(String(url || "")) || typeof AbortController !== "function") {
+  if (!/^https?:\/\//i.test(String(url || ""))) {
     return [];
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
-  try {
-    const initial = await fetchRange(url, headers, 0, MAX_HEADER_BYTES, controller.signal);
+  return runRangeProbe(PROBE_TIMEOUT_MS, async (probe) => {
+    const initial = await fetchRange(url, headers, 0, MAX_HEADER_BYTES, probe);
     if (!initial) {
       return [];
     }
@@ -302,7 +239,7 @@ export async function fetchMatroskaChapters(url, headers = {}) {
         initial,
         layout.seekHeadPosition,
         MAX_HEADER_BYTES,
-        controller.signal
+        probe
       );
       if (seekHead) {
         const relative = matroskaSeekHeadPositions(seekHead).get(ID_CHAPTERS);
@@ -320,13 +257,8 @@ export async function fetchMatroskaChapters(url, headers = {}) {
       initial,
       chaptersPosition,
       MAX_CHAPTERS_BYTES,
-      controller.signal
+      probe
     );
     return chapters ? parseMatroskaChapters(chapters) : [];
-  } catch (_) {
-    return [];
-  } finally {
-    clearTimeout(timeout);
-    controller.abort();
-  }
+  });
 }
