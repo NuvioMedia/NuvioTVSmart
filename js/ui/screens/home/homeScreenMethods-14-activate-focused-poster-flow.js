@@ -181,8 +181,9 @@ export function createHomeScreenMethods14() {
           return;
         }
         // The auto-scroller owns this description: rewriting its text would
-        // detach the track it translates.
-        if (node.classList.contains("hero-description-autoscroll")) {
+        // detach the track it translates. The hero update only schedules it, so
+        // the pending frame counts as ownership too.
+        if (node.classList.contains("hero-description-autoscroll") || this.heroDescriptionAutoScrollFrame) {
           return;
         }
         const currentText = node.textContent ?? "";

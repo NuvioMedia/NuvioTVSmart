@@ -170,8 +170,12 @@ export function createHomeScreenMethods05() {
       this.applyHeroDescriptionAutoScroll();
     },
     applyHeroDescriptionAutoScroll() {
+      if (this.heroDescriptionAutoScrollFrame) {
+        cancelAnimationFrame(this.heroDescriptionAutoScrollFrame);
+        this.heroDescriptionAutoScrollFrame = 0;
+      }
       const node = this.container?.querySelector(".home-hero-card .home-hero-description");
-      if (!node) {
+      if (!node || !this.layoutPrefs?.heroDescriptionAutoScrollEnabled) {
         this.heroDescriptionAutoScroller?.stop();
         return;
       }
@@ -183,7 +187,15 @@ export function createHomeScreenMethods05() {
           }
         });
       }
-      this.heroDescriptionAutoScroller.apply(node, Boolean(this.layoutPrefs?.heroDescriptionAutoScrollEnabled));
+      // Measuring here would force a synchronous layout inside the hero update.
+      // Android sizes AutoScrollingText during composition, at frame time.
+      this.heroDescriptionAutoScrollFrame = requestAnimationFrame(() => {
+        this.heroDescriptionAutoScrollFrame = 0;
+        if (!node.isConnected) {
+          return;
+        }
+        this.heroDescriptionAutoScroller.apply(node, Boolean(this.layoutPrefs?.heroDescriptionAutoScrollEnabled));
+      });
     },
     setSidebarExpanded(expanded) {
       const nextExpanded = Boolean(expanded);
