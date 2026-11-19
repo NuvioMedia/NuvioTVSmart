@@ -392,7 +392,8 @@
                 pushState(true);
               },
               onError: function onError(event) {
-                fallbackToDirectEmbed();
+                var errorCode = Number(event && event.data) || 0;
+                postToParent("error", { videoId: videoId, code: errorCode });
               }
             }
           });

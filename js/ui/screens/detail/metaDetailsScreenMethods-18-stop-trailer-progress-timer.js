@@ -291,8 +291,43 @@ export function createMetaDetailsScreenMethods18() {
       this.stopTrailerProxyLoadingTimer();
       this.stopTrailerFirstFramePolling();
       this.stopTrailerFallbackRevealTimer();
+      if (this.trailerIframeFocusGuardHandler && typeof window !== "undefined") {
+        window.removeEventListener("blur", this.trailerIframeFocusGuardHandler);
+      }
+      this.trailerIframeFocusGuardHandler = null;
       this.trailerProxyState = null;
+      this.trailerProxyReadyReceived = false;
       this.trailerYoutubeFallbackActive = false;
+    },
+    reclaimTrailerIframeFocus() {
+      const frame = this.trailerUiRefs?.frame;
+      if (!this.isTrailerPlaying || !frame || typeof document === "undefined" || document.activeElement !== frame) {
+        return false;
+      }
+      try {
+        frame.blur?.();
+      } catch (_) {}
+      if (this.trailerPlaybackMode === "manual" && this.trailerUiRefs?.overlay) {
+        try {
+          this.trailerUiRefs.overlay.focus?.({ preventScroll: true });
+        } catch (_) {
+          this.trailerUiRefs.overlay.focus?.();
+        }
+        return true;
+      }
+      const focused =
+        this.container?.querySelector(".focusable.focused") ||
+        this.container?.querySelector('.series-detail-actions [data-action="playDefault"]') ||
+        this.container?.querySelector(".focusable") ||
+        null;
+      if (focused) {
+        try {
+          focused.focus?.({ preventScroll: true });
+        } catch (_) {
+          focused.focus?.();
+        }
+      }
+      return true;
     },
     async initYoutubeTrailerPlayer() {
       const ytId = String(this.trailerSource?.ytId || "").trim();
@@ -300,6 +335,12 @@ export function createMetaDetailsScreenMethods18() {
         return;
       }
       this.destroyYoutubeTrailerPlayer();
+      if (typeof window !== "undefined") {
+        this.trailerIframeFocusGuardHandler = () => {
+          this.reclaimTrailerIframeFocus();
+        };
+        window.addEventListener("blur", this.trailerIframeFocusGuardHandler);
+      }
       this.trailerProxyState = {
         currentTime: 0,
         duration: 0,
@@ -309,6 +350,7 @@ export function createMetaDetailsScreenMethods18() {
         loading: true,
         controllable: true
       };
+      this.trailerProxyReadyReceived = false;
       this.trailerYoutubeFallbackActive = false;
       this.startTrailerProxyLoadingTimer(ytId);
       this.updateTrailerOverlay();
