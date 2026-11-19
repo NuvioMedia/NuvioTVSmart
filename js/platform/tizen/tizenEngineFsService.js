@@ -1,7 +1,7 @@
 import { Platform } from "../index.js";
 import { TizenCapabilities } from "./tizenCapabilities.js";
 import {
-  getTizenServiceStartMethods,
+  getTizenEngineFsStartMethods,
   getWrtServiceClass,
   startWithWrtServiceClass
 } from "./tizenWrtService.js";
@@ -174,7 +174,7 @@ async function requestServiceStart(serviceId) {
       startViaApplicationControl(serviceId, TIZEN_DEFAULT_OPERATION),
     "tizen-application-launch": () => startViaTizenApplication(serviceId)
   };
-  const attempts = getTizenServiceStartMethods({
+  const attempts = getTizenEngineFsStartMethods({
     webServiceSupported: capabilities.webServiceSupported,
     tizenMajorVersion: capabilities.tizenMajorVersion || 0,
     tizenMinorVersion: capabilities.tizenMinorVersion || 0,
