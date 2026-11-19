@@ -127,6 +127,13 @@ function updateAttributes(node, previous, next) {
           node.style.setProperty(property, value, next.style.getPropertyPriority(property));
         else node.style.removeProperty(property);
       });
+    } else if (
+      name === "src" &&
+      node.classList?.contains("home-hero-backdrop") &&
+      node.heroBackdropCanvasSrc &&
+      node.heroBackdropCanvasSrc === newValue
+    ) {
+      return;
     } else if (newValue === null) {
       node.removeAttribute(name);
     } else {

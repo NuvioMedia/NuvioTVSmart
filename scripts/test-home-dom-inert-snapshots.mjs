@@ -10,7 +10,7 @@ const released = [];
 const context = vm.createContext({ releaseHomeArtwork: (url) => released.push(url) });
 vm.runInContext(
   source.replace(/^import .*;$/gm, "").replaceAll("export function", "function") +
-    "\nglobalThis.api = { registerHomeDomNodes, updateHomeDom, sourceByNode, releasePosters, updateNode, unchangedHomeRowMarkup };",
+    "\nglobalThis.api = { registerHomeDomNodes, updateHomeDom, sourceByNode, releasePosters, updateAttributes, updateNode, unchangedHomeRowMarkup };",
   context
 );
 let documentsCreated = 0;
@@ -82,6 +82,42 @@ context.api.updateNode(mountedRow, {
   hasAttribute: (name) => name === "data-home-row-unchanged"
 });
 assert.equal(context.api.sourceByNode.get(mountedRow), undefined);
+
+// Background DOM patches must not re-attach a raw src onto the hidden anchor
+// <img> while a bitmap <canvas> is already presenting that exact backdrop URL.
+const makeAttrNode = (srcValue) => ({
+  attributes: srcValue ? [{ name: "src" }] : [],
+  getAttribute: (name) => (name === "src" ? srcValue : null)
+});
+const setCalls = [];
+const backdropNode = {
+  tagName: "IMG",
+  classList: { contains: (cls) => cls === "home-hero-backdrop" },
+  heroBackdropCanvasSrc: "https://art/hero-b.jpg",
+  setAttribute: (name, value) => setCalls.push(["set", name, value]),
+  removeAttribute: (name) => setCalls.push(["remove", name])
+};
+context.api.updateAttributes(
+  backdropNode,
+  makeAttrNode("https://art/hero-a.jpg"),
+  makeAttrNode("https://art/hero-b.jpg")
+);
+assert.deepEqual(setCalls, []);
+backdropNode.heroBackdropCanvasSrc = "https://art/hero-a.jpg";
+context.api.updateAttributes(
+  backdropNode,
+  makeAttrNode("https://art/hero-a.jpg"),
+  makeAttrNode("https://art/hero-b.jpg")
+);
+assert.deepEqual(setCalls, [["set", "src", "https://art/hero-b.jpg"]]);
+backdropNode.heroBackdropCanvasSrc = "";
+context.api.updateAttributes(
+  backdropNode,
+  makeAttrNode("https://art/hero-a.jpg"),
+  makeAttrNode("https://art/hero-b.jpg")
+);
+assert.equal(setCalls.length, 2);
+
 console.log(
   "Home snapshots and parsing share the inert document, including early live-node registration."
 );
