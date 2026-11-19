@@ -404,3 +404,23 @@ test("continue watching card backdrops rescale and release on eviction", async (
   assert.equal(cwImage.dataset.src, "https://art/cw-backdrop.jpg");
   assert.equal(cwImage.getAttribute("src"), null);
 });
+
+test("TV continue watching cards defer their backdrop to the artwork pass", async () => {
+  const previousPlatform = globalThis.__NUVIO_PLATFORM__;
+  const { Platform } = await import("../../../platform/index.js");
+  globalThis.__NUVIO_PLATFORM__ = "tizen";
+  Platform.current = null;
+  try {
+    const { renderContinueWatchingCard } = await import("./homeScreenHelpers-12-build-hero-indicators.js");
+    const card = renderContinueWatchingCard(
+      { contentId: "tt1", contentType: "series", title: "Show", poster: "https://art/poster.jpg" },
+      0,
+      { rowKey: "continue_watching", navIndex: 0, posterSettings: {} }
+    );
+    assert.match(card, /class="home-continue-bg"[^>]*data-src="https:\/\/art\/poster\.jpg"/);
+    assert.doesNotMatch(card, /class="home-continue-bg"[^>]* src=/);
+  } finally {
+    globalThis.__NUVIO_PLATFORM__ = previousPlatform;
+    Platform.current = null;
+  }
+});
