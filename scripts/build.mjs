@@ -383,7 +383,11 @@ function flexGapFallbackPlugin() {
       rowGap ||= "0";
       columnGap ||= "0";
 
-      const scopedSelectors = rule.selectors.map((selector) => `html.no-flex-gap ${selector}`);
+      const scopedSelectors = rule.selectors.map((selector) =>
+        /^html(?=[.#[:\s]|$)/i.test(selector)
+          ? selector.replace(/^html\b/i, "html.no-flex-gap")
+          : `html.no-flex-gap ${selector}`
+      );
       const isColumnDirection = flexDirection.includes("column");
       const wraps = flexWrap.includes("wrap") && !flexWrap.includes("nowrap");
       const childFallback = postcss.rule({
