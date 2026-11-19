@@ -392,7 +392,18 @@
                 pushState(true);
               },
               onError: function onError(event) {
-                fallbackToDirectEmbed();
+                var errorCode = Number(event && event.data) || 0;
+                // Fatal playback error: stop polling and make sure the pre-ready
+                // watchdog cannot replace the player with a direct embed afterwards.
+                if (readyWatchdog) {
+                  clearTimeout(readyWatchdog);
+                  readyWatchdog = null;
+                }
+                if (stateTimer) {
+                  clearInterval(stateTimer);
+                  stateTimer = null;
+                }
+                postToParent("error", { videoId: videoId, code: errorCode });
               }
             }
           });
