@@ -52,6 +52,10 @@ export function createHomeScreenMethods30() {
       this.cancelModernCameraFollow({ stopAnimations: true });
       this.endModernVerticalFastScroll({ land: false });
       this.stopHeroRotation();
+      if (this.heroDescriptionAutoScrollFrame) {
+        cancelAnimationFrame(this.heroDescriptionAutoScrollFrame);
+        this.heroDescriptionAutoScrollFrame = 0;
+      }
       this.heroDescriptionAutoScroller?.stop();
       this.heroDescriptionScrollHolding = false;
       this.cancelPendingHeroFocus();
