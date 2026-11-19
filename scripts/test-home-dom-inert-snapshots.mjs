@@ -329,6 +329,56 @@ context.api.updateAttributes(
 );
 assert.equal(heroLogo.getAttribute("src"), "https://cdn/next.png", "a different hero logo still updates");
 
+// On Tizen the hero backdrop is painted by a bitmap <canvas>; the <img> is a
+// hidden anchor left without src. A refresh repeating that url must not put the
+// raw full-size decode back behind the canvas.
+function backdropNode(canvasSrc, src = null) {
+  const attributes = src ? { src } : {};
+  return {
+    tagName: "IMG",
+    dataset: {},
+    heroBackdropCanvasSrc: canvasSrc,
+    classList: {
+      contains: (name) => name === "home-hero-backdrop"
+    },
+    getAttribute: (name) => (name in attributes ? attributes[name] : null),
+    setAttribute: (name, value) => {
+      attributes[name] = value;
+    },
+    removeAttribute: (name) => {
+      delete attributes[name];
+    }
+  };
+}
+const canvasBackdrop = backdropNode("https://cdn/backdrop.jpg");
+context.api.updateAttributes(
+  canvasBackdrop,
+  sourceNode({ src: "https://cdn/old.jpg" }),
+  sourceNode({ src: "https://cdn/backdrop.jpg" })
+);
+assert.equal(canvasBackdrop.getAttribute("src"), null, "the canvas keeps sole ownership of the decode");
+context.api.updateAttributes(
+  canvasBackdrop,
+  sourceNode({ src: "https://cdn/old.jpg" }),
+  sourceNode({ src: "https://cdn/next.jpg" })
+);
+assert.equal(
+  canvasBackdrop.getAttribute("src"),
+  "https://cdn/next.jpg",
+  "a different backdrop still reaches the anchor before the swap"
+);
+canvasBackdrop.heroBackdropCanvasSrc = "";
+context.api.updateAttributes(
+  canvasBackdrop,
+  sourceNode({ src: "https://cdn/old.jpg" }),
+  sourceNode({ src: "https://cdn/backdrop.jpg" })
+);
+assert.equal(
+  canvasBackdrop.getAttribute("src"),
+  "https://cdn/backdrop.jpg",
+  "the <img> follows the markup again once the canvas is released"
+);
+
 const plainImage = liveNode();
 context.api.updateAttributes(
   plainImage,
