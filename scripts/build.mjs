@@ -353,7 +353,11 @@ function flexGapFallbackPlugin() {
           if (value.includes("column")) {
             flexDirection = "column";
           }
-          if (value.includes("wrap")) {
+          // `nowrap` also contains `wrap`; check it first so row-nowrap rules
+          // do not inherit the wrap fallback margins.
+          if (value.includes("nowrap")) {
+            flexWrap = "nowrap";
+          } else if (value.includes("wrap")) {
             flexWrap = "wrap";
           }
           return;
@@ -383,7 +387,11 @@ function flexGapFallbackPlugin() {
       rowGap ||= "0";
       columnGap ||= "0";
 
-      const scopedSelectors = rule.selectors.map((selector) => `html.no-flex-gap ${selector}`);
+      const scopedSelectors = rule.selectors.map((selector) =>
+        /^html(?=[.#[:\s]|$)/i.test(selector)
+          ? selector.replace(/^html\b/i, "html.no-flex-gap")
+          : `html.no-flex-gap ${selector}`
+      );
       const isColumnDirection = flexDirection.includes("column");
       const wraps = flexWrap.includes("wrap") && !flexWrap.includes("nowrap");
       const childFallback = postcss.rule({
