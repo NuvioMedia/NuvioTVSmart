@@ -84,13 +84,13 @@ function makeRow(context, { top }) {
   return row;
 }
 
-function makeImage(context, { row, src, left = 0 }) {
+function makeImage(context, { row, src, left = 0, className = "content-poster" }) {
   const image = new context.HTMLImageElement();
   const attributes = new Map();
   image.isConnected = true;
   image.dataset = { src };
   image.loading = "";
-  image.classList = { contains: (name) => name === "content-poster" };
+  image.classList = { contains: (name) => name === className };
   image.closest = (selector) => (selector === ROW_SELECTOR ? row : null);
   image.getBoundingClientRect = () => ({
     top: row.top,
@@ -367,4 +367,40 @@ test("the stylesheet's own object-fit reaches the rescaler", () => {
   );
   assert.equal(asked[0].width, 220);
   assert.equal(asked[0].height, 338);
+});
+
+test("continue watching card backdrops rescale and release on eviction", async () => {
+  const asked = [];
+  const released = [];
+  const context = buildHome({
+    rescale: {
+      enabled: () => true,
+      fit: () => "cover",
+      rescale: (url, options) => {
+        asked.push({ url, ...options });
+        return Promise.resolve("blob:cw-rescaled-1");
+      },
+      release: (url) => released.push(url)
+    }
+  });
+  const row = makeRow(context, { top: 100 });
+  const cwImage = makeImage(context, {
+    row,
+    src: "https://art/cw-backdrop.jpg",
+    className: "home-continue-bg"
+  });
+  const screen = makeScreen(context, { rows: [row], images: [cwImage] });
+
+  screen.hydrateHomeLazyImages(null, { forceFullScan: true, refreshIndex: true });
+  await Promise.resolve();
+  assert.equal(asked.length, 1);
+  assert.equal(asked[0].url, "https://art/cw-backdrop.jpg");
+  assert.equal(cwImage.src, "blob:cw-rescaled-1");
+  assert.equal(cwImage.dataset.originalSrc, "https://art/cw-backdrop.jpg");
+
+  row.top = 9000;
+  assert.equal(screen.evictDistantHomeLazyImages(null), 1);
+  assert.deepEqual(released, ["blob:cw-rescaled-1"]);
+  assert.equal(cwImage.dataset.src, "https://art/cw-backdrop.jpg");
+  assert.equal(cwImage.getAttribute("src"), null);
 });

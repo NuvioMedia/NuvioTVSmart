@@ -66,9 +66,29 @@ const poster = {
   dataset: { originalSrc: "https://art/poster.jpg" },
   getAttribute: () => "blob:poster"
 };
-context.api.releasePosters({ nodeType: 1, matches: () => false, querySelectorAll: () => [poster] });
-assert.deepEqual(released, ["blob:poster"]);
+const continueBg = {
+  dataset: { originalSrc: "https://art/cw-bg.jpg" },
+  getAttribute: () => "blob:cw-bg"
+};
+context.api.releasePosters({
+  nodeType: 1,
+  matches: (selector) =>
+    selector.includes("content-poster") && selector.includes("home-continue-bg"),
+  querySelectorAll: (selector) => {
+    assert.ok(selector.includes("img.content-poster"));
+    assert.ok(selector.includes("img.home-continue-bg"));
+    return [continueBg];
+  }
+});
+// When root itself is not a card image, querySelectorAll handles descendants.
+context.api.releasePosters({
+  nodeType: 1,
+  matches: () => false,
+  querySelectorAll: () => [poster, continueBg]
+});
+assert.deepEqual(released, ["blob:cw-bg", "blob:poster"]);
 assert.equal(poster.dataset.originalSrc, undefined);
+assert.equal(continueBg.dataset.originalSrc, undefined);
 // An unchanged-row stand-in leaves the mounted row and its snapshot alone.
 const stub = context.api.unchangedHomeRowMarkup("row&amp;1");
 assert.equal(stub, '<section data-row-key="row&amp;1" data-home-row-unchanged></section>');
