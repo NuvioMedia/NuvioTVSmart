@@ -107,6 +107,7 @@ export function createHomeScreenMethods04() {
     HERO_ROTATE_FIRST_DELAY_MS,
     HERO_ROTATE_INTERVAL_MS,
     HOME_CATALOG_REFRESH_TTL_MS,
+    HOME_ROUTE_RETURN_SETTLE_MS,
     HOME_STABLE_GATE_TIMEOUT_MS,
     logHomePerf,
     homePerfNow,
@@ -506,6 +507,24 @@ export function createHomeScreenMethods04() {
       ]);
     },
     async refreshHomeAfterRouteReturn({ preserveReturnState = true, reason = "route-return" } = {}) {
+      // Focus restoration and the first D-pad presses own the frames right
+      // after a route return. Let them settle before rebuilding the input
+      // signature and reconciling watch/catalog state. A newer mount or a
+      // cleanup bumps homeLoadToken and drops the pending work.
+      const token = this.homeLoadToken;
+      if (this.homeRouteReturnRefreshTimer) {
+        clearTimeout(this.homeRouteReturnRefreshTimer);
+        this.homeRouteReturnRefreshTimer = null;
+      }
+      await new Promise((resolve) => {
+        this.homeRouteReturnRefreshTimer = setTimeout(() => {
+          this.homeRouteReturnRefreshTimer = null;
+          resolve();
+        }, HOME_ROUTE_RETURN_SETTLE_MS);
+      });
+      if (token !== this.homeLoadToken || Router.getCurrent() !== "home") {
+        return false;
+      }
       // Android retains Home's rows on resume. Rebuild only for changed inputs
       // or an interrupted catalog load; otherwise reconcile watch state and
       // merge catalog page one only after the shared freshness window expires.
@@ -514,7 +533,6 @@ export function createHomeScreenMethods04() {
         return this.requestHomeBackgroundRefresh({ preserveReturnState, reason });
       }
       this.retryPendingCatalogRows();
-      const token = this.homeLoadToken;
       return Promise.all([
         this.refreshHomeContinueWatchingAfterSync(),
         this.refreshHomeCatalogsIfStale({ reason }),
