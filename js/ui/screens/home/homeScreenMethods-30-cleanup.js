@@ -47,6 +47,10 @@ export function createHomeScreenMethods30() {
       this.persistCurrentFocusState();
       this.homeLoadToken = (this.homeLoadToken || 0) + 1;
       this.cancelInitialHomeLoadTimeout();
+      if (this.homeRouteReturnRefreshTimer) {
+        clearTimeout(this.homeRouteReturnRefreshTimer);
+        this.homeRouteReturnRefreshTimer = null;
+      }
       this._trackPaginationInFlight?.clear();
       this.cancelScheduledRender();
       this.cancelModernCameraFollow({ stopAnimations: true });

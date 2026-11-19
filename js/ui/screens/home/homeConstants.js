@@ -53,6 +53,11 @@ export const HOME_ROW_TIMEOUT_MS = 3500;
 // out and kept the previous catalog list for the whole 6h cache window.
 export const HOME_ADDON_MANIFEST_TIMEOUT_MS = 30000;
 export const HOME_CATALOG_REFRESH_TTL_MS = 15 * 60 * 1000;
+// Android comes back to an already laid out Home, so its resume work never
+// competes with focus restoration. On Smart TV the signature rebuild and the
+// watch/catalog reconciliation would otherwise start in the same frame as the
+// restored focus and the first D-pad presses.
+export const HOME_ROUTE_RETURN_SETTLE_MS = 500;
 export const HOME_ROW_RETRY_TIMEOUT_MS = 12000;
 export const HOME_BACKGROUND_RENDER_DELAY_MS = 120;
 export const HOME_BACKGROUND_RENDER_DELAY_LEGACY_MS = 180;
