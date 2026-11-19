@@ -520,30 +520,84 @@ function pluginPolyfill() {
   `;
 }
 
-async function resolveGuestPromise(context, runtime, handle, timeoutMs) {
+async function resolveGuestPromise(context, runtime, handle, timeoutMs, execution = null) {
   let settled = false;
   let resolution = null;
-  context.resolvePromise(handle).then(
+  let wakeResolve = null;
+  let wakePending = false;
+  const wake = () => {
+    wakePending = true;
+    if (wakeResolve) {
+      const resolve = wakeResolve;
+      wakeResolve = null;
+      resolve();
+    }
+  };
+  if (execution) {
+    execution.wake = wake;
+  }
+  const timeoutMsValue = Number(timeoutMs || 60000);
+  const deadlineAt = Date.now() + timeoutMsValue;
+  let timeoutTimer = null;
+  const settledPromise = context.resolvePromise(handle).then(
     (result) => {
       settled = true;
       resolution = result;
+      wake();
     },
     (error) => {
       settled = true;
       resolution = error;
+      wake();
     }
   );
-  const startedAt = Date.now();
-  while (!settled && Date.now() - startedAt < Number(timeoutMs || 60000)) {
-    const jobs = runtime.executePendingJobs();
-    if (jobs?.error) {
-      const errorHandle = context.unwrapResult(jobs);
-      const message = String(context.dump(errorHandle)?.message || "QuickJS pending job failed");
-      errorHandle.dispose();
-      throw new Error(message);
+  try {
+    while (!settled) {
+      wakePending = false;
+      const jobs = runtime.executePendingJobs();
+      if (jobs?.error) {
+        const errorHandle = context.unwrapResult(jobs);
+        const message = String(context.dump(errorHandle)?.message || "QuickJS pending job failed");
+        errorHandle.dispose();
+        throw new Error(message);
+      }
+      // Let host microtasks observe resolvePromise() settling before parking.
+      await Promise.resolve();
+      if (settled) {
+        break;
+      }
+      if (wakePending) {
+        continue;
+      }
+      const remainingMs = deadlineAt - Date.now();
+      if (remainingMs <= 0) {
+        break;
+      }
+      await new Promise((resolve) => {
+        wakeResolve = resolve;
+        timeoutTimer = setTimeout(() => {
+          timeoutTimer = null;
+          if (wakeResolve === resolve) {
+            wakeResolve = null;
+            resolve();
+          }
+        }, remainingMs);
+      });
+      if (timeoutTimer) {
+        clearTimeout(timeoutTimer);
+        timeoutTimer = null;
+      }
     }
-    await new Promise((resolve) => setTimeout(resolve, 0));
+  } finally {
+    if (timeoutTimer) {
+      clearTimeout(timeoutTimer);
+      timeoutTimer = null;
+    }
+    if (execution && execution.wake === wake) {
+      execution.wake = null;
+    }
   }
+  void settledPromise;
   if (!settled) {
     throw new Error("Plugin promise timed out");
   }
@@ -600,7 +654,8 @@ async function execute(message) {
     disposeCheerio: null,
     context: null,
     settleFetch: null,
-    rejectPending: null
+    rejectPending: null,
+    wake: null
   };
   activeExecution = execution;
   // The network bridge returns a QuickJS promise immediately and resolves it
@@ -716,6 +771,7 @@ async function execute(message) {
     } finally {
       pending.deferred.dispose();
     }
+    execution.wake?.();
   }
   execution.settleFetch = settleFetch;
   execution.rejectPending = function (error) {
@@ -858,7 +914,13 @@ async function execute(message) {
   var resolvedCallResult;
   var providerCallError = null;
   try {
-    resolvedCallResult = await resolveGuestPromise(context, runtime, callHandle, request.timeoutMs);
+    resolvedCallResult = await resolveGuestPromise(
+      context,
+      runtime,
+      callHandle,
+      request.timeoutMs,
+      execution
+    );
   } catch (error) {
     providerCallError = error;
   }
