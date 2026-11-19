@@ -245,7 +245,7 @@ function insertInsetFallbacks(decl) {
   }
 }
 
-function legacyDeclarationFallbackPlugin() {
+function legacyDeclarationFallbackPlugin(seenSupportsRootBlocks = new Set()) {
   const guardedDeclarations = new WeakSet();
   const lastGuardByRule = new WeakMap();
   return {
@@ -260,6 +260,16 @@ function legacyDeclarationFallbackPlugin() {
         // substitution then invalidates the consuming property, so duplicate
         // declarations alone cannot provide a legacy fallback.
         if (decl.prop.startsWith("--") && /\b(min|max|clamp)\(/.test(decl.value)) {
+          // postcss-global-data injects base.css :root into every processed file,
+          // so an identical :root guard would otherwise be emitted for each one.
+          if (decl.parent.selector === ":root") {
+            const guardKey = `${decl.prop}|${decl.value}`;
+            if (seenSupportsRootBlocks.has(guardKey)) {
+              decl.value = legacyValue;
+              return;
+            }
+            seenSupportsRootBlocks.add(guardKey);
+          }
           const modernDecl = decl.clone();
           guardedDeclarations.add(modernDecl);
           const modernRule = decl.parent.clone({ nodes: [modernDecl] });
@@ -445,6 +455,7 @@ async function buildCSS() {
 
   const remoteImports = [];
   const seenRemoteImports = new Set();
+  const seenSupportsRootBlocks = new Set();
   const bodies = [];
 
   const remoteImportPattern =
@@ -473,7 +484,7 @@ async function buildCSS() {
           overrideBrowserslist: [`Chrome ${compatibilityPolicy.chromiumVersion}`],
           grid: "autoplace"
         }),
-        legacyDeclarationFallbackPlugin(),
+        legacyDeclarationFallbackPlugin(seenSupportsRootBlocks),
         unsupportedSelectorFallbackPlugin(),
         flexGapFallbackPlugin(),
         cssnano()
