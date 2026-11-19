@@ -180,6 +180,11 @@ export function createHomeScreenMethods14() {
         if (!(node instanceof HTMLElement)) {
           return;
         }
+        // The auto-scroller owns this description: rewriting its text would
+        // detach the track it translates.
+        if (node.classList.contains("hero-description-autoscroll")) {
+          return;
+        }
         const currentText = node.textContent ?? "";
         const storedText = node.dataset.fullText || "";
         const shouldRefresh = !storedText || (currentText && currentText !== storedText && !currentText.trim().endsWith("..."));

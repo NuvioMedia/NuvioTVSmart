@@ -143,11 +143,6 @@ export function createHomeScreenMethods05() {
 
       const descriptionNode = heroNode.querySelector(".home-hero-description");
       if (descriptionNode) {
-        this.heroDescriptionAutoScroller?.stop();
-        descriptionNode.classList.remove("hero-description-autoscroll");
-        descriptionNode.style.height = "";
-        descriptionNode.style.maskImage = "";
-        descriptionNode.style.webkitMaskImage = "";
         descriptionNode.textContent = display.description || " ";
         descriptionNode.classList.toggle("is-empty", !display.description);
       }
