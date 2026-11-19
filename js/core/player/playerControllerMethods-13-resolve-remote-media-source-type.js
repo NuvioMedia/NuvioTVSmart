@@ -125,12 +125,21 @@ export function createPlayerControllerMethods13() {
         this.captureHlsErrorDiagnostic(data);
         const responseCode = Number(data?.response?.code || data?.networkDetails?.status || 0);
         if (!data?.fatal) {
+          // hls.js keeps retrying a 416 fragment for about a minute before
+          // declaring it fatal, which is past the startup watchdog. The player
+          // already recovers a 416 by replaying the source from the start (and,
+          // on CNCVerse's legacy route, through the current bridge path), so
+          // surface it at the first response instead of waiting for the retry
+          // ladder to expire.
+          if (responseCode === 416 && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            emitFatalHlsNetworkError(data, responseCode);
+          }
           return;
         }
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
           // Keep terminal playlist HTTP statuses aligned with Android TV; a 404
           // points to a missing bridge-generated playlist, not a recoverable load.
-          if (isTerminalHlsHttpStatus(responseCode)) {
+          if (responseCode === 416 || isTerminalHlsHttpStatus(responseCode)) {
             emitFatalHlsNetworkError(data, responseCode);
             return;
           }
