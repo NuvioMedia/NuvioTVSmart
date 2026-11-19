@@ -1,5 +1,9 @@
-.home-hero-description.hero-description-autoscroll {
-  display: block;
+.home-hero-description.hero-description-autoscroll,
+.performance-constrained .home-screen-shell .home-hero-description.hero-description-autoscroll,
+.legacy-tizen
+  .home-screen-shell.home-layout-modern
+  .home-hero-description.hero-description-autoscroll {
+  display: block !important;
   -webkit-line-clamp: unset;
   line-clamp: unset;
   max-height: none;
