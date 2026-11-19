@@ -160,8 +160,8 @@ function releasePoster(image) {
 
 function releasePosters(node) {
   if (node.nodeType !== 1) return;
-  if (node.matches("img.content-poster")) releasePoster(node);
-  node.querySelectorAll("img.content-poster").forEach(releasePoster);
+  if (node.matches("img.content-poster, img.home-continue-bg")) releasePoster(node);
+  node.querySelectorAll("img.content-poster, img.home-continue-bg").forEach(releasePoster);
 }
 
 function updateNode(node, source, protectedNode) {
@@ -178,7 +178,30 @@ function updateNode(node, source, protectedNode) {
   sourceByNode.set(node, snapshot(source));
 }
 
+function unwrapRuntimeHeroDescriptionTrack(parent) {
+  if (!parent?.classList?.contains?.("home-hero-description")) {
+    return;
+  }
+  parent.classList.remove("hero-description-autoscroll");
+  if (parent.style) {
+    parent.style.height = "";
+    parent.style.maskImage = "";
+    parent.style.webkitMaskImage = "";
+  }
+  for (let child = parent.firstChild; child;) {
+    const next = child.nextSibling;
+    if (child.nodeType === 1 && child.classList?.contains?.("hero-description-track")) {
+      while (child.firstChild) {
+        parent.insertBefore(child.firstChild, child);
+      }
+      child.remove();
+    }
+    child = next;
+  }
+}
+
 function updateChildren(parent, source, protectedNode) {
+  unwrapRuntimeHeroDescriptionTrack(parent);
   const available = new Map();
   children(parent).forEach((node) => {
     const previous = sourceByNode.get(node);

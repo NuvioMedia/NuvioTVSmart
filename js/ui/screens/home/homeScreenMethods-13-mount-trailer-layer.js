@@ -46,9 +46,51 @@ export function createHomeScreenMethods13() {
         frame.allow = "autoplay; encrypted-media; picture-in-picture";
         frame.allowFullscreen = true;
         frame.referrerPolicy = "strict-origin-when-cross-origin";
+        frame.tabIndex = -1;
+        frame.inert = true;
+        frame.setAttribute?.("tabindex", "-1");
+        frame.setAttribute?.("aria-hidden", "true");
+        frame.setAttribute?.("inert", "");
         let revealTimer = 0;
         let fallbackTimer = 0;
         let revealed = false;
+        let proxyReadyReceived = false;
+        let focusReclaimTimer = 0;
+        const reclaimHomeFocusFromFrame = () => {
+          if (focusReclaimTimer || typeof document === "undefined" || document.activeElement !== frame) {
+            return;
+          }
+          // A cross-origin iframe keeps keyboard routing until the focus change
+          // completes, so blur() synchronously here is silently ignored. Defer
+          // the reclaim by one task, otherwise the TV remote stays captured.
+          focusReclaimTimer = setTimeout(() => {
+            focusReclaimTimer = 0;
+            if (typeof document === "undefined" || document.activeElement !== frame) {
+              return;
+            }
+            try {
+              frame.blur?.();
+            } catch (_) {}
+            const focused = this.container?.querySelector?.(".focusable.focused") || this.container?.querySelector?.(".focusable") || null;
+            if (focused) {
+              try {
+                focused.focus?.({ preventScroll: true });
+              } catch (_) {
+                focused.focus?.();
+              }
+            }
+          }, 0);
+        };
+        const abortFailedTrailer = () => {
+          frame.dataset.ambientTrailerPlaying = "false";
+          if (container.classList?.contains?.("home-hero-trailer-layer")) {
+            this.setHeroTrailerActive?.(false);
+            this.heroTrailerPlaybackState = null;
+          } else {
+            container.closest?.(".home-poster-card")?.classList?.remove?.("is-trailer-active");
+          }
+          this.clearTrailerLayer(container);
+        };
         const reveal = (delayMs = 0) => {
           if (revealed || revealTimer) {
             return;
@@ -77,7 +119,15 @@ export function createHomeScreenMethods13() {
           if (!data || typeof data !== "object" || data.source !== "nuvio-youtube-proxy") {
             return;
           }
-          if (data.type === "ended" || data.type === "error") {
+          if (data.type === "ready") {
+            proxyReadyReceived = true;
+            return;
+          }
+          if (data.type === "error") {
+            abortFailedTrailer();
+            return;
+          }
+          if (data.type === "ended") {
             frame.dataset.ambientTrailerPlaying = "false";
           }
           if (data.type === "firstFrame") {
@@ -86,6 +136,10 @@ export function createHomeScreenMethods13() {
             return;
           }
           const state = data.type === "state" && data.state && typeof data.state === "object" ? data.state : null;
+          if (state && proxyReadyReceived && state.controllable === false) {
+            abortFailedTrailer();
+            return;
+          }
           if (state) {
             // The embed loops; Android plays a trailer once and then lets the
             // idle period start, so only the first pass counts as playing.
@@ -106,6 +160,11 @@ export function createHomeScreenMethods13() {
         };
         const cleanup = () => {
           window.removeEventListener("message", handleProxyMessage);
+          window.removeEventListener?.("blur", reclaimHomeFocusFromFrame);
+          if (focusReclaimTimer) {
+            clearTimeout(focusReclaimTimer);
+            focusReclaimTimer = 0;
+          }
           if (revealTimer) {
             clearTimeout(revealTimer);
             revealTimer = 0;
@@ -118,6 +177,7 @@ export function createHomeScreenMethods13() {
         this.homeTrailerFrameCleanup ||= new WeakMap();
         this.homeTrailerFrameCleanup.set(frame, cleanup);
         window.addEventListener("message", handleProxyMessage);
+        window.addEventListener?.("blur", reclaimHomeFocusFromFrame);
         frame.addEventListener(
           "load",
           () => {

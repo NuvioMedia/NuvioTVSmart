@@ -140,10 +140,13 @@ const home = { container: { querySelectorAll: () => [video] } };
 assert.equal(api.isAmbientTrailerPlaying(home), true);
 video.ended = true;
 assert.equal(api.isAmbientTrailerPlaying(home), false);
-let listener, frame;
+let frame;
+let messageListener = null;
 context.window = {
-  addEventListener: (_, fn) => {
-    listener = fn;
+  addEventListener: (name, fn) => {
+    if (name === "message") {
+      messageListener = fn;
+    }
   },
   removeEventListener() {}
 };
@@ -160,7 +163,7 @@ api.createHomeScreenMethods13().mountTrailerLayer.call({ clearTrailerLayer() {} 
   embedUrl: "http://localhost/fixture"
 });
 const message = (data, source = frame.contentWindow) =>
-  listener({ source, data: { source: "nuvio-youtube-proxy", ...data } });
+  messageListener({ source, data: { source: "nuvio-youtube-proxy", ...data } });
 message({ type: "state", state: { paused: false, loading: false } }, {});
 assert.equal(frame.dataset.ambientTrailerPlaying, undefined, "ignore another frame");
 message({ type: "state", state: { paused: false, loading: false } });

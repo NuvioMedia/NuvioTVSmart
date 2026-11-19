@@ -114,6 +114,7 @@ export function createMetaDetailsScreenMethods01() {
         }
         if (data.type === "ready") {
           this.stopTrailerProxyLoadingTimer();
+          this.trailerProxyReadyReceived = true;
           this.trailerProxyState = {
             currentTime: 0,
             duration: 0,
@@ -137,10 +138,15 @@ export function createMetaDetailsScreenMethods01() {
           }
           return;
         }
-        if (data.type === "ended") {
+        if (data.type === "ended" || data.type === "error") {
           const endedId = String(data.videoId || "").trim();
           const activeId = String(this.trailerSource?.ytId || "").trim();
           if (this.isTrailerPlaying && this.trailerSource?.kind === "youtube" && (!endedId || !activeId || endedId === activeId)) {
+            if (data.type === "error") {
+              // Android's onError = onTrailerEnded consumes the attempt, so a failed
+              // trailer is not retried by the autoplay idle timer.
+              this.trailerHasAutoplayed = true;
+            }
             this.stopTrailerPlayback();
           }
           return;
@@ -161,6 +167,16 @@ export function createMetaDetailsScreenMethods01() {
             return;
           }
           const nextState = normalizeTrailerProxyStatePayload(data, this.trailerMuted, this.trailerSubtitlesEnabled);
+          if (this.trailerProxyReadyReceived && nextState.controllable === false) {
+            // An older hosted youtube-proxy.html falls back to a raw youtube.com/embed
+            // iframe on YT.Player onError after ready, which shows an unplayable error
+            // screen and steals TV remote focus. Match Android TV (onError = onTrailerEnded).
+            if (this.isTrailerPlaying && this.trailerSource?.kind === "youtube") {
+              this.trailerHasAutoplayed = true;
+              this.stopTrailerPlayback();
+            }
+            return;
+          }
           if (nextState.loading === false || Number(nextState.duration || 0) > 0 || Number(nextState.currentTime || 0) > 0) {
             this.stopTrailerProxyLoadingTimer();
           }

@@ -215,7 +215,7 @@ export function createMetaDetailsScreenMethods19() {
           this.trailerSource.embedUrl ||
           "";
         layer.innerHTML = `
-            <div class="detail-trailer-media detail-trailer-youtube" data-trailer-media>
+            <div class="detail-trailer-media detail-trailer-youtube" data-trailer-media inert>
               <iframe
                 class="detail-trailer-frame"
                 src="${youtubeFrameUrl}"
@@ -226,6 +226,7 @@ export function createMetaDetailsScreenMethods19() {
                 scrolling="no"
                 tabindex="-1"
                 aria-hidden="true"
+                inert
               ></iframe>
             </div>
             ${controlsMarkup}
