@@ -4,9 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 const rawSource = await readFile(new URL("./addonLogoCache.js", import.meta.url), "utf8");
-const source = rawSource
-  .replace(/^import [\s\S]*?;$/gm, "")
-  .replace(/^export /gm, "");
+const source = rawSource.replace(/^import [\s\S]*?;$/gm, "").replace(/^export /gm, "");
 
 function setup({
   fetchImpl,
@@ -110,7 +108,11 @@ test("warmAddonLogoPreview fetches, decodes via createImageBitmap, downscales to
   assert.equal(ok, true);
   assert.equal(fetchCalls.length, 1);
   assert.equal(fetchCalls[0].init.mode, "cors");
-  assert.equal(harness.imageRequests.length, 0, "Image() should not run when bitmap fetch succeeds");
+  assert.equal(
+    harness.imageRequests.length,
+    0,
+    "Image() should not run when bitmap fetch succeeds"
+  );
   assert.equal(harness.drawn.length, 1);
   assert.equal(harness.drawn[0].canvasWidth, 144);
   assert.equal(harness.drawn[0].canvasHeight, 72);
@@ -133,7 +135,11 @@ test("warmAddonLogoPreview falls back cleanly to Image path when fetch fails or 
 
   const ok = await harness.api.warmAddonLogoPreview("https://cdn.example.com/no-cors-badge.png");
   assert.equal(ok, true);
-  assert.equal(harness.imageRequests.length, 2, "crossOrigin anonymous fallback retries direct Image()");
+  assert.equal(
+    harness.imageRequests.length,
+    2,
+    "crossOrigin anonymous fallback retries direct Image()"
+  );
   assert.equal(
     harness.api.getCachedAddonLogoDisplayUrl("https://cdn.example.com/no-cors-badge.png"),
     "https://cdn.example.com/no-cors-badge.png"
@@ -168,4 +174,25 @@ test("skips fetchScaledBadgeDataUrl when createImageBitmap is unavailable or URL
   await webosProxy.api.warmAddonLogoPreview("http://127.0.0.1:2710/image-proxy?url=test");
   assert.equal(fetchCalls, 0);
   assert.equal(webosProxy.imageRequests.length, 1);
+});
+
+test("warmAddonLogoPreview keeps the Image canvas path when createImageBitmap rejects", async () => {
+  const harness = setup({
+    fetchImpl: async () => ({ ok: true, status: 200, blob: async () => ({ size: 1234 }) }),
+    createImageBitmapImpl: async () => {
+      throw new Error("bitmap unsupported");
+    }
+  });
+
+  const ok = await harness.api.warmAddonLogoPreview("https://cdn.example.com/undecodable.png");
+  assert.equal(ok, true);
+  assert.equal(harness.imageRequests.length, 1);
+  assert.equal(harness.getClosedBitmaps(), 0);
+  assert.equal(harness.drawn.length, 1);
+  assert.equal(harness.drawn[0].canvasWidth, 144);
+  assert.equal(harness.drawn[0].canvasHeight, 72);
+  assert.equal(
+    harness.api.getCachedAddonLogoDisplayUrl("https://cdn.example.com/undecodable.png"),
+    "data:image/png;base64,SCALED_144x72"
+  );
 });

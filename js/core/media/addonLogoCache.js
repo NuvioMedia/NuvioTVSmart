@@ -10,6 +10,7 @@ const ADDON_LOGO_CACHE_KEY = "nuvio.stream.addonLogoCache.v1";
 const ADDON_LOGO_CACHE_LIMIT = 36;
 const ADDON_LOGO_TV_CACHE_LIMIT = 12;
 const ADDON_LOGO_CACHE_MAX_LENGTH = 140000;
+const ADDON_LOGO_PREVIEW_MAX_SIZE = 144;
 const ADDON_LOGO_PRELOAD_CONCURRENCY_TV = 3;
 const ADDON_LOGO_PRELOAD_CONCURRENCY_DEFAULT = 6;
 
@@ -31,6 +32,33 @@ export function resetAddonLogoCache() {
   LocalStore.remove(ADDON_LOGO_CACHE_KEY);
 }
 
+function scaledAddonLogoSize(width, height) {
+  const naturalWidth = Math.max(1, Number(width || 1));
+  const naturalHeight = Math.max(1, Number(height || 1));
+  const ratio = Math.min(1, ADDON_LOGO_PREVIEW_MAX_SIZE / Math.max(naturalWidth, naturalHeight));
+  return {
+    width: Math.max(1, Math.round(naturalWidth * ratio)),
+    height: Math.max(1, Math.round(naturalHeight * ratio))
+  };
+}
+
+function drawAddonLogoDataUrl(source, width, height) {
+  const size = scaledAddonLogoSize(width, height);
+  const canvas = document.createElement("canvas");
+  canvas.width = size.width;
+  canvas.height = size.height;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Canvas unavailable");
+  }
+  context.clearRect(0, 0, size.width, size.height);
+  context.drawImage(source, 0, 0, size.width, size.height);
+  return canvas.toDataURL("image/png");
+}
+
+// Android TV decodes logos off the main thread at the target size (Coil). An
+// <img> element decodes the full PNG synchronously instead, so ask the bytes
+// and createImageBitmap for the decode whenever the runtime can do it.
 async function fetchScaledBadgeDataUrl(url) {
   if (
     typeof globalThis.fetch !== "function" ||
@@ -48,27 +76,11 @@ async function fetchScaledBadgeDataUrl(url) {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
-  const blob = await response.blob();
-  const fullBitmap = await globalThis.createImageBitmap(blob);
+  const bitmap = await globalThis.createImageBitmap(await response.blob());
   try {
-    const naturalWidth = Math.max(1, Number(fullBitmap.width || 1));
-    const naturalHeight = Math.max(1, Number(fullBitmap.height || 1));
-    const maxSize = 144;
-    const ratio = Math.min(1, maxSize / Math.max(naturalWidth, naturalHeight));
-    const width = Math.max(1, Math.round(naturalWidth * ratio));
-    const height = Math.max(1, Math.round(naturalHeight * ratio));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d");
-    if (!context) {
-      throw new Error("Canvas unavailable");
-    }
-    context.clearRect(0, 0, width, height);
-    context.drawImage(fullBitmap, 0, 0, width, height);
-    return canvas.toDataURL("image/png");
+    return drawAddonLogoDataUrl(bitmap, bitmap.width, bitmap.height);
   } finally {
-    fullBitmap?.close?.();
+    bitmap?.close?.();
   }
 }
 
@@ -427,36 +439,23 @@ function scheduleAddonLogoCachePersist() {
 async function imageToDataUrl(image) {
   const naturalWidth = Math.max(1, Number(image?.naturalWidth || image?.width || 1));
   const naturalHeight = Math.max(1, Number(image?.naturalHeight || image?.height || 1));
-  const maxSize = 144;
-  const ratio = Math.min(1, maxSize / Math.max(naturalWidth, naturalHeight));
-  const width = Math.max(1, Math.round(naturalWidth * ratio));
-  const height = Math.max(1, Math.round(naturalHeight * ratio));
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext("2d");
-  if (!context) {
-    throw new Error("Canvas unavailable");
-  }
-  context.clearRect(0, 0, width, height);
   if (typeof globalThis.createImageBitmap === "function") {
     let bitmap = null;
     try {
+      const size = scaledAddonLogoSize(naturalWidth, naturalHeight);
       bitmap = await globalThis.createImageBitmap(image, {
-        resizeWidth: width,
-        resizeHeight: height,
+        resizeWidth: size.width,
+        resizeHeight: size.height,
         resizeQuality: "medium"
       });
-      context.drawImage(bitmap, 0, 0, width, height);
-      return canvas.toDataURL("image/png");
+      return drawAddonLogoDataUrl(bitmap, size.width, size.height);
     } catch (_) {
-      // Fall through to direct drawImage on runtimes where ImageBitmap rejects.
+      // Fall through to the direct draw when the runtime cannot resize the element.
     } finally {
       bitmap?.close?.();
     }
   }
-  context.drawImage(image, 0, 0, width, height);
-  return canvas.toDataURL("image/png");
+  return drawAddonLogoDataUrl(image, naturalWidth, naturalHeight);
 }
 
 async function awaitImageDecoded(image) {
