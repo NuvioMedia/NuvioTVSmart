@@ -344,7 +344,6 @@ export function buildYoutubeEmbedUrl(videoId, { muted = true } = {}) {
       proxyUrl.searchParams.set("playsinline", "1");
       proxyUrl.searchParams.set("rel", "0");
       proxyUrl.searchParams.set("cc_load_policy", "0");
-      proxyUrl.searchParams.set("_cb", `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
       return proxyUrl.toString();
     } catch (_) {
       return "";

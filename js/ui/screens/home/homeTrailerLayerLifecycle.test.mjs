@@ -167,3 +167,41 @@ test("a trailer that has not shown a frame is dropped when focus moves, on any T
 
   assert.deepEqual(cleared, [booting]);
 });
+
+test("buildYoutubeEmbedUrl produces deterministic proxy URLs so mounted trailer iframes can be reused", async () => {
+  const helperSource = await readFile(
+    new URL("./homeScreenHelpers-05-normalize-collection-folder-item.js", import.meta.url),
+    "utf8"
+  );
+  const startIndex = helperSource.indexOf("export function resolveYoutubeId");
+  assert.notEqual(startIndex, -1);
+
+  const helperContext = vm.createContext({
+    URL,
+    URLSearchParams,
+    YOUTUBE_PROXY_URL: "https://proxy.example.test/embed",
+    location: { href: "https://app.example.test/", origin: "https://app.example.test" }
+  });
+  helperContext.globalThis = helperContext;
+  vm.runInContext(
+    `${helperSource.slice(startIndex).replace(/^export /gm, "")}
+globalThis.buildYoutubeEmbedUrl = buildYoutubeEmbedUrl;`,
+    helperContext
+  );
+
+  const firstUrl = helperContext.buildYoutubeEmbedUrl("dQw4w9WgXcQ", { muted: true });
+  const secondUrl = helperContext.buildYoutubeEmbedUrl("dQw4w9WgXcQ", { muted: true });
+  assert.equal(firstUrl, secondUrl);
+  assert.equal(new URL(firstUrl).searchParams.has("_cb"), false);
+
+  const context = buildContext();
+  const screen = makeScreen(context);
+  const container = makeContainer(firstUrl);
+  let ready = false;
+  screen.mountTrailerLayer(container, { kind: "youtube", embedUrl: secondUrl }, () => {
+    ready = true;
+  });
+
+  assert.equal(ready, true);
+  assert.equal(container.posted.length, 1);
+});
