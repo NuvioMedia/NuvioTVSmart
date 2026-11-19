@@ -73,6 +73,7 @@ test("loader sprite caps DPR via getTvArtworkPixelRatio and captures SVG delay b
   const mountedNode = {
     classList: {
       add: (name) => classes.add(name),
+      contains: (name) => classes.has(name),
       remove: (name) => classes.delete(name),
       toggle: (name, force) => (force ? classes.add(name) : classes.delete(name))
     },
@@ -146,5 +147,9 @@ globalThis.__loaderApi = { scheduleLoaderSprite };`,
   assert.equal(createdCanvas.height, 96 * 1);
   assert.equal(classes.has("has-loader-sprite"), true);
   assert.equal(styles.get("--loader-sprite"), "url(blob:loader-sprite)");
+  assert.equal(styles.get("--loader-sprite-delay"), "-420ms");
+
+  // Re-applying the cached strip must not move the paused strip back to frame 0.
+  context.__loaderApi.scheduleLoaderSprite();
   assert.equal(styles.get("--loader-sprite-delay"), "-420ms");
 });
