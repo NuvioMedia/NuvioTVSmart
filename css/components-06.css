@@ -441,6 +441,10 @@ img.placeholder {
   opacity: 0;
 }
 
+.home-loading-spinner.has-loader-sprite .nuvio-loading-indicator-arc {
+  animation: none;
+}
+
 /* The strip is 120 frames wide and the 96px box clips it, so translating it
    swaps frames without moving the loader itself. */
 .home-loading-spinner.has-loader-sprite::before {
