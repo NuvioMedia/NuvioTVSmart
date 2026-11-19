@@ -180,7 +180,7 @@ function unwrapRuntimeHeroDescriptionTrack(parent) {
     parent.style.maskImage = "";
     parent.style.webkitMaskImage = "";
   }
-  for (let child = parent.firstChild; child; ) {
+  for (let child = parent.firstChild; child;) {
     const next = child.nextSibling;
     if (child.nodeType === 1 && child.classList?.contains?.("hero-description-track")) {
       while (child.firstChild) {

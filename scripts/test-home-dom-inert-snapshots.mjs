@@ -120,7 +120,13 @@ context.api.updateNode(mountedRow, {
 });
 assert.equal(context.api.sourceByNode.get(mountedRow), undefined);
 
-function makeNode({ nodeType = 1, nodeName = "DIV", ownerDocument = liveDocument, classes = [], text = "" } = {}) {
+function makeNode({
+  nodeType = 1,
+  nodeName = "DIV",
+  ownerDocument = liveDocument,
+  classes = [],
+  text = ""
+} = {}) {
   const nodeClasses = new Set(classes);
   const node = {
     nodeType,
@@ -214,14 +220,21 @@ function makeText(text, ownerDocument = liveDocument) {
 // Verify that incremental updates on .home-hero-description unwrap any runtime
 // .hero-description-track span before reconciling children, preventing duplicate
 // overlapping text nodes when auto-scroll is active.
-const descNode = makeNode({ nodeName: "P", classes: ["home-hero-description", "hero-description-autoscroll"] });
+const descNode = makeNode({
+  nodeName: "P",
+  classes: ["home-hero-description", "hero-description-autoscroll"]
+});
 descNode.style.height = "120px";
 const rawTextNode = makeText("Original synopsis");
 descNode.appendChild(rawTextNode);
 context.api.registerHomeDomNodes([descNode]);
 
 function wrapLikeAutoScroller(parent, textNode) {
-  const track = makeNode({ nodeName: "SPAN", ownerDocument: parent.ownerDocument, classes: ["hero-description-track"] });
+  const track = makeNode({
+    nodeName: "SPAN",
+    ownerDocument: parent.ownerDocument,
+    classes: ["hero-description-track"]
+  });
   track.appendChild(textNode);
   parent.appendChild(track);
   return track;
