@@ -31,6 +31,47 @@ export function resetAddonLogoCache() {
   LocalStore.remove(ADDON_LOGO_CACHE_KEY);
 }
 
+async function fetchScaledBadgeDataUrl(url) {
+  if (
+    typeof globalThis.fetch !== "function" ||
+    typeof globalThis.createImageBitmap !== "function" ||
+    !/^https?:\/\//i.test(url) ||
+    isWebOsImageProxyUrl(url)
+  ) {
+    return null;
+  }
+  const response = await globalThis.fetch(url, {
+    mode: "cors",
+    credentials: "omit",
+    referrerPolicy: "no-referrer"
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  const blob = await response.blob();
+  const fullBitmap = await globalThis.createImageBitmap(blob);
+  try {
+    const naturalWidth = Math.max(1, Number(fullBitmap.width || 1));
+    const naturalHeight = Math.max(1, Number(fullBitmap.height || 1));
+    const maxSize = 144;
+    const ratio = Math.min(1, maxSize / Math.max(naturalWidth, naturalHeight));
+    const width = Math.max(1, Math.round(naturalWidth * ratio));
+    const height = Math.max(1, Math.round(naturalHeight * ratio));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Canvas unavailable");
+    }
+    context.clearRect(0, 0, width, height);
+    context.drawImage(fullBitmap, 0, 0, width, height);
+    return canvas.toDataURL("image/png");
+  } finally {
+    fullBitmap?.close?.();
+  }
+}
+
 export async function warmAddonLogoPreview(url = "") {
   const normalized = normalizeAddonLogoUrl(url);
   if (!normalized || failedAddonLogoUrls.has(normalized)) {
@@ -47,73 +88,87 @@ export async function warmAddonLogoPreview(url = "") {
 
   const loadingEntry = { status: "loading", updatedAt: Date.now(), promise: null };
   addonLogoCache.set(normalized, loadingEntry);
-  const promise = new Promise((resolve) => {
-    const settle = (ok) => resolve(ok);
-    const fail = () => {
-      failedAddonLogoUrls.add(normalized);
-      addonLogoCache.set(normalized, { status: "failed", updatedAt: Date.now() });
-      settle(false);
-    };
-    const finishDirect = () => {
-      addonLogoCache.set(normalized, {
-        status: "direct",
-        displayUrl: normalized,
-        updatedAt: Date.now()
-      });
-      settle(true);
-    };
-    const loadDirect = () => {
-      const directImage = new Image();
-      directImage.decoding = "async";
-      try {
-        directImage.referrerPolicy = "no-referrer";
-      } catch (_) {}
-      directImage.onload = () => {
-        (async () => {
-          await awaitImageDecoded(directImage);
-          finishDirect();
-        })();
-      };
-      directImage.onerror = fail;
-      directImage.src = normalized;
-    };
-    const finish = (image = null) => {
-      if (image && typeof imageToDataUrl === "function") {
-        (async () => {
-          try {
-            if (!(await awaitImageDecoded(image))) {
-              throw new Error("decode-failed");
-            }
-            const dataUrl = imageToDataUrl(image);
-            if (dataUrl) {
-              addonLogoCache.set(normalized, {
-                status: "ready",
-                displayUrl: dataUrl,
-                updatedAt: Date.now()
-              });
-              scheduleAddonLogoCachePersist();
-              settle(true);
-              return;
-            }
-          } catch (_) {}
-          finishDirect();
-        })();
-        return;
+  const promise = (async () => {
+    try {
+      const dataUrl = await fetchScaledBadgeDataUrl(normalized);
+      if (dataUrl) {
+        addonLogoCache.set(normalized, {
+          status: "ready",
+          displayUrl: dataUrl,
+          updatedAt: Date.now()
+        });
+        scheduleAddonLogoCachePersist();
+        return true;
       }
-      finishDirect();
-    };
-    const image = new Image();
-    image.decoding = "async";
-    try {
-      image.crossOrigin = "anonymous";
     } catch (_) {}
-    try {
-      image.referrerPolicy = "no-referrer";
-    } catch (_) {}
-    image.onload = () => finish(image);
-    image.onerror = loadDirect;
-    image.src = normalized;
-  });
+    return new Promise((resolve) => {
+      const settle = (ok) => resolve(ok);
+      const fail = () => {
+        failedAddonLogoUrls.add(normalized);
+        addonLogoCache.set(normalized, { status: "failed", updatedAt: Date.now() });
+        settle(false);
+      };
+      const finishDirect = () => {
+        addonLogoCache.set(normalized, {
+          status: "direct",
+          displayUrl: normalized,
+          updatedAt: Date.now()
+        });
+        settle(true);
+      };
+      const loadDirect = () => {
+        const directImage = new Image();
+        directImage.decoding = "async";
+        try {
+          directImage.referrerPolicy = "no-referrer";
+        } catch (_) {}
+        directImage.onload = () => {
+          (async () => {
+            await awaitImageDecoded(directImage);
+            finishDirect();
+          })();
+        };
+        directImage.onerror = fail;
+        directImage.src = normalized;
+      };
+      const finish = (image = null) => {
+        if (image && typeof imageToDataUrl === "function") {
+          (async () => {
+            try {
+              if (!(await awaitImageDecoded(image))) {
+                throw new Error("decode-failed");
+              }
+              const dataUrl = await imageToDataUrl(image);
+              if (dataUrl) {
+                addonLogoCache.set(normalized, {
+                  status: "ready",
+                  displayUrl: dataUrl,
+                  updatedAt: Date.now()
+                });
+                scheduleAddonLogoCachePersist();
+                settle(true);
+                return;
+              }
+            } catch (_) {}
+            finishDirect();
+          })();
+          return;
+        }
+        finishDirect();
+      };
+      const image = new Image();
+      image.decoding = "async";
+      try {
+        image.crossOrigin = "anonymous";
+      } catch (_) {}
+      try {
+        image.referrerPolicy = "no-referrer";
+      } catch (_) {}
+      image.onload = () => finish(image);
+      image.onerror = loadDirect;
+      image.src = normalized;
+    });
+  })();
   loadingEntry.promise = promise;
   return promise;
 }
@@ -232,7 +287,7 @@ export function requestAddonLogo(url = "", onSettled = null) {
           if (!(await awaitImageDecoded(image))) {
             throw new Error("decode-failed");
           }
-          const dataUrl = imageToDataUrl(image);
+          const dataUrl = await imageToDataUrl(image);
           addonLogoCache.set(normalized, {
             status: "ready",
             displayUrl: dataUrl,
@@ -369,7 +424,7 @@ function scheduleAddonLogoCachePersist() {
   addonLogoCachePersistTimer = setTimeout(persistAddonLogoCache, 800);
 }
 
-function imageToDataUrl(image) {
+async function imageToDataUrl(image) {
   const naturalWidth = Math.max(1, Number(image?.naturalWidth || image?.width || 1));
   const naturalHeight = Math.max(1, Number(image?.naturalHeight || image?.height || 1));
   const maxSize = 144;
@@ -384,6 +439,22 @@ function imageToDataUrl(image) {
     throw new Error("Canvas unavailable");
   }
   context.clearRect(0, 0, width, height);
+  if (typeof globalThis.createImageBitmap === "function") {
+    let bitmap = null;
+    try {
+      bitmap = await globalThis.createImageBitmap(image, {
+        resizeWidth: width,
+        resizeHeight: height,
+        resizeQuality: "medium"
+      });
+      context.drawImage(bitmap, 0, 0, width, height);
+      return canvas.toDataURL("image/png");
+    } catch (_) {
+      // Fall through to direct drawImage on runtimes where ImageBitmap rejects.
+    } finally {
+      bitmap?.close?.();
+    }
+  }
   context.drawImage(image, 0, 0, width, height);
   return canvas.toDataURL("image/png");
 }
