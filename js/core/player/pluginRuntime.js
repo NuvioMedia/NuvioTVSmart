@@ -71,7 +71,7 @@ function releaseWorker(worker, wasmBytes) {
   idleWorkers.push(entry);
 }
 
-function dropIdleWorkers() {
+function terminateIdleWorkers() {
   idleWorkers.splice(0).forEach((entry) => {
     clearTimeout(entry.timer);
     terminateWorker(entry.worker);
@@ -460,8 +460,17 @@ export const PluginRuntime = {
     });
     activeCancellers.clear();
     activeWorkers.clear();
-    dropIdleWorkers();
+    terminateIdleWorkers();
     runtimeTestPromise = null;
+  },
+
+  /**
+   * Release the warm workers but let running providers finish. Each idle one
+   * parks a compiled QuickJS runtime, megabytes of WASM memory that never
+   * shrinks, while playback is loading its own buffers.
+   */
+  dropIdleWorkers() {
+    terminateIdleWorkers();
   },
 
   getActiveWorkerCount() {
