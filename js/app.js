@@ -424,7 +424,7 @@ async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
     I18n.apply();
     // Member access refresh is not needed for the first Home paint; on a
     // single-core TV it competed with the catalog rows for the main thread and
-    // the network. Stream badge prerender runs when entering Detail instead.
+    // the network.
     runAfterFirstHomePaint(() => {
       void MemberAccessRepository.getAccess().catch((error) => {
         console.warn("Profile member access refresh failed", error);
