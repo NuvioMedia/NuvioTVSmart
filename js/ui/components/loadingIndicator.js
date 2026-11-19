@@ -1,6 +1,9 @@
 import { renderBrandWordmarkImage } from "./brandWordmark.js";
 import { isModernTvProfile } from "../../platform/tvPerformancePolicy.js";
-import { getTvRuntimePerformanceProfile } from "../../platform/tvRuntimePerformance.js";
+import {
+  getTvArtworkPixelRatio,
+  getTvRuntimePerformanceProfile
+} from "../../platform/tvRuntimePerformance.js";
 
 let loadingIndicatorSequence = 0;
 
@@ -71,7 +74,7 @@ function loadingIndicatorEase(value) {
 
 function drawLoaderSprite(colors, frames) {
   const size = LOADER_SPRITE_SIZE;
-  const ratio = Math.min(2, Math.max(1, Number(globalThis.devicePixelRatio) || 1));
+  const ratio = getTvArtworkPixelRatio();
   const canvas = document.createElement("canvas");
   canvas.width = size * frames * ratio;
   canvas.height = size * ratio;
@@ -120,12 +123,15 @@ export function resolveLoaderSpriteDelay(node) {
 function applyLoaderSpriteToMounted() {
   if (!loaderSprite || typeof document === "undefined") return;
   document.querySelectorAll(".home-loading-spinner").forEach((node) => {
+    // A strip that becomes ready mid-loader must continue from the frame the
+    // SVG arc is already showing, not restart at frame 0. Read the arc before
+    // has-loader-sprite pauses it; an already paused strip keeps its offset.
+    if (!node.classList.contains("has-loader-sprite")) {
+      node.style.setProperty("--loader-sprite-delay", resolveLoaderSpriteDelay(node));
+    }
     node.classList.add("has-loader-sprite");
     node.classList.toggle("has-loader-sprite-60", loaderSprite.frames <= 60);
     node.style.setProperty("--loader-sprite", `url(${loaderSprite.url})`);
-    // A strip that becomes ready mid-loader must continue from the frame the
-    // SVG arc is already showing, not restart at frame 0.
-    node.style.setProperty("--loader-sprite-delay", resolveLoaderSpriteDelay(node));
   });
 }
 
