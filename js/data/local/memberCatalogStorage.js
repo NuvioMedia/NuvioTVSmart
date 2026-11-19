@@ -1,12 +1,16 @@
 import { LocalStore } from "../../core/storage/localStore.js";
+import { BoundedCache } from "../../core/util/boundedCache.js";
 
 const AVATAR_CATALOG_KEY = "memberAvatarCatalogCache";
 const PROFILE_BACKGROUND_CATALOG_KEY = "memberProfileBackgroundCatalogCache";
 const DATABASE_NAME = "nuvio_member_asset_cache";
 const DATABASE_VERSION = 1;
 const ASSET_STORE_NAME = "assets";
+// Catalog artwork is also persisted in IndexedDB, so evicting a blob only
+// costs a local read on the next open.
+const MAX_MEMORY_ASSET_ENTRIES = 40;
 
-const memoryAssets = new Map();
+const memoryAssets = new BoundedCache(MAX_MEMORY_ASSET_ENTRIES);
 let databasePromise = null;
 let storageWriteQueue = Promise.resolve();
 let storageGeneration = 0;

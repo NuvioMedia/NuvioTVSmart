@@ -31,6 +31,7 @@ import {
 } from "./traktActivityRefreshState.js";
 import { watchedItemIdentityValues, watchedItemsShareIdentity } from "./watchedIdentity.js";
 import { mapWithConcurrency } from "../../core/network/mapWithConcurrency.js";
+import { BoundedCache } from "../../core/util/boundedCache.js";
 import { getSyncBackoffRemainingMs } from "../../core/sync/syncBackoffPolicy.js";
 import { registerSessionTeardownHandler } from "../../core/auth/sessionLifecycle.js";
 import {
@@ -763,7 +764,7 @@ async function fetchSimklProgressSnapshot() {
 }
 
 // Cache for enriched metadata (5-minute TTL)
-const enrichedMetaCache = new Map();
+const enrichedMetaCache = new BoundedCache(200);
 const ENRICHED_META_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function progressMetadataTypeCandidates(contentType) {
@@ -809,6 +810,9 @@ async function batchEnrichProgressItems(items) {
     const now = Date.now();
     const cached = enrichedMetaCache.get(cacheKey);
     let meta = cached && now - cached.timestamp < ENRICHED_META_CACHE_TTL_MS ? cached.meta : null;
+    if (cached && !meta) {
+      enrichedMetaCache.delete(cacheKey);
+    }
     if (!meta) {
       let flight = progressMetadataFlights.get(key);
       if (!flight) {
