@@ -1,5 +1,6 @@
 import * as internals from "./homeScreenContext.js";
 import { resetHomeArtworkRescaler } from "../../images/tvPosterRescaler.js";
+import { resetHeroLogoRescaleCache } from "./homeScreenHelpers-02-extract-release-date-text.js";
 
 export function createHomeScreenMethods30() {
   const { ScreenUtils, Platform } = internals;
@@ -155,6 +156,7 @@ export function createHomeScreenMethods30() {
         // painted urls back, then drop the workers and every blob they produced.
         this.releaseAllHomeLazyImages();
         resetHomeArtworkRescaler();
+        resetHeroLogoRescaleCache();
         this.homeDomPreserved = false;
         this.container.classList.remove("home-dom-preserved");
         this.container.style.removeProperty("position");

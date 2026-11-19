@@ -63,7 +63,13 @@ import { WatchProgressSource } from "../../../data/local/traktSettingsStore.js";
 
 import { watchProgressCompletedThreshold } from "../../../domain/model/watchProgress.js";
 
-import { getTvHeroTransitionMode, getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
+import {
+  getTvArtworkPixelRatio,
+  getTvHeroTransitionMode,
+  getTvRuntimePerformanceProfile
+} from "../../../platform/tvRuntimePerformance.js";
+
+import { jpegDimensions } from "../../images/tvPosterRescaler.js";
 
 import { isFastHorizontalNavigationEnabled } from "../../../platform/sharedKeys.js";
 
@@ -233,11 +239,24 @@ export const HERO_IMAGE_PRELOAD_CACHE_LIMIT = 32;
 
 export const HERO_BACKDROP_BITMAP_CACHE_LIMIT = 4;
 
+// Android's hero Coil request is 220x100dp, which is the 440x200 box the web
+// hero paints at TV density. Addon logos can be 1664x437 or larger, and the
+// Tizen renderer decodes an <img> at natural size for every hero swap.
+export const HERO_LOGO_RESCALE_WIDTH_PX = 440;
+
+export const HERO_LOGO_RESCALE_HEIGHT_PX = 200;
+
+export const HERO_LOGO_RESCALE_CACHE_LIMIT = 16;
+
+const HERO_LOGO_MAX_BYTES = 8 * 1024 * 1024;
+
 export const HERO_IMAGE_PRELOAD_TIMEOUT_MS = 1500;
 
 export const heroImagePreloadCache = new Map();
 
 export const heroBackdropBitmapCache = new Map();
+
+export const heroLogoRescaleCache = new Map();
 
 function canDecodeHeroBackdropBitmap(src) {
   // Tizen's in-process renderer decodes a full-size <img> inside Commit; a
@@ -290,6 +309,245 @@ export function preloadHeroBackdrop(src) {
     );
   heroBackdropBitmapCache.set(normalized, preload);
   return preload;
+}
+
+function ascii(bytes, offset, length) {
+  let text = "";
+  for (let index = 0; index < length; index += 1) {
+    text += String.fromCharCode(bytes[offset + index] || 0);
+  }
+  return text;
+}
+
+function uint16le(bytes, offset) {
+  return bytes[offset] | (bytes[offset + 1] << 8);
+}
+
+function uint32le(bytes, offset) {
+  return (
+    (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0
+  );
+}
+
+function uint32be(bytes, offset) {
+  return (
+    ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0
+  );
+}
+
+function pngLogoDimensions(bytes) {
+  let offset = 8;
+  while (offset + 8 <= bytes.length) {
+    const length = uint32be(bytes, offset);
+    const type = ascii(bytes, offset + 4, 4);
+    // APNG carries an acTL chunk before IDAT. createImageBitmap keeps one
+    // frame, while the <img> tag plays the animation Android keeps.
+    if (type === "acTL") {
+      return null;
+    }
+    if (type === "IDAT" || type === "IEND") {
+      break;
+    }
+    offset += 12 + length;
+  }
+  return { width: uint32be(bytes, 16), height: uint32be(bytes, 20) };
+}
+
+function webpLogoDimensions(bytes) {
+  let offset = 12;
+  while (offset + 8 <= bytes.length) {
+    const type = ascii(bytes, offset, 4);
+    const size = uint32le(bytes, offset + 4);
+    const data = offset + 8;
+    if (type === "VP8X") {
+      if (bytes[data] & 0x02) {
+        return null;
+      }
+      return {
+        width: 1 + (bytes[data + 4] | (bytes[data + 5] << 8) | (bytes[data + 6] << 16)),
+        height: 1 + (bytes[data + 7] | (bytes[data + 8] << 8) | (bytes[data + 9] << 16))
+      };
+    }
+    if (type === "VP8L") {
+      // 0x2f signature, then the two 14-bit sizes.
+      const bits = uint32le(bytes, data + 1);
+      return { width: 1 + (bits & 0x3fff), height: 1 + ((bits >>> 14) & 0x3fff) };
+    }
+    if (type === "VP8 ") {
+      if (bytes[data + 3] !== 0x9d || bytes[data + 4] !== 0x01 || bytes[data + 5] !== 0x2a) {
+        return null;
+      }
+      return {
+        width: uint16le(bytes, data + 6) & 0x3fff,
+        height: uint16le(bytes, data + 8) & 0x3fff
+      };
+    }
+    offset = data + size + (size & 1);
+  }
+  return null;
+}
+
+/**
+ * Natural size of a still PNG, WebP or JPEG read from its header. Returns null
+ * for animated images and formats a canvas re-encode would change or drop.
+ */
+export function heroLogoDimensions(bytes) {
+  if (!bytes || bytes.length < 24) {
+    return null;
+  }
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    return pngLogoDimensions(bytes);
+  }
+  if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") {
+    return webpLogoDimensions(bytes);
+  }
+  return jpegDimensions(bytes);
+}
+
+function canRescaleHeroLogo(src) {
+  return Boolean(
+    Platform.isTizen() &&
+      !getTvRuntimePerformanceProfile()?.isPerformanceConstrained &&
+      typeof globalThis.fetch === "function" &&
+      typeof globalThis.createImageBitmap === "function" &&
+      typeof globalThis.OffscreenCanvas === "function" &&
+      typeof globalThis.URL?.createObjectURL === "function" &&
+      /^https?:\/\//i.test(src) &&
+      !/\.(?:svg|gif)(?:[?#]|$)/i.test(src)
+  );
+}
+
+export function shouldRescaleHeroLogo(src) {
+  return canRescaleHeroLogo(String(src || "").trim());
+}
+
+function heroLogoTargetSize() {
+  const ratio = getTvArtworkPixelRatio();
+  return {
+    width: Math.max(1, Math.round(HERO_LOGO_RESCALE_WIDTH_PX * ratio)),
+    height: Math.max(1, Math.round(HERO_LOGO_RESCALE_HEIGHT_PX * ratio))
+  };
+}
+
+function isHeroLogoPainted(objectUrl) {
+  const images = globalThis.document?.querySelectorAll?.("img.home-hero-logo");
+  if (!objectUrl || !images) {
+    return false;
+  }
+  return Array.from(images).some((image) => image.getAttribute?.("src") === objectUrl);
+}
+
+function trimHeroLogoRescaleCache() {
+  if (heroLogoRescaleCache.size <= HERO_LOGO_RESCALE_CACHE_LIMIT) {
+    return;
+  }
+  for (const [source, entry] of heroLogoRescaleCache) {
+    if (heroLogoRescaleCache.size <= HERO_LOGO_RESCALE_CACHE_LIMIT) {
+      return;
+    }
+    // A blob url the hero still paints must outlive its cache slot; revoking
+    // it blanks the logo. The next insert trims the entry once it is replaced.
+    if (!entry.settled || isHeroLogoPainted(entry.objectUrl)) {
+      continue;
+    }
+    if (entry.objectUrl) {
+      globalThis.URL.revokeObjectURL(entry.objectUrl);
+    }
+    heroLogoRescaleCache.delete(source);
+  }
+}
+
+function fallbackSource(src) {
+  return preloadImageSource(src).then((loaded) => ({ loaded, src }));
+}
+
+/**
+ * Resolve the url the hero logo should paint from. On eligible Tizen sets it is
+ * a bounded WebP blob; everywhere else, and for every failure or unsupported
+ * format, it is the original source loaded by preloadImageSource.
+ */
+export function preloadHeroLogo(src) {
+  const normalized = String(src || "").trim();
+  if (!normalized || !canRescaleHeroLogo(normalized)) {
+    return fallbackSource(normalized);
+  }
+  const cached = heroLogoRescaleCache.get(normalized);
+  if (cached) {
+    heroLogoRescaleCache.delete(normalized);
+    heroLogoRescaleCache.set(normalized, cached);
+    return cached.promise;
+  }
+
+  const entry = { promise: null, objectUrl: "", settled: false };
+  const target = heroLogoTargetSize();
+  // A stalled addon CDN must not hold the logo blank forever: fall back to the
+  // <img> path on the same budget as a hero image preload.
+  const controller = typeof globalThis.AbortController === "function" ? new globalThis.AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), HERO_IMAGE_PRELOAD_TIMEOUT_MS) : 0;
+  entry.promise = globalThis
+    .fetch(normalized, { mode: "cors", credentials: "omit", signal: controller?.signal || undefined })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.blob();
+    })
+    .then(async (blob) => {
+      if (blob.size > HERO_LOGO_MAX_BYTES) {
+        throw new Error("logo too large");
+      }
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const dimensions = heroLogoDimensions(bytes);
+      if (!dimensions) {
+        throw new Error("unsupported logo");
+      }
+      if (dimensions.width <= target.width && dimensions.height <= target.height) {
+        throw new Error("logo already small");
+      }
+      const bitmap = await globalThis.createImageBitmap(blob, {
+        resizeWidth: Math.min(target.width, dimensions.width),
+        resizeQuality: "medium",
+        imageOrientation: "from-image"
+      });
+      try {
+        // createImageBitmap keeps the aspect ratio when only the width is
+        // given; the canvas then enforces the hero's height bound as Coil does.
+        const scale = Math.min(target.width / bitmap.width, target.height / bitmap.height, 1);
+        const width = Math.max(1, Math.round(bitmap.width * scale));
+        const height = Math.max(1, Math.round(bitmap.height * scale));
+        const canvas = new globalThis.OffscreenCanvas(width, height);
+        canvas.getContext("2d", { alpha: true }).drawImage(bitmap, 0, 0, width, height);
+        const resized = await canvas.convertToBlob({ type: "image/webp", quality: 0.92 });
+        const objectUrl = globalThis.URL.createObjectURL(resized);
+        if (heroLogoRescaleCache.get(normalized) !== entry) {
+          globalThis.URL.revokeObjectURL(objectUrl);
+          return { loaded: true, src: normalized };
+        }
+        entry.objectUrl = objectUrl;
+        entry.settled = true;
+        return { loaded: true, src: objectUrl };
+      } finally {
+        bitmap.close?.();
+      }
+    })
+    .catch(() => {
+      entry.settled = true;
+      return fallbackSource(normalized);
+    })
+    .finally(() => clearTimeout(timeoutId));
+  heroLogoRescaleCache.set(normalized, entry);
+  trimHeroLogoRescaleCache();
+  return entry.promise;
+}
+
+/** Drop every cached hero logo blob. Used when the Home DOM is discarded. */
+export function resetHeroLogoRescaleCache() {
+  heroLogoRescaleCache.forEach((entry) => {
+    if (entry.objectUrl) {
+      globalThis.URL?.revokeObjectURL?.(entry.objectUrl);
+    }
+  });
+  heroLogoRescaleCache.clear();
 }
 
 export function preloadImageSource(src) {
@@ -363,7 +621,7 @@ export function preloadImageSource(src) {
 
 export function preloadHeroAssets(hero, layoutMode = "modern") {
   const display = layoutMode === "modern" ? buildModernHeroPresentation(hero) : buildHeroDisplayModel(hero, layoutMode);
-  return Promise.all([preloadHeroBackdrop(display?.backdrop), preloadImageSource(display?.logo)]);
+  return Promise.all([preloadHeroBackdrop(display?.backdrop), preloadHeroLogo(display?.logo)]);
 }
 
 export function prepareHeroImageEnter(image, enterClass) {

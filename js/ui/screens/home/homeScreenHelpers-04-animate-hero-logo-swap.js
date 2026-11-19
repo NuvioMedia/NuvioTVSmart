@@ -187,7 +187,11 @@ import {
   uniqueNonEmptyValues
 } from "./homeUtils.js";
 
-import { preloadImageSource, prepareHeroImageEnter } from "./homeScreenHelpers-02-extract-release-date-text.js";
+import {
+  preloadHeroLogo,
+  prepareHeroImageEnter,
+  shouldRescaleHeroLogo
+} from "./homeScreenHelpers-02-extract-release-date-text.js";
 
 export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs = HOME_MODERN_HERO_BACKDROP_CROSSFADE_MS, options = {}) {
   if (!(logoNode instanceof HTMLImageElement)) {
@@ -219,26 +223,38 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
     return;
   }
 
-  if (currentSrc === normalizedSrc) {
+  if (logoNode.heroLogoSourceUrl === normalizedSrc) {
     finalize();
     logoNode.setAttribute("alt", normalizedAlt);
     return;
   }
 
+  // The generated markup starts on the original url. On eligible Tizen sets the
+  // first apply still rescales it, then heroLogoSourceUrl marks the swap as done.
+  if (currentSrc === normalizedSrc && !shouldRescaleHeroLogo(normalizedSrc)) {
+    finalize();
+    logoNode.setAttribute("alt", normalizedAlt);
+    return;
+  }
+
+  const applySource = (resolvedSrc) => {
+    logoNode.heroLogoSourceUrl = normalizedSrc;
+    logoNode.setAttribute("src", resolvedSrc || normalizedSrc);
+    logoNode.setAttribute("alt", normalizedAlt);
+  };
+
   if (transitionMode === "single-layer") {
-    preloadImageSource(normalizedSrc).then((loaded) => {
+    preloadHeroLogo(normalizedSrc).then((result) => {
       if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
         return;
       }
-      if (!loaded) {
+      if (!result.loaded) {
         finalize();
-        logoNode.setAttribute("src", normalizedSrc);
-        logoNode.setAttribute("alt", normalizedAlt);
+        applySource(result.src);
         return;
       }
       prepareHeroImageEnter(logoNode, "home-hero-logo-transition-enter");
-      logoNode.setAttribute("src", normalizedSrc);
-      logoNode.setAttribute("alt", normalizedAlt);
+      applySource(result.src);
       requestAnimationFrame(() => {
         if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
           return;
@@ -250,15 +266,14 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
     return;
   }
 
-  preloadImageSource(normalizedSrc).then((loaded) => {
+  preloadHeroLogo(normalizedSrc).then((result) => {
     if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
       return;
     }
 
-    if (!loaded) {
+    if (!result.loaded) {
       finalize();
-      logoNode.setAttribute("src", normalizedSrc);
-      logoNode.setAttribute("alt", normalizedAlt);
+      applySource(result.src);
       return;
     }
 
@@ -273,8 +288,7 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
     }
 
     prepareHeroImageEnter(logoNode, "home-hero-logo-transition-enter");
-    logoNode.setAttribute("src", normalizedSrc);
-    logoNode.setAttribute("alt", normalizedAlt);
+    applySource(result.src);
 
     requestAnimationFrame(() => {
       if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
