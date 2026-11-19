@@ -142,6 +142,11 @@ export function createMetaDetailsScreenMethods01() {
           const endedId = String(data.videoId || "").trim();
           const activeId = String(this.trailerSource?.ytId || "").trim();
           if (this.isTrailerPlaying && this.trailerSource?.kind === "youtube" && (!endedId || !activeId || endedId === activeId)) {
+            if (data.type === "error") {
+              // Android's onError = onTrailerEnded consumes the attempt, so a failed
+              // trailer is not retried by the autoplay idle timer.
+              this.trailerHasAutoplayed = true;
+            }
             this.stopTrailerPlayback();
           }
           return;
@@ -167,6 +172,7 @@ export function createMetaDetailsScreenMethods01() {
             // iframe on YT.Player onError after ready, which shows an unplayable error
             // screen and steals TV remote focus. Match Android TV (onError = onTrailerEnded).
             if (this.isTrailerPlaying && this.trailerSource?.kind === "youtube") {
+              this.trailerHasAutoplayed = true;
               this.stopTrailerPlayback();
             }
             return;

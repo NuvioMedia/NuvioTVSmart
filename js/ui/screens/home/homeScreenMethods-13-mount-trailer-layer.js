@@ -38,8 +38,6 @@ export function createHomeScreenMethods13() {
       }
       this.clearTrailerLayer(container);
       if (source.kind === "youtube" && source.embedUrl) {
-        this.activeHomeTrailerLayers ||= new Set();
-        this.activeHomeTrailerLayers.add(container);
         const frame = document.createElement("iframe");
         frame.className = "home-inline-trailer-frame";
         frame.dataset.trailerSrc = source.embedUrl;
@@ -57,29 +55,34 @@ export function createHomeScreenMethods13() {
         let fallbackTimer = 0;
         let revealed = false;
         let proxyReadyReceived = false;
+        let focusReclaimTimer = 0;
         const reclaimHomeFocusFromFrame = () => {
-          if (typeof document === "undefined" || document.activeElement !== frame) {
+          if (focusReclaimTimer || typeof document === "undefined" || document.activeElement !== frame) {
             return;
           }
-          try {
-            frame.blur?.();
-          } catch (_) {}
-          const focused =
-            this.getCurrentFocusedNode?.() ||
-            this.container?.querySelector?.(".focusable.focused") ||
-            this.container?.querySelector?.(".focusable") ||
-            null;
-          if (focused) {
-            try {
-              focused.focus?.({ preventScroll: true });
-            } catch (_) {
-              focused.focus?.();
+          // A cross-origin iframe keeps keyboard routing until the focus change
+          // completes, so blur() synchronously here is silently ignored. Defer
+          // the reclaim by one task, otherwise the TV remote stays captured.
+          focusReclaimTimer = setTimeout(() => {
+            focusReclaimTimer = 0;
+            if (typeof document === "undefined" || document.activeElement !== frame) {
+              return;
             }
-          }
+            try {
+              frame.blur?.();
+            } catch (_) {}
+            const focused = this.container?.querySelector?.(".focusable.focused") || this.container?.querySelector?.(".focusable") || null;
+            if (focused) {
+              try {
+                focused.focus?.({ preventScroll: true });
+              } catch (_) {
+                focused.focus?.();
+              }
+            }
+          }, 0);
         };
         const abortFailedTrailer = () => {
           frame.dataset.ambientTrailerPlaying = "false";
-          reclaimHomeFocusFromFrame();
           if (container.classList?.contains?.("home-hero-trailer-layer")) {
             this.setHeroTrailerActive?.(false);
             this.heroTrailerPlaybackState = null;
@@ -158,6 +161,10 @@ export function createHomeScreenMethods13() {
         const cleanup = () => {
           window.removeEventListener("message", handleProxyMessage);
           window.removeEventListener?.("blur", reclaimHomeFocusFromFrame);
+          if (focusReclaimTimer) {
+            clearTimeout(focusReclaimTimer);
+            focusReclaimTimer = 0;
+          }
           if (revealTimer) {
             clearTimeout(revealTimer);
             revealTimer = 0;
@@ -184,8 +191,6 @@ export function createHomeScreenMethods13() {
         return;
       }
       if (source.kind === "video" && source.url) {
-        this.activeHomeTrailerLayers ||= new Set();
-        this.activeHomeTrailerLayers.add(container);
         const shouldMute = source.muted !== false;
         const video = document.createElement("video");
         video.className = "home-inline-trailer-video";

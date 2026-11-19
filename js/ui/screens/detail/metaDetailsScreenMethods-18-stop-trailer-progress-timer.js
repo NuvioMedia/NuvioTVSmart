@@ -295,6 +295,10 @@ export function createMetaDetailsScreenMethods18() {
         window.removeEventListener("blur", this.trailerIframeFocusGuardHandler);
       }
       this.trailerIframeFocusGuardHandler = null;
+      if (this.trailerIframeFocusGuardTimer) {
+        clearTimeout(this.trailerIframeFocusGuardTimer);
+        this.trailerIframeFocusGuardTimer = null;
+      }
       this.trailerProxyState = null;
       this.trailerProxyReadyReceived = false;
       this.trailerYoutubeFallbackActive = false;
@@ -337,7 +341,23 @@ export function createMetaDetailsScreenMethods18() {
       this.destroyYoutubeTrailerPlayer();
       if (typeof window !== "undefined") {
         this.trailerIframeFocusGuardHandler = () => {
-          this.reclaimTrailerIframeFocus();
+          const frame = this.trailerUiRefs?.frame;
+          if (
+            this.trailerIframeFocusGuardTimer ||
+            !this.isTrailerPlaying ||
+            !frame ||
+            typeof document === "undefined" ||
+            document.activeElement !== frame
+          ) {
+            return;
+          }
+          // A cross-origin iframe keeps keyboard routing until the focus change
+          // completes, so blur() synchronously here is silently ignored. Defer
+          // the reclaim by one task, otherwise the TV remote stays captured.
+          this.trailerIframeFocusGuardTimer = setTimeout(() => {
+            this.trailerIframeFocusGuardTimer = null;
+            this.reclaimTrailerIframeFocus();
+          }, 0);
         };
         window.addEventListener("blur", this.trailerIframeFocusGuardHandler);
       }

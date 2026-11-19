@@ -48,6 +48,7 @@ const apiReadySource = proxySource.slice(
   proxySource.indexOf("if (directEmbedRequested)")
 );
 const postedEvents = [];
+const clearedTimeouts = [];
 let playerConfig = null;
 let fallbackCalled = 0;
 const apiReadyContext = vm.createContext({
@@ -62,9 +63,10 @@ const apiReadyContext = vm.createContext({
   startMuted: false,
   ready: false,
   readyWatchdog: null,
+  stateTimer: null,
   player: null,
   setTimeout: () => 1,
-  clearTimeout: () => {},
+  clearTimeout: (id) => clearedTimeouts.push(id),
   setCaptionsEnabled: () => {},
   ensureStateTimer: () => {},
   pushState: () => {},
@@ -84,7 +86,12 @@ vm.runInContext(apiReadySource, apiReadyContext);
 apiReadyContext.window.onYouTubeIframeAPIReady();
 assert.ok(playerConfig?.events?.onError, "YT.Player config must define onError");
 playerConfig.events.onError({ data: 150 });
-assert.equal(fallbackCalled, 0, "onError must not replace the proxy with a raw youtube.com/embed iframe");
+assert.equal(
+  fallbackCalled,
+  0,
+  "onError must not replace the proxy with a raw youtube.com/embed iframe"
+);
+assert.deepEqual(clearedTimeouts, [1], "onError must disarm the pre-ready direct-embed watchdog");
 assert.deepEqual(postedEvents, [{ type: "error", videoId: "m8vcBN8uza8", code: 150 }]);
 
 // Verify MetaDetailsScreen stops trailer playback on explicit error or post-ready controllable:false fallback,
@@ -95,7 +102,10 @@ const detail01Source = (
   .replace(/^import [\s\S]*?;$/gm, "")
   .replace(/^export /gm, "");
 const detail18Source = (
-  await readFile("js/ui/screens/detail/metaDetailsScreenMethods-18-stop-trailer-progress-timer.js", "utf8")
+  await readFile(
+    "js/ui/screens/detail/metaDetailsScreenMethods-18-stop-trailer-progress-timer.js",
+    "utf8"
+  )
 )
   .replace(/^import [\s\S]*?;$/gm, "")
   .replace(/^export /gm, "");
@@ -175,9 +185,11 @@ const detailScreen = Object.assign(Object.create(detailContext.detailMethods), {
 detailScreen.bindTrailerProxyMessaging();
 await detailScreen.initYoutubeTrailerPlayer();
 
-// 1. Focus guard reclaims focus when iframe steals it on window blur
+// 1. Focus guard reclaims focus when iframe steals it on window blur. Blink ignores
+// a synchronous blur() during the focus change, so the reclaim runs on the next task.
 detailMockDoc.activeElement = mockFrame;
 windowBlurListener?.();
+await new Promise((resolve) => setTimeout(resolve, 0));
 assert.equal(frameBlurred, 1, "trailer iframe must be blurred when it steals focus");
 assert.equal(overlayFocused, 1, "detail trailer overlay must reclaim focus");
 
@@ -194,10 +206,21 @@ windowMessageListener({
   data: {
     source: "nuvio-youtube-proxy",
     type: "state",
-    state: { currentTime: 0, duration: 0, paused: true, muted: false, loading: true, controllable: false }
+    state: {
+      currentTime: 0,
+      duration: 0,
+      paused: true,
+      muted: false,
+      loading: true,
+      controllable: false
+    }
   }
 });
-assert.equal(detailStopCalls, 1, "post-ready controllable:false fallback must stop trailer playback immediately");
+assert.equal(
+  detailStopCalls,
+  1,
+  "post-ready controllable:false fallback must stop trailer playback immediately"
+);
 
 // 3. Explicit error event stops trailer playback
 detailScreen.isTrailerPlaying = true;
