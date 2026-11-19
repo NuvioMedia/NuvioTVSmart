@@ -1,5 +1,6 @@
 import { detailShuffleSettings } from "./detailEpisodeShuffle.js";
 import { nextShuffleVisit } from "../../../core/player/episodeShuffle.js";
+import { preloadStreamBadgeImages } from "../stream/streamScreen.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 
@@ -10,6 +11,9 @@ export function createMetaDetailsScreenMethods02() {
     async mount(params = {}, navigationContext = {}) {
       this.container = document.getElementById("detail");
       ScreenUtils.show(this.container);
+      void preloadStreamBadgeImages().catch((error) => {
+        console.warn("Stream badge image prerender failed", error);
+      });
       this.stopTrailerPlayback({
         keepDom: false,
         restartAutoplay: false,
