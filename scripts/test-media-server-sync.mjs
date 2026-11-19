@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseSyncedServers, toSyncedServer } from "../js/data/mediaserver/mediaServerSyncModel.js";
+import {
+  parseSyncedServers,
+  toSyncedServer,
+  toSyncPayload
+} from "../js/data/mediaserver/mediaServerSyncModel.js";
 
 function syncedServer(overrides = {}) {
   return {
@@ -23,9 +27,23 @@ function syncedServer(overrides = {}) {
 test("imports the canonical servers_json cloud response", () => {
   const servers = [syncedServer(), syncedServer({ provider_id: "emby", id: "emby-connection" })];
   const imported = parseSyncedServers([{ servers_json: servers, updated_at: "2026-01-01" }]);
-  assert.deepEqual(imported.map(toSyncedServer), servers);
-  assert.deepEqual(parseSyncedServers([{ servers_json: [] }]), []);
+  assert.deepEqual(imported.servers.map(toSyncedServer), servers);
+  assert.deepEqual(imported.preserved, []);
+  assert.deepEqual(parseSyncedServers([{ servers_json: [] }]), { servers: [], preserved: [] });
   assert.equal(parseSyncedServers([]), null);
+});
+
+test("preserves unexecutable provider entries and sends them back untouched", () => {
+  const plex = syncedServer({ id: "plex-connection", provider_id: "plex" });
+  const future = { provider_id: "future", remote_server_id: "server", remote_user_id: "user" };
+  const imported = parseSyncedServers([{ servers_json: [plex, syncedServer(), future] }]);
+  assert.deepEqual(imported.servers.map(toSyncedServer), [syncedServer()]);
+  assert.deepEqual(imported.preserved, [plex, future]);
+  assert.deepEqual(toSyncPayload(imported.servers, imported.preserved), [
+    syncedServer(),
+    plex,
+    future
+  ]);
 });
 
 test("rejects malformed envelopes, including the obsolete servers field", () => {
@@ -43,7 +61,8 @@ test("rejects malformed envelopes, including the obsolete servers field", () => 
 
 test("preserves connection, library, flag and duplicate identity validation", () => {
   const invalid = [
-    { provider_id: "unknown" },
+    { provider_id: " " },
+    { provider_id: 7 },
     { address: "https://user:password@server.test" },
     { address: "https://server.test?token=fixture" },
     { address: "file:///server" },

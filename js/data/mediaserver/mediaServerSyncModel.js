@@ -25,14 +25,27 @@ export function toSyncedServer(server) {
   };
 }
 
+export function toSyncPayload(connections, preserved = []) {
+  return [...connections.map(toSyncedServer), ...preserved];
+}
+
 export function parseSyncedServers(rows) {
   if (!Array.isArray(rows)) throw new Error("Invalid media server sync response");
   if (!rows.length) return null;
   if (!Array.isArray(rows[0]?.servers_json)) throw new Error("Invalid media server sync response");
-  const result = rows[0].servers_json.map((raw) => {
-    const address = normalizeMediaServerAddress(raw.address, raw.provider_id);
+  const servers = [];
+  // Providers this app cannot execute still belong to the account: keep them
+  // untouched so the next push returns them instead of deleting them.
+  const preserved = [];
+  for (const raw of rows[0].servers_json) {
+    const providerId = typeof raw?.provider_id === "string" ? raw.provider_id.trim() : "";
+    if (!providerId) throw new Error("Invalid media server sync payload");
+    if (!["jellyfin", "emby"].includes(providerId)) {
+      preserved.push(raw);
+      continue;
+    }
+    const address = normalizeMediaServerAddress(raw.address, providerId);
     if (
-      !["jellyfin", "emby"].includes(raw.provider_id) ||
       !address ||
       ![raw.id, raw.remote_server_id, raw.remote_user_id, raw.token].every(
         (value) => typeof value === "string" && value
@@ -55,9 +68,9 @@ export function parseSyncedServers(rows) {
         throw new Error("Invalid media server library payload");
       return { id: library.id, name: library.name, kind: library.kind, selected: library.selected };
     });
-    return {
+    servers.push({
       id: raw.id,
-      providerId: raw.provider_id,
+      providerId,
       address,
       name: String(raw.name || ""),
       remoteServerId: raw.remote_server_id,
@@ -68,11 +81,11 @@ export function parseSyncedServers(rows) {
       enabled: raw.enabled !== false,
       useCatalogMetadata: raw.use_catalog_metadata === true,
       importWatchState: typeof raw.import_watch_state === "boolean" ? raw.import_watch_state : null
-    };
-  });
-  if (new Set(result.map(serverSyncKey)).size !== result.length)
+    });
+  }
+  if (new Set(servers.map(serverSyncKey)).size !== servers.length)
     throw new Error("Duplicate media server sync identity");
-  return result;
+  return { servers, preserved };
 }
 
 export function mergeSyncedServers(local, remote, syncedKeys) {

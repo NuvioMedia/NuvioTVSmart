@@ -3,7 +3,7 @@ import { ProfileManager } from "./profileManager.js";
 import { SupabaseApi } from "../../data/remote/supabase/supabaseApi.js";
 import { MediaServerStore } from "../../data/mediaserver/mediaServerStore.js";
 import {
-  toSyncedServer,
+  toSyncPayload,
   parseSyncedServers,
   mergeSyncedServers,
   serverSyncKey
@@ -55,7 +55,7 @@ async function push(scope, snapshot, version) {
     "sync_push_media_servers",
     {
       p_profile_id: Number(scope.profileId),
-      p_servers: snapshot.connections.map(toSyncedServer),
+      p_servers: toSyncPayload(snapshot.connections, snapshot.preserved),
       p_origin_client_id: getSyncClientId()
     },
     true
@@ -84,9 +84,10 @@ async function sync(profileId, pushOnly, version) {
     if (local.connections.length || local.pendingPush) await push(scope, local, version);
     return false;
   }
-  const remoteKeys = remote.map(serverSyncKey);
-  const merged = mergeSyncedServers(local.connections, remote, local.syncedKeys);
-  if (!MediaServerStore.applySync(local, merged, remoteKeys, scope.profileId)) return false;
+  const remoteKeys = remote.servers.map(serverSyncKey);
+  const merged = mergeSyncedServers(local.connections, remote.servers, local.syncedKeys);
+  if (!MediaServerStore.applySync(local, merged, remoteKeys, remote.preserved, scope.profileId))
+    return false;
   const changed = JSON.stringify(local.connections) !== JSON.stringify(merged);
   if (changed) notifyRemoteChange();
   if (merged.some((connection) => !remoteKeys.includes(serverSyncKey(connection)))) {
