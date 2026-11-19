@@ -172,7 +172,6 @@ function buildWebOsIndexHtml({ webOsScriptPath = "" } = {}) {
   <script>window.__NUVIO_PLATFORM__ = "webos";</script>
   <script>window.__NUVIO_WEBOS_PLUGIN_SERVICE_ENABLED__ = true; window.__NUVIO_WEBOS_PLUGIN_SERVICE_ID__ = "${webOsPluginServiceId}";</script>
   <script src="nuvio.env.js"></script>
-  <script src="assets/libs/qrcode-generator.js"></script>
 ${webOsScriptTag}  <script>
     window.NuvioBootGuard.runCompatibilityGate(${compatibilityOptions}, function startNuvioApp() {
       window.NuvioBootGuard.loadScript("app.bundle.js");

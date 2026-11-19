@@ -3,8 +3,8 @@
 
 // The qrcode-generator library used to be a startup script on every launch.
 // Only the QR sign-in, plugin and phone-config screens need it, so it is now
-// loaded on first use. A package may still ship it as a startup script (webOS
-// does); in that case the global already exists and nothing is fetched.
+// loaded on first use. A package may still ship it as a startup script; in
+// that case the global already exists and nothing is fetched.
 const QR_LIBRARY_SRC = "assets/libs/qrcode-generator.js";
 let qrLibraryLoading = null;
 
