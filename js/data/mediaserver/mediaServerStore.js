@@ -4,6 +4,7 @@ const store = createProfileScopedStore({
   seedFromPrimary: false,
   normalize: (value = {}) => ({
     connections: Array.isArray(value.connections) ? value.connections : [],
+    preserved: Array.isArray(value.preserved) ? value.preserved : [],
     revision: Number(value.revision || 0),
     pendingPush: value.pendingPush === true,
     syncedKeys: Array.isArray(value.syncedKeys) ? value.syncedKeys : null
@@ -19,7 +20,7 @@ export const MediaServerStore = {
       { silentSync: true }
     );
   },
-  applySync(snapshot, connections, syncedKeys, profileId) {
+  applySync(snapshot, connections, syncedKeys, preserved, profileId) {
     const current = this.get(profileId);
     if (current.revision !== snapshot.revision) return false;
     const changed = JSON.stringify(current.connections) !== JSON.stringify(connections);
@@ -27,6 +28,7 @@ export const MediaServerStore = {
       profileId,
       {
         connections,
+        preserved,
         syncedKeys,
         pendingPush: false,
         revision: current.revision + (changed ? 1 : 0)
