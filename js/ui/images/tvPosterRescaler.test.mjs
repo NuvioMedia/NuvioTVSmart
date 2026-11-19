@@ -11,7 +11,8 @@ import {
   jpegDimensions,
   rescaleArtwork,
   rescaleHomeArtwork,
-  shouldQueueRescale
+  shouldQueueRescale,
+  webpArtworkInfo
 } from "./tvPosterRescaler.js";
 import { getTvArtworkPixelRatio } from "../../platform/tvRuntimePerformance.js";
 
@@ -144,6 +145,98 @@ test("only JPEG bytes are accepted for re-encoding", () => {
   assert.equal(isJpegHeader(null), false);
 });
 
+const asciiBytes = (text) => [...text].map((char) => char.charCodeAt(0));
+
+function webpFile(chunk, payload) {
+  const riffSize = 4 + 8 + payload.length + (payload.length & 1);
+  return new Uint8Array([
+    ...asciiBytes("RIFF"),
+    riffSize & 0xff,
+    (riffSize >>> 8) & 0xff,
+    (riffSize >>> 16) & 0xff,
+    (riffSize >>> 24) & 0xff,
+    ...asciiBytes("WEBP"),
+    ...asciiBytes(chunk),
+    payload.length & 0xff,
+    (payload.length >>> 8) & 0xff,
+    (payload.length >>> 16) & 0xff,
+    (payload.length >>> 24) & 0xff,
+    ...payload
+  ]);
+}
+
+function vp8Payload(width, height) {
+  // Frame tag, start code, then the two 14-bit sizes.
+  return [0, 0, 0, 0x9d, 0x01, 0x2a, width & 0xff, width >>> 8, height & 0xff, height >>> 8];
+}
+
+function vp8lPayload(width, height, alpha) {
+  const bits = ((width - 1) & 0x3fff) | (((height - 1) & 0x3fff) << 14) | ((alpha ? 1 : 0) << 28);
+  return [0x2f, bits & 0xff, (bits >>> 8) & 0xff, (bits >>> 16) & 0xff, (bits >>> 24) & 0xff];
+}
+
+function vp8xPayload(width, height, { alpha = false, animated = false } = {}) {
+  const flags = (alpha ? 0x10 : 0) | (animated ? 0x02 : 0);
+  return [
+    flags,
+    0,
+    0,
+    0,
+    (width - 1) & 0xff,
+    ((width - 1) >>> 8) & 0xff,
+    ((width - 1) >>> 16) & 0xff,
+    (height - 1) & 0xff,
+    ((height - 1) >>> 8) & 0xff,
+    ((height - 1) >>> 16) & 0xff
+  ];
+}
+
+test("a still WebP header gives the size and alpha the rescaler needs", () => {
+  assert.deepEqual(webpArtworkInfo(webpFile("VP8 ", vp8Payload(1536, 864))), {
+    animated: false,
+    alpha: false,
+    width: 1536,
+    height: 864
+  });
+  assert.deepEqual(webpArtworkInfo(webpFile("VP8L", vp8lPayload(411, 233, true))), {
+    animated: false,
+    alpha: true,
+    width: 411,
+    height: 233
+  });
+  assert.deepEqual(webpArtworkInfo(webpFile("VP8X", vp8xPayload(220, 338))), {
+    animated: false,
+    alpha: false,
+    width: 220,
+    height: 338
+  });
+  assert.equal(
+    webpArtworkInfo(webpFile("VP8X", vp8xPayload(411, 233, { alpha: true }))).alpha,
+    true
+  );
+});
+
+test("an animated WebP is refused before the canvas can drop its frames", () => {
+  assert.deepEqual(webpArtworkInfo(webpFile("VP8X", vp8xPayload(1536, 864, { animated: true }))), {
+    animated: true
+  });
+});
+
+test("a malformed or non-WebP header is left to the img tag", () => {
+  assert.equal(webpArtworkInfo(null), null);
+  assert.equal(webpArtworkInfo(new Uint8Array([0x52, 0x49, 0x46, 0x46])), null);
+  assert.equal(
+    webpArtworkInfo(
+      new Uint8Array([...asciiBytes("RIFF"), 0, 0, 0, 0, ...asciiBytes("WAVE"), 0, 0, 0, 0])
+    ),
+    null
+  );
+  assert.equal(webpArtworkInfo(webpFile("XXXX", [0, 0, 0, 0])), null);
+  const badStartCode = vp8Payload(100, 100);
+  badStartCode[3] = 0;
+  assert.equal(webpArtworkInfo(webpFile("VP8 ", badStartCode)), null);
+});
+
 test("a source above the native 8 MiB body cap is refused", () => {
   assert.equal(isArtworkTooLarge({ byteLength: 8388608 }), false);
   assert.equal(isArtworkTooLarge({ byteLength: 8388609 }), true);
@@ -207,13 +300,11 @@ test("only an oversized JPEG asks for a clamped decode", () => {
   assert.equal(artworkResizeTarget(0, 0), null);
 });
 
-test("shouldQueueRescale fast-skips obvious non-JPEG URLs and non-JPEG data URIs", () => {
+test("shouldQueueRescale fast-skips obvious non-rescalable URLs and non-JPEG data URIs", () => {
   const box = { width: 220, height: 338, fit: "cover" };
   for (const url of [
     "https://cdn.example.com/posters/collection.gif",
     "https://cdn.example.com/posters/collection.gifv?autoplay=1",
-    "https://cdn.example.com/posters/collection.webp?w=600#card",
-    "https://cdn.example.com/posters/collection.WEBP",
     "https://cdn.example.com/posters/logo.png?size=large",
     "https://cdn.example.com/posters/mark.svg#icon",
     "https://cdn.example.com/posters/hero.avif?q=85",
@@ -231,6 +322,8 @@ test("shouldQueueRescale fast-skips obvious non-JPEG URLs and non-JPEG data URIs
     "https://image.tmdb.org/t/p/w500/poster.jpg",
     "https://image.tmdb.org/t/p/w500/poster.JPEG?lang=en#hero",
     "https://cdn.example.com/poster.jpg?fallback=placeholder.png",
+    "https://cdn.example.com/posters/collection.webp?w=600#card",
+    "https://cdn.example.com/posters/collection.WEBP",
     "https://images.metahub.space/poster/medium/tt1234567/img",
     "https://cdn.example.com/artwork?id=42",
     "data:image/jpeg;base64,/9j/4AAQ",
@@ -244,7 +337,7 @@ test("shouldQueueRescale fast-skips obvious non-JPEG URLs and non-JPEG data URIs
   }
 });
 
-test("rescaleHomeArtwork and rescaleArtwork resolve null without starting workers for non-JPEG URLs", async () => {
+test("rescaleHomeArtwork and rescaleArtwork resolve null without starting workers for skipped URLs", async () => {
   const box = { width: 220, height: 338, fit: "cover" };
   const originalWorker = globalThis.Worker;
   let workerSpawns = 0;
@@ -255,7 +348,6 @@ test("rescaleHomeArtwork and rescaleArtwork resolve null without starting worker
   };
   try {
     for (const url of [
-      "https://cdn.example.com/focused/action.webp?v=2",
       "https://cdn.example.com/focused/action.gif#loop",
       "https://cdn.example.com/focused/action.png",
       "data:image/webp;base64,UklGRh4AAABXRUJQ"
