@@ -152,8 +152,8 @@ function releasePoster(image) {
 
 function releasePosters(node) {
   if (node.nodeType !== 1) return;
-  if (node.matches("img.content-poster")) releasePoster(node);
-  node.querySelectorAll("img.content-poster").forEach(releasePoster);
+  if (node.matches("img.content-poster, img.home-continue-bg")) releasePoster(node);
+  node.querySelectorAll("img.content-poster, img.home-continue-bg").forEach(releasePoster);
 }
 
 function updateNode(node, source, protectedNode) {

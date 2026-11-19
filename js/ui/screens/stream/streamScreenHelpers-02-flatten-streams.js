@@ -67,7 +67,7 @@ import { I18n } from "../../../i18n/index.js";
 
 import { localizedGenreText } from "../../../i18n/genreLabels.js";
 
-import { matchStreamBadges, normalizeStreamBadgeChipColor, normalizeStreamBadgeRules } from "../../../core/streams/streamBadgeRules.js";
+import { matchStreamBadges, normalizeStreamBadgeChipColor } from "../../../core/streams/streamBadgeRules.js";
 
 import { normalizeMathematicalAlphanumericSymbols } from "../../../core/streams/streamDisplayText.js";
 
@@ -211,21 +211,6 @@ export async function ensureAddonLogoImageProxyReady() {
   } catch (_) {
     return false;
   }
-}
-
-export async function preloadStreamBadgeImages(settings = StreamBadgeSettingsStore.snapshot()) {
-  await ensureAddonLogoImageProxyReady();
-  const rules = normalizeStreamBadgeRules(settings?.rules);
-  const urls = new Set();
-  rules.imports.forEach((importItem) => {
-    (importItem.filters || []).forEach((filter) => {
-      const url = normalizeAddonLogoUrl(filter.imageURL);
-      if (url) {
-        urls.add(url);
-      }
-    });
-  });
-  await preloadAddonLogoUrls(urls);
 }
 
 export async function preloadMatchedStreamBadgeImages(streams = [], settings = StreamBadgeSettingsStore.snapshot()) {

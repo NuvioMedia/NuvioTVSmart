@@ -30,6 +30,17 @@ export function getTizenServiceStartMethods({
   return ["wrt-service", "tizen-application-launch"];
 }
 
+// EngineFS on Tizen 6-8 (startService() runtimes) keeps the 1.4.1 order: a
+// service started through wrt:service is tied to the app, and on Tizen 6 its
+// teardown after playback left the screen black for seconds on exit (#1408).
+export function getTizenEngineFsStartMethods(options = {}) {
+  const { webServiceSupported = null, tizenMajorVersion = 0, hasServiceClass = false } = options;
+  if (tizenMajorVersion >= 6 && !hasServiceClass && webServiceSupported !== false) {
+    return ["tizen-application-control-default", "tizen-application-launch", "wrt-service"];
+  }
+  return getTizenServiceStartMethods(options);
+}
+
 export function getWrtServiceClass(bridge = globalThis.__NUVIO_TIZEN_WRT_SERVICE__) {
   const Service = bridge?.Service || bridge?.default?.Service;
   return typeof Service === "function" ? Service : null;
