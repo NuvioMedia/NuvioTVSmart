@@ -96,11 +96,18 @@ function updateAttributes(node, previous, next) {
     node.classList.contains("home-hero-logo") &&
     Boolean(node.heroLogoSourceUrl) &&
     next.getAttribute("src") === node.heroLogoSourceUrl;
+  // While the Tizen bitmap <canvas> shows this backdrop, the <img> stays as an
+  // empty hidden anchor. A refresh must not re-attach the raw full-size decode.
+  const keepHeroBackdropSrc =
+    node.tagName === "IMG" &&
+    node.classList.contains("home-hero-backdrop") &&
+    Boolean(node.heroBackdropCanvasSrc) &&
+    next.getAttribute("src") === node.heroBackdropCanvasSrc;
   const names = new Set(
     [...Array.from(previous.attributes), ...Array.from(next.attributes)].map((attr) => attr.name)
   );
   names.forEach((name) => {
-    if (name === "src" && keepHeroLogoSrc) return;
+    if (name === "src" && (keepHeroLogoSrc || keepHeroBackdropSrc)) return;
     const oldValue = previous.getAttribute(name);
     const newValue = next.getAttribute(name);
     if (oldValue === newValue) return;
