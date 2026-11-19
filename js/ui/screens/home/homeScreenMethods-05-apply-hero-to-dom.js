@@ -10,7 +10,6 @@ export function createHomeScreenMethods05() {
     setLegacySidebarExpanded,
     HOME_LEGACY_HERO_BACKDROP_CROSSFADE_MS,
     HOME_MODERN_HERO_BACKDROP_CROSSFADE_MS,
-    escapeAttribute,
     escapeHtml,
     animateHeroBackdropSwap,
     animateHeroLogoSwap,
@@ -79,17 +78,17 @@ export function createHomeScreenMethods05() {
             transitionMode: heroTransitionMode
           });
         } else if (brandNode) {
-          brandNode.insertAdjacentHTML(
-            "afterbegin",
-            `<img class="home-hero-logo home-hero-logo-transition-enter" src="${escapeAttribute(display.logo)}" alt="${escapeAttribute(display.title || "logo")}" decoding="async" fetchpriority="high" />`
-          );
-          const insertedLogo = brandNode.querySelector(".home-hero-logo");
+          const insertedLogo = document.createElement("img");
+          insertedLogo.className = "home-hero-logo";
+          insertedLogo.alt = display.title || "logo";
+          insertedLogo.decoding = "async";
+          insertedLogo.fetchPriority = "high";
+          brandNode.insertBefore(insertedLogo, brandNode.firstChild);
           // The logo belongs to the rendered hero, unlike temporary transition
           // ghosts. Let incremental refreshes reuse or remove it.
           registerHomeDomNodes([insertedLogo]);
-          requestAnimationFrame(() => {
-            insertedLogo?.classList?.add("is-visible");
-            setTimeout(() => insertedLogo?.classList?.remove("home-hero-logo-transition-enter", "is-visible"), heroCrossfadeMs);
+          animateHeroLogoSwap(insertedLogo, display.logo, display.title || "logo", heroCrossfadeMs, {
+            transitionMode: heroTransitionMode
           });
         }
       } else if (logoNode) {

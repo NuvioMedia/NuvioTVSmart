@@ -89,10 +89,18 @@ function updateAttributes(node, previous, next) {
   ) {
     releasePoster(node);
   }
+  // The generated hero keeps the original addon logo url, while the painted
+  // <img> carries the bounded blob url. Only the hero swap may replace it.
+  const keepHeroLogoSrc =
+    node.tagName === "IMG" &&
+    node.classList.contains("home-hero-logo") &&
+    Boolean(node.heroLogoSourceUrl) &&
+    next.getAttribute("src") === node.heroLogoSourceUrl;
   const names = new Set(
     [...Array.from(previous.attributes), ...Array.from(next.attributes)].map((attr) => attr.name)
   );
   names.forEach((name) => {
+    if (name === "src" && keepHeroLogoSrc) return;
     const oldValue = previous.getAttribute(name);
     const newValue = next.getAttribute(name);
     if (oldValue === newValue) return;

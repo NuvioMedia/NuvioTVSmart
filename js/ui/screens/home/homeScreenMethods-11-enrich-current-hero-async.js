@@ -11,7 +11,7 @@ export function createHomeScreenMethods11() {
     firstNonEmpty,
     resolveImdbRating,
     preloadHeroBackdrop,
-    preloadImageSource,
+    preloadHeroLogo,
     parseRuntimeMinutes,
     normalizeCollectionFolderItem,
     withTimeout,
@@ -49,7 +49,7 @@ export function createHomeScreenMethods11() {
       const commitHero = async (resolvedHero, { merge = false } = {}) => {
         if (deferCommit) {
           const display = buildModernHeroPresentation(resolvedHero);
-          await Promise.all([preloadHeroBackdrop(display?.backdrop), preloadImageSource(display?.logo)]);
+          await Promise.all([preloadHeroBackdrop(display?.backdrop), preloadHeroLogo(display?.logo)]);
         }
         if (!canCommitHero()) {
           return false;
