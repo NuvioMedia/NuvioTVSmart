@@ -269,11 +269,15 @@ export function createHeroDescriptionAutoScroller({
       ) {
         track = node.firstElementChild;
       } else {
+        const staleTrack = node.querySelector?.(".hero-description-track") || null;
+        if (staleTrack) {
+          staleTrack.remove();
+        }
+        const normalizedText = String(node.textContent || "").trim() || text;
         track = node.ownerDocument.createElement("span");
         track.className = "hero-description-track";
-        while (node.firstChild) {
-          track.appendChild(node.firstChild);
-        }
+        track.textContent = normalizedText;
+        node.textContent = "";
         node.appendChild(track);
       }
       node.classList.add("hero-description-autoscroll");
