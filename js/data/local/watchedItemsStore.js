@@ -64,10 +64,54 @@ function dedupeAndSort(items = []) {
   );
 }
 
+// Home, Detail and Library read this list repeatedly while rendering. Memoize
+// the normalized snapshot on the exact stored string so unchanged reads skip
+// the parse and sort; any write changes the string and invalidates it.
+let listAllCacheRaw = null;
+let listAllCacheValue = null;
+
+function readWatchedItemsRaw() {
+  try {
+    return localStorage.getItem(WATCHED_ITEMS_KEY);
+  } catch (_) {
+    return undefined;
+  }
+}
+
+function loadWatchedItems() {
+  const raw = readWatchedItemsRaw();
+  if (raw !== undefined && raw === listAllCacheRaw && Array.isArray(listAllCacheValue)) {
+    return listAllCacheValue;
+  }
+
+  let stored = [];
+  if (raw === undefined) {
+    stored = LocalStore.get(WATCHED_ITEMS_KEY, []);
+  } else if (raw !== null) {
+    try {
+      stored = JSON.parse(raw);
+    } catch (_) {
+      stored = [];
+    }
+  }
+
+  const items = dedupeAndSort(Array.isArray(stored) ? stored : []);
+  if (raw !== undefined) {
+    listAllCacheRaw = raw;
+    listAllCacheValue = items;
+  }
+  return items;
+}
+
+function writeWatchedItems(items) {
+  LocalStore.set(WATCHED_ITEMS_KEY, items);
+  listAllCacheRaw = null;
+  listAllCacheValue = null;
+}
+
 export const WatchedItemsStore = {
   listAll() {
-    const raw = LocalStore.get(WATCHED_ITEMS_KEY, []);
-    return dedupeAndSort(Array.isArray(raw) ? raw : []);
+    return loadWatchedItems();
   },
 
   listForProfile(profileId) {
@@ -88,7 +132,7 @@ export const WatchedItemsStore = {
         (entry) => !(String(entry.profileId || "1") === pid && watchedItemKey(entry) === key)
       )
     ]).slice(0, 5000);
-    LocalStore.set(WATCHED_ITEMS_KEY, next);
+    writeWatchedItems(next);
   },
 
   upsertMany(items, profileId) {
@@ -106,7 +150,7 @@ export const WatchedItemsStore = {
         (entry) => String(entry.profileId || "1") !== pid || !keys.has(watchedItemKey(entry))
       )
     ]).slice(0, 5000);
-    LocalStore.set(WATCHED_ITEMS_KEY, next);
+    writeWatchedItems(next);
   },
 
   remove(contentId, profileId, options = null) {
@@ -128,7 +172,7 @@ export const WatchedItemsStore = {
       }
       return !(entry.season === targetSeason && entry.episode === targetEpisode);
     });
-    LocalStore.set(WATCHED_ITEMS_KEY, next);
+    writeWatchedItems(next);
   },
 
   replaceForProfile(profileId, items = []) {
@@ -139,9 +183,6 @@ export const WatchedItemsStore = {
     const normalized = (Array.isArray(items) ? items : [])
       .map((item) => normalizeItem(item, pid))
       .filter((item) => Boolean(item.contentId));
-    LocalStore.set(
-      WATCHED_ITEMS_KEY,
-      dedupeAndSort([...normalized, ...keepOtherProfiles]).slice(0, 5000)
-    );
+    writeWatchedItems(dedupeAndSort([...normalized, ...keepOtherProfiles]).slice(0, 5000));
   }
 };

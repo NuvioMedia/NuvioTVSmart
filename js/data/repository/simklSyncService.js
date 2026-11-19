@@ -67,11 +67,50 @@ function emptySnapshot() {
   };
 }
 
+// Snapshot reads happen on every scrobble and library render. Memoize the
+// parsed envelope on the exact stored string so unchanged reads skip the parse;
+// any write changes the string and invalidates it.
+let envelopeCacheRaw = null;
+let envelopeCacheValue = null;
+
+function readEnvelopeRaw() {
+  try {
+    return localStorage.getItem(STORE_KEY);
+  } catch (_) {
+    return undefined;
+  }
+}
+
 function readEnvelope() {
-  const stored = LocalStore.get(STORE_KEY, null);
-  return stored && typeof stored === "object" && stored.profiles
-    ? stored
-    : { version: 1, profiles: {} };
+  const raw = readEnvelopeRaw();
+  if (raw !== undefined && raw === envelopeCacheRaw && envelopeCacheValue) {
+    return envelopeCacheValue;
+  }
+
+  let stored = null;
+  if (raw === undefined) {
+    stored = LocalStore.get(STORE_KEY, null);
+  } else if (raw !== null) {
+    try {
+      stored = JSON.parse(raw);
+    } catch (_) {
+      stored = null;
+    }
+  }
+
+  const envelope =
+    stored && typeof stored === "object" && stored.profiles ? stored : { version: 1, profiles: {} };
+  if (raw !== undefined) {
+    envelopeCacheRaw = raw;
+    envelopeCacheValue = envelope;
+  }
+  return envelope;
+}
+
+function writeEnvelope(envelope) {
+  LocalStore.set(STORE_KEY, envelope);
+  envelopeCacheRaw = null;
+  envelopeCacheValue = null;
 }
 
 function getSnapshot(profileId = activeProfileId()) {
@@ -89,14 +128,14 @@ function getSnapshot(profileId = activeProfileId()) {
 function saveSnapshot(snapshot, profileId = activeProfileId()) {
   const envelope = readEnvelope();
   envelope.profiles[String(profileId)] = snapshot;
-  LocalStore.set(STORE_KEY, envelope);
+  writeEnvelope(envelope);
   return snapshot;
 }
 
 function clearSnapshot(profileId = activeProfileId()) {
   const envelope = readEnvelope();
   delete envelope.profiles[String(profileId)];
-  LocalStore.set(STORE_KEY, envelope);
+  writeEnvelope(envelope);
 }
 
 function mediaForEntry(entry = {}) {
