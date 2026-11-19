@@ -332,7 +332,9 @@ function createPool() {
     cache: new Map(),
     failed: new Map(),
     inflight: new Map(),
-    disposed: false
+    disposed: false,
+    suspended: false,
+    suspendRequested: false
   };
   const count = workerCount();
   for (let index = 0; index < count; index += 1) {
@@ -408,6 +410,9 @@ function retireWorker(state, worker, reason) {
 }
 
 function pump(state) {
+  if (state.suspended && state.queue.length) {
+    resumeWorkers(state);
+  }
   while (!state.disposed && state.idle.length && state.queue.length) {
     // Highest priority first, newest first within a priority: after a long
     // scroll the latest requests are the cards on screen, while the rows passed
@@ -436,6 +441,67 @@ function pump(state) {
       height: job.height,
       fit: job.fit
     });
+  }
+  if (state.suspendRequested && !state.queue.length && !state.jobs.size) {
+    suspendWorkers(state);
+  }
+}
+
+/**
+ * Stop every pool thread until the next rescale needs one. The viewer is in
+ * playback: the TV is about to allocate its video buffer and idle JS isolates
+ * only compete for it.
+ *
+ * Only the compressed blobs nothing paints are reclaimed here. The urls the
+ * retained Home DOM still shows have to survive, so a job still running is
+ * allowed to finish instead of being cut off mid-decode.
+ */
+function suspendWorkers(state) {
+  if (!state || state.disposed) {
+    return;
+  }
+  state.suspendRequested = false;
+  state.workers.splice(0).forEach((worker) => {
+    try {
+      worker.terminate();
+    } catch (_) {}
+  });
+  state.idle.length = 0;
+  state.suspended = true;
+  state.cache.forEach((entry, key) => {
+    if (entry.uses > 0) {
+      return;
+    }
+    URL.revokeObjectURL(entry.objectUrl);
+    state.cache.delete(key);
+  });
+}
+
+function suspendPool(state) {
+  if (!state || state.disposed) {
+    return;
+  }
+  if (state.queue.length || state.jobs.size) {
+    // A poster is being re-encoded right now. Cut it only once the answer is
+    // in, or the card would keep the oversized original instead.
+    state.suspendRequested = true;
+    return;
+  }
+  suspendWorkers(state);
+}
+
+function resumeWorkers(state) {
+  const count = workerCount();
+  while (state.workers.length < count) {
+    if (!spawnWorker(state)) {
+      break;
+    }
+  }
+  state.suspended = state.workers.length === 0;
+  if (!state.workers.length) {
+    // Nothing can run, so hand the queue back and let every caller fall back
+    // to loading the original url, exactly as an unusable pool does.
+    state.queue.splice(0).forEach((job) => job.settle(null, "no workers"));
   }
 }
 
@@ -683,6 +749,21 @@ export function resetHomeArtworkRescaler() {
   const state = pool;
   pool = null;
   resetPool(state);
+}
+
+/**
+ * Stop the Home pool's threads for the duration of playback. Android enters the
+ * player with nothing but its decoder alive; here the retained Home DOM keeps
+ * the rescaler workers parked next to the video buffer. Painted urls survive,
+ * and the next rescale spawns a worker again on its own.
+ */
+export function suspendIdleHomeArtworkWorkers() {
+  suspendPool(pool);
+}
+
+/** Same as suspendIdleHomeArtworkWorkers for the non-Home pool. */
+export function suspendIdleArtworkWorkers() {
+  suspendPool(genericPool);
 }
 
 /** Drop the non-Home pool and its cached urls. */

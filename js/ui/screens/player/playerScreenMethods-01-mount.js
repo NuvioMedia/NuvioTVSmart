@@ -2,6 +2,8 @@ import { canResolveMediaServerStream } from "../../../data/mediaserver/mediaServ
 import { loadPlayerShuffleWatched } from "./playerEpisodeShuffle.js";
 import { activeStreamLinkProfile } from "../../../data/local/streamLinkCacheStore.js";
 import { sourceFallbackKey } from "../../../core/player/sourceFallback.js";
+import { PluginRuntime } from "../../../core/player/pluginRuntime.js";
+import { suspendIdleArtworkWorkers, suspendIdleHomeArtworkWorkers } from "../../images/tvPosterRescaler.js";
 /* global __NUVIO_APP_VERSION__ */
 import * as internals from "./playerScreenContext.js";
 import { initializePlayerMountState } from "./playerMountStateInitialization.js";
@@ -38,6 +40,14 @@ export function createPlayerScreenMethods01() {
 
   return {
     async mount(params = {}, navigationContext = {}) {
+      // Android starts playback with only the decoder alive. On the web the
+      // retained Home artwork and the plugin runtime keep JS workers parked,
+      // and each plugin worker holds its QuickJS WASM until its idle TTL
+      // expires, so hand that memory back before the TV allocates the video
+      // buffer. Artwork the retained Home DOM is still painting stays valid.
+      PluginRuntime.dropIdleWorkers();
+      suspendIdleHomeArtworkWorkers();
+      suspendIdleArtworkWorkers();
       PlayerController.currentPlaybackIsLive = false;
       streamRepository.setLocalPluginSearchPaused(false);
       this.container = document.getElementById("player");
