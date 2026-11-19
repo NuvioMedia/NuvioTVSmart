@@ -353,7 +353,11 @@ function flexGapFallbackPlugin() {
           if (value.includes("column")) {
             flexDirection = "column";
           }
-          if (value.includes("wrap")) {
+          // `nowrap` also contains `wrap`; check it first so row-nowrap rules
+          // do not inherit the wrap fallback margins.
+          if (value.includes("nowrap")) {
+            flexWrap = "nowrap";
+          } else if (value.includes("wrap")) {
             flexWrap = "wrap";
           }
           return;
