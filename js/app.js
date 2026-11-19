@@ -825,6 +825,7 @@ async function bootstrapApp() {
       ProviderCredentialSyncService.cancelForegroundPull();
       void MediaServerSyncService.stop();
       ProfileSyncService.clearCachedProfileLockStates();
+      Router.routes?.home?.resetForSignOut?.();
       hasSelectedProfileThisSession = false;
       const shouldBypassQr = Boolean(LocalStore.get(GUEST_QR_BYPASS_KEY, false));
       if (isSignedOutRouteAllowed()) {

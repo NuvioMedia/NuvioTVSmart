@@ -141,3 +141,53 @@ test("a browser Home still releases its artwork without the TV retained layer", 
   assert.equal(calls.reset, 1);
   assert.equal(calls.hidden, 1);
 });
+
+test("sign-out discards preserved TV Home DOM, releases artwork, and resets user state", () => {
+  const { screen, calls } = buildScreen({ platform: "tizen" });
+  let clearedStoredFocus = 0;
+  screen.heroCandidates = [{ id: "hero-1" }];
+  screen.heroItem = { id: "hero-1" };
+  screen.continueWatchingItems = [{ id: "cw-1" }];
+  screen.sidebarProfile = { name: "User" };
+  screen.savedFocusStates = { modern: { track: 1 } };
+  screen.loadedProfileId = "profile-1";
+  screen.loadedWatchProgressSourceKey = "trakt";
+  screen.loadedHomeRouteInputSignature = "sig-1";
+  screen.renderedMarkup = "<section>Home</section>";
+  screen.clearStoredReturnFocusState = () => {
+    clearedStoredFocus += 1;
+  };
+
+  screen.cleanup();
+  assert.equal(screen.homeDomPreserved, true);
+
+  screen.resetForSignOut();
+
+  assert.equal(screen.homeDomPreserved, false);
+  assert.ok(calls.classes.includes("remove:home-dom-preserved"));
+  assert.equal(screen.container.innerHTML, "");
+  assert.equal(calls.released, 1);
+  assert.equal(calls.reset, 1);
+  assert.equal(calls.hidden, 1);
+  assert.equal(clearedStoredFocus, 1);
+  assert.equal(screen.hasLoadedOnce, false);
+  assert.deepEqual(Array.from(screen.rows), []);
+  assert.deepEqual(Array.from(screen.heroCandidates), []);
+  assert.equal(screen.heroItem, null);
+  assert.deepEqual(Array.from(screen.continueWatchingItems), []);
+  assert.equal(screen.sidebarProfile, null);
+  assert.deepEqual(Object.keys(screen.savedFocusStates), []);
+  assert.equal(screen.loadedProfileId, "");
+  assert.equal(screen.loadedWatchProgressSourceKey, "");
+  assert.equal(screen.loadedHomeRouteInputSignature, "");
+  assert.equal(screen.renderedMarkup, null);
+});
+
+test("AuthState.SIGNED_OUT invokes HomeScreen resetForSignOut in js/app.js", async () => {
+  const appSource = await readFile(new URL("../../../app.js", import.meta.url), "utf8");
+  const signedOutMatch = appSource.match(
+    /if\s*\(\s*state\s*===\s*AuthState\.SIGNED_OUT\s*\)\s*\{([\s\S]*?)\n\s{4}\}/
+  );
+  assert.ok(signedOutMatch, "AuthState.SIGNED_OUT handler must exist in js/app.js");
+  assert.match(signedOutMatch[1], /Router\.routes\?\.\s*home\?\.\s*resetForSignOut\?\.\(\)/);
+});
