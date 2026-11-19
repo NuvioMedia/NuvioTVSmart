@@ -54,13 +54,22 @@ export function createHomeScreenMethods11() {
         const focusedHero = this.getNodeHeroSource(this.getCurrentFocusedNode());
         return buildHeroIdentity(focusedHero) === heroIdentity;
       };
-      const commitHero = async (resolvedHero, { merge = false } = {}) => {
-        if (deferCommit) {
+      let settledMdbImdbRating = null;
+      let mdbImdbRatingSettled = false;
+      let heroCommitStarted = false;
+      const commitHero = async (resolvedHero, { merge = false, skipPreload = false } = {}) => {
+        if (deferCommit && !skipPreload) {
           const display = buildModernHeroPresentation(resolvedHero);
           await Promise.all([preloadHeroBackdrop(display?.backdrop), preloadHeroLogo(display?.logo)]);
         }
         if (!canCommitHero()) {
           return false;
+        }
+        // A rating that settled while the media preload was running is newer
+        // than the hero assembled by the caller.
+        if (mdbImdbRatingSettled && settledMdbImdbRating != null) {
+          resolvedHero = { ...resolvedHero, imdbRating: settledMdbImdbRating };
+          merge = true;
         }
         this.heroItem = resolvedHero;
         const matchedIndex = (this.heroCandidates || []).findIndex((item) => String(item?.id || "") === itemId);
@@ -80,6 +89,23 @@ export function createHomeScreenMethods11() {
         3500,
         null
       ).catch(() => null);
+      // A slow rating request must not hold the artwork/meta commit: the hero
+      // paints as soon as TMDB/addon metadata resolves, and the rating is
+      // patched in afterwards without re-preloading media already on screen.
+      void mdbImdbRatingPromise
+        .then((rating) => {
+          settledMdbImdbRating = rating == null ? null : Number(rating);
+          mdbImdbRatingSettled = true;
+          if (settledMdbImdbRating == null || !heroCommitStarted || !canCommitHero()) {
+            return null;
+          }
+          const currentHero = this.heroItem;
+          if (String(currentHero?.id || "") !== itemId || Number(currentHero.imdbRating) === settledMdbImdbRating) {
+            return null;
+          }
+          return commitHero({ ...currentHero, imdbRating: settledMdbImdbRating }, { merge: true, skipPreload: true });
+        })
+        .catch(() => {});
       let metadataPromise = null;
       let latestMetadataResult = null;
       let latestTmdbEnrichment = null;
@@ -87,10 +113,8 @@ export function createHomeScreenMethods11() {
         if (!canCommitHero()) {
           return false;
         }
-        const mdbImdbRating = await mdbImdbRatingPromise;
-        if (!canCommitHero()) {
-          return false;
-        }
+        heroCommitStarted = true;
+        const mdbImdbRating = mdbImdbRatingSettled ? settledMdbImdbRating : null;
         const fallbackHero = {
           ...(deferCommit ? hero : this.heroItem),
           heroMetaEnriched: false,
@@ -105,11 +129,9 @@ export function createHomeScreenMethods11() {
         if ((!meta && !tmdbEnrichment) || !canCommitHero()) {
           return false;
         }
+        heroCommitStarted = true;
         const enrichedImdb = meta ? resolveImdbRating(meta) : null;
-        const mdbImdbRating = await mdbImdbRatingPromise;
-        if (!canCommitHero()) {
-          return false;
-        }
+        const mdbImdbRating = mdbImdbRatingSettled ? settledMdbImdbRating : null;
         const settings = TmdbSettingsStore.get();
         const sourceHero =
           (late || tmdbEnrichment) && String(this.heroItem?.id || "") === itemId ? this.heroItem : deferCommit ? hero : this.heroItem;
