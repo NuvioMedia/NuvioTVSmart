@@ -328,7 +328,9 @@ export function renderContinueWatchingCard(item, index, options = {}) {
   const uniqueCardImageSources = uniqueNonEmptyValues(cardImageSources.map((source) => normalizeCardImageUrl(source)));
   const cardImage = uniqueCardImageSources[0] || "";
   const fallbackQueue = encodeHeroBackdropFallbacks(uniqueCardImageSources.slice(1));
-  const deferContinueImage = getTvRuntimePerformanceProfile().isPerformanceConstrained;
+  // Like posters, Continue Watching art has to reach the lazy hydration pass,
+  // which is the only path that can hand it to the rescaler on modern TVs.
+  const deferContinueImage = getTvRuntimePerformanceProfile().isTvRuntime;
   const continueImageAttrs = cardImage ? buildLazyImageAttributes(cardImage, { defer: deferContinueImage }) : "";
   return `
     <article class="home-content-card home-continue-card${blurNextUp ? " home-continue-card-blur-next-up" : ""} focusable"
