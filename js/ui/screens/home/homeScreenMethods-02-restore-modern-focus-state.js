@@ -11,6 +11,19 @@ function clearCameraScrollActive(container) {
   container?.classList?.remove?.("is-camera-scrolling");
 }
 
+function isScrollContainerHiddenOrDetached(container) {
+  if (!container || container.isConnected === false) {
+    return true;
+  }
+  return Number(container.clientHeight || 0) === 0 && Number(container.clientWidth || 0) === 0;
+}
+
+function getContainerMaxScroll(container, axis) {
+  return axis === "y"
+    ? Math.max(0, Number(container.scrollHeight || 0) - Number(container.clientHeight || 0))
+    : Math.max(0, Number(container.scrollWidth || 0) - Number(container.clientWidth || 0));
+}
+
 export function createHomeScreenMethods02() {
   const { MODERN_HOME_CONSTANTS, findHomeFocusIdentityMatch, MODERN_CAMERA_PAN_EASING } = internals;
 
@@ -131,6 +144,33 @@ export function createHomeScreenMethods02() {
       this.scheduleFocusedPosterFlow(target);
       return true;
     },
+    trackScrollContainer(container) {
+      if (!container) {
+        return;
+      }
+      this.activeScrollAnimationContainers ||= new Set();
+      this.activeScrollAnimationContainers.add(container);
+    },
+    untrackScrollContainerIfIdle(container) {
+      if (!container || !this.activeScrollAnimationContainers) {
+        return;
+      }
+      const tweenState = this.scrollAnimations?.get?.(container);
+      const springState = this.springScrollAnimations?.get?.(container);
+      const hasTween = Boolean(tweenState?.x || tweenState?.y);
+      const hasSpring = Boolean(springState?.x?.raf || springState?.y?.raf);
+      if (!hasTween && !hasSpring) {
+        this.activeScrollAnimationContainers.delete(container);
+      }
+    },
+    cancelAllScrollAnimations() {
+      const containers = Array.from(this.activeScrollAnimationContainers || []);
+      containers.forEach((container) => {
+        this.cancelScrollAnimation(container, "x");
+        this.cancelScrollAnimation(container, "y");
+      });
+      this.activeScrollAnimationContainers?.clear?.();
+    },
     cancelScrollAnimation(container, axis = "x") {
       const map = this.scrollAnimations || (this.scrollAnimations = new WeakMap());
       const state = map.get(container);
@@ -150,6 +190,7 @@ export function createHomeScreenMethods02() {
       const stillAnimating = Boolean((state?.[otherKey] && state[otherKey] !== null) || springState?.[otherKey]?.raf);
       if (!stillAnimating) {
         clearCameraScrollActive(container);
+        this.activeScrollAnimationContainers?.delete?.(container);
       }
     },
     animateScroll(container, axis, targetValue, duration = 150, options = {}) {
@@ -161,10 +202,7 @@ export function createHomeScreenMethods02() {
         return;
       }
       const property = axis === "y" ? "scrollTop" : "scrollLeft";
-      const max =
-        axis === "y"
-          ? Math.max(0, container.scrollHeight - container.clientHeight)
-          : Math.max(0, container.scrollWidth - container.clientWidth);
+      const max = getContainerMaxScroll(container, axis);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const key = axis === "y" ? "y" : "x";
       if (this.shouldUseImmediateFocusScroll()) {
@@ -175,6 +213,7 @@ export function createHomeScreenMethods02() {
       }
       const startValue = Number(container[property] || 0);
       if (Math.abs(startValue - nextValue) <= 1) {
+        this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
       }
@@ -187,7 +226,8 @@ export function createHomeScreenMethods02() {
         springState[key] = null;
         springMap.set(container, springState);
       }
-      if (prefersReducedMotion || effectiveDuration <= 0) {
+      if (prefersReducedMotion || effectiveDuration <= 0 || isScrollContainerHiddenOrDetached(container)) {
+        this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
       }
@@ -202,6 +242,13 @@ export function createHomeScreenMethods02() {
 
       const startTime = performance.now();
       const tick = (now) => {
+        if (isScrollContainerHiddenOrDetached(container)) {
+          existing[key] = null;
+          map.set(container, existing);
+          this.untrackScrollContainerIfIdle?.(container);
+          clearCameraScrollActive(container);
+          return;
+        }
         const progress = Math.min(1, (now - startTime) / effectiveDuration);
         container[property] = Math.round(startValue + (nextValue - startValue) * easing(progress));
         if (progress < 1) {
@@ -210,11 +257,13 @@ export function createHomeScreenMethods02() {
         } else {
           existing[key] = null;
           map.set(container, existing);
+          this.untrackScrollContainerIfIdle?.(container);
           clearCameraScrollActive(container);
         }
       };
 
       markCameraScrollActive(container);
+      this.trackScrollContainer?.(container);
       existing[key] = requestAnimationFrame(tick);
       map.set(container, existing);
     },
@@ -223,10 +272,7 @@ export function createHomeScreenMethods02() {
         return;
       }
       const property = axis === "y" ? "scrollTop" : "scrollLeft";
-      const max =
-        axis === "y"
-          ? Math.max(0, container.scrollHeight - container.clientHeight)
-          : Math.max(0, container.scrollWidth - container.clientWidth);
+      const max = getContainerMaxScroll(container, axis);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const key = axis === "y" ? "y" : "x";
       if (this.shouldUseImmediateFocusScroll()) {
@@ -235,7 +281,8 @@ export function createHomeScreenMethods02() {
         return;
       }
       const prefersReducedMotion = globalThis?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-      if (prefersReducedMotion) {
+      if (prefersReducedMotion || isScrollContainerHiddenOrDetached(container)) {
+        this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
       }
@@ -279,9 +326,17 @@ export function createHomeScreenMethods02() {
       };
 
       const tick = (now) => {
+        if (isScrollContainerHiddenOrDetached(container)) {
+          existing[key] = null;
+          springMap.set(container, existing);
+          this.untrackScrollContainerIfIdle?.(container);
+          clearCameraScrollActive(container);
+          return;
+        }
+        const liveTarget = Math.max(0, Math.min(getContainerMaxScroll(container, axis), Number(state.target || 0)));
         const deltaSeconds = Math.min(0.034, Math.max(0.001, (now - state.lastTime) / 1000));
         state.lastTime = now;
-        const displacement = state.position - Number(state.target || 0);
+        const displacement = state.position - liveTarget;
         const acceleration = -state.stiffness * displacement - state.damping * state.velocity;
         state.velocity += acceleration * deltaSeconds;
         state.position += state.velocity * deltaSeconds;
@@ -291,11 +346,13 @@ export function createHomeScreenMethods02() {
         // affects settling once velocity is low enough; keep that check first.
         if (
           Math.abs(state.velocity) <= state.velocityEpsilon &&
-          Math.abs(Number(state.target || 0) - Number(container[property] || 0)) <= state.precision
+          (Math.abs(liveTarget - state.position) <= state.precision ||
+            Math.abs(liveTarget - Number(container[property] || 0)) <= state.precision)
         ) {
-          container[property] = state.target;
+          container[property] = liveTarget;
           existing[key] = null;
           springMap.set(container, existing);
+          this.untrackScrollContainerIfIdle?.(container);
           clearCameraScrollActive(container);
           return;
         }
@@ -306,6 +363,7 @@ export function createHomeScreenMethods02() {
       };
 
       markCameraScrollActive(container);
+      this.trackScrollContainer?.(container);
       state.raf = requestAnimationFrame(tick);
       existing[key] = state;
       springMap.set(container, existing);

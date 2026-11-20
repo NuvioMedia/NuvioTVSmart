@@ -51,9 +51,14 @@ export function createHomeScreenMethods30() {
         clearTimeout(this.homeRouteReturnRefreshTimer);
         this.homeRouteReturnRefreshTimer = null;
       }
+      if (this.continueWatchingReleaseTimer) {
+        clearTimeout(this.continueWatchingReleaseTimer);
+        this.continueWatchingReleaseTimer = null;
+      }
       this._trackPaginationInFlight?.clear();
       this.cancelScheduledRender();
       this.cancelModernCameraFollow({ stopAnimations: true });
+      this.cancelAllScrollAnimations?.();
       this.endModernVerticalFastScroll({ land: false });
       this.stopHeroRotation();
       if (this.heroDescriptionAutoScrollFrame) {
@@ -191,9 +196,14 @@ export function createHomeScreenMethods30() {
       if (hadActiveState && this.container) {
         this.cleanup({ discardPreservedDom: true });
       } else {
+        if (this.continueWatchingReleaseTimer) {
+          clearTimeout(this.continueWatchingReleaseTimer);
+          this.continueWatchingReleaseTimer = null;
+        }
         this.homeLoadToken = (this.homeLoadToken || 0) + 1;
         this.releaseAllHomeLazyImages?.();
         resetHomeArtworkRescaler();
+        resetHeroLogoRescaleCache();
       }
       this.hasLoadedOnce = false;
       this.hasAppliedInitialContinueWatchingFocus = false;
