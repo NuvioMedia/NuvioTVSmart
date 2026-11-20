@@ -27,6 +27,16 @@ export function isModernTvProfile(profile = null) {
   );
 }
 
+// Keep artwork bitmap bounding enabled on modern >= 2 GB TVs even when the
+// adaptive pace check demotes them to measured-slow: falling back to unbounded
+// 4K/full-res bitmaps multiplies decoded texture pressure and worsens stalls.
+export function canUseModernTvArtworkBounding(profile = null, deviceMemory = getDeviceMemoryGb()) {
+  if (!profile?.isTvRuntime || profile.isLegacyTvRuntime || isLowMemoryDevice(deviceMemory)) {
+    return false;
+  }
+  return Boolean(!profile.isPerformanceConstrained || profile.isMeasuredSlow);
+}
+
 // RAM decides before the generation does. A 2022+ set with 1 GB still cannot
 // keep the modern artwork window, the same way the native legacy client lifts
 // the smallest texture budget to the lowest RAM tier first.

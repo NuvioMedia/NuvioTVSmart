@@ -1,9 +1,9 @@
 import { getTvRuntimePerformanceProfile } from "../../platform/tvRuntimePerformance.js";
 import {
+  canUseModernTvArtworkBounding,
   getArtworkCacheLimit,
   getDeviceMemoryGb,
-  isLowMemoryDevice,
-  isModernTvProfile
+  isLowMemoryDevice
 } from "../../platform/tvPerformancePolicy.js";
 
 // Android decodes artwork at the size Compose is going to draw it: Coil is
@@ -307,12 +307,10 @@ export function getHomeArtworkObjectFit(image) {
 }
 
 export function shouldRescaleHomeArtwork() {
-  // Constrained generations already bound Home artwork with the smaller cache
-  // and the aggressive release window. On them the worker round-trip (fetch,
-  // decode, re-encode, second decode in the renderer) costs more than the RAM
-  // it saves, and the poster only appears once the worker answers: a 2021 Tizen
-  // set loaded artwork instantly before this path existed.
-  return isSupported() && isModernTvProfile(getTvRuntimePerformanceProfile());
+  // Modern >= 2 GB TVs keep bounded artwork rescaling even when measured slow,
+  // avoiding a fallback to full-resolution decoded textures; low-RAM and legacy
+  // sets keep direct <img> loading with the smaller cache and release window.
+  return isSupported() && canUseModernTvArtworkBounding(getTvRuntimePerformanceProfile());
 }
 
 // A worker that hangs would hold its slot forever and every later poster

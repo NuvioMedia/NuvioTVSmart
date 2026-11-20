@@ -69,6 +69,8 @@ import {
   getTvRuntimePerformanceProfile
 } from "../../../platform/tvRuntimePerformance.js";
 
+import { canUseModernTvArtworkBounding } from "../../../platform/tvPerformancePolicy.js";
+
 import { jpegDimensions } from "../../images/tvPosterRescaler.js";
 
 import { isFastHorizontalNavigationEnabled } from "../../../platform/sharedKeys.js";
@@ -263,7 +265,7 @@ function canDecodeHeroBackdropBitmap(src) {
   // screen-sized ImageBitmap mirrors Android's Coil request sized to the hero.
   return (
     Platform.isTizen() &&
-    !getTvRuntimePerformanceProfile()?.isPerformanceConstrained &&
+    canUseModernTvArtworkBounding(getTvRuntimePerformanceProfile()) &&
     typeof globalThis.fetch === "function" &&
     typeof globalThis.createImageBitmap === "function" &&
     /^https?:\/\//i.test(src)
@@ -407,13 +409,13 @@ export function heroLogoDimensions(bytes) {
 function canRescaleHeroLogo(src) {
   return Boolean(
     Platform.isTizen() &&
-      !getTvRuntimePerformanceProfile()?.isPerformanceConstrained &&
-      typeof globalThis.fetch === "function" &&
-      typeof globalThis.createImageBitmap === "function" &&
-      typeof globalThis.OffscreenCanvas === "function" &&
-      typeof globalThis.URL?.createObjectURL === "function" &&
-      /^https?:\/\//i.test(src) &&
-      !/\.(?:svg|gif)(?:[?#]|$)/i.test(src)
+    canUseModernTvArtworkBounding(getTvRuntimePerformanceProfile()) &&
+    typeof globalThis.fetch === "function" &&
+    typeof globalThis.createImageBitmap === "function" &&
+    typeof globalThis.OffscreenCanvas === "function" &&
+    typeof globalThis.URL?.createObjectURL === "function" &&
+    /^https?:\/\//i.test(src) &&
+    !/\.(?:svg|gif)(?:[?#]|$)/i.test(src)
   );
 }
 
