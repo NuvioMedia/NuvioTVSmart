@@ -67,12 +67,24 @@ export const FocusEngine = {
     this.boundHandlePointerClick = this.handlePointerClick.bind(this);
     document.addEventListener("keydown", this.boundHandleKey, true);
     document.addEventListener("keyup", this.boundHandleKeyUp, true);
-    if (Platform.isWebOS()) {
-      document.addEventListener("mousemove", this.boundHandlePointerMove, true);
-      document.addEventListener("pointermove", this.boundHandlePointerMove, true);
+    if (Platform.supportsPointerNavigation()) {
+      // A touchscreen has no meaningful hover state: a pointermove on touch is a
+      // finger already committed to a target, so letting it move focus would
+      // fight the tap. Only hover-capable pointers get the move-driven path.
+      if (!Platform.isTouchDevice()) {
+        document.addEventListener("mousemove", this.boundHandlePointerMove, true);
+        document.addEventListener("pointermove", this.boundHandlePointerMove, true);
+      }
       document.addEventListener("click", this.boundHandlePointerClick, true);
-      document.documentElement?.classList?.add("webos-pointer-remote");
-      document.body?.classList?.add("webos-pointer-remote");
+      const classes = Platform.isWebOS()
+        ? ["webos-pointer-remote"]
+        : Platform.isTouchDevice()
+          ? ["web-touch", "web-pointer"]
+          : ["web-pointer"];
+      for (const cls of classes) {
+        document.documentElement?.classList?.add(cls);
+        document.body?.classList?.add(cls);
+      }
     }
   },
 
@@ -285,7 +297,7 @@ export const FocusEngine = {
   },
 
   handlePointerMove(event) {
-    if (!Platform.isWebOS()) {
+    if (!Platform.supportsPointerNavigation() || Platform.isTouchDevice()) {
       return;
     }
     this.pendingPointerMoveEvent = event;
@@ -306,7 +318,7 @@ export const FocusEngine = {
   },
 
   processPointerMove(event) {
-    if (!Platform.isWebOS()) {
+    if (!Platform.supportsPointerNavigation() || Platform.isTouchDevice()) {
       return;
     }
     const currentScreen = Router.getCurrentScreen();
@@ -336,7 +348,7 @@ export const FocusEngine = {
   },
 
   handlePointerClick(event) {
-    if (!Platform.isWebOS()) {
+    if (!Platform.supportsPointerNavigation()) {
       return;
     }
     const target = this.getPointerFocusable(event);

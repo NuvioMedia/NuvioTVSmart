@@ -128,6 +128,48 @@ export const Platform = {
     return this.getName() === "browser";
   },
 
+  // The TV tiers receive input from a D-pad or a magic-remote cursor, never a
+  // touchscreen. On the browser tier we have to ask the device what it has.
+  // `(any-pointer)` is false on a TV browser with only a remote, true for both
+  // a mouse and a touchscreen, so it is the correct switch for enabling the
+  // pointer path in the focus engine.
+  supportsPointerNavigation() {
+    if (this.isWebOS()) {
+      return true;
+    }
+    if (this.isTizen()) {
+      return false;
+    }
+    if (typeof globalThis.matchMedia !== "function") {
+      return false;
+    }
+    try {
+      return globalThis.matchMedia("(any-pointer)").matches;
+    } catch (_) {
+      return false;
+    }
+  },
+
+  // True when the only pointer available is a finger/stylus. Hover is not a
+  // reliable state here, so focus must not follow a moving pointer and cards
+  // need an explicit tap-to-activate path.
+  isTouchDevice() {
+    if (this.isWebOS() || this.isTizen()) {
+      return false;
+    }
+    if (typeof globalThis.matchMedia !== "function") {
+      return false;
+    }
+    try {
+      const coarse = globalThis.matchMedia("(any-pointer: coarse)").matches;
+      const fine = globalThis.matchMedia("(any-pointer: fine)").matches;
+      const noHover = globalThis.matchMedia("(hover: none)").matches;
+      return coarse && noHover && !fine;
+    } catch (_) {
+      return false;
+    }
+  },
+
   exitApp() {
     if (globalThis.document && typeof globalThis.CustomEvent === "function") {
       const beforeExitEvent = new CustomEvent("nuvio:beforeExitApp", {
