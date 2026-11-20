@@ -8,7 +8,11 @@ const keepAwakeLifecycleBindings = new WeakSet();
 let refreshTimer = null;
 let screenSaverBlocked = false;
 let wakeLock = null;
+let wakeLockRequestToken = 0;
+let wakeLockPending = false;
 let webOsAppInForeground = true;
+let documentVisibilityBound = false;
+let currentKeepAwakeBinding = null;
 
 function getWebOsSystemObjects() {
   return Array.from(
@@ -76,7 +80,7 @@ function hasActiveKeepAwakeReason() {
 
 function setWebOsAppForeground(inForeground) {
   webOsAppInForeground = Boolean(inForeground);
-  refreshKeepAwake();
+  refreshKeepAwake({ force: Boolean(inForeground) });
 }
 
 function bindWebOsAppLifecycle() {
@@ -113,6 +117,8 @@ function bindWebOsAppLifecycle() {
 }
 
 function releaseWakeLock() {
+  wakeLockRequestToken += 1;
+  wakeLockPending = false;
   const lock = wakeLock;
   wakeLock = null;
   if (lock && typeof lock.release === "function") {
@@ -121,12 +127,23 @@ function releaseWakeLock() {
 }
 
 function requestWakeLock() {
-  if (wakeLock || !globalThis.navigator?.wakeLock?.request) {
+  if (wakeLock || wakeLockPending || !globalThis.navigator?.wakeLock?.request) {
     return;
   }
+  const token = ++wakeLockRequestToken;
+  wakeLockPending = true;
   globalThis.navigator.wakeLock
     .request("screen")
     .then((lock) => {
+      if (token === wakeLockRequestToken) {
+        wakeLockPending = false;
+      }
+      if (token !== wakeLockRequestToken || !screenSaverBlocked || !hasActiveKeepAwakeReason()) {
+        if (lock && typeof lock.release === "function") {
+          lock.release().catch(() => null);
+        }
+        return;
+      }
       wakeLock = lock;
       lock.addEventListener?.("release", () => {
         if (wakeLock === lock) {
@@ -135,11 +152,14 @@ function requestWakeLock() {
       });
     })
     .catch(() => {
-      wakeLock = null;
+      if (token === wakeLockRequestToken) {
+        wakeLockPending = false;
+        wakeLock = null;
+      }
     });
 }
 
-function refreshKeepAwake() {
+function refreshKeepAwake({ force = false } = {}) {
   const shouldBlock = hasActiveKeepAwakeReason();
   if (!shouldBlock) {
     if (refreshTimer) {
@@ -154,8 +174,10 @@ function refreshKeepAwake() {
     return;
   }
 
-  screenSaverBlocked = true;
-  setScreenSaverBlocked(true);
+  if (force || !screenSaverBlocked) {
+    screenSaverBlocked = true;
+    setScreenSaverBlocked(true);
+  }
   requestWakeLock();
 }
 
@@ -168,7 +190,7 @@ function requestKeepAwake(reason, shouldKeepAwake = null) {
   keepAwakeReasons.set(key, typeof shouldKeepAwake === "function" ? shouldKeepAwake : null);
   refreshKeepAwake();
   if (!refreshTimer) {
-    refreshTimer = setInterval(refreshKeepAwake, KEEP_AWAKE_REFRESH_MS);
+    refreshTimer = setInterval(() => refreshKeepAwake({ force: true }), KEEP_AWAKE_REFRESH_MS);
   }
 }
 
@@ -180,14 +202,37 @@ function releaseKeepAwake(reason) {
   refreshKeepAwake();
 }
 
+function bindDocumentVisibilityKeepAwake() {
+  if (
+    documentVisibilityBound ||
+    typeof document === "undefined" ||
+    typeof document.addEventListener !== "function"
+  ) {
+    return;
+  }
+  documentVisibilityBound = true;
+  const onVisibilityChange = () => {
+    currentKeepAwakeBinding?.sync();
+    refreshKeepAwake();
+  };
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  document.addEventListener("webkitvisibilitychange", onVisibilityChange);
+}
+
 function bindWebOsPlaybackKeepAwake(videoElement) {
   if (!videoElement || keepAwakeBindings.has(videoElement)) {
     return;
   }
 
   const reason = `video:${Date.now()}:${Math.random()}`;
+  const binding = {
+    videoElement,
+    sync: null,
+    stop: null
+  };
 
   const start = () => {
+    currentKeepAwakeBinding = binding;
     requestKeepAwake(reason, () => isVideoActivelyPlaying(videoElement));
   };
 
@@ -203,22 +248,27 @@ function bindWebOsPlaybackKeepAwake(videoElement) {
     }
   };
 
-  const onVisibilityChange = () => {
-    sync();
+  const stopAndClearCurrent = () => {
+    if (currentKeepAwakeBinding === binding) {
+      currentKeepAwakeBinding = null;
+    }
+    stop();
   };
 
-  ["playing", "play", "timeupdate", "seeked", "ratechange", "loadeddata", "canplay"].forEach(
-    (eventName) => {
-      videoElement.addEventListener(eventName, sync);
-    }
-  );
-  ["pause", "ended", "emptied", "abort", "error"].forEach((eventName) => {
-    videoElement.addEventListener(eventName, stop);
-  });
-  document.addEventListener("visibilitychange", onVisibilityChange);
-  document.addEventListener("webkitvisibilitychange", onVisibilityChange);
+  binding.sync = sync;
+  binding.stop = stop;
+  currentKeepAwakeBinding = binding;
 
-  keepAwakeBindings.set(videoElement, { stop });
+  ["playing", "play", "seeked", "ratechange", "loadeddata", "canplay"].forEach((eventName) => {
+    videoElement.addEventListener(eventName, sync);
+  });
+  videoElement.addEventListener("pause", stop);
+  ["ended", "emptied", "abort", "error"].forEach((eventName) => {
+    videoElement.addEventListener(eventName, stopAndClearCurrent);
+  });
+  bindDocumentVisibilityKeepAwake();
+
+  keepAwakeBindings.set(videoElement, binding);
 }
 
 export const WebOSPlayerExtensions = {
@@ -253,7 +303,7 @@ export const WebOSPlayerExtensions = {
 
   refreshPlaybackKeepAwake() {
     if (keepAwakeReasons.has(PLAYER_SESSION_REASON)) {
-      refreshKeepAwake();
+      refreshKeepAwake({ force: true });
     }
   }
 };
