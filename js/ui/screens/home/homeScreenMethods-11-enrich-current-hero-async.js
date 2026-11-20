@@ -1,5 +1,11 @@
 import { MdbListSettingsStore } from "../../../data/local/mdbListSettingsStore.js";
-import { releaseHomeArtwork, rescaleHomeArtwork, shouldQueueRescale, shouldRescaleHomeArtwork } from "../../images/tvPosterRescaler.js";
+import {
+  isKnownUnrescalableHomeArtwork,
+  releaseHomeArtwork,
+  rescaleHomeArtwork,
+  shouldQueueRescale,
+  shouldRescaleHomeArtwork
+} from "../../images/tvPosterRescaler.js";
 import { getTvArtworkPixelRatio } from "../../../platform/tvRuntimePerformance.js";
 import * as internals from "./homeScreenContext.js";
 
@@ -333,14 +339,18 @@ export function createHomeScreenMethods11() {
         // decodes at natural size, so a static high-resolution overlay costs
         // the full bitmap even when the card paints a few hundred pixels.
         // Animated assets are refused by the rescaler and paint immediately.
-        if (shouldRescaleHomeArtwork()) {
+        if (
+          shouldRescaleHomeArtwork() &&
+          shouldQueueRescale(src, { width: 1, height: 1, fit: "fill" }) &&
+          !(typeof isKnownUnrescalableHomeArtwork === "function" && isKnownUnrescalableHomeArtwork(src))
+        ) {
           // `.home-collection-card .home-poster-focus-gif` is object-fit: fill
           // in every layout, so the card box is exactly what Android decodes.
           const rect = gifNode.getBoundingClientRect();
           const ratio = getTvArtworkPixelRatio();
           const width = Math.round(rect.width * ratio);
           const height = Math.round(rect.height * ratio);
-          if (shouldQueueRescale(src, { width, height, fit: "fill" })) {
+          if (width > 0 && height > 0) {
             const request = { src };
             const isStale = () => !gifNode.isConnected || gifNode.dataset.src !== src || !node.classList.contains("focused");
             focusGifRequests.set(gifNode, request);
