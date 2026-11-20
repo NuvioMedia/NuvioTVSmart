@@ -201,12 +201,66 @@ import { isCollectionFolderItem } from "./homeScreenHelpers-04-animate-hero-logo
 import { normalizeCollectionFolderItem } from "./homeScreenHelpers-05-normalize-collection-folder-item.js";
 import { normalizeCatalogItem } from "./homeScreenHelpers-08-partition-continue-watching-rows.js";
 
+let cwEnrichmentMemoRaw;
+let cwEnrichmentMemoRevision = -1;
+let cwEnrichmentMemoCache = null;
+
+function readRawCwEnrichmentText() {
+  try {
+    const value = globalThis.localStorage?.getItem?.(CW_ENRICHMENT_CACHE_KEY);
+    return typeof value === "string" || value === null ? value : undefined;
+  } catch (_) {
+    return undefined;
+  }
+}
+
+function getMemoizedContinueWatchingEnrichmentCache() {
+  const raw = readRawCwEnrichmentText();
+  const revision = LocalStore.revision(CW_ENRICHMENT_CACHE_KEY);
+  if (cwEnrichmentMemoCache && raw !== undefined && raw === cwEnrichmentMemoRaw && revision === cwEnrichmentMemoRevision) {
+    return cwEnrichmentMemoCache;
+  }
+  const parsed = readContinueWatchingEnrichmentCache();
+  cwEnrichmentMemoCache = parsed && typeof parsed === "object" ? parsed : {};
+  cwEnrichmentMemoRaw = raw;
+  cwEnrichmentMemoRevision = revision;
+  return cwEnrichmentMemoCache;
+}
+
+function cwEnrichmentEntryEquals(left, right) {
+  if (!left || !right || typeof left !== "object" || typeof right !== "object") {
+    return false;
+  }
+  const keys = Object.keys(right);
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    if (key === "cachedAt") {
+      continue;
+    }
+    const a = left[key];
+    const b = right[key];
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+        return false;
+      }
+      for (let j = 0; j < a.length; j += 1) {
+        if (a[j] !== b[j]) {
+          return false;
+        }
+      }
+    } else if (a !== b) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function getCachedContinueWatchingEnrichment(item = {}) {
   const key = continueWatchingEnrichmentCacheKey(item);
   if (!key) {
     return null;
   }
-  const cached = readContinueWatchingEnrichmentCache()[key];
+  const cached = getMemoizedContinueWatchingEnrichmentCache()[key];
   if (!cached || typeof cached !== "object") {
     return null;
   }
@@ -258,8 +312,9 @@ export function saveContinueWatchingEnrichment(item = {}) {
   if (!key) {
     return;
   }
-  const cache = readContinueWatchingEnrichmentCache();
-  cache[key] = {
+  const cache = getMemoizedContinueWatchingEnrichmentCache();
+  const prev = cache[key];
+  const nextEntry = {
     cachedAt: Date.now(),
     title: normalized.title,
     name: normalized.name,
@@ -285,11 +340,22 @@ export function saveContinueWatchingEnrichment(item = {}) {
     episodeDescription: normalized.episodeDescription,
     continueWatchingMetaResolved: true
   };
+  if (prev && Date.now() - Number(prev.cachedAt || 0) < 60 * 60 * 1000 && cwEnrichmentEntryEquals(prev, nextEntry)) {
+    return;
+  }
+  cache[key] = nextEntry;
   const enrichmentCacheLimit = getTvRuntimePerformanceProfile().isPerformanceConstrained ? 50 : 200;
-  const entries = Object.entries(cache)
-    .sort(([, left], [, right]) => Number(right?.cachedAt || 0) - Number(left?.cachedAt || 0))
-    .slice(0, enrichmentCacheLimit);
-  LocalStore.set(CW_ENRICHMENT_CACHE_KEY, Object.fromEntries(entries));
+  let nextCache = cache;
+  if (Object.keys(cache).length > enrichmentCacheLimit) {
+    const entries = Object.entries(cache)
+      .sort(([, left], [, right]) => Number(right?.cachedAt || 0) - Number(left?.cachedAt || 0))
+      .slice(0, enrichmentCacheLimit);
+    nextCache = Object.fromEntries(entries);
+  }
+  LocalStore.set(CW_ENRICHMENT_CACHE_KEY, nextCache);
+  cwEnrichmentMemoCache = nextCache;
+  cwEnrichmentMemoRaw = readRawCwEnrichmentText();
+  cwEnrichmentMemoRevision = LocalStore.revision(CW_ENRICHMENT_CACHE_KEY);
 }
 
 export function readContinueWatchingDisplaySnapshot(scopeKey) {
