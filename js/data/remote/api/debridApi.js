@@ -3,23 +3,53 @@ import { fetchViaWebOsDebridAuthProxy } from "../../../platform/webos/webosSupab
 const TORBOX_BASE_URL = "https://api.torbox.app/";
 const PREMIUMIZE_BASE_URL = "https://www.premiumize.me/";
 const REAL_DEBRID_BASE_URL = "https://api.real-debrid.com/rest/1.0/";
+const DEFAULT_DEBRID_TIMEOUT_MS = 15000;
 
 function joinUrl(baseUrl, path) {
   return `${String(baseUrl || "").replace(/\/+$/, "")}/${String(path || "").replace(/^\/+/, "")}`;
+}
+
+async function fetchDebridWithTimeout(url, options = {}) {
+  const { timeoutMs = DEFAULT_DEBRID_TIMEOUT_MS, ...rest } = options || {};
+  const controller =
+    !rest.signal && typeof AbortController === "function" ? new AbortController() : null;
+  const fetchOptions = {
+    ...rest,
+    headers: {
+      ...(rest.headers || {})
+    },
+    ...(controller ? { signal: controller.signal } : {})
+  };
+  const attempt = (async () =>
+    (await fetchViaWebOsDebridAuthProxy(url, fetchOptions)) || (await fetch(url, fetchOptions)))();
+  attempt.catch(() => {});
+
+  const effectiveTimeoutMs = Number(timeoutMs);
+  if (!Number.isFinite(effectiveTimeoutMs) || effectiveTimeoutMs <= 0) {
+    return attempt;
+  }
+
+  let timer = 0;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller?.abort?.();
+      const error = new Error(`Debrid request timed out after ${effectiveTimeoutMs} ms`);
+      error.name = "AbortError";
+      reject(error);
+    }, effectiveTimeoutMs);
+  });
+  try {
+    return await Promise.race([attempt, timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function requestJson(baseUrl, path, options = {}) {
   let response;
   try {
     const url = joinUrl(baseUrl, path);
-    const fetchOptions = {
-      ...options,
-      headers: {
-        ...(options.headers || {})
-      }
-    };
-    response =
-      (await fetchViaWebOsDebridAuthProxy(url, fetchOptions)) || (await fetch(url, fetchOptions));
+    response = await fetchDebridWithTimeout(url, options);
   } catch (error) {
     return {
       ok: false,
@@ -48,13 +78,8 @@ async function requestJson(baseUrl, path, options = {}) {
 
 async function requestDebridAuthJson(baseUrl, path, options = {}) {
   const url = joinUrl(baseUrl, path);
-  const fetchOptions = {
-    ...options,
-    headers: { ...(options.headers || {}) }
-  };
   try {
-    const response =
-      (await fetchViaWebOsDebridAuthProxy(url, fetchOptions)) || (await fetch(url, fetchOptions));
+    const response = await fetchDebridWithTimeout(url, options);
     const text = await response.text();
     let data = null;
     if (text.trim()) {
