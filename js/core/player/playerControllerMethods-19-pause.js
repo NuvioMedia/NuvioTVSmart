@@ -65,22 +65,23 @@ export function createPlayerControllerMethods19() {
           return;
         }
         try {
+          const playToken = this.playRequestToken;
           avplay.play?.();
           this.isPlaying = true;
           this.syncWebOsPlaybackKeepAwake();
           this.reapplyAvPlayPlaybackRate();
           this.startAvPlayTickTimer();
           this.emitVideoEvent("playing", { playbackEngine: this.playbackEngine });
-          setTimeout(() => {
+          const applyResumeAvPlayState = () => {
+            if (!this.isUsingAvPlay() || !this.isPlaying || playToken !== this.playRequestToken) {
+              return;
+            }
             this.reapplyAvPlayPlaybackRate();
             this.applyPendingAvPlayAudioTrackSelection();
             this.applyPendingAvPlaySubtitleTrackSelection();
-          }, 0);
-          setTimeout(() => {
-            this.reapplyAvPlayPlaybackRate();
-            this.applyPendingAvPlayAudioTrackSelection();
-            this.applyPendingAvPlaySubtitleTrackSelection();
-          }, 300);
+          };
+          setTimeout(applyResumeAvPlayState, 0);
+          setTimeout(applyResumeAvPlayState, 300);
         } catch (error) {
           this.lastPlaybackErrorCode = this.mapAvPlayErrorToMediaCode(error?.name || error?.message || error);
           console.warn("Playback resume rejected", error);
