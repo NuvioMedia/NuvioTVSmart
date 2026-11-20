@@ -188,11 +188,29 @@ export function createAuthQrSignInScreenMethods02() {
           .replace(/^https?:\/\//i, "")
           .replace(/\/+$/, "");
         manualText.innerText = manualUrl && (displayCode || code) ? I18n.t("auth.qr.manualInstruction", { url: manualUrl }) : "";
+        this.appendOpenOnThisDeviceLink(manualText, loginUrl || verificationUri);
       }
       codeText.innerText = I18n.t("auth.qr.codeLabel", {
         code: displayCode || code || ""
       });
       this.startCountdown(expiresAt);
+    },
+    // Touch/web tier: a QR is useless on a device that already owns the browser.
+    // Expose the same URL the QR encodes as a tappable anchor so login needs no second screen.
+    appendOpenOnThisDeviceLink(targetNode, rawUrl) {
+      if (!targetNode) return null;
+      const linkTarget = String(rawUrl || "").trim();
+      if (!/^https?:\/\//i.test(linkTarget)) return null;
+      if (targetNode.querySelector(".qr-open-link")) return null;
+      const anchor = document.createElement("a");
+      anchor.className = "qr-open-link qr-open-link-primary focusable";
+      anchor.href = linkTarget;
+      anchor.rel = "noopener noreferrer";
+      anchor.target = "_blank";
+      anchor.textContent = I18n.t("auth.qr.openOnThisDevice") || "Open on this device";
+      targetNode.appendChild(document.createElement("br"));
+      targetNode.appendChild(anchor);
+      return anchor;
     },
     clearQr() {
       this.qrResult = null;

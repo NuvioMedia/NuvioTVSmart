@@ -1,0 +1,43 @@
+/*
+ * Web/touch tier additions (fork-local).
+ *
+ * These rules only style elements this fork introduces or re-targets for
+ * pointer devices, so they are inert on Tizen/webOS where those elements never
+ * render. Colour syntax follows components-01.css (.qr-status): literal,
+ * space-separated rgb() with slash alpha and no var() indirection, which is
+ * what scripts/test-legacy-css-colors.mjs guards against.
+ */
+.qr-open-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 240px;
+  margin-top: 14px;
+  padding: 12px 22px;
+  box-sizing: border-box;
+  border-radius: 18px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.12);
+  color: var(--text-color);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.qr-open-link-primary {
+  background: rgb(255 255 255 / 0.2);
+  border-color: rgb(255 255 255 / 0.34);
+  color: var(--text-color);
+}
+
+.qr-open-link:focus-visible,
+.qr-open-link.focused {
+  outline: 3px solid var(--focus-color, #ffffff);
+  outline-offset: 3px;
+}
