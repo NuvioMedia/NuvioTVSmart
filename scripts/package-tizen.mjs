@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { constants as fsConstants } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { transform as esbuildTransform } from "esbuild";
 import JSZip from "jszip";
 import { readAppMetadata, syncVersionFiles } from "./appMetadata.mjs";
 import { compatibilityPolicy } from "./compatibilityPolicy.mjs";
@@ -280,14 +281,25 @@ async function stageTizenEngineFsService() {
     )
   ]);
   // The source runtime keeps a small alias so it can be tested in-place. A
-  // Tizen package must contain the actual parser because the webOS source tree
-  // is not part of the WGT.
-  await cp(
+  // Tizen package must contain the transpiled ES5/Node 4-compatible parser
+  // because Tizen 5.0/5.5 runs EngineFS on legacy Node and the webOS source
+  // tree is not part of the WGT.
+  const bitmapSubtitlesSource = await readFile(
     path.join(rootDir, "services", "webos", "src", "bitmapSubtitles.js"),
+    "utf8"
+  );
+  const transpiledParser = await esbuildTransform(bitmapSubtitlesSource, {
+    loader: "js",
+    target: "es2015",
+    format: "cjs"
+  });
+  await writeFile(
     path.join(
       stagingDir,
       `${tizenEngineFsRuntimeDirRelativePath}/embedded-text-subtitle-parser.cjs`
-    )
+    ),
+    transpiledParser.code,
+    "utf8"
   );
 }
 
