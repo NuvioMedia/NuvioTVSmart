@@ -254,6 +254,7 @@ export function createHomeScreenMethods24() {
             return;
           }
         }
+        const canRescale = !this.isLegacyTvRuntime() && shouldRescaleHomeArtwork();
         images.forEach((image) => {
           if (!(image instanceof HTMLImageElement) || !image.isConnected) {
             return;
@@ -263,9 +264,10 @@ export function createHomeScreenMethods24() {
             image.removeAttribute("data-src");
             return;
           }
+          let rect = null;
           if (!shouldHydrateFocusedRowImmediately) {
             const imageHorizontalMargin = isFocusedRow ? focusedRowMargin : horizontalMargin;
-            const rect = image.getBoundingClientRect();
+            rect = image.getBoundingClientRect();
             const isNearViewport =
               rect.bottom >= visibleRect.top - verticalMargin &&
               rect.top <= visibleRect.bottom + verticalMargin &&
@@ -275,6 +277,14 @@ export function createHomeScreenMethods24() {
               return;
             }
           }
+          // Pre-read rescaler geometry before any DOM attribute mutations so the
+          // write pass below never interleaves reads and writes (layout thrashing).
+          const isRescaleCandidate =
+            canRescale && (image.classList.contains("content-poster") || image.classList.contains("home-continue-bg"));
+          if (isRescaleCandidate && !rect) {
+            rect = image.getBoundingClientRect();
+          }
+          const fit = isRescaleCandidate ? getHomeArtworkObjectFit(image) : null;
           // The app already decides when an image is close enough to load. Leaving
           // loading="lazy" here delegates that decision back to old TV browsers,
           // which can miscalculate visibility inside the nested modern-home viewport.
@@ -287,7 +297,9 @@ export function createHomeScreenMethods24() {
             row,
             isFocusedRow,
             isFocusedImage,
-            priority: isFocusedImage ? 0 : isFocusedRow ? 1 : 2
+            priority: isFocusedImage ? 0 : isFocusedRow ? 1 : 2,
+            rect,
+            fit
           });
         });
       });
@@ -295,8 +307,8 @@ export function createHomeScreenMethods24() {
       if (this.isLegacyTvRuntime()) {
         this.commitHomeLazyImageSources(pendingLoads, anchorNode, anchorRow);
       } else {
-        pendingLoads.forEach(({ image, src, priority }) => {
-          this.assignHomeLazyImageSource(image, src, priority);
+        pendingLoads.forEach(({ image, src, priority, rect, fit }) => {
+          this.assignHomeLazyImageSource(image, src, priority, { rect, fit });
         });
       }
       // Sweep on every pass. Rows drift out of reach as later catalogs mount,
@@ -307,7 +319,7 @@ export function createHomeScreenMethods24() {
         this.scheduleHomeLazyImageEviction(anchorNode);
       }
     },
-    assignHomeLazyImageSource(image, src, priority = 2) {
+    assignHomeLazyImageSource(image, src, priority = 2, premeasured = null) {
       // The app already decided this image is close enough to load, so stop
       // deferring to the browser's own lazy heuristic.
       image.loading = "eager";
@@ -322,12 +334,12 @@ export function createHomeScreenMethods24() {
         image.src = src;
         return;
       }
-      const rect = image.getBoundingClientRect();
+      const rect = premeasured?.rect || image.getBoundingClientRect();
       // Home poster rules are not uniform: a catalog card crops its artwork
       // while a collection card stretches it. Redrawing a stretched poster as
       // a crop would silently change the picture, so ask the stylesheet what
       // this element actually resolved to and skip anything else.
-      const fit = getHomeArtworkObjectFit(image);
+      const fit = premeasured && typeof premeasured.fit === "string" ? premeasured.fit : getHomeArtworkObjectFit(image);
       if (!isRescalableArtworkFit(fit)) {
         image.src = src;
         return;
