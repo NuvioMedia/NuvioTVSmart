@@ -113,7 +113,7 @@ function runInWorker(request) {
     nextRequestId += 1;
     clearIdleTimer();
     const timer = setTimeout(() => {
-      if (pending.delete(id)) {
+      if (pending.has(id)) {
         markWorkerBroken(new Error("Subtitle AutoSync worker timed out"));
       }
     }, WORKER_RESULT_TIMEOUT_MS);
@@ -121,8 +121,6 @@ function runInWorker(request) {
     try {
       instance.postMessage({ id, ...request });
     } catch (error) {
-      pending.delete(id);
-      clearTimeout(timer);
       markWorkerBroken(error);
     }
   });
