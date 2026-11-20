@@ -71,7 +71,7 @@ import {
 
 import { canUseModernTvArtworkBounding } from "../../../platform/tvPerformancePolicy.js";
 
-import { jpegDimensions } from "../../images/tvPosterRescaler.js";
+import { jpegDimensions, pngStillDimensions, rescaleHomeLogoBlob } from "../../images/tvPosterRescaler.js";
 
 import { isFastHorizontalNavigationEnabled } from "../../../platform/sharedKeys.js";
 
@@ -482,6 +482,36 @@ export function preloadHeroLogo(src) {
 
   const entry = { promise: null, objectUrl: "", settled: false };
   const target = heroLogoTargetSize();
+  const finishRescaledBlob = (resized) => {
+    const objectUrl = globalThis.URL.createObjectURL(resized);
+    if (heroLogoRescaleCache.get(normalized) !== entry) {
+      globalThis.URL.revokeObjectURL(objectUrl);
+      return { loaded: true, src: normalized };
+    }
+    entry.objectUrl = objectUrl;
+    entry.settled = true;
+    return { loaded: true, src: objectUrl };
+  };
+  if (typeof globalThis.Worker === "function") {
+    entry.promise = rescaleHomeLogoBlob(normalized, {
+      width: target.width,
+      height: target.height,
+      timeoutMs: HERO_IMAGE_PRELOAD_TIMEOUT_MS
+    })
+      .then((resized) => {
+        if (!resized) {
+          throw new Error("logo rescale skipped");
+        }
+        return finishRescaledBlob(resized);
+      })
+      .catch(() => {
+        entry.settled = true;
+        return fallbackSource(normalized);
+      });
+    heroLogoRescaleCache.set(normalized, entry);
+    trimHeroLogoRescaleCache();
+    return entry.promise;
+  }
   // A stalled addon CDN must not hold the logo blank forever: fall back to the
   // <img> path on the same budget as a hero image preload.
   const controller = typeof globalThis.AbortController === "function" ? new globalThis.AbortController() : null;
@@ -520,14 +550,7 @@ export function preloadHeroLogo(src) {
         const canvas = new globalThis.OffscreenCanvas(width, height);
         canvas.getContext("2d", { alpha: true }).drawImage(bitmap, 0, 0, width, height);
         const resized = await canvas.convertToBlob({ type: "image/webp", quality: 0.92 });
-        const objectUrl = globalThis.URL.createObjectURL(resized);
-        if (heroLogoRescaleCache.get(normalized) !== entry) {
-          globalThis.URL.revokeObjectURL(objectUrl);
-          return { loaded: true, src: normalized };
-        }
-        entry.objectUrl = objectUrl;
-        entry.settled = true;
-        return { loaded: true, src: objectUrl };
+        return finishRescaledBlob(resized);
       } finally {
         bitmap.close?.();
       }

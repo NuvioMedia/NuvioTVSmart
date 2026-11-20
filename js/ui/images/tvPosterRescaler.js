@@ -165,6 +165,48 @@ export function jpegDimensions(bytes) {
 }
 
 /**
+ * Natural size of a still PNG from its IHDR chunk, or null for APNG (which
+ * carries acTL before IDAT so createImageBitmap would keep only one frame).
+ */
+export function pngStillDimensions(bytes) {
+  if (
+    !bytes ||
+    bytes.length < 24 ||
+    bytes[0] !== 0x89 ||
+    bytes[1] !== 0x50 ||
+    bytes[2] !== 0x4e ||
+    bytes[3] !== 0x47
+  ) {
+    return null;
+  }
+  let offset = 8;
+  while (offset + 8 <= bytes.length) {
+    const length =
+      ((bytes[offset] << 24) |
+        (bytes[offset + 1] << 16) |
+        (bytes[offset + 2] << 8) |
+        bytes[offset + 3]) >>>
+      0;
+    const type = String.fromCharCode(
+      bytes[offset + 4] || 0,
+      bytes[offset + 5] || 0,
+      bytes[offset + 6] || 0,
+      bytes[offset + 7] || 0
+    );
+    if (type === "acTL") {
+      return null;
+    }
+    if (type === "IDAT" || type === "IEND") {
+      break;
+    }
+    offset += 12 + length;
+  }
+  const width = ((bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19]) >>> 0;
+  const height = ((bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23]) >>> 0;
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+
+/**
  * The one dimension to clamp for createImageBitmap, or null when the source is
  * already small enough. Supplying only one side keeps the source aspect ratio,
  * which the crop below depends on.
@@ -185,13 +227,20 @@ const isJpeg = ${isJpegHeader.toString()};
 const webpInfo = ${webpArtworkInfo.toString()};
 const isTooLarge = ${isArtworkTooLarge.toString()};
 const jpegSize = ${jpegDimensions.toString()};
+const pngSize = ${pngStillDimensions.toString()};
 const resizeTarget = ${artworkResizeTarget.toString()};
 
 self.onmessage = async (event) => {
-  const { id, url, width, height, fit } = event.data || {};
+  const { id, url, width, height, fit, kind, timeoutMs } = event.data || {};
   let full = null;
+  const hasTimeout = Number(timeoutMs) > 0 && typeof AbortController === "function";
+  const controller = hasTimeout ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), Number(timeoutMs)) : 0;
   try {
-    const response = await fetch(url, { credentials: "omit" });
+    const fetchOptions = controller
+      ? { mode: "cors", credentials: "omit", signal: controller.signal }
+      : { credentials: "omit" };
+    const response = await fetch(url, fetchOptions);
     if (!response.ok) {
       throw new Error("http " + response.status);
     }
@@ -207,6 +256,37 @@ self.onmessage = async (event) => {
       throw new Error("too large");
     }
     const view = new Uint8Array(bytes);
+    if (kind === "logo") {
+      const png = pngSize(view);
+      const webp = png ? null : webpInfo(view);
+      if (webp && webp.animated) {
+        throw new Error("animated webp");
+      }
+      const dimensions =
+        png || (webp && webp.width > 0 && webp.height > 0 ? webp : null) || jpegSize(view);
+      if (!dimensions) {
+        throw new Error("unsupported logo");
+      }
+      if (dimensions.width <= width && dimensions.height <= height) {
+        throw new Error("logo already small");
+      }
+      full = await createImageBitmap(new Blob([bytes]), {
+        resizeWidth: Math.min(width, dimensions.width),
+        resizeQuality: "medium",
+        imageOrientation: "from-image"
+      });
+      // Enforce both width and height bounds while keeping transparent edges.
+      const scale = Math.min(width / full.width, height / full.height, 1);
+      const targetW = Math.max(1, Math.round(full.width * scale));
+      const targetH = Math.max(1, Math.round(full.height * scale));
+      const canvas = new OffscreenCanvas(targetW, targetH);
+      canvas.getContext("2d", { alpha: true }).drawImage(full, 0, 0, targetW, targetH);
+      const out = await canvas.convertToBlob({ type: "image/webp", quality: 0.92 });
+      full.close();
+      full = null;
+      self.postMessage({ id, ok: true, blob: out });
+      return;
+    }
     const jpeg = isJpeg(view);
     const webp = jpeg ? null : webpInfo(view);
     if (!jpeg && !webp) {
@@ -244,6 +324,10 @@ self.onmessage = async (event) => {
       full.close();
     }
     self.postMessage({ id, ok: false, reason: String((error && error.message) || error) });
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
   }
 };
 `;
@@ -330,6 +414,7 @@ function createPool() {
     cache: new Map(),
     failed: new Map(),
     inflight: new Map(),
+    logoInflight: new Map(),
     disposed: false,
     suspended: false,
     suspendRequested: false
@@ -432,13 +517,20 @@ function pump(state) {
     job.worker = worker;
     job.timer = setTimeout(() => retireWorker(state, worker, "timeout"), JOB_TIMEOUT_MS);
     state.jobs.set(job.id, job);
-    worker.postMessage({
+    const message = {
       id: job.id,
       url: job.url,
       width: job.width,
       height: job.height,
       fit: job.fit
-    });
+    };
+    if (job.kind === "logo") {
+      message.kind = "logo";
+      if (job.timeoutMs > 0) {
+        message.timeoutMs = job.timeoutMs;
+      }
+    }
+    worker.postMessage(message);
   }
   if (state.suspendRequested && !state.queue.length && !state.jobs.size) {
     suspendWorkers(state);
@@ -506,7 +598,8 @@ function resumeWorkers(state) {
 // Artwork 404s are deliberately left out: the native client excludes art from
 // its negative cache because a CDN 404 can be transient. Only answers that
 // depend on the bytes themselves are permanent for the session.
-const DETERMINISTIC_ARTWORK_FAILURE = /^(not jpeg|already small|too large|animated webp)$/;
+const DETERMINISTIC_ARTWORK_FAILURE =
+  /^(not jpeg|already small|too large|animated webp|unsupported logo|logo already small)$/;
 const ARTWORK_FAILURE_LIMIT = 512;
 
 function rememberArtworkFailure(state, key, reason) {
@@ -673,6 +766,69 @@ export function rescaleHomeArtwork(url, options) {
   return rescaleWithPool(getPool(), url, options);
 }
 
+/**
+ * Downscale a hero logo off the main thread using the existing Home rescaler
+ * pool. Returns a transparent WebP Blob, or null to fall back to the original.
+ */
+export function rescaleHomeLogoBlob(url, { width, height, timeoutMs = 1500 } = {}) {
+  const normalized = String(url || "").trim();
+  if (
+    typeof globalThis.Worker !== "function" ||
+    !normalized ||
+    !(width > 0) ||
+    !(height > 0) ||
+    !/^https?:\/\//i.test(normalized) ||
+    /\.(?:svg|gif)(?:[?#]|$)/i.test(normalized)
+  ) {
+    return Promise.resolve(null);
+  }
+  const state = getPool();
+  if (!state) {
+    return Promise.resolve(null);
+  }
+  const key = `logo|${normalized}|${width}x${height}`;
+  if (state.failed.has(key)) {
+    return Promise.resolve(null);
+  }
+  const pendingJob = state.logoInflight.get(key);
+  if (pendingJob) {
+    return pendingJob.promise;
+  }
+  const job = {
+    id: state.nextId++,
+    url: normalized,
+    width,
+    height,
+    fit: "contain",
+    kind: "logo",
+    timeoutMs,
+    priority: 0,
+    isStale: null,
+    worker: null
+  };
+  job.promise = new Promise((resolve) => {
+    job.settle = (blob, reason) => {
+      if (job.done) {
+        return;
+      }
+      job.done = true;
+      state.logoInflight.delete(key);
+      if (!blob || state.disposed) {
+        if (!blob && !state.disposed) {
+          rememberArtworkFailure(state, key, reason);
+        }
+        resolve(null);
+        return;
+      }
+      resolve(blob);
+    };
+  });
+  state.logoInflight.set(key, job);
+  state.queue.push(job);
+  pump(state);
+  return job.promise;
+}
+
 /** Same contract as rescaleHomeArtwork, with its own pool for non-Home screens. */
 export function rescaleArtwork(url, options) {
   if (!shouldQueueRescale(url, options)) return Promise.resolve(null);
@@ -715,6 +871,7 @@ function resetPool(state) {
   });
   state.queue.splice(0).forEach((job) => job.settle(null, "reset"));
   state.inflight.forEach((job) => job.settle(null, "reset"));
+  state.logoInflight?.forEach((job) => job.settle(null, "reset"));
   state.workers.forEach((worker) => {
     try {
       worker.terminate();
@@ -725,6 +882,7 @@ function resetPool(state) {
   state.cache.clear();
   state.jobs.clear();
   state.inflight.clear();
+  state.logoInflight?.clear();
   state.workers.length = 0;
   state.idle.length = 0;
   state.queue.length = 0;
