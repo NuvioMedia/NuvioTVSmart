@@ -1,0 +1,197 @@
+/* Touch tier, sized from the official Nuvio Mobile (Kotlin Multiplatform /
+   Compose) specs rather than guessed.
+
+   Root cause of "way too big": this web CSS was ported from Android TV, whose
+   canvas is 960dp wide rendered at 1920px, so the port doubles every dp to px
+   (css/components-07.css: "ATV legacyCollapsedWidth 72dp -> 144px";
+   js/ui/components/nuvioDialog.js: "all dp->vw at 320dpi, 1920px = 960dp,
+   16dp = 32px, 20sp = 40px"). A phone is ~390dp, not 960dp, so dp x 2 is
+   wrong by ~2.5x. In this web tier a CSS px is already equivalent to dp, so
+   the touch tier uses dp x 1.
+
+   Verified against NuvioMedia/NuvioMobile (GPL v3, same licence as this repo):
+     poster base width      110dp   (core/ui/PosterCardDimensions.kt: 180f/110f)
+     landscape poster       scale 180/110, aspect 1.77
+     catalog grid columns   >=1400dp:7 >=1200:6 >=1000:5 >=840:4 else 3
+                            (features/catalog/CatalogScreen.kt:423)
+     navigation bar         58dp tall, 24-28dp icons (core/ui/NavigationBar.kt)
+     title / body text      20sp / 14sp (js/ui/components/nuvioDialog.js header)
+   Consistency check: 3 columns at 390dp with 16dp gutters and 12dp gaps gives
+   (390 - 32 - 24)/3 = 111dp, matching the 110dp base.
+*/
+
+/* iOS Safari reports 100vh as the large-toolbar height, putting the bottom of
+   every screen under the browser chrome. dvh is the real visible box. */
+.web-touch #app,
+.web-touch .screen {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.web-touch html,
+.web-touch body {
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+.web-touch {
+  --touch-safe-top: env(safe-area-inset-top, 0px);
+  --touch-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --touch-safe-left: env(safe-area-inset-left, 0px);
+  --touch-safe-right: env(safe-area-inset-right, 0px);
+  --touch-poster-columns: 3;
+  --touch-gutter: 16px;
+  --touch-gap: 12px;
+  --touch-nav-height: 58px;
+}
+
+/* Typography: the TV tier resolves these clamp()s to their 1920px canvas
+   minimums (42px title / 20px body), which is the dp x 2 doubled scale. On
+   touch, use the phone app's sp values directly. */
+.web-touch {
+  --tv-title-text: 22px;
+  --tv-subtitle-text: 17px;
+  --tv-body-text: 15px;
+  --tv-secondary-text: 13px;
+  --tv-caption-text: 12px;
+  --tv-button-height: 44px;
+  --tv-button-padding-x: 18px;
+  --tv-control-size: 44px;
+  --tv-control-icon-size: 22px;
+  --tv-safe-gutter: 16px;
+  --tv-safe-gutter-wide: 16px;
+  --tv-card-radius: 12px;
+  --tv-card-gap: 12px;
+}
+
+/* Sidebar becomes a bottom bar; the 144px rail is a third of a phone width. */
+.web-touch .home-shell {
+  --legacy-sidebar-rail-width: 100vw;
+  --legacy-sidebar-open-width: 100vw;
+  --legacy-sidebar-item-width: 28px;
+  --legacy-sidebar-item-expanded-width: 28px;
+  --legacy-sidebar-item-height: 58px;
+  --legacy-sidebar-item-radius: 14px;
+  --legacy-sidebar-padding: 8px;
+  --legacy-sidebar-item-gap: 8px;
+  --legacy-sidebar-profile-top-gap: 0px;
+  --legacy-sidebar-profile-bottom-gap: 0px;
+  flex-direction: column;
+}
+
+.web-touch .home-sidebar {
+  position: fixed;
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: calc(var(--touch-nav-height) + var(--touch-safe-bottom));
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 12px;
+  padding-bottom: var(--touch-safe-bottom);
+  background: rgb(13 13 13 / 92%);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.web-touch .home-sidebar .home-nav-item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.web-touch .home-screen-shell {
+  --home-sidebar-width: 0px;
+  --home-content-start: var(--touch-gutter);
+  --home-track-end: var(--touch-gutter);
+  --home-row-gap: var(--touch-gap);
+  --home-poster-radius: 10px;
+  /* derived: (viewport - 2 gutters - (columns-1) gaps) / columns */
+  --touch-poster-width: calc(
+    (100vw - (2 * var(--touch-gutter)) - ((var(--touch-poster-columns) - 1) * var(--touch-gap))) /
+      var(--touch-poster-columns)
+  );
+  --home-poster-width: var(--touch-poster-width);
+  --home-poster-height: calc(var(--touch-poster-width) * 1.5);
+  --home-landscape-poster-width: calc(var(--touch-poster-width) * (180 / 110));
+  --home-landscape-poster-height: calc(var(--home-landscape-poster-width) / 1.77);
+  --home-continue-width: calc((100vw - (2 * var(--touch-gutter))) * 0.86);
+  --home-continue-height: calc(var(--home-continue-width) / 1.7777);
+}
+
+.web-touch .home-screen-shell .home-main {
+  padding-bottom: calc(var(--touch-nav-height) + var(--touch-safe-bottom) + 16px);
+  -webkit-overflow-scrolling: touch;
+}
+
+.web-touch .home-screen-shell .home-track {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  padding-left: max(var(--touch-gutter), var(--touch-safe-left));
+  padding-right: max(var(--touch-gutter), var(--touch-safe-right));
+}
+
+.web-touch .home-screen-shell .home-poster-card,
+.web-touch .home-screen-shell .home-content-card {
+  scroll-snap-align: start;
+}
+
+/* 400px hero min-height is a whole phone screen before any content. */
+.web-touch .home-screen-shell .home-hero-card {
+  min-height: 62vh;
+}
+
+/* Focus rings are a remote aid; touch gets a press state instead. Scoped to
+   outline only so screens that use .focused for real layout changes (expanded
+   cards, hero swaps) keep that behaviour. */
+.web-touch .focusable.focused {
+  outline: none;
+}
+
+.web-touch .focusable:active {
+  transform: scale(0.97);
+  transition: transform 90ms ease-out;
+}
+
+/* iOS zooms the whole page when a focused control is under 16px. */
+.web-touch input,
+.web-touch select,
+.web-touch textarea {
+  font-size: 16px;
+}
+
+.web-touch .focusable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Column count follows the mobile grid breakpoints (840dp and up gets 4). */
+@media (min-width: 600px) {
+  .web-touch {
+    --touch-poster-columns: 4;
+    --touch-gutter: 24px;
+    --touch-gap: 16px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .web-touch {
+    --touch-poster-columns: 5;
+  }
+}
+
+@media (min-width: 1200px) {
+  .web-touch {
+    --touch-poster-columns: 6;
+  }
+}
+
+@media (min-width: 1400px) {
+  .web-touch {
+    --touch-poster-columns: 7;
+  }
+}
