@@ -150,6 +150,52 @@ export const Platform = {
     }
   },
 
+  // A pointer that can rest on a target without activating it. Drives the
+  // hover/follow-focus path; touch pointers cannot hover, so they must not get
+  // it even though they do support pointer navigation.
+  // The TV builds always lay out on a 1920x1080 CSS canvas (index.html sets
+  // viewport width=1920 on Tizen; webOS reports a 1920-wide viewport even on
+  // 1080p and 4K panels). So the shorter side is exactly 1080 on every TV and
+  // smaller on every phone and tablet, which makes it a clean tier test.
+  isCompactViewport() {
+    if (this.isWebOS() || this.isTizen() || !this.isBrowser()) {
+      return false;
+    }
+    const width = Number(
+      globalThis.innerWidth || globalThis.document?.documentElement?.clientWidth || 0
+    );
+    const height = Number(
+      globalThis.innerHeight || globalThis.document?.documentElement?.clientHeight || 0
+    );
+    if (!width || !height) {
+      return false;
+    }
+    // The shorter side under 1080 separates phone and tablet canvases from the
+    // TV canvas. The wider side is also checked so a desktop window that is
+    // 1920 wide but only ~940 tall keeps the wide TV layout instead of
+    // collapsing to the phone tier.
+    return Math.min(width, height) < 1080 && Math.max(width, height) < 1440;
+  },
+
+  hasHoverPointer() {
+    if (this.isWebOS()) {
+      // The Magic Remote cursor is a hoverable pointer; that tier already
+      // relies on hover-driven focus.
+      return true;
+    }
+    if (this.isTizen()) {
+      return false;
+    }
+    if (typeof globalThis.matchMedia !== "function") {
+      return false;
+    }
+    try {
+      return globalThis.matchMedia("(any-pointer: fine)").matches;
+    } catch (_) {
+      return false;
+    }
+  },
+
   // True when the only pointer available is a finger/stylus. Hover is not a
   // reliable state here, so focus must not follow a moving pointer and cards
   // need an explicit tap-to-activate path.
