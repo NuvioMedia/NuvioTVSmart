@@ -42,6 +42,11 @@
           "public": true
         },
         {
+          "name": "embeddedSubtitleTimeline",
+          "description": "Read the cue timeline for an embedded Matroska text subtitle track",
+          "public": true
+        },
+        {
           "name": "playbackServiceKeepAlive",
           "description": "Keep the webOS companion service alive during playback",
           "public": true
