@@ -36,6 +36,9 @@ const context = vm.createContext({
   internals: {}
 });
 
+class TestElement {}
+context.HTMLElement = TestElement;
+
 function resetRescale() {
   rescaleEnabled = false;
   rescaleCalls = [];
@@ -102,6 +105,23 @@ await loadFrom(
   "export function createPosterCardMarkup"
 );
 await loadFrom("./homeScreenMethods-11-enrich-current-hero-async.js", "const focusGifRequests");
+
+// The focus owner is the single place every focus transfer goes through, so it
+// has to drop the previous collection overlay.
+const focusStateSource = await readFile(
+  new URL("./homeScreenMethods-05-apply-hero-to-dom.js", import.meta.url),
+  "utf8"
+);
+const focusSetterStart = focusStateSource.indexOf("setCurrentFocusedNode(node = null) {");
+const focusSetterEnd = focusStateSource.indexOf("\n    },", focusSetterStart);
+assert.ok(focusSetterStart >= 0 && focusSetterEnd > focusSetterStart);
+vm.runInContext(
+  `function setCurrentFocusedNode(node = null) {${focusStateSource.slice(
+    focusSetterStart + "setCurrentFocusedNode(node = null) {".length,
+    focusSetterEnd
+  )}}`,
+  context
+);
 
 const gif = "https://example.invalid/focus.gif";
 const cover = "https://example.invalid/cover.jpg";
@@ -361,6 +381,33 @@ test("hydrating a collection card without a focus gif overlay still tears down a
     querySelector: () => null
   };
   methods.hydrateCollectionFocusGif(staticCollectionNode, true);
+  assert.equal(firstCard.image.getAttribute("src"), undefined);
+  assert.ok(!firstCard.classes.has("is-focus-gif-active"));
+  assert.equal(methods.activeCollectionFocusGifNode, null);
+});
+
+test("any focus move away from the collection card tears its overlay down", () => {
+  resetRescale();
+  const firstCard = focusCard("https://example.invalid/one.gif");
+  Object.setPrototypeOf(firstCard.node, TestElement.prototype);
+  const methods = context.createHomeScreenMethods11();
+  methods.setCurrentFocusedNode = context.setCurrentFocusedNode;
+
+  methods.hydrateCollectionFocusGif(firstCard.node, true);
+  assert.equal(firstCard.image.getAttribute("src"), "https://example.invalid/one.gif");
+
+  // Focus lands on a regular card: the overlay of the previous card cannot
+  // stay painted just because a non-D-pad path moved the focus.
+  methods.setCurrentFocusedNode(new TestElement());
+  assert.equal(firstCard.image.getAttribute("src"), undefined);
+  assert.ok(!firstCard.classes.has("is-focus-gif-active"));
+  assert.equal(methods.activeCollectionFocusGifNode, null);
+
+  methods.hydrateCollectionFocusGif(firstCard.node, true);
+  assert.equal(firstCard.image.getAttribute("src"), "https://example.invalid/one.gif");
+
+  // Focus leaves the Home content entirely.
+  methods.setCurrentFocusedNode(null);
   assert.equal(firstCard.image.getAttribute("src"), undefined);
   assert.ok(!firstCard.classes.has("is-focus-gif-active"));
   assert.equal(methods.activeCollectionFocusGifNode, null);

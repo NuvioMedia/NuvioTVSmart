@@ -45,13 +45,8 @@ export function createHomeScreenMethods18() {
         deferUntilVerticalSettle: deferHomeArtworkUntilSettle,
         focusedRowOnly: this.isLegacyTvRuntime()
       });
-      if (this.isCollectionFolderNode(current)) {
-        this.hydrateCollectionFocusGif(current, false);
-      }
       if (this.isCollectionFolderNode(target)) {
         this.hydrateCollectionFocusGif(target, true);
-      } else if (this.activeCollectionFocusGifNode && this.activeCollectionFocusGifNode !== target) {
-        this.hydrateCollectionFocusGif(this.activeCollectionFocusGifNode, false);
       }
       this.setSidebarExpanded(this.isSidebarNode(target));
       if (this.isMainNode(target)) {
