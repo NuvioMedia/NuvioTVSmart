@@ -84,6 +84,28 @@ export function createPlayerControllerMethods16() {
       if (!this.video) {
         return;
       }
+      const handlePlayRejection = (error) => {
+        if (playToken !== null && playToken !== this.playRequestToken) {
+          return null;
+        }
+        if (this.isExpectedPlayInterruption(error)) {
+          return null;
+        }
+        if (typeof onRejected === "function") {
+          try {
+            const handled = onRejected(error);
+            if (handled) {
+              return null;
+            }
+          } catch (_) {
+            // Ignore rejection handler failures and continue to warning output.
+          }
+        }
+        this.isPlaying = false;
+        this.stopProgressSaving();
+        console.warn(warningLabel, error);
+        return null;
+      };
       Promise.resolve()
         .then(() => beforePlay?.())
         .then(() => {
@@ -92,33 +114,16 @@ export function createPlayerControllerMethods16() {
           }
           this.applyStartupAudioGateToVideo();
           const playPromise = this.video.play();
-          return this.handleNativePlayStartedUnderStartupGate(playPromise);
-        })
-        .then((playPromise) => {
-          if (!playPromise || typeof playPromise.catch !== "function") {
-            return null;
+          const handledPromise = this.handleNativePlayStartedUnderStartupGate(playPromise);
+          if (handledPromise && typeof handledPromise.catch === "function") {
+            return handledPromise.catch(handlePlayRejection);
           }
-          return playPromise.catch((error) => {
-            if (this.isExpectedPlayInterruption(error)) {
-              return null;
-            }
-            if (typeof onRejected === "function") {
-              try {
-                const handled = onRejected(error);
-                if (handled) {
-                  return null;
-                }
-              } catch (_) {
-                // Ignore rejection handler failures and continue to warning output.
-              }
-            }
-            this.isPlaying = false;
-            this.stopProgressSaving();
-            console.warn(warningLabel, error);
-            return null;
-          });
+          return null;
         })
         .catch((error) => {
+          if (playToken !== null && playToken !== this.playRequestToken) {
+            return;
+          }
           if (this.isExpectedPlayInterruption(error)) {
             return;
           }
