@@ -5,6 +5,7 @@ Thanks for helping improve Nuvio TV.
 ## Strict rules - read before opening anything
 
 These rules are enforced strictly. Issues and PRs that do not follow them will be closed without review.
+
 ---
 
 ## What PRs are for
@@ -21,7 +22,9 @@ Pull requests are accepted only when they fit one of these categories:
 - Small maintenance work that does not change UI, UX, behavior, dependencies, architecture, platform contracts, or public APIs
 - Small documentation fixes that improve accuracy
 - Translation/localization updates
-  Pull requests are not accepted for:
+
+Pull requests are not accepted for:
+
 - New major features
 - Product direction changes
 - UX/UI redesigns
@@ -33,7 +36,8 @@ Pull requests are accepted only when they fit one of these categories:
 - Dependency additions or architecture changes without prior approval
 - Broad platform rewrites for Tizen, webOS, or installer tooling
 - Changes that affect packaged app identifiers, signing, distribution, or release flow without approval
-  Translation PRs are allowed, as long as they stay focused on translation/localization work and do not bundle unrelated feature, UI, playback, platform, or installer changes.
+
+Translation PRs are allowed, as long as they stay focused on translation/localization work and do not bundle unrelated feature, UI, playback, platform, or installer changes.
 
 ---
 
@@ -53,14 +57,17 @@ UI PRs are accepted only when they fix a specific, documented glitch or bug, suc
 - A crash, blank screen, or unusable screen caused by UI code
 - Platform-specific rendering issues on Samsung Tizen or LG webOS
 - Layout issues caused by TV resolution, scaling, overscan, or legacy browser behavior
-  Every UI PR must include:
+
+Every UI PR must include:
+
 - A linked bug issue
 - The affected platform or platforms
 - Device model and platform version, when possible
 - A short explanation of the exact glitch being fixed
 - Before and after screenshots or a short video
 - The smallest possible change that fixes the glitch
-  Cosmetic-only UI PRs will be closed, even if the change is small.
+
+Cosmetic-only UI PRs will be closed, even if the change is small.
 
 ---
 
@@ -71,13 +78,16 @@ Do not open a PR that changes behavior unless one of these is true:
 
 - It fixes a linked, reproducible bug or regression and restores the intended behavior.
 - It links an approved feature request where a maintainer explicitly approved implementation.
-  Behavior PRs must explain:
+
+Behavior PRs must explain:
+
 - The old behavior
 - The broken or unwanted behavior
 - The new behavior
 - The affected platform or platforms
 - How the behavior was tested
-  Minor behavior tweaks are still behavior changes. They need the same issue link or approval.
+
+Minor behavior tweaks are still behavior changes. They need the same issue link or approval.
 
 ---
 
@@ -93,8 +103,11 @@ Platform-specific PRs must include:
 - Whether the change affects only one platform or shared code
 - Manual testing notes
 - Any known risk for the other supported platforms
-  Do not make platform-specific changes in shared code unless the impact on the other platforms has been considered and tested.
-  Examples of platform-specific areas include:
+
+Do not make platform-specific changes in shared code unless the impact on the other platforms has been considered and tested.
+
+Examples of platform-specific areas include:
+
 - Samsung Tizen Web APIs
 - LG webOS APIs
 - Platform media playback adapters
@@ -128,7 +141,9 @@ Playback includes, but is not limited to:
 - Codec fallback behavior
 - Error recovery
 - Debrid or external source resolution behavior
-  Playback PRs must include:
+
+Playback PRs must include:
+
 - A linked bug issue or approved feature request
 - Reproduction steps
 - Affected platform and device model
@@ -136,7 +151,8 @@ Playback includes, but is not limited to:
 - Expected vs actual behavior
 - Testing notes
 - Regression risk, especially for the other TV platform
-  Do not bundle playback fixes with UI cleanup, refactors, formatting, or unrelated changes.
+
+Do not bundle playback fixes with UI cleanup, refactors, formatting, or unrelated changes.
 
 ---
 
@@ -156,13 +172,16 @@ This includes:
 - `sync:webos`
 - Nuvio TV Installer compatibility
 - webOS Homebrew metadata support
-  PRs in this area must include:
+
+PRs in this area must include:
+
 - The exact command tested
 - The target platform
 - Whether the generated package was installed successfully
 - Device/emulator/simulator used for testing
 - Any changes to app identifiers, package IDs, or metadata
-  Do not change package identifiers, app IDs, signing-related behavior, release paths, or distribution assumptions without prior approval.
+
+Do not change package identifiers, app IDs, signing-related behavior, release paths, or distribution assumptions without prior approval.
 
 ---
 
@@ -173,9 +192,12 @@ This includes:
 1. Open a **Feature Request** issue describing the change.
 2. Wait for explicit maintainer approval on that issue.
 3. Link the approved issue in your PR description.
-   PRs that introduce large changes without a linked, approved feature request **will not be reviewed at all** and will be closed immediately. No exceptions.
-   This applies to UI changes, behavior changes, playback changes, new features, architecture changes, dependency additions, platform rewrites, installer changes, large refactors, migrations, and changes that affect product direction.
-   Approval means a maintainer has clearly said the implementation is approved. A feature request being open, popular, or labeled `enhancement` is not approval.
+
+PRs that introduce large changes without a linked, approved feature request **will not be reviewed at all** and will be closed immediately. No exceptions.
+
+This applies to UI changes, behavior changes, playback changes, new features, architecture changes, dependency additions, platform rewrites, installer changes, large refactors, migrations, and changes that affect product direction.
+
+Approval means a maintainer has clearly said the implementation is approved. A feature request being open, popular, or labeled `enhancement` is not approval.
 
 ---
 
@@ -200,8 +222,10 @@ To keep issues fixable, bug reports should include:
 - Frequency: always, sometimes, or once
 - Screenshots or video when the issue is visual
 - Logs when relevant
-  Do not leave the title as just `[Bug]:` or another generic placeholder.
-  Logs are optional for most issues, but they are required for crashes, blank screens, install failures, package failures, playback failures, or platform API errors.
+
+Do not leave the title as just `[Bug]:` or another generic placeholder.
+
+Logs are optional for most issues, but they are required for crashes, blank screens, install failures, package failures, playback failures, or platform API errors.
 
 ### Useful logs
 
