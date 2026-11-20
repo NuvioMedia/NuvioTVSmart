@@ -4,6 +4,7 @@ import { watchedItemsRepository } from "../../data/repository/watchedItemsReposi
 import { ProfileManager } from "./profileManager.js";
 import { LocalStore } from "../storage/localStore.js";
 import { TraktAuthStore } from "../../data/local/traktAuthStore.js";
+import { MdbListAccount } from "../../data/repository/mdbListAccount.js";
 import { SimklAuthStore } from "../../data/local/simklAuthStore.js";
 import { TraktSettingsStore, WatchProgressSource } from "../../data/local/traktSettingsStore.js";
 import { isSyncBackoffActive } from "../sync/syncBackoffPolicy.js";
@@ -28,7 +29,8 @@ function shouldUseSupabaseWatchProgressSync() {
   const source = TraktSettingsStore.get().watchProgressSource || WatchProgressSource.TRAKT;
   const providerSelected =
     (TraktAuthStore.isAuthenticated() && source === WatchProgressSource.TRAKT) ||
-    (SimklAuthStore.isAuthenticated() && source === WatchProgressSource.SIMKL);
+    (SimklAuthStore.isAuthenticated() && source === WatchProgressSource.SIMKL) ||
+    (MdbListAccount.connected() && source === WatchProgressSource.MDBLIST);
   return !providerSelected;
 }
 
