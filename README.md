@@ -3,56 +3,109 @@
   <img src="assets/brand/app_logo_wordmark.png" alt="Nuvio" width="300" />
 
   <p>
-    A free, open-source media app for your phone, your desktop, and the TV you already own.
-    <br />
-    Bring your own sources. Nuvio turns them into a library with artwork, ratings, subtitles, and your place saved on every screen.
+    <strong>Fork goal:</strong> run the Nuvio TV web client on a phone or tablet,
+    served from your own machine over the local network.
   </p>
-
-[Website](https://nuvio.tv) · [GitHub releases](https://github.com/NuvioMedia/NuvioTVSmart/releases/latest) · [Support Nuvio](https://nuvio.tv/support)
 
 </div>
 
-## Get Nuvio TV
+> **This is a personal fork of [NuvioMedia/NuvioTVSmart](https://github.com/NuvioMedia/NuvioTVSmart).**
+> It is not an official Nuvio product and it does not change Nuvio's product direction.
+> Everything here is proposed back upstream as a pull request; nothing here is a fork-and-forget
+> distribution. Upstream's README is the source of truth for what Nuvio TV is, which TVs it
+> supports, and how to install it on Tizen and webOS.
 
-Nuvio TV supports **Samsung Tizen TVs from 2018 onward (Tizen 4+)** and **LG webOS TVs from 2020 onward (webOS 5+)**.
-The startup compatibility baseline is Samsung Tizen 4.0 / Chromium 56 and LG webOS 5.0 / Chromium 68 when the platform reports those versions.
+## The goal of this repo
 
-Platform capabilities are intentionally version-dependent:
+Nuvio TV already ships a browser tier: `npm run serve` starts a local web server and prints the
+LAN URLs, so the exact same app the TV runs can be opened in any browser on the same network.
+That tier, however, is still laid out for a TV. The stylesheet is a port of the Android TV app,
+whose canvas is 960dp drawn at 1920px, so every dimension doubles dp to px. A phone is about
+390dp wide, not 960dp, so the interface lands roughly 2.5x too large, and the only input path
+wired up is the remote: focus rings and D-pad keys, with no click handler at all.
 
-- **Samsung Tizen 4.x** — the app and direct playback are supported, but torrent/P2P playback is unavailable by design. Some advanced audio and subtitle features may also be limited.
-- **Samsung Tizen 5.x** — torrent/P2P playback is supported through the bundled local EngineFS service. The packaged PluginService, plugin execution and remote plugin synchronization also run on Tizen 5.x, including the Node 4.4.3 service runtime of Tizen 5.5.
-- **Samsung Tizen 6+** — torrent/P2P and the packaged PluginService are supported. Plugin execution requires the packaged service plus the TV runtime's Worker and WebAssembly support. Tizen 6 and later use the same current Tizen service pipeline.
-- **LG webOS 5.x** — torrent/P2P and the packaged plugin service are supported, with the limited plugin resource quotas used by the older webOS runtime.
-- **LG webOS 6+** — torrent/P2P and the packaged plugin service are supported with the modern plugin resource quotas.
+**The aim of this fork is to make that existing browser tier usable on touch screens, without
+touching what a TV sees.** Not a rewrite, not a new UI, not a second client:
 
-On Tizen 5+ and LG webOS, torrent/P2P uses only the bundled local companion service; no external torrent streaming server is configured or required.
+- Pointer and touch input in the focus engine, gated on device capability instead of on being
+  a webOS build.
+- A `.web-touch` layout tier that re-derives the existing layout at dp x 1, using the numbers
+  from the official [Nuvio Mobile](https://github.com/NuvioMedia/NuvioMobile) app, so a phone
+  gets the phone app's proportions rather than a shrunken TV.
+- A tap-to-open sign-in link on the QR screen, which is otherwise impossible to use on the
+  device that is already showing it.
 
-- [Nuvio TV Installer](https://github.com/NuvioMedia/NuvioTVSmart/releases/latest) for Windows, macOS, and Linux
-- [Nuvio TV Installer for iPhone and iPad](https://github.com/NuvioMedia/NuvioTVSmart/releases/latest) as an unsigned IPA, also available as an [AltStore/SideStore source](https://github.com/NuvioMedia/NuvioTVSmart/releases/latest/download/NuvioTVSmart-Installer-AltStore.json)
-- [Nuvio TV Installer for Android](https://github.com/NuvioMedia/NuvioTVSmart/releases/latest) as an APK for phones and tablets
-- [Samsung Tizen WGT](https://github.com/NuvioMedia/NuvioTVSmart/releases/latest) for manual installation
-- [LG webOS Homebrew repository](https://raw.githubusercontent.com/NuvioMedia/NuvioTVWebOS/main/webosbrew/apps.json)
-- [LG webOS IPK](https://github.com/NuvioMedia/NuvioTVSmart/releases/latest) for manual installation
+Everything is scoped behind tier classes that the browser tier applies and the TV tiers never
+do, so Tizen and webOS rendering is byte-identical. The changes are shared-web-app only; no
+packaging, signing, installer, or wrapper behaviour is touched.
 
-## Build from source
+## Run it on a phone
+
+This is the flow the fork exists to support. It needs a machine on the same network as the phone.
 
 ```bash
-git clone https://github.com/NuvioMedia/NuvioTVSmart.git NuvioTVSmart
-cd NuvioTVSmart
+git clone https://github.com/chingavin1/NuvioTVWeb.git
+cd NuvioTVWeb
+git checkout feat/web-touch-client
 npm install
+cp local.example.properties local.properties   # fill in your own TMDB / Trakt / Supabase keys
 npm run build
+npm run serve
 ```
 
-Build TV packages with:
+`serve` listens on `0.0.0.0:4173` by default, starts the bundled local media runtime, and prints
+one `LAN URL:` line per network interface. Open one of those URLs on the phone. `HOST` and `PORT`
+change the bind address and port. Sign in with the tap-to-open link on the QR screen instead of
+scanning the code.
 
 ```bash
-npm run package:tizen
-npm run package:tizen:store
-npm run package:webos
+PORT=8080 npm run serve   # example
 ```
 
-`package:tizen` creates the unsigned WGT used by development and the Nuvio TV Installer. The installer signs it locally for the target TV before installation. `package:tizen:store` is a separate Seller Office build: it requires Tizen Studio/Web CLI and a configured security profile, and creates the signed Store package with the local EngineFS service included so Tizen 5+ retains torrent/P2P playback. Tizen 4 still reports P2P as unsupported at runtime. Nuvio TV is built with JavaScript, HTML, CSS, and platform TV APIs. Building requires Node.js and npm; package installation additionally requires the relevant Tizen or webOS tools.
+## Branches
 
-## License
+| Branch                  | What it is                                                                                                                                                                                                                                                     |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`                  | Tracks upstream `main`. Keeps this fork's landing page and README here; no code of its own.                                                                                                                                                                    |
+| `feat/web-touch-client` | The contribution. 5 commits, 9 files, rebased on upstream `main`. This is the branch proposed upstream.                                                                                                                                                        |
+| `fork/auth-stub`        | Local-only dev tooling (a stub auth server plus a Playwright devDependency) used to drive the QR flow while developing. Deliberately **not** proposed: `CONTRIBUTING.md` does not accept added dependencies without prior approval, so it stays out of the PR. |
 
-[GNU General Public License v3.0](./LICENSE)
+## Contributing back
+
+All of this is meant to land upstream, in [NuvioMedia/NuvioTVSmart](https://github.com/NuvioMedia/NuvioTVSmart),
+and the [contribution rules](https://github.com/NuvioMedia/NuvioTVSmart/blob/main/CONTRIBUTING.md)
+apply unchanged: UI changes need a linked, documented issue, and before/after proof. The upstream
+PR template check runs in CI and will fail a PR that lacks an approving issue or screenshots, so
+the fork's branch carries no claim that this is already accepted work.
+
+## Development
+
+```bash
+npm run build          # generates dist/ (bundle.css, bundled JS)
+npm run lint
+npm run test           # repo test suite
+npm run test:perf      # performance-sensitive units
+npx prettier --check . # formatting, also run by the pre-commit hook
+```
+
+Two things worth knowing before editing CSS, both learned the hard way:
+
+- `css/components.css` is **not** processed by the build. `build.mjs` puts it in `orderedSet` and
+  then filters `orderedSet` out of `extraFiles`, so new rules belong in a numbered
+  `css/components-NN.css` file. `components.css` only carries `@import`s.
+- `scripts/test-legacy-css-colors.mjs` enforces the Tizen 5 colour token rule. Copy the colour
+  syntax used by the neighbouring rule rather than inventing one with `var()` indirection.
+
+For TV packaging and the full platform support matrix (Tizen 4/5/6, webOS 5/6, installer,
+AltStore IPA, Android APK, webOS IPK), see the
+[upstream README](https://github.com/NuvioMedia/NuvioTVSmart#readme). Nothing in this fork changes
+that behaviour, and this fork publishes no releases of its own.
+
+## Credit and license
+
+The app, the artwork and the original implementation belong to
+[NuvioMedia](https://github.com/NuvioMedia). Layout values referenced by the touch tier come from
+[NuvioMobile](https://github.com/NuvioMedia/NuvioMobile), used here under the same license.
+
+[GNU General Public License v3.0](./LICENSE) - the same license as upstream, and the fork stays
+under it.
