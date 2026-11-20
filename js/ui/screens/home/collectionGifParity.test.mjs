@@ -305,3 +305,63 @@ test("smart TV posters are handed to the lazy hydration pass instead of loading 
   route = "home";
   isTvRuntime = false;
 });
+
+test("hydrating a collection overlay tears down any previously active overlay", () => {
+  resetRescale();
+  const firstCard = focusCard("https://example.invalid/one.gif");
+  const ImageCtor = context.HTMLImageElement;
+  const secondImage = new ImageCtor();
+  secondImage.dataset.src = "https://example.invalid/two.gif";
+  const secondClasses = new Set(["focused"]);
+  const secondNode = {
+    querySelector: () => secondImage,
+    classList: {
+      add: (name) => secondClasses.add(name),
+      remove: (name) => secondClasses.delete(name),
+      contains: (name) => secondClasses.has(name)
+    }
+  };
+  const methods = context.createHomeScreenMethods11();
+
+  methods.hydrateCollectionFocusGif(firstCard.node, true);
+  assert.equal(methods.activeCollectionFocusGifNode, firstCard.node);
+  assert.equal(firstCard.image.getAttribute("src"), "https://example.invalid/one.gif");
+  assert.ok(firstCard.classes.has("is-focus-gif-active"));
+
+  methods.hydrateCollectionFocusGif(secondNode, true);
+  assert.equal(firstCard.image.getAttribute("src"), undefined);
+  assert.ok(!firstCard.classes.has("is-focus-gif-active"));
+  assert.equal(methods.activeCollectionFocusGifNode, secondNode);
+  assert.equal(secondImage.getAttribute("src"), "https://example.invalid/two.gif");
+  assert.ok(secondClasses.has("is-focus-gif-active"));
+});
+
+test("hydrating an overlay that already carries src restores its active class and tracking", () => {
+  resetRescale();
+  const { image, classes, node } = focusCard("https://example.invalid/existing.gif");
+  image.setAttribute("src", "https://example.invalid/existing.gif");
+  const methods = context.createHomeScreenMethods11();
+
+  methods.hydrateCollectionFocusGif(node, true);
+  assert.ok(classes.has("is-focus-gif-active"));
+  assert.equal(methods.activeCollectionFocusGifNode, node);
+  assert.equal(rescaleCalls.length, 0);
+});
+
+test("hydrating a collection card without a focus gif overlay still tears down any previous overlay", () => {
+  resetRescale();
+  const firstCard = focusCard("https://example.invalid/one.gif");
+  const methods = context.createHomeScreenMethods11();
+
+  methods.hydrateCollectionFocusGif(firstCard.node, true);
+  assert.equal(methods.activeCollectionFocusGifNode, firstCard.node);
+  assert.equal(firstCard.image.getAttribute("src"), "https://example.invalid/one.gif");
+
+  const staticCollectionNode = {
+    querySelector: () => null
+  };
+  methods.hydrateCollectionFocusGif(staticCollectionNode, true);
+  assert.equal(firstCard.image.getAttribute("src"), undefined);
+  assert.ok(!firstCard.classes.has("is-focus-gif-active"));
+  assert.equal(methods.activeCollectionFocusGifNode, null);
+});

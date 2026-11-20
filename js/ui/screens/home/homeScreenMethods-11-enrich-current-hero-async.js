@@ -295,13 +295,26 @@ export function createHomeScreenMethods11() {
       return Boolean(firstNonEmpty(this.getNodeHeroSource(node)?.heroVideoUrl));
     },
     hydrateCollectionFocusGif(node, active = false) {
+      if (active && this?.activeCollectionFocusGifNode && this.activeCollectionFocusGifNode !== node) {
+        this.hydrateCollectionFocusGif?.(this.activeCollectionFocusGifNode, false);
+      }
       const gifNode = node?.querySelector?.(".home-poster-focus-gif") || null;
       if (!(gifNode instanceof HTMLImageElement)) {
+        if (!active && this && this.activeCollectionFocusGifNode === node) {
+          this.activeCollectionFocusGifNode = null;
+        }
         return;
       }
       if (active) {
+        if (this) {
+          this.activeCollectionFocusGifNode = node;
+        }
         const src = String(gifNode.dataset.src || gifNode.getAttribute("src") || "").trim();
-        if (!src || gifNode.getAttribute("src")) {
+        if (!src) {
+          return;
+        }
+        if (gifNode.getAttribute("src")) {
+          node.classList.add("is-focus-gif-active");
           return;
         }
         const pending = focusGifRequests.get(gifNode);
@@ -356,6 +369,9 @@ export function createHomeScreenMethods11() {
         return;
       }
       node.classList.remove("is-focus-gif-active");
+      if (this && this.activeCollectionFocusGifNode === node) {
+        this.activeCollectionFocusGifNode = null;
+      }
       // Match Android's focused-only GIF lifecycle: hiding the overlay is not
       // enough on TV browsers because an <img> with src keeps decoding/animating.
       // Preserve data-src so the asset can be loaded again on the next focus.
