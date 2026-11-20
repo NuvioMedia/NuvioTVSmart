@@ -213,8 +213,15 @@ export function createHomeScreenMethods06() {
         return false;
       }
       this.prepareHomeRowsForRestore(state);
+      const tracksByKey = new Map();
+      Array.from(this.container?.querySelectorAll("[data-track-row-key]") || []).forEach((track) => {
+        const key = String(track?.dataset?.trackRowKey || "");
+        if (key && !tracksByKey.has(key)) {
+          tracksByKey.set(key, track);
+        }
+      });
       Object.entries(state.trackStates || {}).forEach(([rowKey, scrollLeft]) => {
-        const track = this.container?.querySelector(`[data-track-row-key="${rowKey}"]`);
+        const track = tracksByKey.get(String(rowKey || ""));
         if (track) {
           track.scrollLeft = Number(scrollLeft || 0);
         }
