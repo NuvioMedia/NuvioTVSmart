@@ -217,8 +217,36 @@ export const AmbientMode = {
     }
     this.idleRoute = route;
     this.trailerPlaying = trailerPlaying;
-    const settings = AmbientModeStore.get();
-    const signature = JSON.stringify([ProfileManager.getActiveProfileId(), settings]);
+    const profileId = ProfileManager.getActiveProfileId();
+    let rawAmbientSettings;
+    try {
+      if (typeof localStorage !== "undefined" && typeof localStorage?.getItem === "function") {
+        rawAmbientSettings = localStorage.getItem("ambientModeSettings");
+      }
+    } catch (_) {
+      rawAmbientSettings = undefined;
+    }
+    let settings;
+    let signature;
+    if (
+      rawAmbientSettings !== undefined &&
+      this.cachedAmbientSettings &&
+      this.lastAmbientProfileId === profileId &&
+      this.lastAmbientRaw === rawAmbientSettings &&
+      this.lastAmbientSignature === this.signature
+    ) {
+      settings = this.cachedAmbientSettings;
+      signature = this.signature;
+    } else {
+      settings = AmbientModeStore.get();
+      signature = JSON.stringify([profileId, settings]);
+      if (rawAmbientSettings !== undefined) {
+        this.cachedAmbientSettings = settings;
+        this.lastAmbientProfileId = profileId;
+        this.lastAmbientRaw = rawAmbientSettings;
+        this.lastAmbientSignature = signature;
+      }
+    }
     if (signature !== this.signature) {
       this.signature = signature;
       this.generation++;
