@@ -331,30 +331,6 @@ function uint32le(bytes, offset) {
   );
 }
 
-function uint32be(bytes, offset) {
-  return (
-    ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0
-  );
-}
-
-function pngLogoDimensions(bytes) {
-  let offset = 8;
-  while (offset + 8 <= bytes.length) {
-    const length = uint32be(bytes, offset);
-    const type = ascii(bytes, offset + 4, 4);
-    // APNG carries an acTL chunk before IDAT. createImageBitmap keeps one
-    // frame, while the <img> tag plays the animation Android keeps.
-    if (type === "acTL") {
-      return null;
-    }
-    if (type === "IDAT" || type === "IEND") {
-      break;
-    }
-    offset += 12 + length;
-  }
-  return { width: uint32be(bytes, 16), height: uint32be(bytes, 20) };
-}
-
 function webpLogoDimensions(bytes) {
   let offset = 12;
   while (offset + 8 <= bytes.length) {
@@ -398,7 +374,7 @@ export function heroLogoDimensions(bytes) {
     return null;
   }
   if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
-    return pngLogoDimensions(bytes);
+    return pngStillDimensions(bytes);
   }
   if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") {
     return webpLogoDimensions(bytes);
