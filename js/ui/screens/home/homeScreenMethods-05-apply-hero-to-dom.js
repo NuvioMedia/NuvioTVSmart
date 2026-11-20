@@ -306,11 +306,17 @@ export function createHomeScreenMethods05() {
         return this.currentFocusedNode;
       }
       const focused = this.container?.querySelector(".focusable.focused") || null;
-      this.currentFocusedNode = focused;
+      this.setCurrentFocusedNode(focused);
       return focused;
     },
     setCurrentFocusedNode(node = null) {
-      this.currentFocusedNode = node instanceof HTMLElement ? node : null;
+      const next = node instanceof HTMLElement ? node : null;
+      if (this.activeCollectionFocusGifNode && this.activeCollectionFocusGifNode !== next) {
+        // Android renders the overlay from `isFocused`; every focus move has to
+        // drop the previous card's animated overlay, whatever moved the focus.
+        this.hydrateCollectionFocusGif(this.activeCollectionFocusGifNode, false);
+      }
+      this.currentFocusedNode = next;
     },
     setFocusedNode(target, { suppressDelegatedFocus = false } = {}) {
       if (this.homeHoldFocusLocked) {

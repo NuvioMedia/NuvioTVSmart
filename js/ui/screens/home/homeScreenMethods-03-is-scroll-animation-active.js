@@ -68,6 +68,9 @@ export function createHomeScreenMethods03() {
       if (this.isPerformanceConstrained() || this.isLegacyTvRuntime()) {
         return false;
       }
+      if (this._trackHorizRaf) {
+        return true;
+      }
       return this.isScrollAnimationActive(this.modernCameraFollowLastHorizontalContainer, "x");
     },
     isSidebarFocusActive() {
