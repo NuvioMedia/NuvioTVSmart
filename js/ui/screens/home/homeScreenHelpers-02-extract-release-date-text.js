@@ -63,11 +63,7 @@ import { WatchProgressSource } from "../../../data/local/traktSettingsStore.js";
 
 import { watchProgressCompletedThreshold } from "../../../domain/model/watchProgress.js";
 
-import {
-  getTvArtworkPixelRatio,
-  getTvHeroTransitionMode,
-  getTvRuntimePerformanceProfile
-} from "../../../platform/tvRuntimePerformance.js";
+import { getTvArtworkPixelRatio, getTvHeroTransitionMode, getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
 
 import { jpegDimensions } from "../../images/tvPosterRescaler.js";
 
@@ -324,15 +320,11 @@ function uint16le(bytes, offset) {
 }
 
 function uint32le(bytes, offset) {
-  return (
-    (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0
-  );
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
 }
 
 function uint32be(bytes, offset) {
-  return (
-    ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0
-  );
+  return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
 }
 
 function pngLogoDimensions(bytes) {
@@ -407,13 +399,13 @@ export function heroLogoDimensions(bytes) {
 function canRescaleHeroLogo(src) {
   return Boolean(
     Platform.isTizen() &&
-      !getTvRuntimePerformanceProfile()?.isPerformanceConstrained &&
-      typeof globalThis.fetch === "function" &&
-      typeof globalThis.createImageBitmap === "function" &&
-      typeof globalThis.OffscreenCanvas === "function" &&
-      typeof globalThis.URL?.createObjectURL === "function" &&
-      /^https?:\/\//i.test(src) &&
-      !/\.(?:svg|gif)(?:[?#]|$)/i.test(src)
+    !getTvRuntimePerformanceProfile()?.isPerformanceConstrained &&
+    typeof globalThis.fetch === "function" &&
+    typeof globalThis.createImageBitmap === "function" &&
+    typeof globalThis.OffscreenCanvas === "function" &&
+    typeof globalThis.URL?.createObjectURL === "function" &&
+    /^https?:\/\//i.test(src) &&
+    !/\.(?:svg|gif)(?:[?#]|$)/i.test(src)
   );
 }
 

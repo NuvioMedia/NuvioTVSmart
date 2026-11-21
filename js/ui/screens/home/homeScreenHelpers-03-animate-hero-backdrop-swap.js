@@ -211,8 +211,7 @@ export function animateHeroBackdropSwap(
 
   const parent = backdrop.parentElement;
   // The visible bitmap layer on Tizen; the <img> stays the hero's anchor element.
-  const getCanvas = () =>
-    parent?.querySelector?.(".home-hero-backdrop-canvas:not(.home-hero-backdrop-transition-ghost)") || null;
+  const getCanvas = () => parent?.querySelector?.(".home-hero-backdrop-canvas:not(.home-hero-backdrop-transition-ghost)") || null;
 
   const clearGhosts = () => {
     parent?.querySelectorAll?.(".home-hero-backdrop-transition-ghost")?.forEach((node) => node.remove());

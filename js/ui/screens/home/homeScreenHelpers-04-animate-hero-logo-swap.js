@@ -187,11 +187,7 @@ import {
   uniqueNonEmptyValues
 } from "./homeUtils.js";
 
-import {
-  preloadHeroLogo,
-  prepareHeroImageEnter,
-  shouldRescaleHeroLogo
-} from "./homeScreenHelpers-02-extract-release-date-text.js";
+import { preloadHeroLogo, prepareHeroImageEnter, shouldRescaleHeroLogo } from "./homeScreenHelpers-02-extract-release-date-text.js";
 
 export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs = HOME_MODERN_HERO_BACKDROP_CROSSFADE_MS, options = {}) {
   if (!(logoNode instanceof HTMLImageElement)) {

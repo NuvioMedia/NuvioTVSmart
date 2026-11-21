@@ -159,13 +159,16 @@ test("an addon prefetch keeps the plain cache key and is reused", async () => {
 
 test("a dismissed next-episode card survives a backward seek, like Android", async () => {
   let position = 1300;
-  const methods = await loadMethods(repository(() => ({ status: "success", data: [] })), {
-    PlayerController: { video: { paused: false } },
-    PlayerSettingsStore: { get: () => ({ autoplayNextEpisode: true }) },
-    // Outro starts at 1290s of a 1400s episode.
-    shouldShowNextEpisodeCardRule: ({ positionSeconds }) => positionSeconds >= 1290,
-    Router: { getCurrent: () => "player" }
-  });
+  const methods = await loadMethods(
+    repository(() => ({ status: "success", data: [] })),
+    {
+      PlayerController: { video: { paused: false } },
+      PlayerSettingsStore: { get: () => ({ autoplayNextEpisode: true }) },
+      // Outro starts at 1290s of a 1400s episode.
+      shouldShowNextEpisodeCardRule: ({ positionSeconds }) => positionSeconds >= 1290,
+      Router: { getCurrent: () => "player" }
+    }
+  );
   const screen = Object.create(methods);
   let launches = 0;
   Object.assign(screen, {
