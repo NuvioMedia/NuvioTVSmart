@@ -9,6 +9,7 @@ import {
   cloudPlaybackFileForSession
 } from "../../data/local/cloudLibraryPlaybackStore.js";
 import { Platform } from "../../platform/index.js";
+import { applyVidaaPlaybackCapabilities } from "../../platform/vidaa/vidaa.js";
 import { TizenPlaybackProxy } from "../../platform/tizen/tizenPlaybackProxy.js";
 import { WebOsPlaybackProxy } from "../../platform/webos/webosPlaybackProxy.js";
 import { WatchProgressSyncService } from "../profile/watchProgressSyncService.js";
@@ -81,6 +82,7 @@ export {
   WebOsPlaybackProxy,
   WatchProgressSyncService,
   nativeVideoEngine,
+  applyVidaaPlaybackCapabilities,
   hlsJsEngine,
   dashJsEngine,
   resolvePlatformAvplayEngine,

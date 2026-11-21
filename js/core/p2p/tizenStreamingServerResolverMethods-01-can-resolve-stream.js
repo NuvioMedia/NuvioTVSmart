@@ -6,6 +6,9 @@ export function createTizenStreamingServerResolverMethods01() {
     Platform,
     TizenEngineFsService,
     TizenCapabilities,
+    hasLocalEngineFs,
+    canUseLocalEngineFs,
+    getLocalEngineFsService,
     TIZEN_STREAMING_KIND,
     removeRequestsByInfoHash,
     logTizenP2pDebug,
@@ -27,7 +30,7 @@ export function createTizenStreamingServerResolverMethods01() {
 
   return {
     canResolveStream(stream = {}) {
-      return Platform.isTizen() && TizenCapabilities.canUseP2p() && Boolean(getInfoHash(stream));
+      return canUseLocalEngineFs() && Boolean(getInfoHash(stream));
     },
     isTorrentStream(stream = {}) {
       return Boolean(getInfoHash(stream));
@@ -81,7 +84,7 @@ export function createTizenStreamingServerResolverMethods01() {
     },
     async remove(infoHash, { baseUrl = "", timeoutMs = 2500 } = {}) {
       const normalizedHash = normalizeInfoHash(infoHash);
-      if (!normalizedHash || !Platform.isTizen()) {
+      if (!normalizedHash || !hasLocalEngineFs()) {
         return { status: "unsupported" };
       }
       const existingRequest = removeRequestsByInfoHash.get(normalizedHash);
@@ -89,7 +92,7 @@ export function createTizenStreamingServerResolverMethods01() {
         return existingRequest;
       }
       const removeRequest = (async () => {
-        const bases = uniqueBaseUrls([baseUrl, ...TizenEngineFsService.getLocalBaseUrls()]);
+        const bases = uniqueBaseUrls([baseUrl, ...getLocalEngineFsService().getLocalBaseUrls()]);
         let lastError = null;
         for (const candidateBaseUrl of bases) {
           try {
@@ -123,10 +126,10 @@ export function createTizenStreamingServerResolverMethods01() {
       if (getDirectPlaybackUrl(stream)) {
         return { status: "success", stream };
       }
-      if (!Platform.isTizen()) {
+      if (!hasLocalEngineFs()) {
         return { status: "unsupported" };
       }
-      if (!TizenCapabilities.canUseP2p()) {
+      if (!canUseLocalEngineFs()) {
         return { status: "unsupported", detail: "Tizen P2P streaming is not supported on this TV" };
       }
       const infoHash = getInfoHash(stream);
@@ -137,7 +140,7 @@ export function createTizenStreamingServerResolverMethods01() {
       try {
         let baseUrl = "";
         const baseUrlKind = "local-service";
-        const localService = await TizenEngineFsService.ensureStarted({ purpose: "p2p" });
+        const localService = await getLocalEngineFsService().ensureStarted({ purpose: "p2p" });
         if (localService.status === "success" && localService.baseUrl) {
           baseUrl = localService.baseUrl;
         } else {

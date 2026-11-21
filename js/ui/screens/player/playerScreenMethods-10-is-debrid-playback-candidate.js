@@ -74,7 +74,7 @@ export function createPlayerScreenMethods10() {
         if (state) {
           return state;
         }
-      } else if (Environment.isTizen()) {
+      } else if (Environment.isTizen() || Environment.isVidaa()) {
         const state = TizenStreamingServerResolver.getResolvedStreamState(streamCandidate || {});
         if (state) {
           return state;
@@ -93,12 +93,12 @@ export function createPlayerScreenMethods10() {
           return null;
         }
         const isLocalPlayback = isLocalEngineFsUrl(playbackUrl);
-        if ((Environment.isTizen() || Environment.isWebOS()) && !isLocalPlayback) {
+        if ((Environment.isTizen() || Environment.isWebOS() || Environment.isVidaa()) && !isLocalPlayback) {
           return null;
         }
         const fileIdx = Number(match[2]);
         return {
-          kind: Environment.isTizen() ? "tizen-streaming-server" : "webos-enginefs",
+          kind: Environment.isTizen() || Environment.isVidaa() ? "tizen-streaming-server" : "webos-enginefs",
           infoHash: String(match[1] || "").toLowerCase(),
           fileIdx: Number.isFinite(fileIdx) ? fileIdx : -1,
           playbackUrl,

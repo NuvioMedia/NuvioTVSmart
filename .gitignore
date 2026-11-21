@@ -20,3 +20,4 @@ scripts/commit-build-poller.mjs
 store-assets/
 .claude/
 .DS_Store
+vidaa/out/

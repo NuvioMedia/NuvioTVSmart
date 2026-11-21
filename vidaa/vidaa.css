@@ -1,0 +1,76 @@
+/* Hisense VIDAA overrides, loaded after Nuvio's own stylesheet.
+ *
+ * Sizes are pixels of the 1920x1080 page. Several player overlays are sized
+ * for a phone or a desktop window (11-22 px text at 50-70% opacity), which is
+ * unreadable from a sofa on a 55" panel; they are scaled up and brightened
+ * here. Subtitles get a crisp outline instead of a blurred shadow, a smaller
+ * base size, and clearance above the bottom edge.
+ */
+
+/* No focus rings anywhere: Nuvio draws its own focus states (.focused). */
+*:focus,
+*:focus-visible,
+html,
+body,
+#videoPlayer {
+  outline: none !important;
+}
+
+/* Content warnings at playback start ("Violence · Mild"). */
+.player-parental-guide {
+  zoom: 1.45;
+}
+.player-parental-severity {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+.player-parental-separator {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Torrent stats box (peers, speed) and the loading status line. */
+.player-torrent-overlay {
+  zoom: 1.8;
+}
+.player-torrent-overlay-detail {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+.player-loading-status {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 30px !important;
+}
+
+/* Subtitles drawn by Nuvio (HTML overlay). */
+.player-html-subtitle-default {
+  bottom: calc(110px + var(--player-subtitle-clearance, 0px)) !important;
+}
+.player-html-subtitles {
+  font-size: calc(var(--player-html-subtitle-font-size) * 0.82) !important;
+}
+.player-html-subtitle-text {
+  text-shadow:
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    2px 2px 0 #000,
+    0 2px 0 #000,
+    0 -2px 0 #000,
+    2px 0 0 #000,
+    -2px 0 0 #000 !important;
+}
+
+/* Subtitles drawn by the browser from the video's own text tracks. */
+#videoPlayer::cue {
+  font-size: calc(var(--player-subtitle-font-size) * 0.82) !important;
+  text-shadow:
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    2px 2px 0 #000,
+    0 2px 0 #000,
+    0 -2px 0 #000,
+    2px 0 0 #000,
+    -2px 0 0 #000 !important;
+}
+#videoPlayer::-webkit-media-text-track-container {
+  transform: translateY(calc(var(--player-subtitle-offset) - 80px)) !important;
+}

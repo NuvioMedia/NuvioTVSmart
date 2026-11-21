@@ -1,0 +1,6 @@
+#!/bin/sh
+# Nuvio for Hisense VIDAA: undo everything postinst did.
+export LD_LIBRARY_PATH=/lib:/usr/local/lib:/basic/lib:/3rd/lib:/vendor/lib:/vendor/lib/utopia
+PH=/APPS/pkgs/tv.vidaa.app.phoenix/CHA/bin/phoenix
+"$PH" /APPS/pkgs/nuvio/setup.cjs uninstall
+exit 0

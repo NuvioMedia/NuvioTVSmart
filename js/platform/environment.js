@@ -13,6 +13,10 @@ export const Environment = {
     return Platform.isBrowser();
   },
 
+  isVidaa() {
+    return Platform.isVidaa();
+  },
+
   isBackEvent(event) {
     return Platform.isBackEvent(event);
   },

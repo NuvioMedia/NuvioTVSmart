@@ -1,6 +1,7 @@
 import { browserAdapter } from "./adapters/browserAdapter.js";
 import { webosAdapter } from "./adapters/webosAdapter.js";
 import { tizenAdapter } from "./adapters/tizenAdapter.js";
+import { isVidaaRuntime } from "./vidaa/vidaa.js";
 
 const ADAPTERS = {
   browser: browserAdapter,
@@ -126,6 +127,12 @@ export const Platform = {
 
   isBrowser() {
     return this.getName() === "browser";
+  },
+
+  // Hisense VIDAA runs as the browser platform; this marks the TV-specific
+  // additions (formats, local torrent engine, exit).
+  isVidaa() {
+    return this.isBrowser() && isVidaaRuntime();
   },
 
   exitApp() {

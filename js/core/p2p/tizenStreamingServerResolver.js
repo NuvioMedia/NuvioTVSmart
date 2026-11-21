@@ -1,6 +1,7 @@
 import { Platform } from "../../platform/index.js";
 import { TizenEngineFsService } from "../../platform/tizen/tizenEngineFsService.js";
 import { TizenCapabilities } from "../../platform/tizen/tizenCapabilities.js";
+import { VidaaEngineFsService } from "../../platform/vidaa/vidaa.js";
 import {
   TorrentSettingsStore,
   getTorrentProfilePeerLimits
@@ -12,6 +13,9 @@ export {
   Platform,
   TizenEngineFsService,
   TizenCapabilities,
+  hasLocalEngineFs,
+  canUseLocalEngineFs,
+  getLocalEngineFsService,
   TIZEN_STREAMING_KIND,
   CREATE_TIMEOUT_MS,
   removeRequestsByInfoHash,
@@ -38,6 +42,20 @@ export {
   createTorrent,
   buildResolvedStream
 };
+// Samsung Tizen and Hisense VIDAA both run the EngineFS runtime as a local
+// HTTP service on 127.0.0.1:2710; only the way it is started differs.
+function hasLocalEngineFs() {
+  return Platform.isTizen() || Platform.isVidaa();
+}
+
+function canUseLocalEngineFs() {
+  return Platform.isTizen() ? TizenCapabilities.canUseP2p() : Platform.isVidaa();
+}
+
+function getLocalEngineFsService() {
+  return Platform.isVidaa() ? VidaaEngineFsService : TizenEngineFsService;
+}
+
 const TIZEN_STREAMING_KIND = "tizen-streaming-server";
 const CREATE_TIMEOUT_MS = 60000;
 const removeRequestsByInfoHash = new Map();

@@ -176,7 +176,47 @@ function playableSources(item) {
         (source) => String(source.Type || "").toLowerCase() !== "placeholder"
       );
 }
+// Hisense VIDAA: the browser's <video> hands files to the TV's media engine,
+// which plays 4K HEVC Main10 / Dolby Vision / HDR10 in MKV and MP4 with
+// lossless audio. Transcodes stay HEVC-capable fMP4 HLS with surround audio,
+// so a subtitle burn-in or audio conversion does not also drop the picture to
+// 1080p SDR H.264.
+function buildVidaaServerDeviceProfile() {
+  return {
+    Name: "Nuvio Smart TV (VIDAA)",
+    MaxStreamingBitrate: 120000000,
+    DirectPlayProfiles: [
+      {
+        Type: "Video",
+        Container: "mkv,mp4,m4v,mov,webm",
+        VideoCodec: "h264,hevc,vp9",
+        AudioCodec: "aac,mp3,ac3,eac3,truehd,dts,flac,opus,vorbis"
+      }
+    ],
+    TranscodingProfiles: [
+      {
+        Type: "Video",
+        Container: "mp4",
+        VideoCodec: "hevc,h264",
+        AudioCodec: "eac3,ac3,aac",
+        Protocol: "hls",
+        Context: "Streaming",
+        MaxAudioChannels: "6",
+        MinSegments: 1,
+        BreakOnNonKeyFrames: false
+      }
+    ],
+    SubtitleProfiles: [
+      { Format: "vtt", Method: "External" },
+      { Format: "srt", Method: "External" },
+      { Format: "ass", Method: "External" }
+    ]
+  };
+}
 export function buildServerDeviceProfile({ allowDirectPlay = true } = {}) {
+  if (allowDirectPlay && Platform.isVidaa()) {
+    return buildVidaaServerDeviceProfile();
+  }
   const nativeTv = allowDirectPlay && (Platform.isWebOS() || Platform.isTizen());
   // Samsung TVs from Tizen 6 (2021) onward decode AV1 in the native pipeline.
   // Older Tizen and webOS keep the previous negotiation.

@@ -30,6 +30,7 @@ import { runAfterFirstHomePaint } from "./runtime/startupScheduler.js";
 import { Platform } from "./platform/index.js";
 import { TizenCapabilities } from "./platform/tizen/tizenCapabilities.js";
 import { PluginServiceClient } from "./platform/pluginServiceClient.js";
+import { startVidaaAddonInbox } from "./platform/vidaa/vidaaAddonInbox.js";
 import {
   getTvRuntimePerformanceProfile,
   resetTvRuntimePerformanceProfile
@@ -180,6 +181,11 @@ async function checkForAppUpdateOnStartup() {
     return;
   }
   updateCheckStarted = true;
+  // The VIDAA build is installed from its own package; an upstream release
+  // prompt would point at downloads that do not apply to this TV.
+  if (Platform.isVidaa()) {
+    return;
+  }
 
   try {
     // Tizen can spend longer restoring the authenticated route because the
@@ -820,6 +826,11 @@ async function bootstrapApp() {
   runAfterFirstHomePaint(() => {
     void checkForAppUpdateOnStartup();
   });
+  if (Platform.isVidaa()) {
+    runAfterFirstHomePaint(() => {
+      startVidaaAddonInbox();
+    });
+  }
 
   markBootStage("Restoring session");
   DeviceSessionRegistration.start();

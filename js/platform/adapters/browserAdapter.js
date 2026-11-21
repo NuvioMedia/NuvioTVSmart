@@ -1,4 +1,5 @@
 import { isBackEvent, normalizeKeyEvent } from "../sharedKeys.js";
+import { exitVidaaApp, isVidaaRuntime } from "../vidaa/vidaa.js";
 
 export const browserAdapter = {
   name: "browser",
@@ -6,6 +7,10 @@ export const browserAdapter = {
   init() {},
 
   exitApp() {
+    if (isVidaaRuntime()) {
+      exitVidaaApp();
+      return;
+    }
     try {
       globalThis.close?.();
     } catch (_) {
@@ -22,7 +27,7 @@ export const browserAdapter = {
   },
 
   getDeviceLabel() {
-    return "Web Browser";
+    return isVidaaRuntime() ? "Hisense VIDAA" : "Web Browser";
   },
 
   getCapabilities() {

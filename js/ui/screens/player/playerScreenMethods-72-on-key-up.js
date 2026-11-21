@@ -84,6 +84,9 @@ export function createPlayerScreenMethods72() {
 
       const hasCapabilityProbe = Boolean(PlayerController?.video);
       const isWebOsRuntime = Environment.isWebOS();
+      // The VIDAA media engine plays E-AC-3, TrueHD and DTS directly, so those
+      // releases are not marked down there.
+      const playsLosslessAudio = Environment.isVidaa();
       const capabilities =
         hasCapabilityProbe && typeof PlayerController.getPlaybackCapabilities === "function"
           ? PlayerController.getPlaybackCapabilities()
@@ -178,10 +181,10 @@ export function createPlayerScreenMethods72() {
           if (/\b(ac3|dolby digital)\b/.test(text) && !/\b(eac3|ec-3|ddp|atmos)\b/.test(text)) {
             score += 10;
           }
-          if (/\b(eac3|ec-3|ddp|atmos)\b/.test(text)) {
+          if (/\b(eac3|ec-3|ddp|atmos)\b/.test(text) && !playsLosslessAudio) {
             score += isWebOsRuntime ? -70 : -18;
           }
-          if (/\b(truehd|dts-hd|dts:x|dts)\b/.test(text)) {
+          if (/\b(truehd|dts-hd|dts:x|dts)\b/.test(text) && !playsLosslessAudio) {
             score += isWebOsRuntime ? -85 : -40;
           }
           if (/\b(stereo|2\.0|2ch)\b/.test(text)) {

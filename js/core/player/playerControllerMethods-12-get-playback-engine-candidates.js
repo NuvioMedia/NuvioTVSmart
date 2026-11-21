@@ -2,7 +2,7 @@
 import * as internals from "./playerController.js";
 
 export function createPlayerControllerMethods12() {
-  const { Platform, nativeVideoEngine, WEBOS_MEDIA_TYPE_PROBE_TIMEOUT_MS } = internals;
+  const { Platform, nativeVideoEngine, WEBOS_MEDIA_TYPE_PROBE_TIMEOUT_MS, applyVidaaPlaybackCapabilities } = internals;
 
   return {
     getPlaybackEngineCandidates(url, sourceType = null, itemType = this.currentItemType) {
@@ -188,7 +188,9 @@ export function createPlayerControllerMethods12() {
       };
       capabilities.hdrLikely = capabilities.mp4HevcMain10 || capabilities.mp4Av1;
       capabilities.atmosLikely = capabilities.audioEac3;
-      return capabilities;
+      // canPlayType() on VIDAA answers for the browser, not for the TV's media
+      // engine that actually decodes <video> sources.
+      return Platform.isVidaa() ? applyVidaaPlaybackCapabilities(capabilities) : capabilities;
     },
     teardownHlsInstance() {
       this.clearHlsBufferStallWarning();
