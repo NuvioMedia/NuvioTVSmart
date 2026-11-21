@@ -221,7 +221,8 @@ export function artworkResizeTarget(width, height, maxDimension = 1280) {
   return null;
 }
 
-const WORKER_SOURCE = `
+/** Exported so the streaming early-abort can be exercised without a browser. */
+export const WORKER_SOURCE = `
 const sourceRect = ${computeSourceRect.toString()};
 const isJpeg = ${isJpegHeader.toString()};
 const webpInfo = ${webpArtworkInfo.toString()};
@@ -251,12 +252,12 @@ self.onmessage = async (event) => {
     // Read the bytes off the response rather than the blob: Blob.arrayBuffer
     // is newer than OffscreenCanvas, so some webOS builds have the canvas but
     // not the blob method.
-    const bytes = await response.arrayBuffer();
-    if (isTooLarge(bytes)) {
-      throw new Error("too large");
-    }
-    const view = new Uint8Array(bytes);
     if (kind === "logo") {
+      const bytes = await response.arrayBuffer();
+      if (isTooLarge(bytes)) {
+        throw new Error("too large");
+      }
+      const view = new Uint8Array(bytes);
       const png = pngSize(view);
       const webp = png ? null : webpInfo(view);
       if (webp && webp.animated) {
@@ -287,6 +288,73 @@ self.onmessage = async (event) => {
       self.postMessage({ id, ok: true, blob: out });
       return;
     }
+    const concatChunks = (chunks, total) => {
+      if (chunks.length === 1) {
+        return chunks[0];
+      }
+      const out = new Uint8Array(total);
+      let offset = 0;
+      for (let i = 0; i < chunks.length; i += 1) {
+        out.set(chunks[i], offset);
+        offset += chunks[i].byteLength;
+      }
+      return out;
+    };
+    const readPosterBytes = async () => {
+      if (!response.body || typeof response.body.getReader !== "function") {
+        const bytes = await response.arrayBuffer();
+        if (isTooLarge(bytes)) {
+          throw new Error("too large");
+        }
+        return new Uint8Array(bytes);
+      }
+      // Abort multi-MB animated WebPs as soon as the 30-byte header arrives so
+      // workers do not buffer the whole animation only to reject it.
+      const reader = response.body.getReader();
+      const chunks = [];
+      let total = 0;
+      let sniffed = false;
+      const cancelAndThrow = async (message) => {
+        try {
+          await reader.cancel();
+        } catch (_) {}
+        throw new Error(message);
+      };
+      const checkLeadingHeader = async () => {
+        if (sniffed) {
+          return;
+        }
+        sniffed = true;
+        const head = concatChunks(chunks, total);
+        const jpeg = isJpeg(head);
+        const webp = jpeg ? null : webpInfo(head);
+        if (!jpeg && !webp) {
+          await cancelAndThrow("not jpeg");
+        }
+        if (webp && webp.animated) {
+          await cancelAndThrow("animated webp");
+        }
+      };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (value && value.byteLength) {
+          total += value.byteLength;
+          if (total > 8388608) {
+            await cancelAndThrow("too large");
+          }
+          chunks.push(value);
+          if (!sniffed && total >= 30) {
+            await checkLeadingHeader();
+          }
+        }
+      }
+      await checkLeadingHeader();
+      return concatChunks(chunks, total);
+    };
+    const view = await readPosterBytes();
     const jpeg = isJpeg(view);
     const webp = jpeg ? null : webpInfo(view);
     if (!jpeg && !webp) {
@@ -300,7 +368,7 @@ self.onmessage = async (event) => {
     const dimensions = jpeg ? jpegSize(view) : webp;
     const resize = dimensions ? resizeTarget(dimensions.width, dimensions.height, 1280) : null;
     full = await createImageBitmap(
-      new Blob([bytes]),
+      new Blob([view]),
       resize ? { ...resize, resizeQuality: "low" } : undefined
     );
     if (full.width <= width && full.height <= height) {
@@ -413,6 +481,7 @@ function createPool() {
     nextId: 1,
     cache: new Map(),
     failed: new Map(),
+    failedUrls: new Set(),
     inflight: new Map(),
     logoInflight: new Map(),
     disposed: false,
@@ -600,10 +669,12 @@ function resumeWorkers(state) {
 // depend on the bytes themselves are permanent for the session.
 const DETERMINISTIC_ARTWORK_FAILURE =
   /^(not jpeg|already small|too large|animated webp|unsupported logo|logo already small)$/;
+const URL_LEVEL_FAILURE = /^(not jpeg|too large|animated webp)$/;
 const ARTWORK_FAILURE_LIMIT = 512;
 
-function rememberArtworkFailure(state, key, reason) {
-  if (!DETERMINISTIC_ARTWORK_FAILURE.test(String(reason || ""))) {
+function rememberArtworkFailure(state, key, reason, url = "") {
+  const message = String(reason || "");
+  if (!DETERMINISTIC_ARTWORK_FAILURE.test(message)) {
     return;
   }
   if (state.failed.size >= ARTWORK_FAILURE_LIMIT) {
@@ -611,6 +682,13 @@ function rememberArtworkFailure(state, key, reason) {
     if (oldest !== undefined) state.failed.delete(oldest);
   }
   state.failed.set(key, true);
+  if (url && state.failedUrls && URL_LEVEL_FAILURE.test(message)) {
+    if (state.failedUrls.size >= ARTWORK_FAILURE_LIMIT) {
+      const oldestUrl = state.failedUrls.values().next().value;
+      if (oldestUrl !== undefined) state.failedUrls.delete(oldestUrl);
+    }
+    state.failedUrls.add(String(url));
+  }
 }
 
 function trimCache(state) {
@@ -671,7 +749,7 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
   // These answers cannot change for the same url and target: an unsupported or
   // animated source stays that way, and a source already smaller than the box
   // stays smaller. Retrying them on every scroll only spends a worker fetch.
-  if (state.failed.has(key)) {
+  if (state.failed.has(key) || state.failedUrls?.has(url)) {
     return Promise.resolve(null);
   }
   const cached = state.cache.get(key);
@@ -717,7 +795,7 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
       state.inflight.delete(key);
       if (!blob || state.disposed) {
         if (!blob && !state.disposed) {
-          rememberArtworkFailure(state, key, reason);
+          rememberArtworkFailure(state, key, reason, url);
         }
         resolve(null);
         return;
@@ -829,6 +907,11 @@ export function rescaleHomeLogoBlob(url, { width, height, timeoutMs = 1500 } = {
   return job.promise;
 }
 
+/** Whether `url` already failed a Home worker check for URL-wide reasons. */
+export function isKnownUnrescalableHomeArtwork(url) {
+  return Boolean(url && pool && !pool.disposed && pool.failedUrls?.has(String(url)));
+}
+
 /** Same contract as rescaleHomeArtwork, with its own pool for non-Home screens. */
 export function rescaleArtwork(url, options) {
   if (!shouldQueueRescale(url, options)) return Promise.resolve(null);
@@ -887,6 +970,7 @@ function resetPool(state) {
   state.idle.length = 0;
   state.queue.length = 0;
   state.failed?.clear?.();
+  state.failedUrls?.clear?.();
 }
 
 /**
