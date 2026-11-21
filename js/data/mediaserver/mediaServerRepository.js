@@ -104,7 +104,7 @@ function image(connection, item, type = "Primary", parentId = null) {
   });
 }
 // Like the Android app, an episode in the resume row stands for its series: the
-// card carries the series id and images, none of the episode's own details.
+// card carries the series id and images, with the episode overview Android keeps.
 function resumeCardItem(item) {
   if (String(item?.Type).toLowerCase() !== "episode") return item;
   if (!item.SeriesId) return null;
@@ -113,6 +113,7 @@ function resumeCardItem(item) {
     SeriesId: item.SeriesId,
     Name: item.SeriesName || item.Name,
     Type: "Series",
+    Overview: item.Overview,
     ImageTags: {
       ...(item.SeriesPrimaryImageTag ? { Primary: item.SeriesPrimaryImageTag } : {}),
       ...(item.ParentLogoImageTag ? { Logo: item.ParentLogoImageTag } : {})
@@ -419,7 +420,13 @@ export const MediaServerRepository = {
           connection,
           "resume",
           null,
-          { limit: 100, fields: LIST_FIELDS, mediaTypes: "Video" },
+          {
+            limit: 100,
+            fields: LIST_FIELDS,
+            mediaTypes: "Video",
+            imageTypeLimit: 1,
+            enableImageTypes: "Primary,Backdrop,Logo,Thumb"
+          },
           signal
         );
       } else if (catalogId.startsWith("search-")) {

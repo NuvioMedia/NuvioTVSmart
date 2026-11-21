@@ -65,7 +65,12 @@ const seriesItem = (id, name) => ({
 });
 
 const resumeItems = [
-  episode("E24", "S1", "My Hero Academia", 5, 24),
+  episode("E24", "S1", "My Hero Academia", 5, 24, {
+    Overview: "The final battle.",
+    ParentLogoImageTag: "logo-S1",
+    ParentBackdropImageTags: ["backdrop-S1"],
+    ParentBackdropItemId: "S1"
+  }),
   episode("E23", "S1", "My Hero Academia", 5, 23),
   episode("E8", "S2", "Malcolm", 2, 8),
   { Id: "M1", Name: "Oceania", Type: "Movie", ProviderIds: { Imdb: "tt-movie-M1" }, UserData: {} },
@@ -126,14 +131,37 @@ for (const useCatalogMetadata of [false, true]) {
   });
 }
 
-test("resume card of an episode uses the series image and no episode details", async () => {
+test("resume card of an episode uses the series artwork and keeps the episode overview", async () => {
   const result = await resumeCatalog(false);
   const card = result.data.items[0];
   assert.match(card.poster, /\/Items\/S1\/Images\/Primary/);
   assert.match(card.poster, /tag=tag-S1/);
+  assert.match(card.logo, /\/Items\/S1\/Images\/Logo/);
+  assert.match(card.logo, /tag=logo-S1/);
+  assert.match(card.background, /\/Items\/S1\/Images\/Backdrop/);
+  assert.match(card.background, /tag=backdrop-S1/);
+  assert.equal(card.description, "The final battle.");
   assert.equal(card.imdbId, null);
   assert.deepEqual(card.userData, {});
   assert.equal(card.releaseInfo, "");
+});
+
+test("resume request asks for the same image types as Android", async () => {
+  await withServer(
+    (href) => (href.includes("/Items/Resume") ? json({ Items: [] }) : json({}, 404)),
+    async (requests) => {
+      connection.useCatalogMetadata = false;
+      await MediaServerRepository.catalog({
+        addonBaseUrl: "nuvio-server://conn-1",
+        catalogId: "resume",
+        type: "movie"
+      });
+      assert.ok(
+        requests.some((url) => url.includes("enableImageTypes=Primary%2CBackdrop%2CLogo%2CThumb"))
+      );
+      assert.ok(requests.some((url) => url.includes("imageTypeLimit=1")));
+    }
+  );
 });
 
 test("an episode without a series id is not shown", async () => {
