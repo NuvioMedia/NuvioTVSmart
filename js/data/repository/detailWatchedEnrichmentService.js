@@ -8,9 +8,11 @@ import { ProfileManager } from "../../core/profile/profileManager.js";
 import { episodeMappingEntries } from "../../core/tracking/episodeMapping.js";
 import { TraktEpisodeMappingService } from "./traktEpisodeMappingService.js";
 import { MdbListEpisodeMappingService } from "./mdbListEpisodeMappingService.js";
+import { BoundedCache } from "../../core/util/boundedCache.js";
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
-const CACHE = new Map();
+const MAX_CACHE_ENTRIES = 100;
+const CACHE = new BoundedCache(MAX_CACHE_ENTRIES);
 
 function buildCacheKey(contentId, traktId) {
   const profileId = ProfileManager.getActiveProfileId() || "default";
@@ -33,9 +35,17 @@ function getCachedEntry(cacheKey) {
 }
 
 function setCachedEntry(cacheKey, value) {
+  const now = Date.now();
+  if (CACHE.size >= MAX_CACHE_ENTRIES) {
+    for (const [existingKey, existingEntry] of CACHE.entries()) {
+      if (now > existingEntry.expiresAt) {
+        CACHE.delete(existingKey);
+      }
+    }
+  }
   CACHE.set(cacheKey, {
     value,
-    expiresAt: Date.now() + CACHE_TTL_MS
+    expiresAt: now + CACHE_TTL_MS
   });
 }
 
