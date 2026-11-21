@@ -38,6 +38,7 @@ export function syncHtmlSubtitleClearance(screen) {
   ].filter(([node, enabled]) => isCandidate(node, enabled));
 
   if (candidates.length === 0) {
+    // Nothing overlaps the subtitle band, so the lift is 0 at any viewport size.
     if (root.style.getPropertyValue("--player-subtitle-clearance") !== "0px") {
       root.style.setProperty("--player-subtitle-clearance", "0px");
     }
@@ -49,6 +50,8 @@ export function syncHtmlSubtitleClearance(screen) {
     const verticalOffsetVh = getSubtitleVerticalOffsetVh(
       screen.subtitleStyleSettings?.verticalOffset
     );
+    // #playerUiRoot is inset:0 inside the fixed player surface, so its rect only
+    // changes with the viewport; innerHeight is the cheap invalidation key.
     const winHeight = typeof globalThis.innerHeight === "number" ? globalThis.innerHeight : null;
     const prev = lastNoOverlayAssState.get(screen);
     if (
