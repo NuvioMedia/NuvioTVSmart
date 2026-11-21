@@ -302,8 +302,17 @@ function watchTvFramePace() {
   if (!profile.isTvRuntime || profile.isPerformanceConstrained) {
     return;
   }
+  let onKeyDown = null;
+  const detachListener = () => {
+    if (onKeyDown) {
+      document.removeEventListener("keydown", onKeyDown, true);
+      onKeyDown = null;
+    }
+  };
   const monitor = createFramePaceMonitor({
+    shouldSample: () => Router.getCurrent() !== "player",
     onSlow: (lostMs) => {
+      detachListener();
       storeMeasuredTvTier({ tier: "constrained", appVersion: APP_VERSION, lostMs });
       resetTvRuntimePerformanceProfile();
       applyPerformanceMode();
@@ -312,7 +321,13 @@ function watchTvFramePace() {
   });
   // Readable from the remote inspector when a set's tier is in question.
   globalThis.__NUVIO_FRAME_PACE__ = monitor;
-  document.addEventListener("keydown", () => monitor.noteKey(), true);
+  onKeyDown = () => {
+    if (Router.getCurrent() === "player") {
+      return;
+    }
+    monitor.noteKey();
+  };
+  document.addEventListener("keydown", onKeyDown, true);
 }
 
 function isAddonRemoteMode() {
