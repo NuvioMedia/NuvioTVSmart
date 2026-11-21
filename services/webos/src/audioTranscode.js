@@ -189,7 +189,19 @@ async function buildConverted(s, index) {
 function converted(s, index) {
   if (s.cache.has(index)) return Promise.resolve(s.cache.get(index));
   if (s.conversions.has(index)) return s.conversions.get(index);
-  const promise = buildConverted(s, index).finally(() => s.conversions.delete(index));
+  const cleanup = () => {
+    s.conversions.delete(index);
+  };
+  const promise = buildConverted(s, index).then(
+    (result) => {
+      cleanup();
+      return result;
+    },
+    (error) => {
+      cleanup();
+      throw error;
+    }
+  );
   s.conversions.set(index, promise);
   return promise;
 }
