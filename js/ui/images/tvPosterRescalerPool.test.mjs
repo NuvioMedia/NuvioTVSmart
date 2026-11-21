@@ -31,6 +31,7 @@ class FakeWorker {
 globalThis.Worker = FakeWorker;
 
 const {
+  isKnownUnrescalableHomeArtwork,
   rescaleHomeArtwork,
   rescaleHomeLogoBlob,
   releaseHomeArtwork,
@@ -304,4 +305,37 @@ test("resetHomeArtworkRescaler settles pending hero logo jobs to null", async ()
   const pending = rescaleHomeLogoBlob("https://art/pending-logo.png", { width: 440, height: 200 });
   resetHomeArtworkRescaler();
   assert.equal(await pending, null);
+});
+
+test("url-level failures mark artwork unrescalable across any box size until reset", async () => {
+  reset();
+  const animatedUrl = "https://art/animated.webp";
+  const first = rescaleHomeArtwork(animatedUrl, BOX);
+  const worker = created.find((candidate) => candidate.posted.length);
+  const job = worker.posted.shift();
+  worker.onmessage({ data: { id: job.id, ok: false, reason: "animated webp" } });
+  assert.equal(await first, null);
+  assert.equal(isKnownUnrescalableHomeArtwork(animatedUrl), true);
+
+  const otherSize = await rescaleHomeArtwork(animatedUrl, { width: 440, height: 676, fit: "fill" });
+  assert.equal(otherSize, null);
+  assert.equal(
+    created.reduce((total, candidate) => total + candidate.posted.length, 0),
+    0,
+    "known animated webp must not queue a second worker job for another size"
+  );
+
+  resetHomeArtworkRescaler();
+  assert.equal(isKnownUnrescalableHomeArtwork(animatedUrl), false);
+});
+
+test("already small failure stays dimension-scoped and does not mark url unrescalable", async () => {
+  reset();
+  const smallUrl = "https://art/already-small.jpg";
+  const first = rescaleHomeArtwork(smallUrl, BOX);
+  const worker = created.find((candidate) => candidate.posted.length);
+  const job = worker.posted.shift();
+  worker.onmessage({ data: { id: job.id, ok: false, reason: "already small" } });
+  assert.equal(await first, null);
+  assert.equal(isKnownUnrescalableHomeArtwork(smallUrl), false);
 });

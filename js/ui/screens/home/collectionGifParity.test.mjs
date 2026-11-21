@@ -10,6 +10,7 @@ let route = "home";
 let rescaleEnabled = false;
 let rescaleCalls = [];
 let releasedUrls = [];
+let knownUnrescalable = new Set();
 let settleRescale = null;
 
 const context = vm.createContext({
@@ -23,6 +24,7 @@ const context = vm.createContext({
   Router: { getCurrent: () => route },
   shouldRescaleHomeArtwork: () => rescaleEnabled,
   shouldQueueRescale,
+  isKnownUnrescalableHomeArtwork: (url) => knownUnrescalable.has(url),
   rescaleHomeArtwork: (url, options) => {
     rescaleCalls.push({ url, options });
     return new Promise((resolve) => {
@@ -44,9 +46,11 @@ function resetRescale() {
   rescaleCalls = [];
   releasedUrls = [];
   settleRescale = null;
+  knownUnrescalable.clear();
 }
 
 function focusCard(src, { width = 220, height = 338 } = {}) {
+  let rectCalls = 0;
   class Image {
     dataset = { src };
     attributes = new Map();
@@ -61,6 +65,7 @@ function focusCard(src, { width = 220, height = 338 } = {}) {
       this.attributes.delete(key);
     }
     getBoundingClientRect() {
+      rectCalls += 1;
       return { width, height };
     }
   }
@@ -75,7 +80,7 @@ function focusCard(src, { width = 220, height = 338 } = {}) {
       contains: (name) => classes.has(name)
     }
   };
-  return { image, classes, node };
+  return { image, classes, node, getRectCalls: () => rectCalls };
 }
 
 async function loadFrom(file, start, end) {
@@ -411,4 +416,23 @@ test("any focus move away from the collection card tears its overlay down", () =
   assert.equal(firstCard.image.getAttribute("src"), undefined);
   assert.ok(!firstCard.classes.has("is-focus-gif-active"));
   assert.equal(methods.activeCollectionFocusGifNode, null);
+});
+
+test("skips getBoundingClientRect for gif and known unrescalable webp overlays", () => {
+  resetRescale();
+  rescaleEnabled = true;
+  const { hydrateCollectionFocusGif } = context.createHomeScreenMethods11();
+
+  const gifCard = focusCard("https://example.invalid/focus.gif");
+  hydrateCollectionFocusGif(gifCard.node, true);
+  assert.equal(gifCard.getRectCalls(), 0);
+  assert.equal(gifCard.image.getAttribute("src"), "https://example.invalid/focus.gif");
+
+  const animatedWebp = "https://example.invalid/animated.webp";
+  knownUnrescalable.add(animatedWebp);
+  const webpCard = focusCard(animatedWebp);
+  hydrateCollectionFocusGif(webpCard.node, true);
+  assert.equal(webpCard.getRectCalls(), 0);
+  assert.equal(webpCard.image.getAttribute("src"), animatedWebp);
+  assert.equal(rescaleCalls.length, 0);
 });
