@@ -1,4 +1,9 @@
 import { resolveContinueWatchingEpisodeRating } from "./continueWatchingEpisodeRating.js";
+import {
+  dedupeContinueWatchingInProgress,
+  isServerContentId,
+  resolveContinueWatchingSeriesContentId
+} from "./continueWatchingSeriesIdentity.js";
 import * as internals from "./homeScreenContext.js";
 
 export function createHomeScreenMethods27() {
@@ -31,7 +36,7 @@ export function createHomeScreenMethods27() {
 
   return {
     async enrichContinueWatching(items = [], options = {}) {
-      const [inProgressItems, nextUpItems] = await Promise.all([
+      const [enrichedInProgressItems, nextUpItems] = await Promise.all([
         mapWithConcurrency(items || [], CW_MAX_ENRICHMENT_CONCURRENCY, async (item) => {
           if (isCloudContinueWatchingItem(item)) {
             return {
@@ -45,7 +50,19 @@ export function createHomeScreenMethods27() {
           const needsEpisodeRating =
             isSeriesTypeForContinueWatching(cachedItem.contentType || cachedItem.type) &&
             !Object.prototype.hasOwnProperty.call(cachedItem, "episodeImdbRating");
-          if (!options?.forceRefreshMetadata && !needsEpisodeRating && !needsContinueWatchingMetadataRefresh([cachedItem])) {
+          // An episode id stored as a series content id can only be resolved by
+          // the media server, so check each server series once before trusting
+          // its cached enrichment.
+          const needsServerSeriesIdentity =
+            isSeriesTypeForContinueWatching(cachedItem.contentType || cachedItem.type) &&
+            isServerContentId(cachedItem.contentId) &&
+            cachedItem.serverSeriesIdentityChecked !== true;
+          if (
+            !options?.forceRefreshMetadata &&
+            !needsEpisodeRating &&
+            !needsServerSeriesIdentity &&
+            !needsContinueWatchingMetadataRefresh([cachedItem])
+          ) {
             return cachedItem;
           }
           try {
@@ -54,6 +71,7 @@ export function createHomeScreenMethods27() {
               (await this.fetchMetaForContinueWatching(item.contentType || "movie", item.contentId, options?.metaTimeoutMs || 1800, [
                 item.imdbId
               ]));
+            const resolvedMeta = Boolean(meta);
             if (!meta) {
               meta = {
                 id: item.contentId,
@@ -63,6 +81,7 @@ export function createHomeScreenMethods27() {
             }
             if (meta) {
               const enrichedMeta = await this.enrichContinueWatchingMetaWithTmdb(meta, item);
+              const contentId = resolveContinueWatchingSeriesContentId(item.contentId, enrichedMeta);
               const episodeEntry = findEpisodeEntry(enrichedMeta.videos, item.season, item.episode);
               const runtimeMinutes = parseRuntimeMinutes(
                 episodeEntry?.runtimeMinutes ?? enrichedMeta.episodeRuntime ?? enrichedMeta.runtimeMinutes ?? enrichedMeta.runtime ?? 0
@@ -72,6 +91,7 @@ export function createHomeScreenMethods27() {
                 : null;
               const enriched = {
                 ...item,
+                contentId,
                 title: enrichedMeta.name || prettyId(item.contentId),
                 landscapePoster:
                   enrichedMeta.landscapePoster || enrichedMeta.thumbnail || enrichedMeta.backdrop || enrichedMeta.background || null,
@@ -104,7 +124,9 @@ export function createHomeScreenMethods27() {
                   item.episodeDescription,
                   item.episode_description
                 ),
-                continueWatchingMetaResolved: true
+                continueWatchingMetaResolved: true,
+                serverSeriesIdentityChecked:
+                  resolvedMeta && isServerContentId(item.contentId) ? true : cachedItem.serverSeriesIdentityChecked === true
               };
               saveContinueWatchingEnrichment(enriched);
               return enriched;
@@ -141,6 +163,7 @@ export function createHomeScreenMethods27() {
         })
       ]);
 
+      const inProgressItems = dedupeContinueWatchingInProgress(enrichedInProgressItems);
       const inProgressSeriesIds = new Set(
         inProgressItems
           .filter((item) => isSeriesTypeForContinueWatching(item?.contentType || item?.type))

@@ -346,7 +346,8 @@ export function saveContinueWatchingEnrichment(item = {}) {
     videoId: normalized.videoId,
     episodeTitle: normalized.episodeTitle,
     episodeDescription: normalized.episodeDescription,
-    continueWatchingMetaResolved: true
+    continueWatchingMetaResolved: true,
+    serverSeriesIdentityChecked: normalized.serverSeriesIdentityChecked === true
   };
   if (
     prev &&
