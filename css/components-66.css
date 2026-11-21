@@ -244,6 +244,17 @@
   padding-right: var(--touch-gutter);
 }
 
+/* isLowEndDevice() flags any 4-core runtime (budget Android phones, TV boxes,
+   every CI runner) and components-49 then pins modern-home rails to
+   overflow:hidden — a TV-only optimization for programmatic scrollLeft
+   centering. The touch tier never centers rails (compact viewport yields to
+   native pan), so hidden overflow there strands every card past the viewport
+   edge. Keep rails native scrollers on touch tiers regardless. */
+.web-touch.performance-constrained .home-screen-shell.home-layout-modern .home-track {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
 /* Detail rails are horizontal overflow scrollers already (css/components-40.css
    .detail-morelike-track). Give them the same phone carousel feel as the home
    rails: inertial scrolling and proximity snap. touch-action stays default so
