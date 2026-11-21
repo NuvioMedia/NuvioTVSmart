@@ -37,9 +37,9 @@ Grounded in branch `feat/web-touch-client` (8 commits ahead of origin). Screens 
 ## Phase 4 — Mobile UX gaps vs NuvioMobile
 
 - [ ] Touch-native player controls: scrubber with large thumb, double-tap side to seek ±10s, tap-to-toggle-then-autohide
-- [ ] Replace QR auth with native email/password form flow on touch tier (QR is awkward on the phone you'd log in _on_; fallback already exists via `renderQrMainLoginFallback`)
+- [x] Auth on touch tier: servers with `emailPasswordAuth` capability land on the native email/password form by default (capability default, all tiers); inline one-tap QR<->email switch added for the touch tier when both flows exist (`renderModeSwitch`, components-66.css). Official nuvio.tv backend is tvLogin-only, so the phone path there is QR + >=44px open-on-this-device link (audited by auth-qr-phone + auth-email-form probe gates). Full form replacement on official servers needs the backend to expose the capability.
 - [ ] Pull-to-refresh on home/library
-- [ ] Virtual-keyboard behavior: `autocomplete`/`inputmode` on search and sign-in fields
+- [x] Virtual-keyboard behavior: sign-in fields carry `autocomplete=username`/`current-password`, `type=email`, `autocapitalize=none` (authQrSignInScreenMethods-01-mount.js renderLoginContent; asserted by the auth-email-form probe gate). Search field inputmode still open if needed.
 - [ ] Performance pass on phone-class hardware: lazy poster loading, image sizing (no 1920-canvas poster sizes on a 390px screen)
 
 ## Phase 5 — Release readiness

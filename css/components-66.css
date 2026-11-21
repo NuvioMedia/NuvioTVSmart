@@ -412,6 +412,24 @@
   font-size: 16px;
 }
 
+/* One-tap QR<->email switch on the touch tier (renderModeSwitch); the TV tier
+   reaches the same toggle through the server menu and never renders this. */
+.web-touch .qr-mode-switch-row {
+  margin-top: 12px;
+}
+
+.web-touch .qr-mode-switch {
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+  text-align: center;
+}
+
 .web-touch .qr-actions {
   margin-top: 14px;
   gap: 12px;

@@ -142,6 +142,7 @@ export function createAuthQrSignInScreenMethods01() {
                   }
                 </p>
                 ${this.renderLoginContent()}
+                ${this.renderModeSwitch()}
                 ${!this.isSignedIn ? this.renderTermsAcknowledgement() : ""}
                 <div class="qr-actions">${this.renderActions()}</div>
               </div>
@@ -201,6 +202,22 @@ export function createAuthQrSignInScreenMethods01() {
           <div id="qr-code-text" class="qr-code-text"></div>
           <div id="qr-expiry" class="qr-expiry"></div>
           <div id="qr-status" class="qr-status" role="status" aria-live="polite">${escapeHtml(I18n.t("auth.qr.waitingApproval"))}</div>
+        `;
+    },
+    renderModeSwitch() {
+      // Touch tier only: the QR<->email switch must be one tap, not buried in
+      // the ⋮ server menu. Gated on isCompactViewport so Tizen/webOS markup
+      // stays byte-identical; only meaningful when the server supports both.
+      if (this.isSignedIn || !this.supportsEmailAuth || !this.supportsQrAuth || !Platform.isCompactViewport()) {
+        return "";
+      }
+      const toEmail = !this.useEmailLogin;
+      return `
+          <div class="qr-mode-switch-row">
+            <button type="button" class="qr-mode-switch focusable" data-action="${toEmail ? "login-email" : "login-qr"}">
+              ${escapeHtml(I18n.t(toEmail ? "server_options_login_with_email" : "server_options_login_with_qr"))}
+            </button>
+          </div>
         `;
     },
     renderConnectedAccountIdentity() {

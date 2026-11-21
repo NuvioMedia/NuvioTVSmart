@@ -200,6 +200,113 @@ async function swipeGate(page) {
 }
 
 const browser = await chromium.launch();
+// Phone sign-in audit (task: replace QR with native flow on the touch tier).
+// A) Official server (tvLogin-only): the phone must offer a same-device path,
+//    not just a scannable QR: QR canvas visible AND a >=44px open-on-this-device link.
+// B) Server declaring both caps: the phone must land on the native email form
+//    by default (capability default), with autofill attrs, 44px targets, local
+//    validation on empty submit, and a one-tap inline mode switch.
+async function authPhoneGate(browser) {
+  const qrProblems = [];
+  const emailProblems = [];
+  const probe = (page, sel) =>
+    page.evaluate((s) => {
+      const e = document.querySelector(s);
+      if (!e) return null;
+      const r = e.getBoundingClientRect();
+      const st = getComputedStyle(e);
+      if (r.width <= 0 || r.height <= 0 || st.display === "none" || st.visibility === "hidden")
+        return { hidden: true, h: Math.round(r.height) };
+      return {
+        h: Math.round(r.height),
+        ac: e.getAttribute("autocomplete") || "",
+        type: e.getAttribute("type") || ""
+      };
+    }, sel);
+
+  const opts = { viewport: { width: VW, height: VH }, hasTouch: true, isMobile: true };
+
+  const ctxA = await browser.newContext(opts);
+  const a = await ctxA.newPage();
+  await a.goto(BASE_URL + "/", { waitUntil: "domcontentloaded" });
+  await a.waitForSelector("#qr-container, #auth-email-form", { timeout: 20000 }).catch(() => {});
+  await a.waitForTimeout(3000);
+  if (!(await a.evaluate(() => document.body.classList.contains("web-touch"))))
+    qrProblems.push({ kind: "auth", why: "boot screen missing .web-touch" });
+  if (await a.evaluate(() => !!document.querySelector("#auth-email-form")))
+    qrProblems.push({ kind: "auth", why: "email form shown on tvLogin-only server" });
+  const qrBox = await probe(a, "#qr-container canvas");
+  if (!qrBox || qrBox.hidden || qrBox.h < 150)
+    qrProblems.push({ kind: "auth", why: "QR not visible: " + JSON.stringify(qrBox) });
+  const link = await probe(a, ".qr-open-link-primary");
+  if (!link || link.hidden || link.h < 44)
+    qrProblems.push({
+      kind: "auth",
+      why: "open-on-this-device link missing/<44px: " + JSON.stringify(link)
+    });
+  await ctxA.close();
+
+  const ctxB = await browser.newContext(opts);
+  await ctxB.addInitScript(
+    ([key, payload]) => localStorage.setItem(key, payload),
+    [
+      "nuvioServerConfigurationV1",
+      JSON.stringify({
+        isCustom: true,
+        backendUrl: BASE_URL + "/probe-srv",
+        publishableKey: "pk-probe-test",
+        capabilities: { emailPasswordAuth: true, tvLogin: true }
+      })
+    ]
+  );
+  const b = await ctxB.newPage();
+  await b.goto(BASE_URL + "/", { waitUntil: "domcontentloaded" });
+  await b.waitForSelector("#auth-email-form", { timeout: 20000 }).catch(() => {});
+  await b.waitForTimeout(1500);
+  if (!(await b.evaluate(() => !!document.querySelector("#auth-email-form")))) {
+    emailProblems.push({ kind: "auth-email", why: "email form not default on both-caps server" });
+  } else {
+    const email = await probe(b, "#auth-email-input");
+    const pass = await probe(b, "#auth-password-input");
+    const submit = await probe(b, "#auth-email-submit");
+    if (!email || email.hidden || email.type !== "email" || email.ac !== "username")
+      emailProblems.push({ kind: "auth-email", why: "email input: " + JSON.stringify(email) });
+    if (!pass || pass.hidden || pass.type !== "password" || pass.ac !== "current-password")
+      emailProblems.push({ kind: "auth-email", why: "password input: " + JSON.stringify(pass) });
+    if (!submit || submit.hidden || submit.h < 44)
+      emailProblems.push({ kind: "auth-email", why: "submit target: " + JSON.stringify(submit) });
+    await b
+      .locator("#auth-email-submit")
+      .tap()
+      .catch(() => {});
+    await b.waitForTimeout(500);
+    const err = await b.evaluate(() => {
+      const e = document.querySelector(".qr-login-error");
+      if (!e || e.hidden || !e.getBoundingClientRect().height) return null;
+      return e.textContent.trim();
+    });
+    if (!err)
+      emailProblems.push({ kind: "auth-email", why: "empty submit produced no inline error" });
+    if (!(await b.locator(".qr-mode-switch").count())) {
+      emailProblems.push({ kind: "auth-email", why: "no inline .qr-mode-switch on touch tier" });
+    } else {
+      await b.locator(".qr-mode-switch").tap();
+      await b.waitForTimeout(1500);
+      if (!(await b.evaluate(() => !!document.querySelector("#qr-container"))))
+        emailProblems.push({ kind: "auth-email", why: "mode switch did not reach QR view" });
+      await b
+        .locator(".qr-mode-switch")
+        .tap()
+        .catch(() => {});
+      await b.waitForTimeout(800);
+      if (!(await b.evaluate(() => !!document.querySelector("#auth-email-form"))))
+        emailProblems.push({ kind: "auth-email", why: "mode switch did not return to email form" });
+    }
+  }
+  await ctxB.close();
+  return { qrProblems, emailProblems };
+}
+
 const ctx = await browser.newContext({
   viewport: { width: VW, height: VH },
   hasTouch: true,
@@ -215,6 +322,16 @@ if (!harnessOnly) {
   results.push({ label: "home-swipe", ok: swipeProblems.length === 0, fails: swipeProblems });
   console.log(
     `${swipeProblems.length ? "FAIL" : "PASS"} home-swipe${swipeProblems.length ? " " + JSON.stringify(swipeProblems) : ""}`
+  );
+
+  const { qrProblems, emailProblems } = await authPhoneGate(browser);
+  results.push({ label: "auth-qr-phone", ok: qrProblems.length === 0, fails: qrProblems });
+  results.push({ label: "auth-email-form", ok: emailProblems.length === 0, fails: emailProblems });
+  console.log(
+    `${qrProblems.length ? "FAIL" : "PASS"} auth-qr-phone${qrProblems.length ? " " + JSON.stringify(qrProblems) : ""}`
+  );
+  console.log(
+    `${emailProblems.length ? "FAIL" : "PASS"} auth-email-form${emailProblems.length ? " " + JSON.stringify(emailProblems) : ""}`
   );
 
   await page.evaluate(() => document.querySelector(".home-track .home-poster-card")?.click());
