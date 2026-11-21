@@ -12,7 +12,10 @@ const distDir = path.join(rootDir, "dist");
 const host = process.env.HOST || "0.0.0.0";
 const port = Number(process.env.PORT || 4173);
 const mediaRuntimePath = path.join(rootDir, "services", "webos", "runtime", "media-http.cjs");
-const mediaServerPorts = [2710, 2711, 2712, 2713, 2714];
+const mediaServerPorts = (process.env.NUVIO_MEDIA_SERVER_PORTS || "2710,2711,2712,2713,2714")
+  .split(",")
+  .map((p) => Number(p))
+  .filter((p) => Number.isFinite(p));
 const mediaProbeTimeoutMs = 1200;
 let mediaRuntimeProcess = null;
 let cachedMediaServerPort = mediaServerPorts[0];

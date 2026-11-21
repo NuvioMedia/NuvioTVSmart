@@ -193,6 +193,22 @@ async function swipeGate(page) {
     };
   });
   if (!pre.found) return [{ kind: "swipe", why: "no swipeable .home-track found" }];
+  if (pre.overflowX === "hidden") {
+    // Environment-divergence diagnostic: which track was picked and why its
+    // overflow is not scrollable (CI vs local rails behave differently).
+    pre.diagnostic = await page.evaluate(() =>
+      [...document.querySelectorAll(".home-track")].map((t) => ({
+        cls: t.className.toString().slice(0, 60),
+        sw: t.scrollWidth,
+        cw: t.clientWidth,
+        ox: getComputedStyle(t).overflowX,
+        inline: (t.getAttribute("style") || "").slice(0, 120),
+        parentCls: t.parentElement?.className.toString().slice(0, 60),
+        parentOx: t.parentElement ? getComputedStyle(t.parentElement).overflowX : ""
+      }))
+    );
+    return [{ kind: "swipe", why: "overflowX=hidden", tracks: pre.diagnostic.slice(0, 6) }];
+  }
   const cdp = await page.context().newCDPSession(page);
   const send = (type, x) =>
     cdp.send("Input.dispatchTouchEvent", {
