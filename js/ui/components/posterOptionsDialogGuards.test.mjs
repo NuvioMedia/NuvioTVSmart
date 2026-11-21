@@ -9,91 +9,208 @@ const stripModule = (source) =>
     .replace(/^import\s+["'][^"']+["'];\r?\n/gm, "")
     .replace(/^export /gm, "");
 
-test("PosterOptionsDialogController prevents stale mounts after destroy and deduplicates concurrent activations", async () => {
-  const source = stripModule(
-    await readFile(new URL("./posterOptionsMenu.js", import.meta.url), "utf8")
-  );
+const deferred = () => {
+  let resolve;
+  const promise = new Promise((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+};
 
-  let dialogMounts = 0;
-  let resolveState;
-  let resolveAction;
-  let actionCalls = 0;
+const moduleSource = stripModule(
+  await readFile(new URL("./posterOptionsMenu.js", import.meta.url), "utf8")
+);
+
+function createHarness() {
+  const counts = { mounts: 0, actions: 0, saves: 0, changed: 0, dismissed: 0 };
+  const stateRequests = [];
+  const actionRequests = [];
+  const saveRequests = [];
 
   class FakeNuvioDialog {
+    constructor(options) {
+      this.options = options;
+      this.title = options.title;
+    }
     mount() {
-      dialogMounts += 1;
+      counts.mounts += 1;
       return this;
     }
     destroy() {}
+    setButtonSelected() {}
   }
 
-  const testCtx = vm.createContext({
+  const context = vm.createContext({
     document: { body: {} },
     console,
     trackingErrorMessage: () => "",
-    I18n: { t: (_k, _p, opts) => opts?.fallback || "" },
+    I18n: { t: (_key, _params, options) => options?.fallback || "" },
     savedLibraryRepository: { isSaved: async () => false },
     libraryRepository: {
       getListTabs: async () => [],
       getMembershipSnapshot: async () => ({ listMembership: {} }),
       getSourceMode: async () => "local",
-      applyMembershipChanges: async () => {}
+      applyMembershipChanges: () => {
+        counts.saves += 1;
+        const request = deferred();
+        saveRequests.push(request);
+        return request.promise;
+      }
     },
     LibrarySourceMode: { LOCAL: "local", SIMKL: "simkl" },
-    watchedItemsRepository: {
-      isWatched: async () => false,
-      markItem: async () => {},
-      unmarkItem: async () => {}
-    },
-    watchedTitleStateRepository: { markItem: async () => {}, unmarkItem: async () => {} },
+    watchedItemsRepository: { isWatched: async () => false },
+    watchedTitleStateRepository: {},
     watchProgressRepository: {},
-    watchedSeriesReconciliationService: { getSeriesSummary: async () => ({}) },
+    watchedSeriesReconciliationService: {},
     supportsMembershipFor: () => true,
     NuvioDialog: FakeNuvioDialog,
     buildWatchedTitleIdSet: () => new Set(),
     isTitleItemWatched: () => false
   });
-  testCtx.globalThis = testCtx;
+  context.globalThis = context;
   vm.runInContext(
-    `${source}\nglobalThis.PosterOptionsDialogController = PosterOptionsDialogController;`,
-    testCtx
+    `${moduleSource}\nglobalThis.PosterOptionsDialogController = PosterOptionsDialogController;`,
+    context
   );
-  testCtx.createPosterOptionsState = () =>
-    new Promise((resolve) => {
-      resolveState = resolve;
-    });
-  testCtx.activatePosterOption = () => {
-    actionCalls += 1;
-    return new Promise((resolve) => {
-      resolveAction = resolve;
-    });
+  context.createPosterOptionsState = () => {
+    const request = deferred();
+    stateRequests.push(request);
+    return request.promise;
+  };
+  context.activatePosterOption = () => {
+    counts.actions += 1;
+    const request = deferred();
+    actionRequests.push(request);
+    return request.promise;
   };
 
-  const controller = new testCtx.PosterOptionsDialogController({ onDetails: () => {} });
-  const openPromise = controller.open({ id: "tt1", type: "movie", name: "Film" });
-  controller.destroy({ restoreFocus: false });
-  resolveState({
-    item: { id: "tt1", type: "movie", title: "Film" },
-    isSaved: false,
-    isWatched: false
+  const controller = new context.PosterOptionsDialogController({
+    onDetails: () => {},
+    onDismiss: () => {
+      counts.dismissed += 1;
+    },
+    onChanged: () => {
+      counts.changed += 1;
+    }
   });
-  assert.equal(await openPromise, false);
-  assert.equal(dialogMounts, 0, "destroyed controller must not mount a stale dialog");
+  return { controller, counts, stateRequests, actionRequests, saveRequests };
+}
 
-  // Re-open validly and verify double Enter / concurrent activateOption deduplication.
-  const secondOpen = controller.open({ id: "tt2", type: "movie", name: "Film 2" });
-  resolveState({
-    item: { id: "tt2", type: "movie", title: "Film 2" },
-    isSaved: false,
-    isWatched: false
-  });
-  assert.equal(await secondOpen, true);
-  assert.equal(dialogMounts, 1);
+const posterState = (id, title = id) => ({
+  item: { id, type: "movie", title },
+  sourceMode: "trakt",
+  membership: {},
+  isSaved: false,
+  isWatched: false
+});
 
-  const firstActivation = controller.activateOption("toggleLibrary");
-  const duplicateActivation = controller.activateOption("toggleLibrary");
-  assert.equal(actionCalls, 1, "concurrent activateOption must be ignored while in flight");
-  assert.equal(await duplicateActivation, false);
-  resolveAction({ type: "updated", state: controller.state });
-  assert.equal(await firstActivation, true);
+const listPickerState = () => ({
+  item: { itemId: "tt1", title: "Film" },
+  sourceMode: "trakt",
+  tabs: [{ key: "trakt", title: "Trakt" }],
+  membership: { trakt: false },
+  error: ""
+});
+
+async function openValidDialog(harness) {
+  const pending = harness.controller.open({ id: "tt1", type: "movie" });
+  harness.stateRequests[0].resolve(posterState("tt1"));
+  assert.equal(await pending, true);
+}
+
+async function openListPicker(harness) {
+  await openValidDialog(harness);
+  const activation = harness.controller.activateOption("toggleLibrary");
+  harness.actionRequests[0].resolve({ type: "listPicker", state: listPickerState() });
+  assert.equal(await activation, true);
+}
+
+test("aborts a stale open after destroy", async () => {
+  const harness = createHarness();
+  const pending = harness.controller.open({ id: "tt1", type: "movie" });
+
+  harness.controller.destroy({ restoreFocus: false });
+  harness.stateRequests[0].resolve(posterState("tt1"));
+
+  assert.equal(await pending, false);
+  assert.equal(harness.counts.mounts, 0);
+});
+
+test("mounts only the newest dialog when opens overlap", async () => {
+  const harness = createHarness();
+  const first = harness.controller.open({ id: "tt1", type: "movie" });
+  const second = harness.controller.open({ id: "tt2", type: "movie" });
+
+  harness.stateRequests[1].resolve(posterState("tt2", "Two"));
+  assert.equal(await second, true);
+  harness.stateRequests[0].resolve(posterState("tt1", "One"));
+
+  assert.equal(await first, false);
+  assert.equal(harness.counts.mounts, 1);
+  assert.equal(harness.controller.dialog.title, "Two");
+});
+
+test("ignores concurrent option activations while one is in flight", async () => {
+  const harness = createHarness();
+  await openValidDialog(harness);
+
+  const activation = harness.controller.activateOption("toggleLibrary");
+  const duplicate = harness.controller.activateOption("toggleLibrary");
+  assert.equal(await duplicate, false);
+
+  harness.actionRequests[0].resolve({ type: "updated", state: posterState("tt1") });
+  assert.equal(await activation, true);
+  assert.equal(harness.counts.actions, 1);
+  assert.equal(harness.counts.changed, 1);
+});
+
+test("does not apply an option activation that resolves after destroy", async () => {
+  const harness = createHarness();
+  await openValidDialog(harness);
+
+  const activation = harness.controller.activateOption("toggleLibrary");
+  harness.controller.destroy({ restoreFocus: false });
+  harness.actionRequests[0].resolve({ type: "updated", state: posterState("tt1") });
+
+  assert.equal(await activation, false);
+  assert.equal(harness.counts.changed, 0);
+});
+
+test("does not mount the list picker after the poster dialog is dismissed", async () => {
+  const harness = createHarness();
+  await openValidDialog(harness);
+
+  const activation = harness.controller.activateOption("toggleLibrary");
+  harness.controller.dialog.options.onDismiss();
+  harness.actionRequests[0].resolve({ type: "listPicker", state: listPickerState() });
+
+  assert.equal(await activation, false);
+  assert.equal(harness.counts.mounts, 1);
+  assert.equal(harness.controller.dialog, null);
+});
+
+test("deduplicates list picker saves", async () => {
+  const harness = createHarness();
+  await openListPicker(harness);
+
+  const save = harness.controller.activateListPickerOption("saveLibraryLists");
+  const duplicate = harness.controller.activateListPickerOption("saveLibraryLists");
+  assert.equal(await duplicate, false);
+
+  harness.saveRequests[0].resolve();
+  assert.equal(await save, true);
+  assert.equal(harness.counts.saves, 1);
+  assert.equal(harness.counts.changed, 1);
+});
+
+test("does not apply a list picker save that resolves after destroy", async () => {
+  const harness = createHarness();
+  await openListPicker(harness);
+
+  const save = harness.controller.activateListPickerOption("saveLibraryLists");
+  harness.controller.destroy({ restoreFocus: false });
+  harness.saveRequests[0].resolve();
+
+  assert.equal(await save, false);
+  assert.equal(harness.counts.changed, 0);
 });

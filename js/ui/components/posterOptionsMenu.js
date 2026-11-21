@@ -331,12 +331,7 @@ export class PosterOptionsDialogController {
           void this.activateOption(option.action);
         }
       })),
-      onDismiss: () => {
-        this.dialog = null;
-        this.state = null;
-        this.listPicker = null;
-        this.onDismiss?.();
-      }
+      onDismiss: () => this.destroy()
     }).mount(document.body);
     return true;
   }
@@ -402,12 +397,7 @@ export class PosterOptionsDialogController {
       })),
       panelClassName: "poster-list-picker-dialog-panel",
       actionsClassName: "poster-list-picker-actions",
-      onDismiss: () => {
-        this.dialog = null;
-        this.state = null;
-        this.listPicker = null;
-        this.onDismiss?.();
-      }
+      onDismiss: () => this.destroy()
     }).mount(document.body);
     return true;
   }
@@ -462,7 +452,7 @@ export class PosterOptionsDialogController {
         this.onChanged?.(this.state);
         this.destroy();
       } catch (error) {
-        if (token !== this.openToken || !this.listPicker) {
+        if (token !== this.openToken) {
           return false;
         }
         console.warn("Failed to update library lists", error);
