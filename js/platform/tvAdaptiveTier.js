@@ -92,6 +92,10 @@ export function createFramePaceMonitor({
         const frameAt = now();
         const interval = frameAt - lastFrameAt;
         lastFrameAt = frameAt;
+        if (globalThis.document?.hidden || interval > 1000) {
+          sampling = false;
+          return;
+        }
         if (interval > policy.lateFrameMs) {
           lostMs += interval - policy.frameMs;
         }
