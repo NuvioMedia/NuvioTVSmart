@@ -7,13 +7,13 @@ test("fitSidebarLabel caches repeated non-empty labels to skip binary-search lay
   globalThis.getComputedStyle = () => ({ fontSize: "36px" });
   try {
     let scrollReads = 0;
-    const makeNode = (text) => ({
+    const makeNode = (text, width = 100) => ({
       isConnected: true,
       className: "modern-sidebar-nav-label",
       textContent: text,
       style: { fontSize: "" },
-      clientWidth: 100,
-      getBoundingClientRect: () => ({ width: 100 }),
+      clientWidth: Math.round(width),
+      getBoundingClientRect: () => ({ width }),
       get scrollWidth() {
         scrollReads += 1;
         const size = Number.parseFloat(this.style.fontSize) || 36;
@@ -33,6 +33,14 @@ test("fitSidebarLabel caches repeated non-empty labels to skip binary-search lay
     assert.equal(fitSidebarLabel(node2, 14), true);
     assert.equal(node2.style.fontSize, node1.style.fontSize);
     assert.equal(scrollReads, readsAfterFirst, "matching label+width hits shared cache");
+
+    const narrower = makeNode("SettingsLabel", 99.9);
+    assert.equal(fitSidebarLabel(narrower, 14), true);
+    assert.notEqual(scrollReads, readsAfterFirst, "a different slot width is measured again");
+    assert.ok(
+      Number.parseFloat(narrower.style.fontSize) <= Number.parseFloat(node1.style.fontSize),
+      "a narrower slot never reuses the wider fit"
+    );
   } finally {
     globalThis.getComputedStyle = prevGetComputedStyle;
   }

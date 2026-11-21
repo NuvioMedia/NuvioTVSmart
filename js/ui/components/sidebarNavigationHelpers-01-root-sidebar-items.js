@@ -153,17 +153,21 @@ export function fitSidebarLabel(node, minFontSizePx) {
 
   const minSize = Math.max(12, Number(minFontSizePx) || 12);
   const text = String(node.textContent || "").trim();
-  const roundedWidth = Math.round(targetWidth * 4);
   const prevNodeState = fittedSidebarLabelState.get(node);
-  if (prevNodeState && prevNodeState.text === text && prevNodeState.roundedWidth === roundedWidth && prevNodeState.minSize === minSize) {
+  if (prevNodeState && prevNodeState.text === text && prevNodeState.width === targetWidth && prevNodeState.minSize === minSize) {
     node.style.fontSize = prevNodeState.fontSize;
     return true;
   }
 
-  const cacheKey = text ? `${globalThis?.innerWidth || 0}|${node.className || ""}|${text}|${roundedWidth}|${minSize}` : "";
+  // The fitted size only depends on the label text, the CSS class that sets the
+  // base size, the viewport (vw sizing), the slot width and the floor. Reuse it
+  // instead of paying the layout reflow again: the key carries the exact width,
+  // so a reused entry can never bring back the sub-pixel overflow that #1335
+  // fixed.
+  const cacheKey = text ? `${globalThis?.innerWidth || 0}|${node.className || ""}|${text}|${targetWidth}|${minSize}` : "";
   if (cacheKey && sidebarLabelFitCache.has(cacheKey)) {
     const cachedFontSize = sidebarLabelFitCache.get(cacheKey);
-    fittedSidebarLabelState.set(node, { text, roundedWidth, minSize, fontSize: cachedFontSize });
+    fittedSidebarLabelState.set(node, { text, width: targetWidth, minSize, fontSize: cachedFontSize });
     node.style.fontSize = cachedFontSize;
     return true;
   }
@@ -182,7 +186,7 @@ export function fitSidebarLabel(node, minFontSizePx) {
   const currentWidth = node.scrollWidth;
   if (currentWidth <= node.clientWidth) {
     node.style.fontSize = "";
-    fittedSidebarLabelState.set(node, { text, roundedWidth, minSize, fontSize: "" });
+    fittedSidebarLabelState.set(node, { text, width: targetWidth, minSize, fontSize: "" });
     if (cacheKey) {
       sidebarLabelFitCache.set(cacheKey, "");
     }
@@ -206,7 +210,7 @@ export function fitSidebarLabel(node, minFontSizePx) {
 
   const finalFontSize = `${best}px`;
   node.style.fontSize = finalFontSize;
-  fittedSidebarLabelState.set(node, { text, roundedWidth, minSize, fontSize: finalFontSize });
+  fittedSidebarLabelState.set(node, { text, width: targetWidth, minSize, fontSize: finalFontSize });
   if (cacheKey) {
     sidebarLabelFitCache.set(cacheKey, finalFontSize);
   }
