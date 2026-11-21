@@ -255,6 +255,42 @@
   overflow-y: visible;
 }
 
+/* ---------- Dialogs (NuvioDialog: hold-menu, watchlist, comments…) ----------
+   Every NuvioDialog dimension is Android TV dp x 2 (48px panel padding, 80px
+   pill buttons at 28px text) and the JS pins an inline max-width in vw — on a
+   390px phone that yields a 146px panel with TV-sized buttons stacked into a
+   column taller than the fold. Re-derive at phone dialog scale. */
+.web-touch .nuvio-dialog-panel {
+  width: min(92vw, 360px) !important;
+  max-width: 92vw !important;
+  padding: 20px 18px;
+  gap: 14px;
+  border-radius: 16px;
+}
+
+.web-touch .nuvio-dialog-title {
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.web-touch .nuvio-dialog-subtitle {
+  font-size: 13px;
+  line-height: 18px;
+  margin-top: -6px;
+}
+
+.web-touch .nuvio-dialog-actions {
+  gap: 10px;
+}
+
+.web-touch .nuvio-dialog-button {
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 15px;
+  line-height: 20px;
+  border-radius: 10px;
+}
+
 /* Detail rails are horizontal overflow scrollers already (css/components-40.css
    .detail-morelike-track). Give them the same phone carousel feel as the home
    rails: inertial scrolling and proximity snap. touch-action stays default so

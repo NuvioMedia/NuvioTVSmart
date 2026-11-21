@@ -1,9 +1,16 @@
 import * as internals from "./homeScreenContext.js";
 
 export function createHomeScreenMethods19() {
-  const { getLegacySidebarSelectedNode, getModernSidebarSelectedNode, getDirectionFromKeyCode, MODERN_HOME_CONSTANTS, Router } = internals;
+  const { getLegacySidebarSelectedNode, getModernSidebarSelectedNode, getDirectionFromKeyCode, MODERN_HOME_CONSTANTS, Router, Platform } =
+    internals;
 
   return {
+    cancelPendingHomeTouchHold() {
+      if (this._homeTouchHoldTimer) {
+        clearTimeout(this._homeTouchHoldTimer);
+        this._homeTouchHoldTimer = null;
+      }
+    },
     handleHomeDpad(event) {
       const keyCode = Number(event?.keyCode || 0);
       const direction = getDirectionFromKeyCode(keyCode);
@@ -164,6 +171,12 @@ export function createHomeScreenMethods19() {
       }
       if (!this.boundHomeClickHandler) {
         this.boundHomeClickHandler = (event) => {
+          // A touch long-press opened the hold dialog; suppress the synthetic
+          // click that Chromium fires on release so it does not also open Detail.
+          if (this._homeHoldFiredAt && Date.now() - this._homeHoldFiredAt < 1000) {
+            this._homeHoldFiredAt = 0;
+            return;
+          }
           const target = event?.target?.closest?.(".home-main .focusable");
           if (!target || !this.container?.contains(target)) {
             return;
@@ -186,6 +199,49 @@ export function createHomeScreenMethods19() {
       if (!this.boundHomeMouseDownHandler) {
         this.boundHomeMouseDownHandler = () => {
           this.markUserInteractionSinceHomePaint();
+        };
+      }
+      if (!this.boundHomeTouchHoldHandler) {
+        // Touch tier only: the poster/continue hold menu (watchlist, mark
+        // watched, trailer…) has only ever been reachable through TV input
+        // (menu key / D-pad hold). Press-and-hold on a card opens it, with a
+        // haptic tick; the release click is suppressed in the click handler.
+        this.boundHomeTouchHoldHandler = (event) => {
+          if (event?.pointerType !== "touch" || !Platform.isCompactViewport()) {
+            return;
+          }
+          const target = event?.target?.closest?.(".home-main .home-content-card.focusable, .home-main .home-continue-card.focusable");
+          if (!target || !this.container?.contains(target)) {
+            return;
+          }
+          this.cancelPendingHomeTouchHold();
+          const startX = Number(event.clientX || 0);
+          const startY = Number(event.clientY || 0);
+          this._homeTouchHoldTimer = setTimeout(() => {
+            this._homeTouchHoldTimer = null;
+            this._homeHoldFiredAt = Date.now();
+            try {
+              navigator.vibrate?.(30);
+            } catch (_) {}
+            this.openHoldMenuForNode(target);
+          }, 500);
+          const finish = (moveEvent) => {
+            const moved = Math.abs(Number(moveEvent?.clientX || 0) - startX) + Math.abs(Number(moveEvent?.clientY || 0) - startY);
+            // Chromium converts a stationary touch into pointercancel around
+            // the long-press threshold (native contextmenu handoff). The touch
+            // tier owns long-press, so a cancel without movement must NOT
+            // abort the pending hold — only real motion or a lift do.
+            if ((moveEvent?.type === "pointermove" || moveEvent?.type === "pointercancel") && moved < 10) {
+              return;
+            }
+            this.cancelPendingHomeTouchHold();
+            this.container?.removeEventListener("pointermove", finish);
+            this.container?.removeEventListener("pointerup", finish);
+            this.container?.removeEventListener("pointercancel", finish);
+          };
+          this.container.addEventListener("pointermove", finish);
+          this.container.addEventListener("pointerup", finish);
+          this.container.addEventListener("pointercancel", finish);
         };
       }
       if (!this.boundHomeMouseOverHandler) {
@@ -237,12 +293,14 @@ export function createHomeScreenMethods19() {
         this.boundHomeEventContainer.removeEventListener("focusin", this.boundHomeFocusInHandler);
         this.boundHomeEventContainer.removeEventListener("click", this.boundHomeClickHandler);
         this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
+        this.boundHomeEventContainer.removeEventListener("pointerdown", this.boundHomeTouchHoldHandler);
         this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
         this.boundHomeEventContainer.removeEventListener("wheel", this.boundHomeWheelHandler);
       }
       this.container.addEventListener("focusin", this.boundHomeFocusInHandler);
       this.container.addEventListener("click", this.boundHomeClickHandler);
       this.container.addEventListener("mousedown", this.boundHomeMouseDownHandler);
+      this.container.addEventListener("pointerdown", this.boundHomeTouchHoldHandler, { passive: true });
       this.container.addEventListener("mouseover", this.boundHomeMouseOverHandler);
       this.container.addEventListener("wheel", this.boundHomeWheelHandler, { passive: false });
       this.boundHomeEventContainer = this.container;

@@ -122,10 +122,12 @@ export function createHomeScreenMethods30() {
         this.boundHomeEventContainer.removeEventListener("focusin", this.boundHomeFocusInHandler);
         this.boundHomeEventContainer.removeEventListener("click", this.boundHomeClickHandler);
         this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
+        this.boundHomeEventContainer.removeEventListener("pointerdown", this.boundHomeTouchHoldHandler);
         this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
         this.boundHomeEventContainer.removeEventListener("wheel", this.boundHomeWheelHandler);
         this.boundHomeEventContainer = null;
       }
+      this.cancelPendingHomeTouchHold?.();
       this.cachedModernPortraitPosterMetrics = null;
       this.cachedModernLandscapePosterMetrics = null;
       const preserveRenderedTvHome = Boolean(

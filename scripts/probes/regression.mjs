@@ -174,6 +174,61 @@ async function navTo(page, text) {
 // Real swipe gate: dispatch a horizontal touch drag across the first home rail
 // and require the rail to actually scroll. Also asserts the rail exposes a
 // swipeable overflow with snap and does not disable touch panning.
+// Press-and-hold on a poster must open the title-actions dialog (watchlist,
+// mark watched…). This menu used to exist only for TV input.
+async function holdGate(page) {
+  const card = await page.evaluate(() => {
+    const c = [...document.querySelectorAll(".home-main .home-poster-card")].find((n) => {
+      const r = n.getBoundingClientRect();
+      return (
+        r.left > 40 && r.right < innerWidth - 10 && r.top > 140 && r.bottom < innerHeight - 130
+      );
+    });
+    if (!c) return null;
+    const r = c.getBoundingClientRect();
+    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+  });
+  if (!card) return [{ kind: "hold", why: "no poster card found" }];
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: card.x, y: card.y }]
+  });
+  await page.waitForTimeout(750);
+  // Sample while the finger is still down: releasing lands a click on the
+  // freshly-opened dialog backdrop, which dismisses it (correct UX, wrong gate).
+  const res = await page.evaluate(() => {
+    const d = document.querySelector(".nuvio-dialog-backdrop");
+    const open = Boolean(
+      d && getComputedStyle(d).display !== "none" && d.getBoundingClientRect().width > 0
+    );
+    const btn = open ? d.querySelector(".nuvio-dialog-button") : null;
+    const r = btn ? btn.getBoundingClientRect() : null;
+    return {
+      open,
+      panelW: open
+        ? Math.round(d.querySelector(".nuvio-dialog-panel")?.getBoundingClientRect().width || 0)
+        : 0,
+      btnW: r ? Math.round(r.width) : 0,
+      btnH: r ? Math.round(r.height) : 0
+    };
+  });
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
+  await page.waitForTimeout(400);
+  const problems = [];
+  if (!res.open) problems.push({ kind: "hold", why: "long-press did not open the actions dialog" });
+  else {
+    if (res.btnH < 40)
+      problems.push({ kind: "hold-scale", why: `dialog button ${res.btnH}px tall` });
+    if (res.panelW < 240)
+      problems.push({ kind: "hold-scale", why: `dialog panel ${res.panelW}px wide` });
+  }
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(600);
+  return problems;
+}
+
 async function swipeGate(page) {
   const pre = await page.evaluate(() => {
     const track = [...document.querySelectorAll(".home-track")].find(
@@ -364,6 +419,12 @@ if (!harnessOnly) {
   results.push({ label: "home-swipe", ok: swipeProblems.length === 0, fails: swipeProblems });
   console.log(
     `${swipeProblems.length ? "FAIL" : "PASS"} home-swipe${swipeProblems.length ? " " + JSON.stringify(swipeProblems) : ""}`
+  );
+
+  const holdProblems = await holdGate(page);
+  results.push({ label: "home-hold-menu", ok: holdProblems.length === 0, fails: holdProblems });
+  console.log(
+    `${holdProblems.length ? "FAIL" : "PASS"} home-hold-menu${holdProblems.length ? " " + JSON.stringify(holdProblems) : ""}`
   );
 
   const { qrProblems, emailProblems } = await authPhoneGate(browser);
