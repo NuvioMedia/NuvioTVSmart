@@ -420,7 +420,7 @@ export function createPlayerControllerMethods18() {
           // Match Stremio's webOS startup order: src -> mediaId -> load -> play.
           this.applyWebOsStagedNativeSource(playbackUrl, "native-file");
           await this.prepareWebOsStagedNativePlayback(playToken, playbackUrl);
-          if (!this.isPlaybackRequestActive(playToken, requestedUrl)) {
+          if (!this.isPlaybackRequestActive(playToken, playbackUrl)) {
             return;
           }
         } else {
