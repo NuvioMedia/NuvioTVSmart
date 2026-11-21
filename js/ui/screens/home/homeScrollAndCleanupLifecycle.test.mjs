@@ -68,22 +68,36 @@ function buildScrollHarness() {
   return { screen, scheduledRafs, cancelledRafs, stepFrame };
 }
 
-test("animateSpringScroll stops immediately when preserved container becomes hidden (display: none)", () => {
-  const { screen, scheduledRafs, stepFrame } = buildScrollHarness();
-  const classes = new Set();
+// Real scroll containers clamp their offset to the live scroll range and report
+// an offset of 0 once hidden, so the stub must do the same.
+function createScrollContainer(classes = new Set()) {
   const container = {
     isConnected: true,
     clientWidth: 1920,
     clientHeight: 1080,
     scrollHeight: 3000,
     scrollWidth: 1920,
-    scrollTop: 0,
     classList: {
       add: (name) => classes.add(name),
       remove: (name) => classes.delete(name),
       contains: (name) => classes.has(name)
     }
   };
+  let scrollTop = 0;
+  Object.defineProperty(container, "scrollTop", {
+    get: () => scrollTop,
+    set: (value) => {
+      const max = Math.max(0, container.scrollHeight - container.clientHeight);
+      scrollTop = Math.max(0, Math.min(max, Number(value) || 0));
+    }
+  });
+  return container;
+}
+
+test("animateSpringScroll stops when preserved container becomes hidden (display: none)", () => {
+  const { screen, scheduledRafs, stepFrame } = buildScrollHarness();
+  const classes = new Set();
+  const container = createScrollContainer(classes);
 
   screen.animateSpringScroll(container, "y", 800);
   assert.equal(scheduledRafs.size, 1);
@@ -99,8 +113,30 @@ test("animateSpringScroll stops immediately when preserved container becomes hid
   container.scrollHeight = 0;
   container.scrollTop = 0;
 
-  stepFrame(16);
+  // The spring must settle on the live (empty) scroll range instead of
+  // scheduling frames forever against an unreachable target.
+  let frames = 0;
+  while (scheduledRafs.size && frames < 240) {
+    stepFrame(16);
+    frames += 1;
+  }
   assert.equal(scheduledRafs.size, 0, "hidden spring scroll must stop scheduling rAF frames");
+  assert.ok(frames < 240, "hidden spring scroll must settle, not spin forever");
+  assert.equal(classes.has("is-camera-scrolling"), false);
+});
+
+test("animateSpringScroll stops on the frame after the container is detached", () => {
+  const { screen, scheduledRafs, stepFrame } = buildScrollHarness();
+  const classes = new Set();
+  const container = createScrollContainer(classes);
+
+  screen.animateSpringScroll(container, "y", 800);
+  stepFrame(16);
+  assert.equal(scheduledRafs.size, 1);
+
+  container.isConnected = false;
+  stepFrame(16);
+  assert.equal(scheduledRafs.size, 0, "a detached container must not keep a scroll loop alive");
   assert.equal(classes.has("is-camera-scrolling"), false);
 });
 
@@ -125,9 +161,11 @@ test("animateScroll early return cancels any prior running rAF and cancelAllScro
   assert.ok(cancelledRafs.includes(firstRafId));
   assert.equal(scheduledRafs.size, 0);
 
-  // Start spring on container, then invoke cancelAllScrollAnimations (as cleanup() does).
-  screen.animateSpringScroll(container, "y", 700);
-  assert.equal(scheduledRafs.size, 1);
+  // Start springs on several containers (viewport + rows), then invoke
+  // cancelAllScrollAnimations (as cleanup() does): all of them must stop.
+  const containers = [0, 1, 2].map(() => createScrollContainer());
+  containers.forEach((target) => screen.animateSpringScroll(target, "x", 700));
+  assert.equal(scheduledRafs.size, 3);
   screen.cancelAllScrollAnimations();
   assert.equal(scheduledRafs.size, 0);
 });
@@ -136,6 +174,7 @@ test("cleanup clears continueWatchingReleaseTimer + active scroll animations, an
   let resetLogoCalls = 0;
   let resetRescalerCalls = 0;
   let cancelAllScrollCalls = 0;
+  const cancelledRafs = [];
   const stub = () => {};
   const context = vm.createContext({
     internals: {
@@ -150,7 +189,9 @@ test("cleanup clears continueWatchingReleaseTimer + active scroll animations, an
     },
     setTimeout,
     clearTimeout,
-    cancelAnimationFrame: stub
+    cancelAnimationFrame: (id) => {
+      cancelledRafs.push(id);
+    }
   });
   context.globalThis = context;
   vm.runInContext(`${source30}\nglobalThis.api = createHomeScreenMethods30();`, context);
@@ -167,6 +208,9 @@ test("cleanup clears continueWatchingReleaseTimer + active scroll animations, an
     continueWatchingReleaseTimer: setTimeout(() => {
       timerFired = true;
     }, 50),
+    _mainVertRaf: 11,
+    _mainClassicVertRaf: 12,
+    _trackHorizRaf: 13,
     cancelAllScrollAnimations() {
       cancelAllScrollCalls += 1;
     },
@@ -196,6 +240,13 @@ test("cleanup clears continueWatchingReleaseTimer + active scroll animations, an
   assert.equal(screen.continueWatchingReleaseTimer, null);
   assert.equal(cancelAllScrollCalls, 1);
   assert.equal(timerFired, false);
+  assert.deepEqual(
+    cancelledRafs.sort((a, b) => a - b),
+    [11, 12, 13]
+  );
+  assert.equal(screen._mainVertRaf, null);
+  assert.equal(screen._mainClassicVertRaf, null);
+  assert.equal(screen._trackHorizRaf, null);
 
   screen.continueWatchingReleaseTimer = setTimeout(() => {
     timerFired = true;

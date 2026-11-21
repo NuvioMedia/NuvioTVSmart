@@ -11,13 +11,6 @@ function clearCameraScrollActive(container) {
   container?.classList?.remove?.("is-camera-scrolling");
 }
 
-function isScrollContainerHiddenOrDetached(container) {
-  if (!container || container.isConnected === false) {
-    return true;
-  }
-  return Number(container.clientHeight || 0) === 0 && Number(container.clientWidth || 0) === 0;
-}
-
 function getContainerMaxScroll(container, axis) {
   return axis === "y"
     ? Math.max(0, Number(container.scrollHeight || 0) - Number(container.clientHeight || 0))
@@ -226,7 +219,7 @@ export function createHomeScreenMethods02() {
         springState[key] = null;
         springMap.set(container, springState);
       }
-      if (prefersReducedMotion || effectiveDuration <= 0 || isScrollContainerHiddenOrDetached(container)) {
+      if (prefersReducedMotion || effectiveDuration <= 0) {
         this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
@@ -242,7 +235,7 @@ export function createHomeScreenMethods02() {
 
       const startTime = performance.now();
       const tick = (now) => {
-        if (isScrollContainerHiddenOrDetached(container)) {
+        if (container.isConnected === false) {
           existing[key] = null;
           map.set(container, existing);
           this.untrackScrollContainerIfIdle?.(container);
@@ -281,7 +274,7 @@ export function createHomeScreenMethods02() {
         return;
       }
       const prefersReducedMotion = globalThis?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-      if (prefersReducedMotion || isScrollContainerHiddenOrDetached(container)) {
+      if (prefersReducedMotion) {
         this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
@@ -326,17 +319,16 @@ export function createHomeScreenMethods02() {
       };
 
       const tick = (now) => {
-        if (isScrollContainerHiddenOrDetached(container)) {
+        if (container.isConnected === false) {
           existing[key] = null;
           springMap.set(container, existing);
           this.untrackScrollContainerIfIdle?.(container);
           clearCameraScrollActive(container);
           return;
         }
-        const liveTarget = Math.max(0, Math.min(getContainerMaxScroll(container, axis), Number(state.target || 0)));
         const deltaSeconds = Math.min(0.034, Math.max(0.001, (now - state.lastTime) / 1000));
         state.lastTime = now;
-        const displacement = state.position - liveTarget;
+        const displacement = state.position - Number(state.target || 0);
         const acceleration = -state.stiffness * displacement - state.damping * state.velocity;
         state.velocity += acceleration * deltaSeconds;
         state.position += state.velocity * deltaSeconds;
@@ -344,17 +336,20 @@ export function createHomeScreenMethods02() {
 
         // Reading scroll position after writing it can flush layout. It only
         // affects settling once velocity is low enough; keep that check first.
-        if (
-          Math.abs(state.velocity) <= state.velocityEpsilon &&
-          (Math.abs(liveTarget - state.position) <= state.precision ||
-            Math.abs(liveTarget - Number(container[property] || 0)) <= state.precision)
-        ) {
-          container[property] = liveTarget;
-          existing[key] = null;
-          springMap.set(container, existing);
-          this.untrackScrollContainerIfIdle?.(container);
-          clearCameraScrollActive(container);
-          return;
+        if (Math.abs(state.velocity) <= state.velocityEpsilon) {
+          // A hidden container (.home-dom-preserved display:none or
+          // content-visibility) reports no scroll range, so its position can
+          // never reach the requested target: clamp to the live range and
+          // settle instead of scheduling frames nobody can see.
+          const settledTarget = Math.min(getContainerMaxScroll(container, axis), Math.max(0, Number(state.target || 0)));
+          if (Math.abs(settledTarget - Number(container[property] || 0)) <= state.precision) {
+            container[property] = settledTarget;
+            existing[key] = null;
+            springMap.set(container, existing);
+            this.untrackScrollContainerIfIdle?.(container);
+            clearCameraScrollActive(container);
+            return;
+          }
         }
 
         state.raf = requestAnimationFrame(tick);

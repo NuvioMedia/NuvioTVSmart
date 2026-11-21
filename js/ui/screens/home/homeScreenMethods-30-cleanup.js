@@ -59,6 +59,20 @@ export function createHomeScreenMethods30() {
       this.cancelScheduledRender();
       this.cancelModernCameraFollow({ stopAnimations: true });
       this.cancelAllScrollAnimations?.();
+      // Deferred focus-scroll frames would otherwise run after cleanup() and
+      // start a fresh scroll animation on the preserved (hidden) Home DOM.
+      if (this._mainVertRaf) {
+        cancelAnimationFrame(this._mainVertRaf);
+        this._mainVertRaf = null;
+      }
+      if (this._mainClassicVertRaf) {
+        cancelAnimationFrame(this._mainClassicVertRaf);
+        this._mainClassicVertRaf = null;
+      }
+      if (this._trackHorizRaf) {
+        cancelAnimationFrame(this._trackHorizRaf);
+        this._trackHorizRaf = null;
+      }
       this.endModernVerticalFastScroll({ land: false });
       this.stopHeroRotation();
       if (this.heroDescriptionAutoScrollFrame) {
