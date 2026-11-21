@@ -35,14 +35,18 @@ const manifest = await page.evaluate(async () => {
     display: json.display,
     start: json.start_url,
     icons,
-    themeColor: document.querySelector('meta[name="theme-color"]')?.content || null
+    themeColor: document.querySelector('meta[name="theme-color"]')?.content || null,
+    viewportFit: (
+      document.querySelector('meta[name="viewport"]')?.getAttribute("content") || ""
+    ).includes("viewport-fit=cover")
   };
 });
 check(
   manifest.link &&
     manifest.display === "standalone" &&
     (manifest.icons || []).every((s) => s === 200) &&
-    manifest.themeColor,
+    manifest.themeColor &&
+    manifest.viewportFit,
   "manifest",
   JSON.stringify(manifest)
 );

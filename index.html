@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <script src="assets/runtime/legacy-features.js"></script>
     <script>
@@ -55,7 +55,8 @@
       // offline shell fallback and asset caching.
       (function registerPwaShell() {
         var ua = String((window.navigator && window.navigator.userAgent) || "").toLowerCase();
-        if (ua.indexOf("tizen") !== -1 || ua.indexOf("web0s") !== -1 || ua.indexOf("webos") !== -1) return;
+        if (ua.indexOf("tizen") !== -1 || ua.indexOf("web0s") !== -1 || ua.indexOf("webos") !== -1)
+          return;
         if (!/^https?:$/.test(window.location.protocol)) return;
         if (!("serviceWorker" in navigator)) return;
         window.addEventListener("load", function () {

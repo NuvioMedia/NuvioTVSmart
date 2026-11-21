@@ -28,8 +28,8 @@ Grounded in branch `feat/web-touch-client` (8 commits ahead of origin). Screens 
 
 - [x] PWA: manifest, icons (192/512/maskable), standalone, theme color (bd335356; icons derived from assets/images/largeIcon.png)
 - [x] Installable/offline shell via service worker (UA-gated to browser tier; streams/media never cached; offline boot verified headless)
-- [ ] Swipe gestures: horizontal carousels with touch drag/scroll instead of focus-rail arrow buttons
-- [ ] Safe-area insets (notch/home bar) via `env(safe-area-inset-*)` on bottom nav and player controls
+- [x] Swipe gestures: horizontal carousels with touch drag/scroll (native scroll; camera spring now yields on touch tier in homeScreenMethods-16/17; detail rails snap-scrolled in components-66.css; regression probe has a home-swipe gate)
+- [x] Safe-area insets (notch/home bar) via `env(safe-area-inset-*)` on bottom nav and player controls (`--touch-safe-*` vars components-66.css:38-41; nav padding + `--player-overlay-bottom` offsets; `viewport-fit=cover` added to index.html meta, asserted by pwa-check; Tizen override untouched)
 - [ ] Landscape layout for tablets (currently the tier assumes 390dp portrait geometry)
 - [ ] Picture-in-Picture for background playback (browser substitute for the app's background play)
 - [ ] Session persistence so reopening the PWA returns to the same screen (deep links / history)
@@ -37,7 +37,7 @@ Grounded in branch `feat/web-touch-client` (8 commits ahead of origin). Screens 
 ## Phase 4 — Mobile UX gaps vs NuvioMobile
 
 - [ ] Touch-native player controls: scrubber with large thumb, double-tap side to seek ±10s, tap-to-toggle-then-autohide
-- [ ] Replace QR auth with native email/password form flow on touch tier (QR is awkward on the phone you'd log in *on*; fallback already exists via `renderQrMainLoginFallback`)
+- [ ] Replace QR auth with native email/password form flow on touch tier (QR is awkward on the phone you'd log in _on_; fallback already exists via `renderQrMainLoginFallback`)
 - [ ] Pull-to-refresh on home/library
 - [ ] Virtual-keyboard behavior: `autocomplete`/`inputmode` on search and sign-in fields
 - [ ] Performance pass on phone-class hardware: lazy poster loading, image sizing (no 1920-canvas poster sizes on a 390px screen)
@@ -51,4 +51,4 @@ Grounded in branch `feat/web-touch-client` (8 commits ahead of origin). Screens 
 
 ---
 
-**Strategic note:** the highest-leverage items are Phase 3's QR-auth replacement and the PWA shell — those make it *feel* like NuvioMobile rather than a resized TV app.
+**Strategic note:** the highest-leverage items are Phase 3's QR-auth replacement and the PWA shell — those make it _feel_ like NuvioMobile rather than a resized TV app.
