@@ -8,6 +8,7 @@ import {
   toDisplayTypeLabel
 } from "../../../core/addons/homeCatalogs.js";
 import { Platform } from "../../../platform/index.js";
+import { isMediaServerResumeRow } from "../home/homeUtils.js";
 import { ExperienceModeStore } from "../../../data/local/experienceModeStore.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
 
@@ -175,7 +176,7 @@ export const CatalogOrderScreen = {
         return `
         <article class="catalog-order-card">
           <div class="catalog-order-card-copy">
-            <h2>${escapeHtml(item.catalogName)} - ${escapeHtml(toDisplayTypeLabel(item.type))}</h2>
+            <h2>${escapeHtml(isMediaServerResumeRow(item) ? item.catalogName : `${item.catalogName} - ${toDisplayTypeLabel(item.type)}`)}</h2>
             <p class="catalog-order-card-subtitle">${escapeHtml(item.addonName)}</p>
             ${item.isDisabled ? '<p class="catalog-order-card-disabled">Disabled on Home</p>' : ""}
           </div>
