@@ -238,7 +238,9 @@ export function createAuthQrSignInScreenMethods02() {
     // Touch/web tier: a QR is useless on a device that already owns the browser.
     // Expose the same URL the QR encodes as a tappable anchor so login needs no second screen.
     appendOpenOnThisDeviceLink(targetNode, rawUrl) {
-      if (!targetNode) return null;
+      // Browser/phone tier only: the anchor must never be inserted on Tizen or
+      // webOS, which keep the stock QR screen rendering.
+      if (!targetNode || !Platform.isBrowser()) return null;
       const linkTarget = String(rawUrl || "").trim();
       if (!/^https?:\/\//i.test(linkTarget)) return null;
       if (targetNode.querySelector(".qr-open-link")) return null;
