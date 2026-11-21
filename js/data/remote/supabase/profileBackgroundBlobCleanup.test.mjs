@@ -9,48 +9,68 @@ const stripModule = (source) =>
     .replace(/^import\s+["'][^"']+["'];\r?\n/gm, "")
     .replace(/^export /gm, "");
 
-test("profileBackgroundRepository retains matching asset blob URLs and revokes removed ones", async () => {
+const tick = () => new Promise((resolve) => setTimeout(resolve, 10));
+
+test("profileBackgroundRepository reuses cached asset URLs and revokes dropped ones", async () => {
   const source = stripModule(
     await readFile(new URL("./profileBackgroundRepository.js", import.meta.url), "utf8")
   );
   const revoked = [];
-  let rpcRows = [
-    { id: "bg1", storage_path: "bg1.jpg", asset_version: 1 },
-    { id: "bg2", storage_path: "bg2.jpg", asset_version: 1 }
-  ];
-  let blobCounter = 1;
+  const created = [];
+  let urlCount = 0;
+  let resolveRemoteCatalog;
+  const remoteCatalogResponse = new Promise((resolve) => {
+    resolveRemoteCatalog = resolve;
+  });
+  const storedCatalog = {
+    items: [
+      { id: "bg1", storage_path: "bg1.jpg", asset_version: 1 },
+      { id: "bg2", storage_path: "bg2.jpg", asset_version: 1 }
+    ]
+  };
   const context = vm.createContext({
     console,
     MemberCatalogStorage: {
-      loadProfileBackgroundCatalog: () => null,
+      loadProfileBackgroundCatalog: () => storedCatalog,
       saveProfileBackgroundCatalog() {},
-      loadAsset: async (_k, id) => ({ id }),
+      loadAsset: async (_kind, id) => ({ id }),
       saveAsset: async () => {}
     },
     SupabaseApi: {
-      rpc: async () => rpcRows,
+      rpc: () => remoteCatalogResponse,
       downloadStorageObject: async () => null
     },
-    createStorageAssetUrl: async (blob) => `blob:${blob.id}:${blobCounter++}`,
+    createStorageAssetUrl: async (blob) => {
+      const url = `blob:${blob.id}:${++urlCount}`;
+      created.push({ id: blob.id, url });
+      return url;
+    },
     revokeStorageAssetUrl: (url) => revoked.push(url)
   });
   context.globalThis = context;
   vm.runInContext(
-    `${source}\nglobalThis.ProfileBackgroundRepository = ProfileBackgroundRepository;\nglobalThis.resetLoadFlag = () => { remoteCatalogLoaded = false; };`,
+    `${source}\nglobalThis.ProfileBackgroundRepository = ProfileBackgroundRepository;`,
     context
   );
 
-  await context.ProfileBackgroundRepository.loadSelectedAndPreload("bg1");
-  const firstCatalog = context.ProfileBackgroundRepository.getCatalog();
-  const bg1Url = firstCatalog.find((x) => x.id === "bg1").imageUrl;
-  const bg2Url = firstCatalog.find((x) => x.id === "bg2").imageUrl;
-  assert.ok(bg1Url && bg2Url);
+  // Launch with a persisted catalog: cached blobs are published while the RPC is still in flight.
+  const loading = context.ProfileBackgroundRepository.loadSelectedAndPreload("bg1");
+  await tick();
+  const cachedCatalog = context.ProfileBackgroundRepository.getCatalog();
+  const cachedBg1Url = cachedCatalog.find((item) => item.id === "bg1").imageUrl;
+  const cachedBg2Url = cachedCatalog.find((item) => item.id === "bg2").imageUrl;
+  assert.ok(cachedBg1Url && cachedBg2Url);
 
-  // Force a catalog reload without bg2 (and bg1 unchanged): bg1 keeps URL, bg2 is revoked.
-  context.resetLoadFlag();
-  rpcRows = [{ id: "bg1", storage_path: "bg1.jpg", asset_version: 1 }];
-  await context.ProfileBackgroundRepository.ensureLoaded();
-  const updated = context.ProfileBackgroundRepository.getCatalog();
-  assert.equal(updated.find((x) => x.id === "bg1").imageUrl, bg1Url);
-  assert.deepEqual(revoked, [bg2Url]);
+  // The refreshed catalog keeps bg1 (same asset version) and drops bg2.
+  resolveRemoteCatalog([{ id: "bg1", storage_path: "bg1.jpg", asset_version: 1 }]);
+  await loading;
+
+  const catalog = context.ProfileBackgroundRepository.getCatalog();
+  assert.equal(catalog.find((item) => item.id === "bg1").imageUrl, cachedBg1Url);
+  assert.equal(
+    catalog.some((item) => item.id === "bg2"),
+    false
+  );
+  assert.deepEqual(revoked, [cachedBg2Url]);
+  assert.equal(created.filter((item) => item.id === "bg1").length, 1);
 });
