@@ -20,7 +20,7 @@ test("createFramePaceMonitor skips key samples and in-flight slow frames when sh
       ...TV_FRAME_PACE_POLICY,
       warmupMs: 20000,
       windowMs: 300,
-      slowFrameThresholdMs: 25,
+      lateFrameMs: 25,
       slowLostMs: 60,
       sampleKeys: 3
     }
