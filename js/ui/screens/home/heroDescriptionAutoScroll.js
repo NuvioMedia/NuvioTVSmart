@@ -86,6 +86,9 @@ export function createHeroDescriptionAutoScroller({
     if (!node) {
       return;
     }
+    if (state && state.node === node) {
+      state.lastMask = "";
+    }
     node.style.maskImage = "";
     node.style.webkitMaskImage = "";
   }
@@ -100,6 +103,12 @@ export function createHeroDescriptionAutoScroller({
         ? `#000 calc(100% - ${fade}px), rgba(0,0,0,${1 - bottomAlpha}) 100%`
         : "#000 100%";
     const mask = `linear-gradient(to bottom, ${top}, ${bottom})`;
+    if (state?.lastMask === mask) {
+      return;
+    }
+    if (state) {
+      state.lastMask = mask;
+    }
     node.style.maskImage = mask;
     node.style.webkitMaskImage = mask;
   }
@@ -150,6 +159,55 @@ export function createHeroDescriptionAutoScroller({
     }
   }
 
+  function scheduleDelayPhase() {
+    if (!state) {
+      return;
+    }
+    stopAnimation();
+    state.phase = "delay";
+    state.phaseStart = now();
+    const localToken = token;
+    state.timer = setTimeout(() => {
+      if (token !== localToken || !state) {
+        return;
+      }
+      state.timer = null;
+      if (isPaused()) {
+        waitWhilePaused(scheduleDelayPhase);
+        return;
+      }
+      state.phase = "scroll";
+      state.phaseStart = null;
+      if (state.cycle === 0) {
+        onHoldChange(true);
+      }
+      state.frame = requestFrame(tick);
+    }, state.plan.startDelayMs);
+  }
+
+  function scheduleEndPausePhase() {
+    if (!state) {
+      return;
+    }
+    stopAnimation();
+    state.phase = "endPause";
+    state.phaseStart = now();
+    const localToken = token;
+    state.timer = setTimeout(() => {
+      if (token !== localToken || !state) {
+        return;
+      }
+      state.timer = null;
+      if (isPaused()) {
+        waitWhilePaused(scheduleDelayPhase);
+        return;
+      }
+      state.phase = "return";
+      state.phaseStart = null;
+      state.frame = requestFrame(tick);
+    }, state.plan.endPauseMs);
+  }
+
   function waitWhilePaused(run) {
     const localToken = token;
     if (state?.timer) {
@@ -171,9 +229,7 @@ export function createHeroDescriptionAutoScroller({
         // Android resets to the top when a paused description resumes.
         setOffset(0);
         state.cycle = 0;
-        state.phase = "delay";
-        state.phaseStart = now() + state.plan.startDelayMs;
-        state.frame = requestFrame(tick);
+        scheduleDelayPhase();
       }
     }, 250);
   }
@@ -184,43 +240,23 @@ export function createHeroDescriptionAutoScroller({
     }
     state.frame = null;
     if (isPaused()) {
-      waitWhilePaused(() => {
-        if (state) {
-          state.frame = requestFrame(tick);
-        }
-      });
+      waitWhilePaused(scheduleDelayPhase);
       return;
     }
     const time = Number.isFinite(timestamp) ? timestamp : now();
-    const elapsed = Math.max(0, time - state.phaseStart);
-    if (state.phase === "delay") {
-      if (elapsed >= state.plan.startDelayMs) {
-        state.phase = "scroll";
-        state.phaseStart = time;
-        if (state.cycle === 0) {
-          onHoldChange(true);
-        }
-      }
-      state.frame = requestFrame(tick);
-      return;
+    if (state.phaseStart == null) {
+      state.phaseStart = time;
     }
+    const elapsed = Math.max(0, time - state.phaseStart);
     if (state.phase === "scroll") {
       const progress = Math.min(1, elapsed / state.plan.durationMs);
       setOffset(state.plan.distance * progress);
       if (progress >= 1) {
-        state.phase = "endPause";
-        state.phaseStart = time;
         if (state.cycle === 0) {
           onHoldChange(false);
         }
-      }
-      state.frame = requestFrame(tick);
-      return;
-    }
-    if (state.phase === "endPause") {
-      if (elapsed >= state.plan.endPauseMs) {
-        state.phase = "return";
-        state.phaseStart = time;
+        scheduleEndPausePhase();
+        return;
       }
       state.frame = requestFrame(tick);
       return;
@@ -235,8 +271,8 @@ export function createHeroDescriptionAutoScroller({
           stopAnimation();
           return;
         }
-        state.phase = "delay";
-        state.phaseStart = now() + state.plan.startDelayMs;
+        scheduleDelayPhase();
+        return;
       }
       state.frame = requestFrame(tick);
       return;
@@ -299,13 +335,18 @@ export function createHeroDescriptionAutoScroller({
         viewportHeight,
         offset: 0,
         phase: "delay",
-        phaseStart: now() + plan.startDelayMs,
+        phaseStart: null,
         cycle: 0,
         frame: null,
-        timer: null
+        timer: null,
+        lastMask: ""
       };
       setOffset(0);
-      state.frame = requestFrame(tick);
+      if (isPaused()) {
+        waitWhilePaused(scheduleDelayPhase);
+      } else {
+        scheduleDelayPhase();
+      }
       void localToken;
       return true;
     },
