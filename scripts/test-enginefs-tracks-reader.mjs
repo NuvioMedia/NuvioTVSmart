@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 
@@ -147,4 +148,202 @@ test("Readable#destroy stops reading where Node 4 lacks it", async () => {
   await closed;
   assert.equal(source.destroyed, true);
   assert.equal(reads, 0, "no further reads after destroy()");
+});
+
+// The vendored reader parses the first range read only. On an anime MKV the
+// Tracks element is larger than that read (every ASS track carries its own
+// styles), so the Arabic track was never returned by /tracks. These checks run
+// the real vendored reader over both the patched and the original bundle.
+const SYNC_SUBTITLES = [
+  ["eng", "English"],
+  ["eng", "English[Signs]"],
+  ["fre", "French"],
+  ["ger", "German"],
+  ["ita", "Italian"],
+  ["spa", "Spanish[ESP]"],
+  ["spa", "Spanish[LAT]"],
+  ["por", "Portuguese[BR]"],
+  ["rus", "Russian"],
+  ["ara", "Arabic"]
+];
+
+function ebml(id, payload) {
+  const data = Buffer.isBuffer(payload) ? payload : Buffer.from(payload);
+  let size;
+  if (data.length < 127) size = Buffer.from([0x80 | data.length]);
+  else if (data.length < 16383) size = Buffer.from([0x40 | (data.length >> 8), data.length & 255]);
+  else
+    size = Buffer.from([0x20 | (data.length >> 16), (data.length >> 8) & 255, data.length & 255]);
+  return Buffer.concat([Buffer.from(id, "hex"), size, data]);
+}
+
+function matroskaSubtitleTrack(id, language, name, padding) {
+  const fields = [
+    ebml("d7", [id]),
+    ebml("83", [17]),
+    ebml("22b59c", language),
+    ebml("536e", name),
+    ebml("86", "S_TEXT/ASS")
+  ];
+  if (padding) fields.push(ebml("63a2", "[Script Info]\n".padEnd(padding, "x")));
+  return ebml("ae", Buffer.concat(fields));
+}
+
+function matroskaTracks({ padding = 0, gap = 0 } = {}) {
+  const tracks = [
+    ebml("ae", Buffer.concat([ebml("d7", [1]), ebml("83", [1]), ebml("86", "V_MPEGH/ISO/HEVC")])),
+    ebml(
+      "ae",
+      Buffer.concat([ebml("d7", [2]), ebml("83", [2]), ebml("22b59c", "jpn"), ebml("86", "A_AAC")])
+    ),
+    ebml(
+      "ae",
+      Buffer.concat([ebml("d7", [3]), ebml("83", [2]), ebml("22b59c", "eng"), ebml("86", "A_AAC")])
+    )
+  ];
+  SYNC_SUBTITLES.forEach(([language, name], index) => {
+    tracks.push(matroskaSubtitleTrack(4 + index, language, name, padding));
+  });
+  const segment = ebml(
+    "18538067",
+    Buffer.concat([
+      gap ? ebml("ec", Buffer.alloc(gap)) : Buffer.alloc(0),
+      ebml("1654ae6b", Buffer.concat(tracks))
+    ])
+  );
+  return Buffer.concat([ebml("1a45dfa3", ebml("4282", "matroska")), segment]);
+}
+
+function serveRanges(body) {
+  const requests = [];
+  const server = createServer((request, response) => {
+    const match = /bytes=(\d+)-(\d*)/.exec(request.headers.range || "");
+    assert.ok(match, "the reader sends a range request");
+    const start = Number(match[1]);
+    const end = match[2] ? Math.min(Number(match[2]), body.length - 1) : body.length - 1;
+    requests.push([start, end]);
+    response.writeHead(206, {
+      "Content-Type": "video/x-matroska",
+      "Content-Range": `bytes ${start}-${end}/${body.length}`,
+      "Content-Length": String(end - start + 1)
+    });
+    response.end(body.subarray(start, end + 1));
+  });
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () =>
+      resolve({
+        requests,
+        url: `http://127.0.0.1:${server.address().port}/episode.mkv`,
+        close: () => new Promise((done) => server.close(done))
+      })
+    );
+  });
+}
+
+async function loadTracksReader(platform, { patched = true } = {}) {
+  const source = await readFile(
+    new URL(`../services/${platform}/runtime/media-http.cjs`, import.meta.url),
+    "utf8"
+  );
+  const moduleId = Number(/getTracksData=__webpack_require__\((\d+)\)\.default/.exec(source)[1]);
+  const declared = source.indexOf("var modules = [");
+  const table =
+    declared >= 0
+      ? source.slice(source.indexOf("[", declared), source.indexOf("\n];", declared) + 2)
+      : source.slice(source.indexOf("})([function(module") + 3, source.lastIndexOf("]") + 1);
+  assert.match(table, /^\[\s*function\(module/, "the vendored module table is found");
+  const modules = new Function("require", "return " + (patched ? patchTracksReader(table) : table))(
+    createRequire(import.meta.url)
+  );
+  const loaded = new Map();
+  const load = (id) => {
+    if (loaded.has(id)) return loaded.get(id).exports;
+    const module = { exports: {} };
+    loaded.set(id, module);
+    modules[id].call(module.exports, module, module.exports, load);
+    return module.exports;
+  };
+  load.o = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+  load.d = (exports, name, getter) => {
+    if (!load.o(exports, name))
+      Object.defineProperty(exports, name, { enumerable: true, get: getter });
+  };
+  load.n = (module) => {
+    const getter = module && module.__esModule ? () => module.default : () => module;
+    load.d(getter, "a", getter);
+    return getter;
+  };
+  return load(moduleId).default;
+}
+
+for (const platform of ["webos", "tizen"]) {
+  test(`${platform}: a Tracks element larger than the first read still returns every track`, async (t) => {
+    const reader = await loadTracksReader(platform);
+    const body = matroskaTracks({ padding: 8000 });
+    assert.ok(body.length > 65536, "the Tracks element must not fit the first read anywhere");
+    const media = await serveRanges(body);
+    t.after(media.close);
+
+    const tracks = await reader(media.url, { maxBytesLimit: 26214400 });
+
+    assert.equal(tracks.length, 13);
+    assert.deepEqual(
+      tracks.filter((track) => track.type === "text").map((track) => track.lang),
+      SYNC_SUBTITLES.map(([language]) => language)
+    );
+    assert.equal(tracks.find((track) => track.label === "Arabic").id, 13);
+    assert.deepEqual(
+      media.requests.map(([start]) => start),
+      [0, 0],
+      "the prefix is read again from the file start, never from mid-element"
+    );
+    assert.equal(media.requests[1][1], body.length - 1, "the second read stops at the Tracks end");
+  });
+}
+
+test("a Tracks list that fits the first read keeps its single request", async (t) => {
+  const reader = await loadTracksReader("webos");
+  const body = matroskaTracks();
+  assert.ok(body.length < 16384, "the fixture must fit the smallest first read");
+  const media = await serveRanges(body);
+  t.after(media.close);
+
+  const tracks = await reader(media.url, { maxBytesLimit: 26214400 });
+
+  assert.equal(tracks.length, 13);
+  assert.deepEqual(
+    media.requests.map(([start]) => start),
+    [0],
+    "a complete Tracks element never adds a range request"
+  );
+});
+
+test("Tracks placed after a large element is found with one bounded re-read", async (t) => {
+  const reader = await loadTracksReader("webos");
+  const body = matroskaTracks({ gap: 200 * 1024 });
+  const media = await serveRanges(body);
+  t.after(media.close);
+
+  const tracks = await reader(media.url, { maxBytesLimit: 26214400 });
+
+  assert.equal(tracks.length, 13);
+  assert.equal(media.requests.length, 2);
+  assert.equal(media.requests[1][0], 0);
+  assert.ok(media.requests[1][1] - media.requests[1][0] < 1048576, "bounded to 1 MiB");
+});
+
+test("without the fix the vendored reader drops the tracks past the first read", async (t) => {
+  const reader = await loadTracksReader("webos", { patched: false });
+  const body = matroskaTracks({ padding: 8000 });
+  const media = await serveRanges(body);
+  t.after(media.close);
+
+  const tracks = await reader(media.url, { maxBytesLimit: 26214400 });
+
+  assert.ok(tracks.length > 0 && tracks.length < 13);
+  assert.equal(
+    tracks.some((track) => track.lang === "ara"),
+    false,
+    "this is the track the report was missing"
+  );
 });

@@ -10,7 +10,33 @@
 //    loop never advances: the service's only thread spins forever.
 // So the parse loops stop on an element that cannot advance, and one chunk is
 // decoded at a time; a seek the decoder asks for (MP4 moov lookup) re-arms it.
+// 3. The Matroska decoder only parses the first chunk, so a Tracks element
+//    larger than it (anime releases carry one ASS header per subtitle track)
+//    loses every track past the cut: the subtitle menu shows only the first
+//    few. When the element is cut, read the file prefix again up to the
+//    element end, once, so files that fit are untouched and the extra range
+//    request stays bounded to 1 MiB.
 var MARKER = "/* NUVIO_TRACKS_READER_FIXES */";
+var TRACKS_READ_LIMIT = 1048576;
+var MATROSKA_DECODE =
+  '{key:"_decode",value:function(e){return new Promise((function(n,t){var r=X(e).find((function(e){return"Segment"===e.name}));if(!r)return t();var a=X(r.data).find((function(e){return"Tracks"===e.name}));if(!a)return t();n(a)}))}}';
+var MATROSKA_DECODE_FIXED =
+  '{key:"_decode",value:function(e,d){var s=this;return new Promise((function(n,t){' +
+  'var r=X(e).find((function(e){return"Segment"===e.name}));if(!r)return t();' +
+  'var a=X(r.data).find((function(e){return"Tracks"===e.name}));' +
+  "if(!a){if(!(r.data.length<r.dataSize))return t();if(d&&" +
+  TRACKS_READ_LIMIT +
+  ">(s.__nuvioTracksRead||0))return s.__nuvioTracksRead=" +
+  TRACKS_READ_LIMIT +
+  ",void d(0," +
+  TRACKS_READ_LIMIT +
+  ");return t()}" +
+  "if(a.data.length<a.dataSize){var h=e.length+(a.dataSize-a.data.length)," +
+  "c=Math.min(h," +
+  TRACKS_READ_LIMIT +
+  ");if(d&&h>(s.__nuvioTracksRead||0)&&c>e.length)" +
+  "return s.__nuvioTracksRead=c,void d(0,c)}" +
+  "n(a)}))}}";
 
 module.exports = function patchEngineFsTracksReader(source) {
   var code = String(source || "");
@@ -43,5 +69,6 @@ module.exports = function patchEngineFsTracksReader(source) {
         ".__nuvioDecoding=!0,$1.decode($2,$3).then($4).catch($5)),[2])"
     );
   }
+  patched = patched.replace(MATROSKA_DECODE, MATROSKA_DECODE_FIXED);
   return patched === code ? code : patched + "\n" + MARKER + "\n";
 };
