@@ -50,7 +50,9 @@ const AUDIT = (scopeSelector) => {
       const r = el.getBoundingClientRect();
       return (
         r.width > 20 &&
-        (r.right > VW + OVER || r.left < -OVER || r.bottom > VH + 2000 || r.top < -VH * 4)
+        // Horizontal overflow without a scroller is unreachable; vertical
+        // below/above-fold content is natively scrollable on the touch tier.
+        (r.right > VW + OVER || r.left < -OVER)
       );
     })
     .slice(0, 10)
@@ -122,6 +124,9 @@ const AUDIT = (scopeSelector) => {
   if (!scopeSelector) {
     for (const el of root.querySelectorAll("button")) {
       if (!vis(el) || /-card/.test(el.className.toString())) continue;
+      // Collapsible groups put option stacks INSIDE the row element; its
+      // height tracks content and is not a tap-target scale signal.
+      if (el.querySelector('button,[role="button"],.focusable,input,select')) continue;
       const h = el.getBoundingClientRect().height;
       if (h > 72)
         fails.push({
@@ -154,17 +159,67 @@ async function audit(page, label, scope) {
 
 async function gotoHome(page) {
   await page.goto(BASE_URL + "/", { waitUntil: "domcontentloaded" });
-  const back = page.locator("#qr-back-btn");
-  if (await back.count()) {
-    await back.tap().catch(() => {});
-    await page.waitForTimeout(9000);
-  } else await page.waitForTimeout(6000);
+  // Fresh-state relaunches walk a chain of boot gates (QR auth back, profile
+  // picker, welcome layout chooser, experience-mode chooser) in varying order
+  // and timing. Loop over states instead of racing fixed per-screen waits.
+  const deadline = Date.now() + 25000;
+  while (Date.now() < deadline) {
+    if (await page.locator(".home-nav-item").count()) break;
+    const handled = await page.evaluate(() => {
+      const back = document.querySelector("#qr-back-btn");
+      if (back) {
+        back.click();
+        return "qr";
+      }
+      const pick = document.querySelector(".profile-card[data-profile-id]");
+      if (pick) {
+        pick.click();
+        return "profile";
+      }
+      const layout =
+        [...document.querySelectorAll(".experience-mode-card[data-layout]")].find((n) =>
+          /modern/i.test(n.textContent || "")
+        ) || document.querySelector(".experience-mode-card[data-layout]");
+      if (layout) {
+        layout.click();
+        return "layout";
+      }
+      const mode =
+        document.querySelector('.experience-mode-card[data-mode="ADVANCED"]') ||
+        document.querySelector(".experience-mode-card[data-mode]");
+      if (mode) {
+        mode.click();
+        return "mode";
+      }
+      return null;
+    });
+    await page.waitForTimeout(handled ? 600 : 400);
+  }
+  if (!(await page.locator(".home-nav-item").count())) {
+    console.log(
+      "gotoHome: sidebar never appeared:",
+      JSON.stringify(
+        await page.evaluate(() => ({
+          bodyCls: document.body.className,
+          txt: document.body.innerText.replace(/\s+/g, " ").slice(0, 200),
+          cards: document.querySelectorAll(
+            ".profile-card,.experience-mode-card,.nuvio-dialog-button"
+          ).length,
+          hash: location.hash || location.pathname
+        }))
+      )
+    );
+  }
+  await page.waitForTimeout(1200);
 }
 async function navTo(page, text) {
+  try {
+    await page.waitForSelector(".home-nav-item", { timeout: 20000 });
+  } catch (_) {}
   await page.evaluate(
     (t) =>
       [...document.querySelectorAll(".home-nav-item")]
-        .find((n) => n.innerText.includes(t))
+        .find((n) => (n.innerText || n.textContent || "").includes(t))
         ?.click(),
     text
   );
@@ -176,19 +231,75 @@ async function navTo(page, text) {
 // swipeable overflow with snap and does not disable touch panning.
 // Press-and-hold on a poster must open the title-actions dialog (watchlist,
 // mark watched…). This menu used to exist only for TV input.
-async function holdGate(page) {
-  const card = await page.evaluate(() => {
-    const c = [...document.querySelectorAll(".home-main .home-poster-card")].find((n) => {
+async function holdGate(
+  page,
+  cardSelector = ".home-main .home-poster-card",
+  allowEmpty = false,
+  leaveOpen = false,
+  minLeft = 40
+) {
+  const findCard = ({ sel, minLeft }) => {
+    const c = [...document.querySelectorAll(sel)].find((n) => {
       const r = n.getBoundingClientRect();
       return (
-        r.left > 40 && r.right < innerWidth - 10 && r.top > 140 && r.bottom < innerHeight - 130
+        r.left > minLeft && r.right < innerWidth - 10 && r.top > 140 && r.bottom < innerHeight - 130
       );
     });
     if (!c) return null;
     const r = c.getBoundingClientRect();
     return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
-  });
-  if (!card) return [{ kind: "hold", why: "no poster card found" }];
+  };
+  let card = await page.evaluate(findCard, { sel: cardSelector, minLeft });
+  if (!card) {
+    // Catalog grids arrive asynchronously; give the route a bounded window
+    // instead of racing a fixed sleep.
+    try {
+      await page.waitForFunction((sel) => document.querySelectorAll(sel).length > 0, cardSelector, {
+        timeout: 8000
+      });
+    } catch (_) {}
+    card = await page.evaluate(findCard, { sel: cardSelector, minLeft });
+  }
+  if (!card) {
+    // Grids may start below the fixed header or above the nav bar; give the
+    // first candidate one scroll-into-center retry before giving up.
+    await page.evaluate(
+      (sel) => document.querySelector(sel)?.scrollIntoView({ block: "center", inline: "center" }),
+      cardSelector
+    );
+    await page.waitForTimeout(450);
+    card = await page.evaluate(findCard, { sel: cardSelector, minLeft });
+  }
+  if (!card) {
+    const total = await page.evaluate((sel) => document.querySelectorAll(sel).length, cardSelector);
+    if (total === 0 && allowEmpty) return { skipped: true, problems: [] };
+    return {
+      skipped: false,
+      problems: [
+        {
+          kind: "hold",
+          why: "no poster card found",
+          snap: await page.evaluate(() => ({
+            body: document.body.innerText.replace(/\s+/g, " ").slice(0, 140),
+            first: (() => {
+              const c = document.querySelector(
+                ".library-grid-card,.discover-card,.home-poster-card"
+              );
+              if (!c) return null;
+              const r = c.getBoundingClientRect();
+              return {
+                vis: Boolean(c.offsetParent),
+                x: Math.round(r.x),
+                y: Math.round(r.y),
+                w: Math.round(r.width),
+                h: Math.round(r.height)
+              };
+            })()
+          }))
+        }
+      ]
+    };
+  }
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchStart",
@@ -216,6 +327,12 @@ async function holdGate(page) {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await cdp.detach();
   await page.waitForTimeout(400);
+  const stillOpen = await page.evaluate(() =>
+    Boolean(
+      document.querySelector(".nuvio-dialog-backdrop") &&
+      document.querySelector(".nuvio-dialog-button")
+    )
+  );
   const problems = [];
   if (!res.open) problems.push({ kind: "hold", why: "long-press did not open the actions dialog" });
   else {
@@ -223,10 +340,16 @@ async function holdGate(page) {
       problems.push({ kind: "hold-scale", why: `dialog button ${res.btnH}px tall` });
     if (res.panelW < 240)
       problems.push({ kind: "hold-scale", why: `dialog panel ${res.panelW}px wide` });
+    // The phone contract: lifting the finger AFTER the menu opened must not
+    // dismiss it (NuvioDialog backdrop mount-grace).
+    if (!stillOpen)
+      problems.push({ kind: "hold", why: "hold release dismissed the menu it just opened" });
   }
-  await page.keyboard.press("Escape");
-  await page.waitForTimeout(600);
-  return problems;
+  if (!leaveOpen) {
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(600);
+  }
+  return { skipped: false, problems };
 }
 
 async function swipeGate(page) {
@@ -421,11 +544,23 @@ if (!harnessOnly) {
     `${swipeProblems.length ? "FAIL" : "PASS"} home-swipe${swipeProblems.length ? " " + JSON.stringify(swipeProblems) : ""}`
   );
 
-  const holdProblems = await holdGate(page);
+  const holdProblems = (await holdGate(page)).problems;
   results.push({ label: "home-hold-menu", ok: holdProblems.length === 0, fails: holdProblems });
   console.log(
     `${holdProblems.length ? "FAIL" : "PASS"} home-hold-menu${holdProblems.length ? " " + JSON.stringify(holdProblems) : ""}`
   );
+
+  const reportHold = (label, resProblems) => {
+    const skipped = resProblems === null;
+    results.push({
+      label,
+      ok: skipped || resProblems.length === 0,
+      fails: skipped ? [] : resProblems
+    });
+    console.log(
+      `${skipped ? "SKIP" : resProblems && resProblems.length ? "FAIL" : "PASS"} ${label}${skipped ? " (no cards on screen)" : resProblems && resProblems.length ? " " + JSON.stringify(resProblems) : ""}`
+    );
+  };
 
   const { qrProblems, emailProblems } = await authPhoneGate(browser);
   results.push({ label: "auth-qr-phone", ok: qrProblems.length === 0, fails: qrProblems });
@@ -444,6 +579,52 @@ if (!harnessOnly) {
   await gotoHome(page);
   await navTo(page, "Search");
   await audit(page, "search");
+  // The Discover entry lives in the search recents view — visit it BEFORE
+  // typing a query, otherwise the results view replaces it.
+  let seeded = false;
+  try {
+    // The recents view (which owns the Discover entry) renders after the
+    // search route's async layout/state boot; do not race it.
+    await page.waitForSelector('[data-action="openDiscover"]', { timeout: 8000 });
+  } catch (_) {}
+  const disc = page.locator('[data-action="openDiscover"]').first();
+  if (await disc.count()) {
+    await disc.tap().catch(() => {});
+    await page.waitForTimeout(2500);
+    const discHold = await holdGate(page, '.discover-card[data-action="openDetail"]', true, true);
+    reportHold("discover-hold-menu", discHold.skipped ? null : discHold.problems);
+    // Seed the guest library from the still-open menu (LOCAL source mode) so
+    // the library-hold gate cannot hide behind an empty-grid skip.
+    seeded = await page.evaluate(() => {
+      const b = [...document.querySelectorAll(".nuvio-dialog-button")].find((n) =>
+        /add to library/i.test(n.innerText)
+      );
+      if (!b) return false;
+      b.click();
+      return true;
+    });
+    await page.waitForTimeout(1200);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+  } else {
+    console.log(
+      "  note: openDiscover absent — DOM:",
+      JSON.stringify(
+        await page.evaluate(() => ({
+          shells: [...document.querySelectorAll(".search-screen-shell")].length,
+          visibleSearch: Boolean(document.querySelector(".search-content")?.offsetParent),
+          navItems: [...document.querySelectorAll(".home-nav-item")].map((n) =>
+            (n.innerText || n.textContent || "?").trim().slice(0, 12)
+          ),
+          discoverBtn: Boolean(
+            document.querySelector(".search-header")?.classList.contains("no-discover")
+          )
+        }))
+      )
+    );
+    reportHold("discover-hold-menu", null);
+  }
+  await navTo(page, "Search");
   const inp = page.locator(".search-screen-shell input").first();
   if (await inp.count()) {
     await inp.tap();
@@ -455,6 +636,9 @@ if (!harnessOnly) {
   await gotoHome(page);
   await navTo(page, "Library");
   await audit(page, "library");
+  // If the discover menu seeded an item, an empty library grid is a regression.
+  const libHold = await holdGate(page, ".library-grid-card.focusable", !seeded, false, 12);
+  reportHold("library-hold-menu", libHold.skipped ? null : libHold.problems);
 
   await gotoHome(page);
   await navTo(page, "Settings");
