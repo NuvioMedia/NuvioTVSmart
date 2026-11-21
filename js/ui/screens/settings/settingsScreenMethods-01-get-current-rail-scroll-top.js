@@ -132,8 +132,14 @@ export function createSettingsScreenMethods01() {
         this.sidebarProfile = this.sidebarProfile || null;
         this.model = this.model || (await this.collectModel({ cacheOnly: true }));
       }
-      await this.render({ refreshModel: false });
+      if (mountToken !== this.settingsMountToken || !this.container || (Router?.getCurrent && Router.getCurrent() !== "settings")) {
+        return;
+      }
       this.isMounted = true;
+      await this.render({ refreshModel: false });
+      if (!this.isMounted || mountToken !== this.settingsMountToken || (Router?.getCurrent && Router.getCurrent() !== "settings")) {
+        return;
+      }
       this.memberAccessUnsubscribe = MemberAccessRepository.subscribe((access) => {
         if (!this.isMounted || !this.model) return;
         const previous = this.model.memberAccess || {};

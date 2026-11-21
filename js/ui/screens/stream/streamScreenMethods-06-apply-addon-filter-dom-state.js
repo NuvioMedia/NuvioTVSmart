@@ -51,12 +51,11 @@ export function createStreamScreenMethods06() {
         row.hidden = !visible;
         row.style.display = visible ? "" : "none";
         row.dataset.streamRow = String(visible ? rowIndex : -1);
-        const card = row.querySelector("[data-card-action]");
-        if (card) {
+        row.querySelectorAll("[data-card-action]").forEach((card) => {
           card.hidden = !visible;
           card.style.display = visible ? "" : "none";
           card.dataset.streamRow = String(visible ? rowIndex : -1);
-        }
+        });
         row.querySelectorAll("[data-lazy-stream-badges]").forEach((placeholder) => {
           placeholder.dataset.streamBadgeRow = String(visible ? rowIndex : -1);
         });
