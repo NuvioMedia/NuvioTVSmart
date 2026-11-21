@@ -69,7 +69,8 @@ export function createFramePaceMonitor({
   onSlow,
   policy = TV_FRAME_PACE_POLICY,
   now = () => globalThis.performance.now(),
-  requestFrame = (callback) => globalThis.requestAnimationFrame(callback)
+  requestFrame = (callback) => globalThis.requestAnimationFrame(callback),
+  shouldSample = null
 } = {}) {
   const startedAt = now();
   const samples = [];
@@ -82,6 +83,9 @@ export function createFramePaceMonitor({
     // (held keys) are covered by that window.
     noteKey() {
       if (reported || sampling || now() - startedAt < policy.warmupMs) {
+        return;
+      }
+      if (typeof shouldSample === "function" && !shouldSample()) {
         return;
       }
       sampling = true;
@@ -104,6 +108,9 @@ export function createFramePaceMonitor({
           return;
         }
         sampling = false;
+        if (typeof shouldSample === "function" && !shouldSample()) {
+          return;
+        }
         samples.push(lostMs);
         if (samples.length > policy.sampleKeys) {
           samples.shift();
