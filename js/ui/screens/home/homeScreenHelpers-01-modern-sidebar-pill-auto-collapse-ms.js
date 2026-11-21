@@ -294,7 +294,16 @@ export function buildModernHomeSizingStyle(layoutPrefs = {}) {
   // dpToPx factor as the rest of the geometry.
   if (dpToPx === 1) {
     const continueWidth = landscapeWidth;
-    parts.push(`--home-continue-width:${continueWidth}px`, `--home-continue-height:${Math.round(continueWidth / 1.77)}px`);
+    parts.push(
+      `--home-continue-width:${continueWidth}px`,
+      `--home-continue-height:${Math.round(continueWidth / 1.77)}px`,
+      // Remote focus inflates the focused card 2.66x (css/components-16.css
+      // --home-poster-expanded-width). A touch device never rests focus on a
+      // card without activating it, and an inline custom property beats the
+      // stylesheet tier, so the expansion must be collapsed here, not in CSS.
+      `--home-poster-expanded-width:${landscapeWidth}px`,
+      `--home-modern-portrait-expanded-width:${portraitWidth}px`
+    );
   }
 
   return parts.join(";");
