@@ -523,9 +523,91 @@
 
 /* ---------- Detail screen (series/movie) ----------
    .series-detail-shell carries the Android TV dp x 2 port as design tokens
-   (css/components-52.css: 96px buttons, 72px title, 28px body). Re-derive
-   them at phone size, then fix the few places with hardcoded 300px geometry
-   that overflow a 390dp viewport. */
+   (css/components-40..53.css: 96px buttons, 40px line-heights, 56px glyphs).
+   The tokens must sit on the #detail root: the hero CTA row, synopsis and
+   meta live outside .series-detail-shell — and the movie screen does not use
+   that shell at all — so the TV 96px/40px rules were winning everywhere.
+   Re-derive at phone scale, then fix the hardcoded geometry the tokens miss. */
+.web-touch #detail {
+  --detail-safe-x: 16px;
+  --detail-episode-safe-x: 16px;
+  --detail-action-gap: 10px;
+  --detail-button-height: 48px;
+  --detail-control-size: 48px;
+  --detail-title-size: 26px;
+  --detail-section-title-size: 18px;
+  --detail-label-size: 14px;
+  --detail-body-size: 15px;
+  --detail-caption-size: 13px;
+}
+
+.web-touch .series-primary-btn {
+  min-height: 48px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  line-height: 1;
+  gap: 8px;
+}
+
+.web-touch .series-secondary-btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+.web-touch .series-detail-actions {
+  margin-bottom: 16px;
+}
+
+/* components-53 line-heights (40px) are the single biggest space-hog on the
+   phone detail page: synopsis, credits and meta rows all inherit them. */
+.web-touch .detail-synopsis-preview {
+  line-height: 22px;
+}
+
+.web-touch .series-detail-support,
+.web-touch .detail-meta-row,
+.web-touch .detail-meta-row .detail-meta-genres {
+  line-height: 20px;
+}
+
+.web-touch .series-detail-support {
+  margin-bottom: 12px;
+}
+
+.web-touch .series-insight-tab,
+.web-touch .series-insight-divider {
+  line-height: 1.6;
+}
+
+.web-touch .series-insight-tab {
+  padding: 9px 6px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.web-touch .movie-cast-avatar-fallback {
+  font-size: 26px;
+}
+
+.web-touch .movie-cast-name {
+  line-height: 1.35;
+}
+
+/* The hero title is collapsed (max-height:0/opacity:0) in trailer-autoplay
+   mode — a TV design where the logo art carries the identity. On a phone that
+   leaves the smallest text as the only title; show the real one. */
+.web-touch .detail-trailer-autoplay .series-detail-title,
+.web-touch .detail-trailer-manual .series-detail-title {
+  max-height: none;
+  margin-bottom: 12px;
+  opacity: 1;
+}
+
 .web-touch .series-detail-shell {
   --detail-safe-x: 16px;
   --detail-episode-safe-x: 16px;
