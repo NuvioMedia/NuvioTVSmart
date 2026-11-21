@@ -64,10 +64,13 @@
   --tv-card-gap: 12px;
 }
 
-/* Sidebar becomes a bottom bar; the 144px rail is a third of a phone width. */
+/* Sidebar becomes a bottom bar; the 144px rail is a third of a phone width.
+   The rail variables are also the content offset (css/components-08.css
+   .home-main margin-left), so they go to 0 rather than 100vw: the sidebar is
+   position:fixed here and must not push or pad the content. */
 .web-touch .home-shell {
-  --legacy-sidebar-rail-width: 100vw;
-  --legacy-sidebar-open-width: 100vw;
+  --legacy-sidebar-rail-width: 0px;
+  --legacy-sidebar-open-width: 0px;
   --legacy-sidebar-item-width: 28px;
   --legacy-sidebar-item-expanded-width: 28px;
   --legacy-sidebar-item-height: 58px;
@@ -144,6 +147,72 @@
   min-height: 62vh;
 }
 
+/* ---------- Modern home layout ----------
+   The default browser-tier home (home-layout-modern) is the Android TV
+   screen: full-bleed hero with a rows overlay pinned to the bottom 52%, a
+   108px sidebar content offset, 104px track gutters and hover-focus cards
+   that inflate to 2.66x. None of that is right on a phone. */
+.web-touch .home-screen-shell.home-layout-modern {
+  --home-sidebar-content-offset: 0px;
+  --home-track-end: var(--touch-gutter);
+  --home-continue-track-end: var(--touch-gutter);
+  --modern-track-peek-extension: 0px;
+  --modern-rows-viewport-height: 46%;
+  --modern-rows-viewport-padding-bottom: calc(
+    var(--touch-nav-height) + var(--touch-safe-bottom) + 24px
+  );
+  --modern-rows-page-height: 50vh;
+  --modern-hero-media-width: 100%;
+  --modern-hero-media-height: calc(100% - var(--modern-rows-viewport-height));
+  --modern-hero-copy-top-safe: 12px;
+  --modern-hero-copy-right: 16px;
+  --modern-hero-copy-max-width: 82%;
+  --modern-hero-logo-max-width: 210px;
+  --modern-hero-logo-max-height: 64px;
+  --modern-hero-title-size: 26px;
+  --modern-hero-title-line-height: 32px;
+  --modern-hero-copy-gap: 8px;
+  --modern-hero-meta-size: 13px;
+  --modern-hero-secondary-size: 13px;
+  --modern-hero-description-size: 14px;
+  --modern-hero-description-line-height: 20px;
+  --modern-hero-description-max-width: 100%;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-modern-rows-scroll {
+  gap: 24px;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-modern-catalogs {
+  gap: 24px;
+}
+
+.web-touch
+  .home-screen-shell.home-layout-modern.home-modern-landscape-posters
+  .home-modern-catalogs,
+.web-touch
+  .home-screen-shell.home-layout-modern.home-modern-landscape-posters
+  .home-modern-rows-scroll {
+  gap: 24px;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-row-title {
+  font-size: 16px;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-row-head {
+  margin-bottom: 10px;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-track {
+  --home-track-gap: 12px;
+  padding-right: var(--touch-gutter);
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-modern-hero-media {
+  right: 0;
+}
+
 /* Focus rings are a remote aid; touch gets a press state instead. Scoped to
    outline only so screens that use .focused for real layout changes (expanded
    cards, hero swaps) keep that behaviour. */
@@ -167,6 +236,191 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+
+/* ---------- Auth / QR sign-in ----------
+   The TV layout is a fixed-height two-column grid (css/components-01.css): a
+   52px title, a 360px QR frame and 78px pill buttons. On a 390dp phone the
+   columns overlap and the card's fixed min(852px) height makes its stacked
+   states (instructions, status, terms, actions) paint on top of each other.
+   The tier re-derives it as one scrolling column at dp x 1. */
+.web-touch .qr-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100vh;
+  height: 100dvh;
+  padding: calc(16px + var(--touch-safe-top)) calc(16px + var(--touch-safe-right))
+    calc(16px + var(--touch-safe-bottom)) calc(16px + var(--touch-safe-left));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.web-touch .qr-left-panel {
+  justify-content: flex-start;
+  flex: 0 0 auto;
+}
+
+.web-touch .qr-brand-lockup {
+  margin-bottom: 14px;
+}
+
+.web-touch .qr-logo {
+  height: 56px;
+  max-width: 70%;
+}
+
+.web-touch .qr-copy-block {
+  max-width: none;
+}
+
+.web-touch .qr-title {
+  font-size: 26px;
+}
+
+.web-touch .qr-description {
+  margin-top: 12px;
+  font-size: 15px;
+  max-width: none;
+}
+
+.web-touch .qr-connected-identity {
+  margin-top: 14px;
+  gap: 4px;
+}
+
+.web-touch .qr-connected-email {
+  font-size: 15px;
+}
+
+.web-touch .qr-card-panel {
+  flex: 1 1 auto;
+  align-items: flex-start;
+}
+
+.web-touch .qr-card {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 20px 16px 16px;
+  border-radius: 16px;
+  gap: 10px;
+}
+
+.web-touch .qr-card-header {
+  gap: 6px;
+}
+
+.web-touch .qr-card-title {
+  font-size: 20px;
+}
+
+.web-touch .qr-card-subtitle {
+  font-size: 14px;
+}
+
+.web-touch .qr-login-instruction {
+  font-size: 14px;
+  /* In every auth state this paragraph resolves to the same i18n string the
+     card subtitle already shows (js/i18n/index.js: cardSubtitleSignedOut and
+     scanInstruction both map to auth_qr_scan_instruction), so on a phone it
+     renders the same sentence twice. */
+  display: none;
+}
+
+.web-touch .qr-code-frame {
+  width: min(220px, 60vw);
+  height: min(220px, 60vw);
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.web-touch .qr-code-text {
+  font-size: 15px;
+}
+
+.web-touch .qr-manual-text,
+.web-touch .qr-expiry {
+  font-size: 13px;
+}
+
+.web-touch .qr-status {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.web-touch .qr-open-link {
+  min-height: 44px;
+  min-width: 200px;
+  margin-top: 10px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  font-size: 16px;
+}
+
+.web-touch .qr-actions {
+  margin-top: 14px;
+  gap: 12px;
+  padding-top: 0;
+}
+
+.web-touch .qr-action-btn {
+  flex: 1 1 0;
+  min-height: 46px;
+  height: auto;
+  padding: 12px 18px;
+  font-size: 16px;
+}
+
+.web-touch .qr-server-menu-trigger {
+  top: calc(12px + var(--touch-safe-top));
+  left: calc(12px + var(--touch-safe-left));
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+}
+
+.web-touch .qr-server-menu {
+  top: calc(64px + var(--touch-safe-top));
+  left: calc(12px + var(--touch-safe-left));
+  width: min(320px, calc(100vw - 24px));
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.web-touch .qr-server-menu-title {
+  font-size: 14px;
+  padding: 6px 10px 8px;
+}
+
+.web-touch .qr-server-menu-item {
+  min-height: 48px;
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
+.web-touch .qr-email-form {
+  gap: 8px;
+  width: 100%;
+}
+
+.web-touch .qr-input-label {
+  font-size: 13px;
+}
+
+.web-touch .qr-auth-input {
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+
+.web-touch .qr-login-error {
+  font-size: 14px;
+}
+
+.web-touch .qr-terms {
+  font-size: 13px;
 }
 
 /* Column count follows the mobile grid breakpoints (840dp and up gets 4). */
