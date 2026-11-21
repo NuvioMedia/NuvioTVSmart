@@ -61,9 +61,22 @@ export function createHomeScreenMethods05() {
             backdrop.setAttribute("alt", "");
           }
         } else if (src) {
-          backdrop.setAttribute("src", src);
-          backdrop.setAttribute("alt", "");
-          backdrop.classList.remove("placeholder");
+          if (typeof document?.createElement === "function" && backdrop.parentNode) {
+            const img = document.createElement("img");
+            img.className = "home-hero-backdrop";
+            img.setAttribute("alt", "");
+            img.setAttribute("decoding", "async");
+            img.setAttribute("fetchpriority", "high");
+            backdrop.parentNode.replaceChild(img, backdrop);
+            registerHomeDomNodes([img]);
+            animateHeroBackdropSwap(img, src, display.title || "featured", heroCrossfadeMs, {
+              transitionMode: heroTransitionMode
+            });
+          } else {
+            backdrop.setAttribute("src", src);
+            backdrop.setAttribute("alt", "");
+            backdrop.classList.remove("placeholder");
+          }
         } else {
           backdrop.removeAttribute("src");
           backdrop.classList.add("placeholder");
