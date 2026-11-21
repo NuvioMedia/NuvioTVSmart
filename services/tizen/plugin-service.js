@@ -235,4 +235,5 @@ function stop() {
 // through onStop. Keeping the server out of module evaluation makes startup,
 // failure reporting and shutdown follow the documented service lifecycle.
 module.exports.onStart = start;
+module.exports.onExit = stop;
 module.exports.onStop = stop;
