@@ -139,3 +139,30 @@ test("attemptVideoPlay ignores stale beforePlay and video.play rejections after 
   assert.equal(harness.isPlaying, true);
   assert.equal(getStopProgressCalls(), 0);
 });
+
+test("attemptVideoPlay ignores a stale video.play rejection after playToken changes", async () => {
+  let rejectPlay = null;
+  let onRejectedCalls = 0;
+  const { harness, getStopProgressCalls } = createAttemptPlayHarness({
+    playResult: new Promise((_, reject) => {
+      rejectPlay = reject;
+    })
+  });
+
+  harness.attemptVideoPlay({
+    playToken: 5,
+    onRejected: () => {
+      onRejectedCalls += 1;
+      return false;
+    }
+  });
+
+  await flushMicrotasks();
+  harness.playRequestToken = 6;
+  rejectPlay(new Error("Stale play rejection"));
+  await flushMicrotasks();
+
+  assert.equal(onRejectedCalls, 0);
+  assert.equal(harness.isPlaying, true);
+  assert.equal(getStopProgressCalls(), 0);
+});
