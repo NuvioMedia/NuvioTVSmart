@@ -29,7 +29,7 @@ export function createHomeScreenMethods19() {
       if (!current) {
         return false;
       }
-      if (this.isMainNode(current) && !this.isNodeWithinMainViewport(current) && !this.shouldSuspendModernViewportFocusSync()) {
+      if (this.isMainNode(current) && !this.shouldSuspendModernViewportFocusSync() && !this.isNodeWithinMainViewport(current)) {
         current = this.syncMainFocusToViewport({ suppressFlows: true }) || current;
       }
       const isSidebar = this.isSidebarNode(current);

@@ -235,7 +235,14 @@ export function requestAddonLogo(url = "", onSettled = null) {
     return Promise.resolve(true);
   }
   if (cached?.status === "loading") {
-    return cached.promise || Promise.resolve(false);
+    const promise = cached.promise || Promise.resolve(false);
+    if (typeof onSettled === "function") {
+      promise.then(
+        () => onSettled(),
+        () => onSettled()
+      );
+    }
+    return promise;
   }
 
   if ((Environment.isWebOS() || Platform.isTizen()) && !isWebOsImageProxyUrl(normalized)) {
