@@ -310,7 +310,10 @@ function unsupportedSelectorFallbackPlugin() {
       }
 
       const safeSelectors = rule.selectors.filter(
-        (selector) => !selector.includes(":focus-visible") && !selector.includes(":has(")
+        (selector) =>
+          !selector.includes(":focus-visible") &&
+          !selector.includes(":has(") &&
+          !selector.includes(":focus-within")
       );
       if (!safeSelectors.length || safeSelectors.length === rule.selectors.length) {
         return;
@@ -463,6 +466,7 @@ async function buildCSS() {
   const localImportPattern =
     /@import\s+(?:url\(\s*["']?(\.{0,2}\/[^"')]+)["']?\s*\)|["'](\.{0,2}\/[^"']+)["'])\s*[^;]*;/gi;
 
+  const baseCssPath = path.join(cssDir, "base.css");
   for (const file of finalOrder) {
     const raw = await readFile(path.join(cssDir, file), "utf8");
 
@@ -478,8 +482,10 @@ async function buildCSS() {
     // inlined by this concatenation (e.g. components.css manifest).
     const body = raw.replace(remoteImportPattern, "").replace(localImportPattern, "").trim();
     if (body) {
+      const needsGlobalData =
+        file !== "base.css" && /(?:@media\s*\(\s*--|@custom-selector\b|:-)/.test(body);
       const result = await postcss([
-        postcssGlobalData({ files: [path.join(cssDir, "base.css")] }),
+        ...(needsGlobalData ? [postcssGlobalData({ files: [baseCssPath] })] : []),
         autoprefixer({
           overrideBrowserslist: [`Chrome ${compatibilityPolicy.chromiumVersion}`],
           grid: "autoplace"

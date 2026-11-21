@@ -263,6 +263,7 @@ module.exports.onStart = function () {
 
 function stopEngineFsRuntime() {
   diagnostic("onExit", { service: "EngineFsService", port: process.env.PORT || "2710" });
+  started = false;
   try {
     require("./runtime/tx3g-subtitle-service.cjs").stop();
   } catch (_) {}

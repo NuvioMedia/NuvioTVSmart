@@ -32,6 +32,7 @@ export function createHomeScreenMethods13() {
             );
           } catch (_) {}
           container.classList.add("is-active");
+          (this.mountedHomeTrailerLayers ||= new Set()).add(container);
           onReady?.();
           return;
         }
@@ -188,6 +189,7 @@ export function createHomeScreenMethods13() {
           { once: true }
         );
         container.appendChild(frame);
+        (this.mountedHomeTrailerLayers ||= new Set()).add(container);
         return;
       }
       if (source.kind === "video" && source.url) {
@@ -247,6 +249,7 @@ export function createHomeScreenMethods13() {
           { once: true }
         );
         container.appendChild(video);
+        (this.mountedHomeTrailerLayers ||= new Set()).add(container);
         video.setAttribute("src", String(source.url || ""));
         try {
           video.load?.();

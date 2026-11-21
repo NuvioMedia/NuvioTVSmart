@@ -1,6 +1,49 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerController.js";
 
+// Every field read while building the parsed track entries must feed this
+// signature, otherwise a metadata change would keep serving the cached objects.
+function avPlayTrackSignature(track) {
+  const rawExtra = track?.extra_info || track?.extraInfo || null;
+  let extra = "";
+  if (rawExtra && typeof rawExtra === "object") {
+    try {
+      extra = JSON.stringify(rawExtra);
+    } catch (_) {
+      return null;
+    }
+  } else if (rawExtra) {
+    extra = String(rawExtra);
+  }
+  return JSON.stringify([
+    track?.type,
+    track?.index,
+    track?.name,
+    track?.label,
+    track?.title,
+    track?.language,
+    track?.lang,
+    track?.track_lang,
+    track?.trackLang,
+    track?.language_code,
+    extra
+  ]);
+}
+
+function buildAvPlayTracksSignature(totalTracks) {
+  const parts = [];
+  for (const track of totalTracks) {
+    const part = avPlayTrackSignature(track);
+    // Unserializable metadata must never look unchanged: two different
+    // circular payloads would otherwise share one cache entry.
+    if (part === null) {
+      return null;
+    }
+    parts.push(part);
+  }
+  return JSON.stringify(parts);
+}
+
 export function createPlayerControllerMethods04() {
   const { Platform, logTizenAvPlayDebug, isValidAvPlayAudioTrackSelectionState } = internals;
 
@@ -9,6 +52,9 @@ export function createPlayerControllerMethods04() {
       if (!this.isUsingAvPlay()) {
         this.avplayAudioTracks = [];
         this.avplaySubtitleTracks = [];
+        this.avplayTotalTracksSignature = null;
+        this.avplayCachedAudioTracks = null;
+        this.avplayCachedSubtitleTracks = null;
         this.selectedAvPlayAudioTrackIndex = -1;
         this.selectedAvPlaySubtitleTrackIndex = -1;
         this.avplayTrackSyncAt = 0;
@@ -58,73 +104,88 @@ export function createPlayerControllerMethods04() {
       const selectedAudioIndex = Number(currentAudio?.index);
       const selectedTextIndex = Number(currentText?.index);
 
-      this.avplayAudioTracks = totalTracks
-        .filter((track) => this.normalizeAvPlayTrackType(track?.type) === "AUDIO")
-        .map((track, index) => {
-          const trackIndex = Number(track?.index);
-          const normalizedTrackIndex = Number.isFinite(trackIndex) ? trackIndex : -1;
-          const extraInfo = this.parseAvPlayExtraInfo(track.extra_info || track.extraInfo || null) || {};
-          const forcedValue = this.pickAvPlayExtraValue(extraInfo, ["forced", "is_forced"]);
-          return {
-            id: `avplay-audio-${normalizedTrackIndex}`,
-            label: this.pickAvPlayTrackLabel(track, index, "Track"),
-            language: this.pickAvPlayTrackLanguage(track),
-            channels: this.pickAvPlayExtraValue(extraInfo, [
-              "channels",
-              "channel",
-              "audio_channel",
-              "audio_channel_count",
-              "channel_layout"
-            ]),
-            codec: this.pickAvPlayExtraValue(extraInfo, [
-              "codec",
-              "codec_name",
-              "codec_id",
-              "codec_tag_string",
-              "audio_type",
-              "audioType",
-              "audioCodec",
-              "fourCC"
-            ]),
-            codecProfile: this.pickAvPlayExtraValue(extraInfo, ["profile", "codecProfile", "codec_profile"]),
-            mimeType: this.pickAvPlayExtraValue(extraInfo, ["mimeType", "sampleMimeType", "mime_type", "sample_mime_type"]),
-            characteristics: this.pickAvPlayExtraValue(extraInfo, ["characteristics", "role", "type"]),
-            sampleRate: Number(this.pickAvPlayExtraValue(extraInfo, ["sampleRate", "audioSampleRate", "sample_rate"]) || 0) || 0,
-            forced: /^(1|true|yes)$/i.test(forcedValue),
-            extraInfo,
-            avplayTrackIndex: normalizedTrackIndex,
-            avplayAudioOrdinalIndex: index
-          };
-        })
-        .filter((track) => Number.isFinite(Number(track?.avplayTrackIndex)) && Number(track.avplayTrackIndex) >= 0);
+      // `force` only bypasses the throttle: AVPlay returns fresh metadata
+      // objects on every poll, so static track lists still reuse the cache while
+      // selection reconciliation below keeps running.
+      const tracksSignature = buildAvPlayTracksSignature(totalTracks);
+      const tracksChanged =
+        tracksSignature === null ||
+        this.avplayTotalTracksSignature !== tracksSignature ||
+        this.avplayAudioTracks !== this.avplayCachedAudioTracks ||
+        this.avplaySubtitleTracks !== this.avplayCachedSubtitleTracks;
 
-      this.avplaySubtitleTracks = totalTracks
-        .filter((track) => this.normalizeAvPlayTrackType(track?.type) === "TEXT")
-        .map((track, index) => {
-          const trackIndex = Number(track?.index);
-          const normalizedTrackIndex = Number.isFinite(trackIndex) ? trackIndex : index;
-          const extraInfo = this.parseAvPlayExtraInfo(track.extra_info || track.extraInfo || null) || {};
-          const forcedValue = this.pickAvPlayExtraValue(extraInfo, ["forced", "is_forced"]);
-          return {
-            id: `avplay-sub-${normalizedTrackIndex}`,
-            label: this.pickAvPlayTrackLabel(track, index, "Subtitle"),
-            language: this.pickAvPlayTrackLanguage(track),
-            codec: this.pickAvPlayExtraValue(extraInfo, ["codec", "codec_name", "codec_id", "codec_tag_string", "fourCC", "fourcc"]),
-            forced: /^(1|true|yes)$/i.test(forcedValue),
-            extraInfo,
-            avplayTrackIndex: normalizedTrackIndex
-          };
-        });
+      if (tracksChanged) {
+        this.avplayTotalTracksSignature = tracksSignature;
+        this.avplayAudioTracks = totalTracks
+          .filter((track) => this.normalizeAvPlayTrackType(track?.type) === "AUDIO")
+          .map((track, index) => {
+            const trackIndex = Number(track?.index);
+            const normalizedTrackIndex = Number.isFinite(trackIndex) ? trackIndex : -1;
+            const extraInfo = this.parseAvPlayExtraInfo(track.extra_info || track.extraInfo || null) || {};
+            const forcedValue = this.pickAvPlayExtraValue(extraInfo, ["forced", "is_forced"]);
+            return {
+              id: `avplay-audio-${normalizedTrackIndex}`,
+              label: this.pickAvPlayTrackLabel(track, index, "Track"),
+              language: this.pickAvPlayTrackLanguage(track),
+              channels: this.pickAvPlayExtraValue(extraInfo, [
+                "channels",
+                "channel",
+                "audio_channel",
+                "audio_channel_count",
+                "channel_layout"
+              ]),
+              codec: this.pickAvPlayExtraValue(extraInfo, [
+                "codec",
+                "codec_name",
+                "codec_id",
+                "codec_tag_string",
+                "audio_type",
+                "audioType",
+                "audioCodec",
+                "fourCC"
+              ]),
+              codecProfile: this.pickAvPlayExtraValue(extraInfo, ["profile", "codecProfile", "codec_profile"]),
+              mimeType: this.pickAvPlayExtraValue(extraInfo, ["mimeType", "sampleMimeType", "mime_type", "sample_mime_type"]),
+              characteristics: this.pickAvPlayExtraValue(extraInfo, ["characteristics", "role", "type"]),
+              sampleRate: Number(this.pickAvPlayExtraValue(extraInfo, ["sampleRate", "audioSampleRate", "sample_rate"]) || 0) || 0,
+              forced: /^(1|true|yes)$/i.test(forcedValue),
+              extraInfo,
+              avplayTrackIndex: normalizedTrackIndex,
+              avplayAudioOrdinalIndex: index
+            };
+          })
+          .filter((track) => Number.isFinite(Number(track?.avplayTrackIndex)) && Number(track.avplayTrackIndex) >= 0);
 
-      if (Platform.isTizen()) {
-        logTizenAvPlayDebug("Tizen AVPlay tracks synced", {
-          state: this.getAvPlayState(),
-          totalTracks,
-          currentTracks,
-          audioTracks: this.avplayAudioTracks,
-          selectedAudioIndex,
-          selectedAudioTrackIndex: this.selectedAvPlayAudioTrackIndex
-        });
+        this.avplaySubtitleTracks = totalTracks
+          .filter((track) => this.normalizeAvPlayTrackType(track?.type) === "TEXT")
+          .map((track, index) => {
+            const trackIndex = Number(track?.index);
+            const normalizedTrackIndex = Number.isFinite(trackIndex) ? trackIndex : index;
+            const extraInfo = this.parseAvPlayExtraInfo(track.extra_info || track.extraInfo || null) || {};
+            const forcedValue = this.pickAvPlayExtraValue(extraInfo, ["forced", "is_forced"]);
+            return {
+              id: `avplay-sub-${normalizedTrackIndex}`,
+              label: this.pickAvPlayTrackLabel(track, index, "Subtitle"),
+              language: this.pickAvPlayTrackLanguage(track),
+              codec: this.pickAvPlayExtraValue(extraInfo, ["codec", "codec_name", "codec_id", "codec_tag_string", "fourCC", "fourcc"]),
+              forced: /^(1|true|yes)$/i.test(forcedValue),
+              extraInfo,
+              avplayTrackIndex: normalizedTrackIndex
+            };
+          });
+        this.avplayCachedAudioTracks = this.avplayAudioTracks;
+        this.avplayCachedSubtitleTracks = this.avplaySubtitleTracks;
+
+        if (Platform.isTizen()) {
+          logTizenAvPlayDebug("Tizen AVPlay tracks synced", {
+            state: this.getAvPlayState(),
+            totalTracks,
+            currentTracks,
+            audioTracks: this.avplayAudioTracks,
+            selectedAudioIndex,
+            selectedAudioTrackIndex: this.selectedAvPlayAudioTrackIndex
+          });
+        }
       }
 
       const desiredAudioIndex = Number(this.desiredAvPlayAudioTrackIndex);
