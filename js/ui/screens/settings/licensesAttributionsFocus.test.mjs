@@ -33,6 +33,7 @@ class FakeHTMLElement {
     this.listeners = new Map();
     this.tabIndex = -1;
     this.focused = false;
+    this.scrollTop = 0;
   }
 
   get classList() {
@@ -251,6 +252,24 @@ test("LicensesAttributionsScreen assigns monotonic indices across sections and a
 
     LicensesAttributionsScreen.onKeyDown({ keyCode: 13, preventDefault() {} });
     assert.equal(rows[1].clickCount, 1);
+  } finally {
+    LicensesAttributionsScreen.cleanup();
+  }
+});
+
+test("LicensesAttributionsScreen scrolls the focused row into the viewport", async () => {
+  await LicensesAttributionsScreen.mount();
+  try {
+    const rows = licensesContainer.querySelectorAll(".focusable");
+    const scroller = licensesContainer.querySelector(".licenses-screen");
+    rows[0].getBoundingClientRect = () => ({ top: 0, bottom: 80 });
+    rows[1].getBoundingClientRect = () => ({ top: 520, bottom: 600 });
+    scroller.getBoundingClientRect = () => ({ top: 0, bottom: 500 });
+
+    LicensesAttributionsScreen.onKeyDown({ keyCode: 40, preventDefault() {} });
+
+    assert.equal(rows[1].classList.contains("focused"), true);
+    assert.equal(scroller.scrollTop, 108, "must scroll just enough to show the focused row");
   } finally {
     LicensesAttributionsScreen.cleanup();
   }

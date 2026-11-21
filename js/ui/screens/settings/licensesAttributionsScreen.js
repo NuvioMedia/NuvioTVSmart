@@ -75,12 +75,32 @@ export const LicensesAttributionsScreen = {
     if (code === 38 || key === "ArrowUp") {
       event?.preventDefault?.();
       ScreenUtils.moveFocus(this.container, -1);
+      this.revealFocused();
     } else if (code === 40 || key === "ArrowDown") {
       event?.preventDefault?.();
       ScreenUtils.moveFocus(this.container, 1);
+      this.revealFocused();
     } else if (code === 13 || key === "Enter") {
       event?.preventDefault?.();
       this.container?.querySelector(".focusable.focused")?.click();
+    }
+  },
+
+  // ScreenUtils.moveFocus focuses with preventScroll, so the list must scroll
+  // the focused row into view itself (Android scrolls the panel the same way).
+  revealFocused() {
+    const scroller = this.container?.querySelector(".licenses-screen");
+    const row = this.container?.querySelector(".focusable.focused");
+    if (!scroller || !row || typeof row.getBoundingClientRect !== "function") {
+      return;
+    }
+    const view = scroller.getBoundingClientRect();
+    const rect = row.getBoundingClientRect();
+    const margin = 8;
+    if (rect.top < view.top + margin) {
+      scroller.scrollTop += rect.top - view.top - margin;
+    } else if (rect.bottom > view.bottom - margin) {
+      scroller.scrollTop += rect.bottom - view.bottom + margin;
     }
   },
 
