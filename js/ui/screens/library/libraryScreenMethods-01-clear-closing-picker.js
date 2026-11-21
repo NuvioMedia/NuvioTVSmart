@@ -5,6 +5,7 @@ export function createLibraryScreenMethods01() {
   const {
     Router,
     ScreenUtils,
+    Platform,
     LayoutPreferences,
     LibraryController,
     LIBRARY_VIEW_MODE,
@@ -202,6 +203,10 @@ export function createLibraryScreenMethods01() {
         if (target.classList.contains("focusable")) {
           this.setFocusedNode(target);
         }
+        if (target?.closest?.(".library-grid-card") && Date.now() - Number(this._libraryHoldFiredAt || 0) < 1000) {
+          this._libraryHoldFiredAt = 0;
+          return;
+        }
         await this.activateNode(target);
       });
 
@@ -218,6 +223,60 @@ export function createLibraryScreenMethods01() {
           this.controller.setCloudSearchQuery(target.value, { reason: "cloudSearch" });
         }
       });
+
+      // Touch tier only: the poster options menu (lists, remove, details) has
+      // only ever been reachable through TV input (D-pad Enter-hold repeat,
+      // startPendingPosterHold). Press-and-hold on a grid card opens it, with
+      // a haptic tick; the release click is suppressed above, and the
+      // NuvioDialog mount grace keeps the hold-release from dismissing it.
+      this.container.addEventListener(
+        "pointerdown",
+        (event) => {
+          if (event?.pointerType !== "touch" || !Platform.isCompactViewport()) {
+            return;
+          }
+          const cardNode = event.target?.closest?.(".library-grid-card.focusable");
+          if (!cardNode || !this.container.contains(cardNode)) {
+            return;
+          }
+          if (this._libraryTouchHoldTimer) {
+            clearTimeout(this._libraryTouchHoldTimer);
+          }
+          const startX = Number(event.clientX || 0);
+          const startY = Number(event.clientY || 0);
+          this._libraryTouchHoldTimer = setTimeout(() => {
+            this._libraryTouchHoldTimer = null;
+            if (!cardNode.isConnected) {
+              return;
+            }
+            this._libraryHoldFiredAt = Date.now();
+            try {
+              navigator.vibrate?.(30);
+            } catch (_) {}
+            void this.openPosterOptionsMenu(cardNode);
+          }, 500);
+          const finish = (moveEvent) => {
+            const moved = Math.abs(Number(moveEvent?.clientX || 0) - startX) + Math.abs(Number(moveEvent?.clientY || 0) - startY);
+            // Chromium converts a stationary touch into pointercancel around the
+            // long-press threshold; the touch tier owns long-press, so only real
+            // motion or a lift aborts the pending hold.
+            if ((moveEvent?.type === "pointermove" || moveEvent?.type === "pointercancel") && moved < 10) {
+              return;
+            }
+            if (this._libraryTouchHoldTimer) {
+              clearTimeout(this._libraryTouchHoldTimer);
+              this._libraryTouchHoldTimer = null;
+            }
+            this.container.removeEventListener("pointermove", finish);
+            this.container.removeEventListener("pointerup", finish);
+            this.container.removeEventListener("pointercancel", finish);
+          };
+          this.container.addEventListener("pointermove", finish);
+          this.container.addEventListener("pointerup", finish);
+          this.container.addEventListener("pointercancel", finish);
+        },
+        { passive: true }
+      );
     },
     setFocusedNode(target) {
       this.container?.querySelectorAll(".focusable.focused").forEach((node) => {

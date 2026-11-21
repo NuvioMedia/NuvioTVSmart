@@ -1250,3 +1250,117 @@
 .web-touch .player-skip-intro-btn {
   min-height: 44px;
 }
+
+/* Onboarding (profile → experience-mode chooser): the desktop grid is
+   2x minmax(18rem, 28rem) — 576px minimum inside a 390px viewport, which
+   centered the grid off the left edge (first card at x=-85, unreachable).
+   Stack to one column with page padding. */
+.web-touch .experience-mode-options,
+.web-touch .experience-mode-options.is-layout {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding: 0 16px;
+  max-width: 100%;
+}
+
+.web-touch .experience-mode-card {
+  padding: 14px 16px;
+}
+
+.web-touch .experience-mode-card strong {
+  font-size: 1.05rem;
+}
+
+.web-touch .experience-mode-card span {
+  font-size: 0.85rem;
+}
+
+/* Settings screens had zero touch-tier coverage: ATV dp x 2 throughout
+   (48px title, 28px subtitle, 124px pill rows, 48px icons, 84px account
+   buttons). Re-derive at phone scale. */
+.web-touch .settings-content-header {
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.web-touch .settings-title {
+  font-size: 26px;
+}
+
+.web-touch .settings-subtitle {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.web-touch .settings-group-card {
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.web-touch .settings-action-row {
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  gap: 12px;
+}
+
+.web-touch .settings-row-leading-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.web-touch .settings-row-title {
+  font-size: 16px;
+}
+
+.web-touch .settings-row-subtitle {
+  font-size: 13px;
+  line-height: 18px;
+  /* Phone settings rows keep descriptions to one ellipsized line so tap
+     rows stay in the 56-72px band instead of TV-style wrapped blocks. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.web-touch .settings-row-badge {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.web-touch .settings-account-action-button {
+  min-height: 52px;
+  padding: 10px 12px;
+  gap: 10px;
+  border-radius: 14px;
+}
+
+.web-touch .settings-account-button-title {
+  font-size: 16px;
+}
+
+.web-touch .settings-account-button-subtitle {
+  font-size: 13px;
+  line-height: 18px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.web-touch .settings-account-status-value {
+  font-size: 16px;
+}
+
+.web-touch .settings-account-signout-button {
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+/* Library grid: TV gap token (32/24) at phone scale. */
+.web-touch .library-grid {
+  gap: 16px;
+}

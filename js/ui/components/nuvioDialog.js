@@ -75,6 +75,7 @@ export class NuvioDialog {
 
     this._focusedIndex = 0;
     this._destroyed = false;
+    this._mountedAt = 0;
     this._backdrop = null;
     this._panel = null;
     this._buttonEls = [];
@@ -188,15 +189,31 @@ export class NuvioDialog {
 
     backdrop.appendChild(panel);
     container.appendChild(backdrop);
+    this._mountedAt = Date.now();
     document.body?.classList?.add("nuvio-modal-open");
 
     this._backdrop = backdrop;
     this._panel = panel;
 
-    // Dismiss on backdrop click (outside panel)
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) this._dismiss();
-    });
+    // Dismiss on backdrop click (outside panel). A brief mount grace period
+    // swallows the synthetic click of a press-and-hold release: the touch
+    // tier opens menus under a held finger, and Chromium dispatches the
+    // release click at the touch point — which now lands on the freshly
+    // mounted dialog (backdrop OR one of its buttons, silently activating
+    // an option the user never intended to press). Capture phase + stop so
+    // neither buttons nor dismissal fire during the grace window.
+    backdrop.addEventListener(
+      "click",
+      (e) => {
+        if (Date.now() - this._mountedAt < 450) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        if (e.target === backdrop) this._dismiss();
+      },
+      true
+    );
 
     // Keyboard navigation
     window.addEventListener("keydown", this._keyHandler, { capture: true });

@@ -12,6 +12,7 @@ export function createLibraryScreenMethods04() {
     getRootSidebarNodes,
     getRootSidebarSelectedNode,
     setLegacySidebarExpanded,
+    Platform,
     POSTER_HOLD_DELAY_MS,
     escapeHtml,
     t,
@@ -32,8 +33,10 @@ export function createLibraryScreenMethods04() {
         this.clearClosingPicker();
       }
       this.lastRenderedExpandedPicker = expandedPicker;
-      const posterWidth = 252;
-      const posterRadius = 24;
+      // Android TV GridCells poster token (126dp x 2). Phone viewports need
+      // ~3 columns: 3x108 + gaps fits 390px (and 2-3 columns at 320px).
+      const posterWidth = Platform.isCompactViewport() ? 108 : 252;
+      const posterRadius = Platform.isCompactViewport() ? 12 : 24;
       const libraryStyle = `--library-poster-width:${posterWidth}px;--library-poster-height:${Math.round(posterWidth * 1.5)}px;--library-poster-radius:${posterRadius}px;`;
       const hasLibraryItems = Array.isArray(state.allItems) && state.allItems.length > 0;
       if (state.viewMode !== "servers" && (state.isLoading || (state.isSyncing && !hasLibraryItems))) {

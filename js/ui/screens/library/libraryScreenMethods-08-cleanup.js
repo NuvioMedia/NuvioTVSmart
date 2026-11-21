@@ -11,6 +11,10 @@ export function createLibraryScreenMethods08() {
       this.clearClosingPicker();
       this.lastRenderedExpandedPicker = null;
       this.cancelPendingPosterHold();
+      if (this._libraryTouchHoldTimer) {
+        clearTimeout(this._libraryTouchHoldTimer);
+        this._libraryTouchHoldTimer = null;
+      }
       this.posterOptionsMenu = null;
       this.posterOptionsController?.destroy?.({ restoreFocus: false });
       this.posterOptionsController = null;
