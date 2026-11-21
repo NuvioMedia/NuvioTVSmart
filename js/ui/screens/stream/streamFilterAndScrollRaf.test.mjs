@@ -55,6 +55,9 @@ test("streamScreen updates every [data-card-action] button on addon filter and c
     style: { display: "" },
     dataset: { streamKey: "0", streamRow: "0" },
     buttons: [makeBtn(), makeBtn()],
+    querySelector(sel) {
+      return sel === "[data-card-action]" ? this.buttons[0] : null;
+    },
     querySelectorAll(sel) {
       return sel === "[data-card-action]" ? this.buttons : [];
     }
@@ -64,6 +67,9 @@ test("streamScreen updates every [data-card-action] button on addon filter and c
     style: { display: "" },
     dataset: { streamKey: "1", streamRow: "1" },
     buttons: [makeBtn(), makeBtn()],
+    querySelector(sel) {
+      return sel === "[data-card-action]" ? this.buttons[0] : null;
+    },
     querySelectorAll(sel) {
       return sel === "[data-card-action]" ? this.buttons : [];
     }
@@ -100,10 +106,14 @@ test("streamScreen updates every [data-card-action] button on addon filter and c
 
   assert.equal(row0.buttons[0].hidden, true);
   assert.equal(row0.buttons[1].hidden, true);
+  assert.equal(row0.buttons[0].style.display, "none");
+  assert.equal(row0.buttons[1].style.display, "none");
   assert.equal(row0.buttons[0].dataset.streamRow, "-1");
   assert.equal(row0.buttons[1].dataset.streamRow, "-1");
   assert.equal(row1.buttons[0].hidden, false);
   assert.equal(row1.buttons[1].hidden, false);
+  assert.equal(row1.buttons[0].style.display, "");
+  assert.equal(row1.buttons[1].style.display, "");
   assert.equal(row1.buttons[0].dataset.streamRow, "0");
   assert.equal(row1.buttons[1].dataset.streamRow, "0");
 
