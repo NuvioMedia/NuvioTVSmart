@@ -511,6 +511,9 @@ export function createPlayerScreenMethods35() {
               .map((addon) => String(addon?.displayName || addon?.name || "").trim())
               .filter(Boolean)
           );
+          if (!this.isActiveMountToken(mountToken)) {
+            return;
+          }
           while (this.sourceFallbackAttempts < maxSources) {
             const next = nextSourceFallbackCandidate({
               streams: this.streamCandidates,
@@ -560,11 +563,12 @@ export function createPlayerScreenMethods35() {
         } catch (error) {
           console.warn("Source fallback failed", error);
         }
-        this.sourceFallbackInFlight = false;
-        if (this.isActiveMountToken(mountToken)) {
-          this.sourceFallbackExhausted = true;
-          this.showStartupError(message, errorOptions);
+        if (!this.isActiveMountToken(mountToken)) {
+          return;
         }
+        this.sourceFallbackInFlight = false;
+        this.sourceFallbackExhausted = true;
+        this.showStartupError(message, errorOptions);
       })();
       return true;
     },
