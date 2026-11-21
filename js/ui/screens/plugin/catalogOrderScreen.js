@@ -48,7 +48,7 @@ export const CatalogOrderScreen = {
   },
 
   async collectModel() {
-    const addons = await addonRepository.getInstalledAddons();
+    const addons = await addonRepository.getInstalledAddons({ includeMediaServers: true });
     const collections = CollectionsStore.get();
     const prefs = HomeCatalogStore.get();
     return {
