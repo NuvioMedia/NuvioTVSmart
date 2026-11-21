@@ -342,21 +342,49 @@ async function requestServiceStart(
   throw new Error(errors.join("; ") || `${serviceId} service start failed`);
 }
 
-async function requestJson(url, options = {}, timeoutMs = PROBE_TIMEOUT_MS) {
+function createAbortError() {
+  const error = new Error("Aborted");
+  error.name = "AbortError";
+  return error;
+}
+
+// Tizen 5.0 runs Chromium 63, which has no AbortController, so a stalled local
+// service request could never be cancelled. The guard below rejects on timeout
+// or caller abort regardless, and covers the response body read as well.
+async function requestPluginService(url, fetchOptions, timeoutMs, signal = null) {
+  if (signal?.aborted) throw createAbortError();
   const controller = typeof AbortController === "function" ? new AbortController() : null;
-  const timeout = setTimeout(() => controller?.abort(), timeoutMs);
+  let rejectAborted = null;
+  const aborted = new Promise((_, reject) => (rejectAborted = reject));
+  const abort = () => {
+    controller?.abort();
+    rejectAborted(createAbortError());
+  };
+  signal?.addEventListener?.("abort", abort, { once: true });
+  const timer = setTimeout(abort, timeoutMs);
+  const request = (async () => {
+    const response = await fetch(url, { ...fetchOptions, signal: controller?.signal });
+    return { response, payload: await response.json().catch(() => ({})) };
+  })();
+  // Without AbortController the abandoned request keeps running: its late
+  // rejection must not surface as an unhandled rejection.
+  request.catch(() => {});
   try {
-    const response = await fetch(url, {
-      ...options,
-      cache: "no-store",
-      signal: controller?.signal
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(`Tizen plugin service HTTP ${response.status}`);
-    return payload;
+    return await Promise.race([request, aborted]);
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(timer);
+    signal?.removeEventListener?.("abort", abort);
   }
+}
+
+async function requestJson(url, options = {}, timeoutMs = PROBE_TIMEOUT_MS) {
+  const { response, payload } = await requestPluginService(
+    url,
+    { ...options, cache: "no-store" },
+    timeoutMs
+  );
+  if (!response.ok) throw new Error(`Tizen plugin service HTTP ${response.status}`);
+  return payload;
 }
 
 async function probe(baseUrl, timeoutMs = PROBE_TIMEOUT_MS) {
@@ -608,19 +636,18 @@ export const TizenPluginService = {
       : leastBusyBaseUrl(started.baseUrl);
     const requestDetails = serviceRequestDetails(method, baseUrl, timeoutMs, payload, signal);
     diagnostic("service request begin", requestDetails);
-    const controller = typeof AbortController === "function" ? new AbortController() : null;
-    const abort = () => controller?.abort();
-    signal?.addEventListener?.("abort", abort, { once: true });
-    const timer = setTimeout(abort, timeoutMs);
     try {
-      const response = await fetch(`${baseUrl}/${method}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        cache: "no-store",
-        signal: controller?.signal
-      });
-      const result = await response.json().catch(() => ({}));
+      const { response, payload: result } = await requestPluginService(
+        `${baseUrl}/${method}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          cache: "no-store"
+        },
+        timeoutMs,
+        signal
+      );
       if (!response.ok || result.returnValue === false)
         throw new Error(result.errorText || `Tizen plugin service HTTP ${response.status}`);
       diagnostic("service request success", {
@@ -631,7 +658,7 @@ export const TizenPluginService = {
       return result;
     } catch (error) {
       // Connection refused: the service died, so the next request probes and restarts it.
-      if (error?.name === "TypeError" && !controller?.signal?.aborted) {
+      if (error?.name === "TypeError" && !signal?.aborted) {
         cachedReachable = null;
         reachableBaseUrls = [];
       }
@@ -641,8 +668,6 @@ export const TizenPluginService = {
       });
       throw error;
     } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener?.("abort", abort);
       if (holdsSlot) releaseFetchSlot(baseUrl);
     }
   },

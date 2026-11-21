@@ -25,8 +25,8 @@ export const SyncCodeScreen = {
     this.container.innerHTML = `
       <div class="auth-simple-shell">
         <div class="auth-simple-hero">
-          <h2 class="auth-simple-title">${I18n.t("auth.syncCode.title")}</h2>
-          <p class="auth-simple-subtitle">${I18n.t("auth.syncCode.currentCode", { value: value || I18n.t("auth.syncCode.emptyValue") })}</p>
+          <h2 class="auth-simple-title">${escapeHtml(I18n.t("auth.syncCode.title"))}</h2>
+          <p class="auth-simple-subtitle">${escapeHtml(I18n.t("auth.syncCode.currentCode", { value: value || I18n.t("auth.syncCode.emptyValue") }))}</p>
         </div>
         <div class="auth-simple-actions">
           <div class="auth-simple-card focusable" data-action="setCode">${I18n.t("auth.syncCode.setCode")}</div>
@@ -61,12 +61,14 @@ export const SyncCodeScreen = {
           : ""
       }
     `;
-    ScreenUtils.indexFocusables(this.container);
     if (this.textDialog) {
-      const input = this.container.querySelector("[data-action='textInput']");
+      const dialogRoot = this.container.querySelector(".settings-dialog") || this.container;
+      ScreenUtils.indexFocusables(dialogRoot);
+      const input = dialogRoot.querySelector("[data-action='textInput']");
       input?.focus?.();
       input?.classList?.add("focused");
     } else {
+      ScreenUtils.indexFocusables(this.container);
       ScreenUtils.setInitialFocus(this.container);
     }
   },
@@ -78,13 +80,14 @@ export const SyncCodeScreen = {
         this.render();
         return;
       }
-      if (ScreenUtils.handleDpadNavigation(event, this.container)) {
+      const dialogRoot = this.container.querySelector(".settings-dialog") || this.container;
+      if (ScreenUtils.handleDpadNavigation(event, dialogRoot)) {
         return;
       }
       if (event.keyCode !== 13) {
         return;
       }
-      const current = this.container.querySelector(".focusable.focused");
+      const current = dialogRoot.querySelector(".focusable.focused");
       const action = current?.dataset?.action || "";
       if (action === "cancelText") {
         this.textDialog = false;
@@ -137,6 +140,7 @@ export const SyncCodeScreen = {
   },
 
   cleanup() {
+    this.textDialog = false;
     ScreenUtils.hide(this.container);
   }
 };

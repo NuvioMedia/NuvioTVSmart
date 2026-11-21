@@ -279,9 +279,13 @@ export class PosterOptionsDialogController {
     this.state = null;
     this.listPicker = null;
     this.dialog = null;
+    this.openToken = 0;
+    this.optionActionInFlight = false;
   }
 
   destroy({ restoreFocus = true, afterExit = null } = {}) {
+    this.openToken += 1;
+    this.optionActionInFlight = false;
     const dialog = this.dialog;
     this.dialog = null;
     this.state = null;
@@ -299,7 +303,12 @@ export class PosterOptionsDialogController {
       return false;
     }
     this.destroy({ restoreFocus: false });
-    this.state = await createPosterOptionsState(item, options);
+    const token = ++this.openToken;
+    const state = await createPosterOptionsState(item, options);
+    if (token !== this.openToken) {
+      return false;
+    }
+    this.state = state;
     return this.mountOptionsDialog();
   }
 
@@ -322,37 +331,46 @@ export class PosterOptionsDialogController {
           void this.activateOption(option.action);
         }
       })),
-      onDismiss: () => {
-        this.dialog = null;
-        this.state = null;
-        this.listPicker = null;
-        this.onDismiss?.();
-      }
+      onDismiss: () => this.destroy()
     }).mount(document.body);
     return true;
   }
 
   async activateOption(action) {
-    const result = await activatePosterOption(this.state, action);
-    if (result?.type === "details") {
-      const item = result.item;
-      this.destroy({
-        restoreFocus: false,
-        afterExit: () => this.onDetails?.(item)
-      });
-      return true;
+    if (this.optionActionInFlight || !this.state) {
+      return false;
     }
-    if (result?.type === "listPicker") {
-      this.listPicker = result.state;
-      return this.mountListPickerDialog();
+    const token = this.openToken;
+    this.optionActionInFlight = true;
+    try {
+      const result = await activatePosterOption(this.state, action);
+      if (token !== this.openToken) {
+        return false;
+      }
+      if (result?.type === "details") {
+        const item = result.item;
+        this.destroy({
+          restoreFocus: false,
+          afterExit: () => this.onDetails?.(item)
+        });
+        return true;
+      }
+      if (result?.type === "listPicker") {
+        this.listPicker = result.state;
+        return this.mountListPickerDialog();
+      }
+      if (result?.type === "updated") {
+        this.state = result.state;
+        this.onChanged?.(result.state);
+        this.destroy();
+        return true;
+      }
+      return false;
+    } finally {
+      if (token === this.openToken) {
+        this.optionActionInFlight = false;
+      }
     }
-    if (result?.type === "updated") {
-      this.state = result.state;
-      this.onChanged?.(result.state);
-      this.destroy();
-      return true;
-    }
-    return false;
   }
 
   mountListPickerDialog() {
@@ -379,12 +397,7 @@ export class PosterOptionsDialogController {
       })),
       panelClassName: "poster-list-picker-dialog-panel",
       actionsClassName: "poster-list-picker-actions",
-      onDismiss: () => {
-        this.dialog = null;
-        this.state = null;
-        this.listPicker = null;
-        this.onDismiss?.();
-      }
+      onDismiss: () => this.destroy()
     }).mount(document.body);
     return true;
   }
@@ -418,6 +431,11 @@ export class PosterOptionsDialogController {
       normalizedAction === "saveLibraryLists" ||
       normalizedAction === "confirmDestructiveSimklRemoval"
     ) {
+      if (this.optionActionInFlight) {
+        return false;
+      }
+      const token = this.openToken;
+      this.optionActionInFlight = true;
       try {
         await libraryRepository.applyMembershipChanges(
           this.listPicker.item,
@@ -428,9 +446,15 @@ export class PosterOptionsDialogController {
             destructiveRemovalConfirmed: normalizedAction === "confirmDestructiveSimklRemoval"
           }
         );
+        if (token !== this.openToken) {
+          return false;
+        }
         this.onChanged?.(this.state);
         this.destroy();
       } catch (error) {
+        if (token !== this.openToken) {
+          return false;
+        }
         console.warn("Failed to update library lists", error);
         this.listPicker.destructiveRemovalRequired =
           error?.code === "SIMKL_DESTRUCTIVE_REMOVAL_REQUIRED";
@@ -439,6 +463,10 @@ export class PosterOptionsDialogController {
           : trackingErrorMessage(error, null) ||
             t("detail_lists_save_failed", {}, "Could not save list changes.");
         this.mountListPickerDialog();
+      } finally {
+        if (token === this.openToken) {
+          this.optionActionInFlight = false;
+        }
       }
       return true;
     }
