@@ -348,49 +348,41 @@ function createAbortError() {
   return error;
 }
 
-async function fetchWithTimeoutAndAbort(url, fetchOptions, timeoutMs, signal = null) {
-  if (signal?.aborted) {
-    throw createAbortError();
-  }
-  if (typeof AbortController === "function") {
-    const controller = new AbortController();
-    const abort = () => controller.abort();
-    signal?.addEventListener?.("abort", abort, { once: true });
-    const timer = setTimeout(abort, timeoutMs);
-    try {
-      return await fetch(url, { ...fetchOptions, signal: controller.signal });
-    } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener?.("abort", abort);
-    }
-  }
-  const fetchPromise = fetch(url, fetchOptions);
-  // Prevent unhandled rejection if timeout/abort settles the race before fetch settles.
-  fetchPromise.catch(() => {});
-  let timer = 0;
-  let onAbort = null;
-  const guardPromise = new Promise((_, reject) => {
-    onAbort = () => reject(createAbortError());
-    signal?.addEventListener?.("abort", onAbort, { once: true });
-    timer = setTimeout(onAbort, timeoutMs);
-  });
+// Tizen 5.0 runs Chromium 63, which has no AbortController, so a stalled local
+// service request could never be cancelled. The guard below rejects on timeout
+// or caller abort regardless, and covers the response body read as well.
+async function requestPluginService(url, fetchOptions, timeoutMs, signal = null) {
+  if (signal?.aborted) throw createAbortError();
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  let rejectAborted = null;
+  const aborted = new Promise((_, reject) => (rejectAborted = reject));
+  const abort = () => {
+    controller?.abort();
+    rejectAborted(createAbortError());
+  };
+  signal?.addEventListener?.("abort", abort, { once: true });
+  const timer = setTimeout(abort, timeoutMs);
+  const request = (async () => {
+    const response = await fetch(url, { ...fetchOptions, signal: controller?.signal });
+    return { response, payload: await response.json().catch(() => ({})) };
+  })();
+  // Without AbortController the abandoned request keeps running: its late
+  // rejection must not surface as an unhandled rejection.
+  request.catch(() => {});
   try {
-    return await Promise.race([fetchPromise, guardPromise]);
+    return await Promise.race([request, aborted]);
   } finally {
     clearTimeout(timer);
-    if (onAbort) {
-      signal?.removeEventListener?.("abort", onAbort);
-    }
+    signal?.removeEventListener?.("abort", abort);
   }
 }
 
 async function requestJson(url, options = {}, timeoutMs = PROBE_TIMEOUT_MS) {
-  const response = await fetchWithTimeoutAndAbort(
+  const { response, payload } = await requestPluginService(
     url,
     { ...options, cache: "no-store" },
     timeoutMs
   );
-  const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(`Tizen plugin service HTTP ${response.status}`);
   return payload;
 }
@@ -645,7 +637,7 @@ export const TizenPluginService = {
     const requestDetails = serviceRequestDetails(method, baseUrl, timeoutMs, payload, signal);
     diagnostic("service request begin", requestDetails);
     try {
-      const response = await fetchWithTimeoutAndAbort(
+      const { response, payload: result } = await requestPluginService(
         `${baseUrl}/${method}`,
         {
           method: "POST",
@@ -656,7 +648,6 @@ export const TizenPluginService = {
         timeoutMs,
         signal
       );
-      const result = await response.json().catch(() => ({}));
       if (!response.ok || result.returnValue === false)
         throw new Error(result.errorText || `Tizen plugin service HTTP ${response.status}`);
       diagnostic("service request success", {
@@ -667,7 +658,7 @@ export const TizenPluginService = {
       return result;
     } catch (error) {
       // Connection refused: the service died, so the next request probes and restarts it.
-      if (error?.name === "TypeError" && error?.name !== "AbortError" && !signal?.aborted) {
+      if (error?.name === "TypeError" && !signal?.aborted) {
         cachedReachable = null;
         reachableBaseUrls = [];
       }
