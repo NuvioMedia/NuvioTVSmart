@@ -1,5 +1,9 @@
 import { mirrorWatchTargets, findServerEpisode } from "./serverWatchedMatcher.js";
-import { serverUserState, projectServerUserState } from "./mediaServerUserState.js";
+import {
+  serverUserState,
+  projectServerUserState,
+  reassignServerItemIdentity
+} from "./mediaServerUserState.js";
 import { MediaServerStore } from "./mediaServerStore.js";
 import {
   mediaServerRequest,
@@ -553,6 +557,7 @@ export const MediaServerRepository = {
     if (profile() !== pid) return null;
     // Cards and progress saved from the resume row can still carry an episode id.
     const fromEpisode = String(item?.Type).toLowerCase() === "episode" && Boolean(item.SeriesId);
+    const episodeItem = fromEpisode ? item : null;
     if (fromEpisode) {
       item = await get(connection, "item", item.SeriesId, { fields: LIST_FIELDS }, signal);
       if (profile() !== pid) return null;
@@ -560,6 +565,9 @@ export const MediaServerRepository = {
     const result = mapServerItem(connection, item);
     if (!result) return null;
     result.id = fromEpisode ? serverId(connection, item.Id) : id;
+    if (fromEpisode) {
+      reassignServerItemIdentity(connection.id, episodeItem.Id, result, pid);
+    }
     result.videos = [];
     let stateItems = [item];
     if (result.type === "series") {

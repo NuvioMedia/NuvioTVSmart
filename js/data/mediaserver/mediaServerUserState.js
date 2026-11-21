@@ -14,6 +14,54 @@ export function serverUserState(item) {
   };
 }
 
+function serverContentId(connectionId, itemId) {
+  return `server:${encodeURIComponent(String(connectionId))}:${encodeURIComponent(String(itemId))}`;
+}
+
+// Cards from the old media-server resume row stored the episode id as the
+// content id, while Android always uses the series id. When the series behind
+// an episode is known, move its progress and watched records to that identity
+// so Continue Watching and Next Up see one title instead of both.
+export function reassignServerItemIdentity(
+  connectionId,
+  episodeItemId,
+  seriesMeta,
+  profileId = "1"
+) {
+  const episodeContentId = serverContentId(connectionId, episodeItemId);
+  const seriesContentId = String(seriesMeta?.id || "");
+  if (!seriesContentId.startsWith("server:") || seriesContentId === episodeContentId) {
+    return;
+  }
+  const display = {};
+  if (seriesMeta.name) display.title = seriesMeta.name;
+  if (seriesMeta.poster) display.poster = seriesMeta.poster;
+  if (seriesMeta.background) display.background = seriesMeta.background;
+  if (seriesMeta.logo) display.logo = seriesMeta.logo;
+
+  const progress = WatchProgressStore.listForProfile(profileId);
+  const episodeProgress = progress.filter((entry) => entry.contentId === episodeContentId);
+  if (episodeProgress.length) {
+    WatchProgressStore.replaceForProfile(profileId, [
+      ...progress.filter((entry) => entry.contentId !== episodeContentId),
+      ...episodeProgress.map((entry) => ({ ...entry, ...display, contentId: seriesContentId }))
+    ]);
+  }
+
+  const watched = WatchedItemsStore.listForProfile(profileId);
+  const episodeWatched = watched.filter((entry) => entry.contentId === episodeContentId);
+  if (episodeWatched.length) {
+    WatchedItemsStore.replaceForProfile(profileId, [
+      ...watched.filter((entry) => entry.contentId !== episodeContentId),
+      ...episodeWatched.map((entry) => ({
+        ...entry,
+        contentId: seriesContentId,
+        ...(seriesMeta.name ? { title: seriesMeta.name } : {})
+      }))
+    ]);
+  }
+}
+
 export function newerServerResume(state, saved, startFromBeginning = false) {
   if (
     startFromBeginning ||

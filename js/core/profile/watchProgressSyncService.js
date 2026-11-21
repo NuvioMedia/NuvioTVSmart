@@ -9,6 +9,7 @@ import { SimklAuthStore } from "../../data/local/simklAuthStore.js";
 import { TraktSettingsStore, WatchProgressSource } from "../../data/local/traktSettingsStore.js";
 import { getSyncClientId } from "../sync/syncClientIdentity.js";
 import { isSyncBackoffActive } from "../sync/syncBackoffPolicy.js";
+import { isDeviceLocalWatchId } from "./syncLocalIds.js";
 
 const PULL_RPC = "sync_pull_watch_progress";
 const PUSH_RPC = "sync_push_watch_progress";
@@ -79,7 +80,11 @@ function progressContentSignature(item = {}) {
 }
 
 function homeProgressSnapshotSignature(items = []) {
-  return buildPushSignature(buildRemoteProgressEntries(coalesceSyncItems(items)));
+  return buildPushSignature(
+    buildRemoteProgressEntries(
+      coalesceSyncItems(items).filter((item) => !isDeviceLocalWatchId(item.contentId))
+    )
+  );
 }
 
 function itemsByProgressKey(items = []) {
@@ -176,7 +181,7 @@ function writeBaselineItems(profileId, items = []) {
   writeProfileSyncState(profileId, { remoteSnapshot: normalizeProgressItems(items) });
 }
 
-function mergeProgressItems(
+export function mergeProgressItems(
   localItems = [],
   remoteItems = [],
   baselineItems = [],
@@ -196,6 +201,13 @@ function mergeProgressItems(
     const localItem = localByKey.get(key) || null;
     const remoteItem = remoteByKey.get(key) || null;
     const baselineItem = baselineByKey.get(key) || null;
+
+    // Device-local media-server progress is never part of the cloud snapshot,
+    // so an absent remote row must not delete it (Android keeps these too).
+    if (localItem && isDeviceLocalWatchId(localItem.contentId)) {
+      merged.push(localItem);
+      return;
+    }
 
     if (localItem && remoteItem) {
       const localChanged =
@@ -581,7 +593,9 @@ async function pushOnce(profileId = null) {
       await deleteRemoteProgressKeys(retryDeleteKeys, resolvedProfileId);
       removePendingDeleteKeys(resolvedProfileId, retryDeleteKeys);
     }
-    const items = localItems.filter((item) => isSyncableProgressItem(item));
+    const items = localItems.filter(
+      (item) => isSyncableProgressItem(item) && !isDeviceLocalWatchId(item.contentId)
+    );
     const rows = buildRemoteProgressEntries(items);
     pushSignature = buildPushSignature(rows);
     if (!rows.length) {
@@ -698,7 +712,12 @@ export const WatchProgressSyncService = {
       });
       const remoteItems = filteredRows
         .map((row) => mapProgressRow(row))
-        .filter((item) => Boolean(item.contentId) && isSyncableProgressItem(item));
+        .filter(
+          (item) =>
+            Boolean(item.contentId) &&
+            isSyncableProgressItem(item) &&
+            !isDeviceLocalWatchId(item.contentId)
+        );
       const snapshotItems = normalizeProgressItems(remoteItems);
       if (!snapshotItems.length && localItems.length) {
         // Android keeps the local snapshot when the remote endpoint returns
@@ -706,7 +725,7 @@ export const WatchProgressSyncService = {
         // authorization result, or a backend outage rather than a deletion.
         // Do not advance the baseline or schedule an empty push.
         lastPullStatus = "ok";
-        lastPullHadUnsynced = false;
+        lastPullHadUnsynced = localItems.some((item) => !isDeviceLocalWatchId(item.contentId));
         return localItems;
       }
       const remoteKeys = new Set(snapshotItems.map((item) => progressKey(item)));
@@ -724,10 +743,14 @@ export const WatchProgressSyncService = {
         readPendingDeleteKeys(resolvedProfileId)
       );
       const remoteSignature = buildPushSignature(
-        buildRemoteProgressEntries(coalesceSyncItems(snapshotItems))
+        buildRemoteProgressEntries(
+          coalesceSyncItems(snapshotItems).filter((item) => !isDeviceLocalWatchId(item.contentId))
+        )
       );
       const mergedSignature = buildPushSignature(
-        buildRemoteProgressEntries(coalesceSyncItems(mergedItems))
+        buildRemoteProgressEntries(
+          coalesceSyncItems(mergedItems).filter((item) => !isDeviceLocalWatchId(item.contentId))
+        )
       );
       const didChangeHomeInputs = homeProgressSnapshotSignature(localItems) !== mergedSignature;
       lastPullChangedHomeInputs = lastPullChangedHomeInputs || didChangeHomeInputs;
@@ -773,7 +796,7 @@ export const WatchProgressSyncService = {
   async deleteItems(items = [], profileId = null) {
     try {
       const resolvedProfileId = resolveProfileId(profileId);
-      const keys = buildDeleteKeys(items);
+      const keys = buildDeleteKeys(items).filter((key) => !isDeviceLocalWatchId(key));
       if (!keys.length) {
         return true;
       }

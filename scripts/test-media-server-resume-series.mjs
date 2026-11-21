@@ -6,7 +6,13 @@ import assert from "node:assert/strict";
 // screen shows "No episodes found". Like the Android app, an episode in that row
 // has to stand for its series: one card per series, with the series id.
 
-globalThis.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+const storage = new Map();
+globalThis.localStorage = {
+  getItem: (key) => (storage.has(key) ? storage.get(key) : null),
+  setItem: (key, value) => storage.set(key, String(value)),
+  removeItem: (key) => storage.delete(key),
+  clear: () => storage.clear()
+};
 if (!globalThis.navigator) {
   Object.defineProperty(globalThis, "navigator", {
     value: { userAgent: "node" },
@@ -26,6 +32,8 @@ globalThis.document = globalThis.document || {
 };
 
 const { MediaServerRepository } = await import("../js/data/mediaserver/mediaServerRepository.js");
+const { WatchProgressStore } = await import("../js/data/local/watchProgressStore.js");
+const { WatchedItemsStore } = await import("../js/data/local/watchedItemsStore.js");
 
 const connection = {
   id: "conn-1",
@@ -215,6 +223,126 @@ test("meta of a series id is unchanged", async () => {
       const meta = await MediaServerRepository.meta("server:conn-1:S1");
       assert.equal(meta.id, "server:conn-1:S1");
       assert.equal(meta.videos.length, 1);
+    }
+  );
+});
+
+test("progress and watched rows saved under an episode id move to the series id", async () => {
+  const now = Date.now();
+  WatchProgressStore.upsertMany(
+    [
+      {
+        contentId: "server:conn-1:E24",
+        contentType: "series",
+        videoId: "server:conn-1:E25",
+        season: 5,
+        episode: 24,
+        positionMs: 675000,
+        durationMs: 1437000,
+        title: "Episode 24",
+        updatedAt: now
+      },
+      {
+        contentId: "server:conn-1:E24",
+        contentType: "series",
+        season: 5,
+        episode: 23,
+        positionMs: 1436000,
+        durationMs: 1436000,
+        title: "Episode 23",
+        updatedAt: now - 1000
+      }
+    ],
+    "1"
+  );
+  WatchedItemsStore.upsertMany(
+    [
+      {
+        contentId: "server:conn-1:E24",
+        contentType: "series",
+        season: 5,
+        episode: 23,
+        title: "Episode 23",
+        watchedAt: now - 2000
+      }
+    ],
+    "1"
+  );
+
+  await withServer(
+    (href) => {
+      if (href.includes("/Shows/S1/Episodes"))
+        return json({ Items: [episode("E24", "S1", "My Hero Academia", 5, 24)] });
+      if (href.includes("/Items/E24")) return json(episode("E24", "S1", "My Hero Academia", 5, 24));
+      if (href.includes("/Items/S1")) return json(seriesItem("S1", "My Hero Academia"));
+      return json({}, 404);
+    },
+    async () => {
+      connection.useCatalogMetadata = false;
+      const meta = await MediaServerRepository.meta("server:conn-1:E24");
+      assert.equal(meta.id, "server:conn-1:S1");
+
+      const progress = WatchProgressStore.listForProfile("1");
+      assert.deepEqual(
+        progress.map((entry) => [entry.contentId, entry.season, entry.episode]).sort(),
+        [
+          ["server:conn-1:S1", 5, 23],
+          ["server:conn-1:S1", 5, 24]
+        ]
+      );
+      const latest = progress.find((entry) => entry.episode === 24);
+      assert.equal(latest.title, "My Hero Academia");
+      assert.match(latest.poster, /\/Items\/S1\/Images\/Primary/);
+      assert.equal(latest.videoId, "server:conn-1:E25");
+
+      const watched = WatchedItemsStore.listForProfile("1");
+      assert.deepEqual(
+        watched.map((entry) => [entry.contentId, entry.season, entry.episode]),
+        [["server:conn-1:S1", 5, 23]]
+      );
+      assert.equal(watched[0].title, "My Hero Academia");
+    }
+  );
+});
+
+test("an existing newer series row wins over the migrated episode row", async () => {
+  const now = Date.now();
+  WatchProgressStore.replaceForProfile("1", [
+    {
+      contentId: "server:conn-1:E24",
+      contentType: "series",
+      season: 5,
+      episode: 24,
+      positionMs: 400000,
+      durationMs: 1437000,
+      updatedAt: now - 5000
+    },
+    {
+      contentId: "server:conn-1:S1",
+      contentType: "series",
+      season: 5,
+      episode: 24,
+      positionMs: 900000,
+      durationMs: 1437000,
+      updatedAt: now
+    }
+  ]);
+
+  await withServer(
+    (href) => {
+      if (href.includes("/Shows/S1/Episodes"))
+        return json({ Items: [episode("E24", "S1", "My Hero Academia", 5, 24)] });
+      if (href.includes("/Items/E24")) return json(episode("E24", "S1", "My Hero Academia", 5, 24));
+      if (href.includes("/Items/S1")) return json(seriesItem("S1", "My Hero Academia"));
+      return json({}, 404);
+    },
+    async () => {
+      connection.useCatalogMetadata = false;
+      await MediaServerRepository.meta("server:conn-1:E24");
+      const progress = WatchProgressStore.listForProfile("1");
+      assert.equal(progress.length, 1);
+      assert.equal(progress[0].contentId, "server:conn-1:S1");
+      assert.equal(progress[0].positionMs, 900000);
     }
   );
 });
