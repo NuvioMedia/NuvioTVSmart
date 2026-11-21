@@ -363,7 +363,10 @@ export class RealtimeSocket {
     const socket = this.ws;
     this.ws = null;
     this.pendingHeartbeatRef = null;
-    this.channels.forEach((channel) => channel.handleSocketClosed());
+    this.channels.forEach((channel) => {
+      channel.clearRejoin();
+      channel.handleSocketClosed();
+    });
     if (socket) {
       try {
         socket.close();

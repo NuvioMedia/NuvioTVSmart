@@ -1,6 +1,5 @@
 import { I18n } from "../../../i18n/index.js";
 import { ScreenUtils } from "../../navigation/screen.js";
-import { Router } from "../../navigation/routerState.js";
 
 const SECTIONS = [
   {
@@ -54,15 +53,14 @@ export const LicensesAttributionsScreen = {
           ${SECTIONS.map(
             (section) => `
             <section><h2>${escapeHtml(t(section.titleKey))}</h2>
-              ${section.items.map(([id, url, license], index) => `<button class="license-row focusable" data-url="${escapeHtml(url)}" data-index="${index}"><strong>${escapeHtml(license ? id : t(`licenses_attributions_${id}_title`, id))}</strong><span>${escapeHtml(license || t(`licenses_attributions_${id}_body`, ""))}</span></button>`).join("")}
+              ${section.items.map(([id, url, license]) => `<button class="license-row focusable" data-url="${escapeHtml(url)}"><strong>${escapeHtml(license ? id : t(`licenses_attributions_${id}_title`, id))}</strong><span>${escapeHtml(license || t(`licenses_attributions_${id}_body`, ""))}</span></button>`).join("")}
             </section>`
           ).join("")}
         </div>
       </main>`;
+    ScreenUtils.indexFocusables(this.container);
     this.onClickBound = this.onClick.bind(this);
-    this.onKeyDownBound = this.onKeyDown.bind(this);
     this.container.addEventListener("click", this.onClickBound);
-    document.addEventListener("keydown", this.onKeyDownBound);
     ScreenUtils.setInitialFocus(this.container);
   },
 
@@ -71,22 +69,48 @@ export const LicensesAttributionsScreen = {
     if (url) window.open?.(url, "_blank");
   },
 
-  async onKeyDown(event) {
-    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-      event.preventDefault();
-      ScreenUtils.moveFocus(this.container, event.key === "ArrowUp" ? -1 : 1);
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      this.container.querySelector(".focusable.focused")?.click();
-    } else if (event.key === "Escape" || event.key === "Backspace") {
-      event.preventDefault();
-      await Router.back();
+  onKeyDown(event) {
+    const code = Number(event?.keyCode || 0);
+    const key = event?.key;
+    if (code === 38 || key === "ArrowUp") {
+      event?.preventDefault?.();
+      ScreenUtils.moveFocus(this.container, -1);
+      this.revealFocused();
+    } else if (code === 40 || key === "ArrowDown") {
+      event?.preventDefault?.();
+      ScreenUtils.moveFocus(this.container, 1);
+      this.revealFocused();
+    } else if (code === 13 || key === "Enter") {
+      event?.preventDefault?.();
+      this.container?.querySelector(".focusable.focused")?.click();
+    }
+  },
+
+  // ScreenUtils.moveFocus focuses with preventScroll, so the list must scroll
+  // the focused row into view itself (Android scrolls the panel the same way).
+  revealFocused() {
+    const scroller = this.container?.querySelector(".licenses-screen");
+    const row = this.container?.querySelector(".focusable.focused");
+    if (
+      !scroller ||
+      !row ||
+      typeof scroller.getBoundingClientRect !== "function" ||
+      typeof row.getBoundingClientRect !== "function"
+    ) {
+      return;
+    }
+    const view = scroller.getBoundingClientRect();
+    const rect = row.getBoundingClientRect();
+    const margin = 8;
+    if (rect.top < view.top + margin) {
+      scroller.scrollTop += rect.top - view.top - margin;
+    } else if (rect.bottom > view.bottom - margin) {
+      scroller.scrollTop += rect.bottom - view.bottom + margin;
     }
   },
 
   cleanup() {
     this.container?.removeEventListener("click", this.onClickBound);
-    document.removeEventListener("keydown", this.onKeyDownBound);
     ScreenUtils.hide(this.container);
   }
 };

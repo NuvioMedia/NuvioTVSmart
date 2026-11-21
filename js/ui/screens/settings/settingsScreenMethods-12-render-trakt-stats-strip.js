@@ -198,8 +198,15 @@ export function createSettingsScreenMethods12() {
       return this.renderAboutSection(model);
     },
     async render({ refreshModel = true, skipUnchangedContent = false } = {}) {
+      if (!this.isMounted || !this.container) {
+        return;
+      }
+      const mountToken = this.settingsMountToken;
       if (refreshModel || !this.model) {
         this.model = await this.collectModel();
+      }
+      if (!this.isMounted || !this.container || mountToken !== this.settingsMountToken) {
+        return;
       }
       this.layoutPrefs = this.model.layout;
       this.sidebarExpanded = Boolean(this.layoutPrefs?.modernSidebar && this.sidebarExpanded);

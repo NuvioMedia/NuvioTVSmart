@@ -12,6 +12,8 @@ import { I18n } from "../../i18n/index.js";
 
 import { getTvRuntimePerformanceProfile } from "../../platform/tvRuntimePerformance.js";
 
+import { BoundedCache } from "../../core/util/boundedCache.js";
+
 export const ROOT_SIDEBAR_ITEMS = [
   {
     action: "gotoHome",
@@ -135,6 +137,10 @@ export function getSidebarTextFitTargets(container) {
   );
 }
 
+const MAX_SIDEBAR_LABEL_FIT_CACHE = 128;
+const fittedSidebarLabelState = new WeakMap();
+const sidebarLabelFitCache = new BoundedCache(MAX_SIDEBAR_LABEL_FIT_CACHE);
+
 export function fitSidebarLabel(node, minFontSizePx) {
   if (!node || !node.isConnected) {
     return false;
@@ -143,6 +149,27 @@ export function fitSidebarLabel(node, minFontSizePx) {
   const targetWidth = node.getBoundingClientRect().width;
   if (!Number.isFinite(targetWidth) || targetWidth <= 0) {
     return false;
+  }
+
+  const minSize = Math.max(12, Number(minFontSizePx) || 12);
+  const text = String(node.textContent || "").trim();
+  const prevNodeState = fittedSidebarLabelState.get(node);
+  if (prevNodeState && prevNodeState.text === text && prevNodeState.width === targetWidth && prevNodeState.minSize === minSize) {
+    node.style.fontSize = prevNodeState.fontSize;
+    return true;
+  }
+
+  // The fitted size only depends on the label text, the CSS class that sets the
+  // base size, the viewport (vw sizing), the slot width and the floor. Reuse it
+  // instead of paying the layout reflow again: the key carries the exact width,
+  // so a reused entry can never bring back the sub-pixel overflow that #1335
+  // fixed.
+  const cacheKey = text ? `${globalThis?.innerWidth || 0}|${node.className || ""}|${text}|${targetWidth}|${minSize}` : "";
+  if (cacheKey && sidebarLabelFitCache.has(cacheKey)) {
+    const cachedFontSize = sidebarLabelFitCache.get(cacheKey);
+    fittedSidebarLabelState.set(node, { text, width: targetWidth, minSize, fontSize: cachedFontSize });
+    node.style.fontSize = cachedFontSize;
+    return true;
   }
 
   const previousInlineSize = node.style.fontSize;
@@ -159,10 +186,13 @@ export function fitSidebarLabel(node, minFontSizePx) {
   const currentWidth = node.scrollWidth;
   if (currentWidth <= node.clientWidth) {
     node.style.fontSize = "";
+    fittedSidebarLabelState.set(node, { text, width: targetWidth, minSize, fontSize: "" });
+    if (cacheKey) {
+      sidebarLabelFitCache.set(cacheKey, "");
+    }
     return true;
   }
 
-  const minSize = Math.max(12, Number(minFontSizePx) || 12);
   let low = minSize;
   let high = computedSize;
   let best = minSize;
@@ -178,7 +208,12 @@ export function fitSidebarLabel(node, minFontSizePx) {
     }
   }
 
-  node.style.fontSize = `${best}px`;
+  const finalFontSize = `${best}px`;
+  node.style.fontSize = finalFontSize;
+  fittedSidebarLabelState.set(node, { text, width: targetWidth, minSize, fontSize: finalFontSize });
+  if (cacheKey) {
+    sidebarLabelFitCache.set(cacheKey, finalFontSize);
+  }
   return true;
 }
 

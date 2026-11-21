@@ -130,8 +130,15 @@ function observeOrHydrate(image) {
   if (visible) hydrate(image);
 }
 
-function prepareImage(image) {
+function prepareImage(image, pendingObserve = null) {
   if (!isLazyArtworkImage(image)) return;
+  const enqueueObserve = (target) => {
+    if (Array.isArray(pendingObserve)) {
+      pendingObserve.push(target);
+      return;
+    }
+    observeOrHydrate(target);
+  };
   if (image.dataset.artworkLazy === "1") {
     // A prepared image can be moved by a screen re-render. Re-observe it
     // instead of leaving it as a transparent pixel after the previous
@@ -140,7 +147,7 @@ function prepareImage(image) {
     const current = image.getAttribute("src") || "";
     if (current && current !== TRANSPARENT_PIXEL && !current.startsWith("blob:")) return;
     if (current.startsWith("blob:")) image.src = TRANSPARENT_PIXEL;
-    observeOrHydrate(image);
+    enqueueObserve(image);
     return;
   }
   // Home owns its own lazy index and already moves src to data-src.
@@ -153,22 +160,29 @@ function prepareImage(image) {
   image.dataset.artworkLazy = "1";
   image.dataset.artworkSrc = source;
   image.src = TRANSPARENT_PIXEL;
-  observeOrHydrate(image);
+  enqueueObserve(image);
 }
 
 function prepareTree(node) {
   if (!node || node.nodeType !== 1) return;
   if (node.closest?.(".home-screen-shell")) return;
-  if (isLazyArtworkImage(node)) prepareImage(node);
-  node.querySelectorAll?.(ARTWORK_SELECTOR).forEach(prepareImage);
+  const pendingObserve = [];
+  if (isLazyArtworkImage(node)) prepareImage(node, pendingObserve);
+  node.querySelectorAll?.(ARTWORK_SELECTOR).forEach((image) => prepareImage(image, pendingObserve));
+  for (let i = 0; i < pendingObserve.length; i += 1) {
+    observeOrHydrate(pendingObserve[i]);
+  }
 }
 
 function releaseTree(node) {
   if (!node || node.nodeType !== 1) return;
+  // closest() matches the node itself: Home subtrees are never prepared here.
+  if (node.closest?.(".home-screen-shell")) return;
   if (node.tagName === "IMG") {
     Promise.resolve().then(() => {
       if (!node.isConnected) releaseImage(node);
     });
+    return;
   }
   // A screen render often replaces a whole subtree. Wait one microtask so a
   // node that was only moved (removed and re-inserted in the same task) keeps

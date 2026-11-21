@@ -190,7 +190,14 @@
 }
 
 .licenses-screen {
+  height: 100%;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.licenses-screen::-webkit-scrollbar {
+  display: none;
 }
 
 .licenses-screen header {
