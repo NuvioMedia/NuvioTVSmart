@@ -7,7 +7,12 @@ import { HomeCatalogStore } from "../../data/local/homeCatalogStore.js";
 import { CollectionsStore, buildCollectionHomeKey } from "../../data/local/collectionsStore.js";
 import { LayoutPreferences } from "../../data/local/layoutPreferences.js";
 import { ProfileManager } from "./profileManager.js";
-import { buildCatalogDisableKey, buildCatalogOrderKey, catalogShouldShowOnHome } from "../addons/homeCatalogs.js";
+import {
+  buildCatalogDisableKey,
+  buildCatalogOrderKey,
+  catalogShouldShowOnHome,
+  withLocalMediaServerPrefs
+} from "../addons/homeCatalogs.js";
 import { getSyncBackoffRemainingMs, isSyncBackoffActive } from "../sync/syncBackoffPolicy.js";
 import { registerSessionTeardownHandler } from "../auth/sessionLifecycle.js";
 
@@ -479,11 +484,13 @@ function payloadPreferences(payload = {}) {
 }
 
 function applyPayload(profileId, payload = {}, effectivePayload = payload) {
-  const prefs = payloadPreferences(payload);
+  const remotePrefs = payloadPreferences(payload);
   // Keep remote-only identities, then append installed rows in manifest order,
   // as Android does when rebuilding its effective Home catalog order.
-  const savedKeys = new Set(prefs.order);
-  prefs.order.push(...(effectivePayload.items || []).map(syncItemKey).filter((key) => !savedKeys.has(key)));
+  const savedKeys = new Set(remotePrefs.order);
+  remotePrefs.order.push(...(effectivePayload.items || []).map(syncItemKey).filter((key) => !savedKeys.has(key)));
+  // The account never holds media-server rows; keep this device's.
+  const prefs = withLocalMediaServerPrefs(remotePrefs, HomeCatalogStore.getForProfile(profileId));
   HomeCatalogSettingsSyncService.syncingFromRemoteProfiles.add(resolveProfileId(profileId));
   try {
     HomeCatalogStore.setForProfile(profileId, prefs, { silentSync: true });

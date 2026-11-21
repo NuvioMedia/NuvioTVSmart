@@ -105,6 +105,45 @@ export function buildCollectionOrderKey(collectionId) {
   return id ? `collection_${id}` : "";
 }
 
+// Media-server rows are local to a device: their order key starts with the
+// server addon id and their base url is nuvio-server://. The account's Home
+// catalog settings never contain them (Android keeps them local too).
+export function isMediaServerCatalogKey(key) {
+  const value = String(key || "");
+  return value.startsWith("media-server-") || value.startsWith("nuvio-server://");
+}
+
+// Pulled prefs replace the local ones, so the local media-server rows are put
+// back: their keys at their local position, their disabled marks and titles.
+export function withLocalMediaServerPrefs(remote = {}, local = {}) {
+  const localOrder = Array.isArray(local?.order) ? local.order : [];
+  const serverEntries = localOrder
+    .map((key, index) => [key, index])
+    .filter(([key]) => isMediaServerCatalogKey(key));
+  const localDisabled = (Array.isArray(local?.disabled) ? local.disabled : []).filter(
+    isMediaServerCatalogKey
+  );
+  const localTitles = Object.fromEntries(
+    Object.entries(local?.customTitles || {}).filter(([key]) => isMediaServerCatalogKey(key))
+  );
+  if (!serverEntries.length && !localDisabled.length && !Object.keys(localTitles).length) {
+    return remote;
+  }
+  const order = (remote?.order || []).filter((key) => !isMediaServerCatalogKey(key));
+  for (const [key, index] of serverEntries) {
+    order.splice(Math.min(index, order.length), 0, key);
+  }
+  const disabled = [...(remote?.disabled || []), ...localDisabled].filter(
+    (key, index, array) => array.indexOf(key) === index
+  );
+  return {
+    ...remote,
+    order,
+    disabled,
+    customTitles: { ...(remote?.customTitles || {}), ...localTitles }
+  };
+}
+
 export function toDisplayTypeLabel(value) {
   const raw = String(value || "").trim();
   if (!raw) {
@@ -148,12 +187,11 @@ export function buildOrderedHomeCatalogItems(
         seenKeys.add(key);
         defaultEntries.push({
           key,
-          disableKey: buildCatalogDisableKey(
-            addon.baseUrl,
-            catalog.apiType,
-            catalog.id,
-            catalog.name
-          ),
+          // A server's base url carries ?revision=N, which changes whenever the
+          // connection is edited, so its rows are disabled by their order key.
+          disableKey: isMediaServerCatalogKey(addon.baseUrl)
+            ? key
+            : buildCatalogDisableKey(addon.baseUrl, catalog.apiType, catalog.id, catalog.name),
           addonBaseUrl: addon.baseUrl,
           addonId: addon.id,
           addonName: addon.displayName,
