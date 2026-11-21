@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import vm from "node:vm";
 
 import {
+  WORKER_SOURCE,
   artworkResizeTarget,
   artworkWorkerCount,
   computeSourceRect,
@@ -399,4 +401,135 @@ test("rescaleHomeArtwork and rescaleArtwork resolve null without starting worker
       globalThis.Worker = originalWorker;
     }
   }
+});
+
+// The worker source is generated from the helpers above and normally only runs
+// inside a real Worker. Exercising it in a VM keeps the network early-abort
+// honest without spawning one.
+function createPosterWorker(response) {
+  const messages = [];
+  const context = vm.createContext({
+    self: { postMessage: (message) => messages.push(message) },
+    fetch: async () => response,
+    Blob: class Blob {
+      constructor(parts) {
+        this.parts = parts;
+      }
+    },
+    createImageBitmap: async () => ({ width: 100, height: 100, close() {} }),
+    OffscreenCanvas: class OffscreenCanvas {
+      getContext() {
+        return { drawImage() {} };
+      }
+      async convertToBlob() {
+        return { type: "image/jpeg" };
+      }
+    },
+    setTimeout,
+    clearTimeout
+  });
+  vm.runInContext(WORKER_SOURCE, context);
+  return { context, messages };
+}
+
+function streamResponse(chunks, tracker) {
+  let index = 0;
+  return {
+    ok: true,
+    headers: { get: () => null },
+    body: {
+      getReader: () => ({
+        read: async () => {
+          if (index >= chunks.length) return { done: true };
+          const value = chunks[index];
+          index += 1;
+          tracker.reads += 1;
+          return { done: false, value };
+        },
+        cancel: async () => {
+          tracker.cancelled = true;
+        }
+      })
+    },
+    arrayBuffer: async () => {
+      throw new Error("a streamed response must not be buffered");
+    }
+  };
+}
+
+async function runPosterJob(response) {
+  const { context, messages } = createPosterWorker(response);
+  await context.self.onmessage({
+    data: { id: 1, url: "https://cdn.example.com/art.webp", width: 220, height: 338, fit: "cover" }
+  });
+  assert.equal(messages.length, 1);
+  return messages[0];
+}
+
+test("the worker cancels an animated WebP once the 30-byte header arrives", async () => {
+  const bytes = new Uint8Array(40);
+  // RIFF, size, WEBP, then a VP8X chunk whose animation flag is set.
+  bytes.set([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x58]);
+  bytes[20] = 0x02;
+  const tail = new Uint8Array(4 * 1024 * 1024);
+  const tracker = { reads: 0, cancelled: false };
+  const message = await runPosterJob(
+    streamResponse([bytes.slice(0, 16), bytes.slice(16), tail], tracker)
+  );
+
+  assert.equal(message.reason, "animated webp");
+  assert.equal(tracker.reads, 2, "the multi-MB tail is never pulled");
+  assert.equal(tracker.cancelled, true);
+});
+
+test("the worker cancels a non-JPEG body after the leading header", async () => {
+  const tracker = { reads: 0, cancelled: false };
+  const message = await runPosterJob(
+    streamResponse([new Uint8Array(32), new Uint8Array(4 * 1024 * 1024)], tracker)
+  );
+
+  assert.equal(message.reason, "not jpeg");
+  assert.equal(tracker.reads, 1);
+  assert.equal(tracker.cancelled, true);
+});
+
+test("the worker stops a streamed body that grows past 8 MiB", async () => {
+  const first = new Uint8Array(5 * 1024 * 1024);
+  first.set([0xff, 0xd8, 0xff]);
+  const tracker = { reads: 0, cancelled: false };
+  const message = await runPosterJob(
+    streamResponse([first, new Uint8Array(4 * 1024 * 1024)], tracker)
+  );
+
+  assert.equal(message.reason, "too large");
+  assert.equal(tracker.cancelled, true);
+});
+
+test("the worker reads a JPEG body to the end without cancelling", async () => {
+  const jpeg = new Uint8Array(100);
+  jpeg.set([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x02]);
+  const tracker = { reads: 0, cancelled: false };
+  const message = await runPosterJob(streamResponse([jpeg], tracker));
+
+  assert.equal(message.reason, "already small");
+  assert.equal(tracker.reads, 1);
+  assert.equal(tracker.cancelled, false);
+});
+
+test("the worker keeps the arrayBuffer path when the body has no reader", async () => {
+  const jpeg = new Uint8Array(100);
+  jpeg.set([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x02]);
+  let buffered = false;
+  const message = await runPosterJob({
+    ok: true,
+    headers: { get: () => null },
+    body: null,
+    arrayBuffer: async () => {
+      buffered = true;
+      return jpeg.buffer;
+    }
+  });
+
+  assert.equal(message.reason, "already small");
+  assert.equal(buffered, true);
 });

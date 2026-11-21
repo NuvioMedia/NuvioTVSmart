@@ -221,7 +221,8 @@ export function artworkResizeTarget(width, height, maxDimension = 1280) {
   return null;
 }
 
-const WORKER_SOURCE = `
+/** Exported so the streaming early-abort can be exercised without a browser. */
+export const WORKER_SOURCE = `
 const sourceRect = ${computeSourceRect.toString()};
 const isJpeg = ${isJpegHeader.toString()};
 const webpInfo = ${webpArtworkInfo.toString()};
