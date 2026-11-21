@@ -1,0 +1,39 @@
+name: Mobile Web Probe
+
+# Regression gate for the phone/tablet touch tier (.web-touch): unit tests,
+# legacy colour tokens, then the Playwright probe suite (screens, player
+# harness, PWA shell) against a real built app served over http.
+# See scripts/probes/ for what runs and how to reproduce locally:
+#   npm run build && npm run test:mobile-web
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  mobile-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build app
+        run: npm run build
+
+      - name: Touch-tier probes (screens + player + PWA)
+        run: npm run test:mobile-web

@@ -27,6 +27,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "serve": "node ./scripts/serve.mjs",
+    "test:mobile-web": "node ./scripts/probes/run.mjs",
     "sync": "node ./scripts/sync-wrapper.mjs",
     "sync:tizen": "node ./scripts/sync-wrapper.mjs --tizen",
     "sync:webos": "node ./scripts/sync-wrapper.mjs --webos"
@@ -45,6 +46,7 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^16.5.0",
     "husky": "^9.1.7",
+    "playwright": "^1.65.1",
     "postcss": "^8.5.28",
     "prettier": "^3.9.8"
   },

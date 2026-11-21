@@ -1,0 +1,109 @@
+<!doctype html>
+<html class="web-touch">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="http://127.0.0.1:4173/css/bundle.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+      }
+      .videoStub {
+        position: absolute;
+        inset: 0;
+        background: #123;
+      }
+    </style>
+  </head>
+  <body class="web-touch">
+    <div class="screen" style="position: relative; height: 100vh; display: block">
+      <div class="videoStub"></div>
+      <div id="playerUiRoot" style="position: absolute; inset: 0">
+        <div class="player-controls-overlay">
+          <div class="player-controls-top"><span class="player-clock">21:42</span></div>
+          <div class="player-controls-bottom">
+            <div class="player-meta">
+              <div class="player-title">The Mandalorian</div>
+              <div class="player-subtitle">S1 E1 · Chapter 1</div>
+              <div class="player-meta-tertiary">4K · HDR</div>
+            </div>
+            <div class="player-control-buttons">
+              <button class="player-control-btn">⏮</button>
+              <button class="player-control-btn">↩10</button>
+              <button class="player-control-btn">⏸</button>
+              <button class="player-control-btn">30↪</button>
+              <button class="player-control-btn">⏭</button>
+              <button class="player-control-btn">CC</button>
+              <button class="player-control-btn">EP</button>
+            </div>
+          </div>
+        </div>
+        <div class="player-seek-overlay">
+          <div class="player-seek-overlay-track">
+            <div class="player-seek-overlay-fill" style="width: 40%"></div>
+          </div>
+          <div class="player-seek-overlay-bottom"><span>10:32</span><span>40:00</span></div>
+        </div>
+        <div class="player-skip-intro">
+          <button class="player-skip-intro-btn">Skip intro</button>
+        </div>
+        <div class="player-episode-panel">
+          <div class="player-episode-panel-header">
+            <div class="player-episode-panel-title">Episodes</div>
+            <button class="player-episode-close-btn">✕</button>
+          </div>
+          <div class="player-episode-season-tabs">
+            <button class="player-episode-season-tab">Season 1</button>
+            <button class="player-episode-season-tab">Season 2</button>
+            <button class="player-episode-season-tab">Season 3</button>
+          </div>
+          <div class="player-episode-list">
+            <div class="player-episode-item">
+              <div class="player-episode-title">1. Chapter 1</div>
+              <div class="player-episode-meta">40:00</div>
+            </div>
+            <div class="player-episode-item">
+              <div class="player-episode-title">2. Chapter 2</div>
+              <div class="player-episode-meta">38:00</div>
+            </div>
+          </div>
+        </div>
+        <div class="player-modal player-subtitle-modal">
+          <div class="player-subtitle-overlay-grid">
+            <div class="player-subtitle-rail-heading">Languages</div>
+            <div class="player-subtitle-rail player-subtitle-language-rail">
+              <div class="player-dialog-item">
+                <div class="player-dialog-item-main">English</div>
+                <div class="player-dialog-item-sub">CC</div>
+                <div class="player-dialog-item-check">✓</div>
+              </div>
+              <div class="player-dialog-item">
+                <div class="player-dialog-item-main">Spanish</div>
+                <div class="player-dialog-item-sub">CC</div>
+                <div class="player-dialog-item-check"></div>
+              </div>
+            </div>
+            <div class="player-subtitle-rail-heading">Subtitles</div>
+            <div class="player-subtitle-rail player-subtitle-options-rail">
+              <div class="player-dialog-item">
+                <div class="player-dialog-item-main">Auto-sync</div>
+                <div class="player-dialog-item-sub">On</div>
+                <div class="player-dialog-item-check">✓</div>
+              </div>
+            </div>
+            <div class="player-subtitle-rail-heading">Subtitle Style</div>
+            <div class="player-subtitle-rail player-subtitle-style-rail">
+              <div class="player-dialog-item">
+                <div class="player-dialog-item-main">Size</div>
+                <div class="player-dialog-item-sub">Medium</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

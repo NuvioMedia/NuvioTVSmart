@@ -8,17 +8,21 @@
  * static assets. Streams, playlists, manifests and any non-app-origin media
  * are never cached.
  */
-const SHELL_CACHE = "nuvio-shell-v1";
-const ASSET_CACHE = "nuvio-assets-v1";
+const SHELL_CACHE = "nuvio-shell-v3";
+const ASSET_CACHE = "nuvio-assets-v3";
 const SHELL_URLS = [
   "/",
   "/index.html",
   "/css/bundle.css",
   "/assets/manifest.webmanifest",
   "/boot-guard.js",
+  "/assets/runtime/legacy-features.js",
   "/nuvio.env.js",
   "/core-js.bundle.js",
-  "/app.bundle.js"
+  "/app.bundle.js",
+  "/res/values/strings.xml",
+  "/res/values/string.xml",
+  "/res/i18n/en.json"
 ];
 const NAV_TIMEOUT_MS = 4000;
 
@@ -97,6 +101,7 @@ self.addEventListener("fetch", (event) => {
       caches.open(ASSET_CACHE).then(async (cache) => {
         const cached =
           (await cache.match(request)) ||
+          (await caches.match(request)) ||
           (url.search
             ? (await cache.match(url.pathname)) ||
               (await caches.match(url.pathname, { ignoreVary: true }))
