@@ -779,6 +779,7 @@ async function runBuild() {
 
     console.log("copying static assets...");
     const copiedAppInfoSource = await copyOptionalRootFile("appinfo.json");
+    await copyOptionalRootFile("sw.js");
     await Promise.all([
       cp(path.join(rootDir, "assets"), path.join(distDir, "assets"), { recursive: true }),
       cp(path.join(rootDir, "res"), path.join(distDir, "res"), { recursive: true }),

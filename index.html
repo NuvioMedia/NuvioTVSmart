@@ -45,6 +45,24 @@
       })();
     </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#0d0d0d" />
+    <link rel="manifest" href="assets/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/images/pwa/apple-touch-icon.png" />
+    <script>
+      // Mobile-web PWA shell. TV tiers are excluded explicitly: Tizen and
+      // webOS never register a service worker, so their update behaviour is
+      // untouched. Browsers get fresh code online; the worker only adds the
+      // offline shell fallback and asset caching.
+      (function registerPwaShell() {
+        var ua = String((window.navigator && window.navigator.userAgent) || "").toLowerCase();
+        if (ua.indexOf("tizen") !== -1 || ua.indexOf("web0s") !== -1 || ua.indexOf("webos") !== -1) return;
+        if (!/^https?:$/.test(window.location.protocol)) return;
+        if (!("serviceWorker" in navigator)) return;
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/sw.js").catch(function () {});
+        });
+      })();
+    </script>
     <title>Nuvio TV</title>
 
     <link rel="stylesheet" href="css/base.css?v=20260509s" />
