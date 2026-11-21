@@ -791,3 +791,123 @@
 .web-touch .search-seeall-label {
   font-size: 13px;
 }
+
+/* Library: TV scale from Android TV LibraryScreen (56px titles, 150px chip
+   buttons, 100px picker anchors, 96px side padding). Phone tier follows the
+   mobile app: 16px gutters, 44-48px controls, 26px page title. */
+.web-touch .library-main {
+  padding: 16px var(--touch-gutter) calc(var(--touch-nav-height) + 20px);
+}
+
+.web-touch .library-page {
+  min-height: 0;
+}
+
+.web-touch .library-page-header {
+  margin-bottom: 16px;
+}
+
+.web-touch .library-page-title {
+  font-size: 26px;
+  letter-spacing: 0;
+}
+
+.web-touch .library-page-source {
+  padding-top: 4px;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.web-touch .library-view-mode-row,
+.web-touch .library-cloud-toolbar {
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.web-touch .library-view-mode-button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.web-touch .library-picker-groups {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.web-touch .library-picker-row {
+  gap: 10px;
+}
+
+.web-touch .library-picker-anchor {
+  min-height: 56px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  gap: 8px;
+}
+
+.web-touch .library-picker-title {
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.web-touch .library-picker-value {
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.web-touch .library-picker-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.web-touch .library-picker-option {
+  min-height: 48px;
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
+.web-touch .library-empty-state {
+  min-height: 280px;
+  gap: 12px;
+  padding-top: 24px;
+}
+
+.web-touch .library-empty-icon {
+  width: 44px;
+  height: 44px;
+}
+
+.web-touch .library-empty-title {
+  margin: 12px 0 0;
+  font-size: 22px;
+}
+
+.web-touch .library-empty-subtitle {
+  font-size: 15px;
+  padding: 0 16px;
+}
+
+.web-touch .library-dialog,
+.web-touch .library-manage-dialog {
+  width: min(92vw, 420px);
+  max-height: 82vh;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.web-touch .library-action-button,
+.web-touch .library-manage-list-button,
+.web-touch .library-privacy-button {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.web-touch .library-dialog-input {
+  min-height: 48px;
+  font-size: 15px;
+}
