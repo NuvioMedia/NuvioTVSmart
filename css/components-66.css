@@ -944,6 +944,31 @@
   border-radius: 6px;
 }
 
+/* Top control-bar text: css/components-35.css hardcodes min(xvw, px) here
+   instead of using the #playerUiRoot tokens (title 24sp, subtitle 14sp,
+   clock 13sp, ends-at 10sp), so the token pinning above never reaches them
+   and they render at 4-10px on a 390px canvas. Re-derive at Nuvio Mobile
+   metrics. */
+.web-touch .player-controls-top {
+  padding: 10px 12px;
+}
+
+.web-touch .player-title {
+  font-size: 20px;
+}
+
+.web-touch .player-subtitle {
+  font-size: 15px;
+}
+
+.web-touch .player-clock {
+  font-size: 14px;
+}
+
+.web-touch .player-ends-at {
+  font-size: 12px;
+}
+
 .web-touch .player-episode-panel {
   left: 0;
   right: 0;
@@ -1019,7 +1044,9 @@
 
 .web-touch .player-skip-intro {
   left: 16px;
-  bottom: calc(16px + var(--touch-safe-bottom));
+  /* The touch tier keeps the control row visible while skip-intro shows, so
+     the button stacks above it instead of landing on the ⏮ button. */
+  bottom: calc(72px + var(--touch-safe-bottom));
   max-width: min(60vw, 200px);
 }
 
