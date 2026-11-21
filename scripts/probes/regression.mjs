@@ -115,6 +115,32 @@ const AUDIT = (scopeSelector) => {
         });
     }
   hits.forEach((h) => fails.push(h));
+  // TV-scale guard: the Android TV dp x 2 port (96px buttons, 40px text
+  // line-heights) has repeatedly bled through into the phone tier when a
+  // re-derivation was mis-scoped. App screens only (not the player harness,
+  // whose overlays are legitimately large); poster/content cards excluded.
+  if (!scopeSelector) {
+    for (const el of root.querySelectorAll("button")) {
+      if (!vis(el) || /-card/.test(el.className.toString())) continue;
+      const h = el.getBoundingClientRect().height;
+      if (h > 72)
+        fails.push({
+          kind: "tv-scale",
+          cls: el.className.toString().slice(0, 40),
+          h: Math.round(h)
+        });
+    }
+    for (const el of root.querySelectorAll("p")) {
+      if (!vis(el)) continue;
+      const lh = parseFloat(getComputedStyle(el).lineHeight);
+      if (lh > 30)
+        fails.push({
+          kind: "tv-scale-lh",
+          cls: el.className.toString().slice(0, 40),
+          lh: Math.round(lh)
+        });
+    }
+  }
   return fails;
 };
 

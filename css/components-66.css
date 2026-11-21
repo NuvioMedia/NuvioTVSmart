@@ -598,6 +598,38 @@
   line-height: 1.35;
 }
 
+/* ---------- Profile pill + profile modal ----------
+   The modal is pure Android TV scale (88px title, 47/38px paragraph
+   line-heights) and the pill/avatar were never re-derived; the probe
+   tv-scale guard flagged them on every screen. */
+.web-touch .home-profile-pill {
+  min-height: 44px;
+  max-height: 48px;
+  align-items: center;
+}
+
+.web-touch .home-profile-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+}
+
+.web-touch .profile-title {
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.web-touch .profile-subtitle {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.web-touch .profile-hint {
+  font-size: 13px;
+  line-height: 18px;
+}
+
 /* The hero title is collapsed (max-height:0/opacity:0) in trailer-autoplay
    mode — a TV design where the logo art carries the identity. On a phone that
    leaves the smallest text as the only title; show the real one. */
