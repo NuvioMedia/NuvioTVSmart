@@ -79,10 +79,22 @@ test("tvArtworkLazyLoader batches src writes before geometry reads and skips Hom
   assert.deepEqual(ops, ["write:a", "write:b", "read:a", "read:b"]);
 
   let homeQsaCalls = 0;
+  const homeShell = {
+    nodeType: 1,
+    tagName: "DIV",
+    // Element.closest matches the element itself too.
+    closest: (selector) => (selector === ".home-screen-shell" ? homeShell : null),
+    querySelectorAll() {
+      homeQsaCalls += 1;
+      return [];
+    }
+  };
+  context.releaseTree(homeShell);
+  context.prepareTree(homeShell);
   context.releaseTree({
     nodeType: 1,
     tagName: "DIV",
-    classList: { contains: (c) => c === "home-screen-shell" },
+    closest: (selector) => (selector === ".home-screen-shell" ? homeShell : null),
     querySelectorAll() {
       homeQsaCalls += 1;
       return [];

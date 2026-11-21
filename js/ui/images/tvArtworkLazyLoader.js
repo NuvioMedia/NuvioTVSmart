@@ -165,8 +165,7 @@ function prepareImage(image, pendingObserve = null) {
 
 function prepareTree(node) {
   if (!node || node.nodeType !== 1) return;
-  if (node.classList?.contains?.("home-screen-shell") || node.closest?.(".home-screen-shell"))
-    return;
+  if (node.closest?.(".home-screen-shell")) return;
   const pendingObserve = [];
   if (isLazyArtworkImage(node)) prepareImage(node, pendingObserve);
   node.querySelectorAll?.(ARTWORK_SELECTOR).forEach((image) => prepareImage(image, pendingObserve));
@@ -177,8 +176,8 @@ function prepareTree(node) {
 
 function releaseTree(node) {
   if (!node || node.nodeType !== 1) return;
-  if (node.classList?.contains?.("home-screen-shell") || node.closest?.(".home-screen-shell"))
-    return;
+  // closest() matches the node itself: Home subtrees are never prepared here.
+  if (node.closest?.(".home-screen-shell")) return;
   if (node.tagName === "IMG") {
     Promise.resolve().then(() => {
       if (!node.isConnected) releaseImage(node);
