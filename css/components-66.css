@@ -101,9 +101,44 @@
   backdrop-filter: blur(12px);
 }
 
+.web-touch .home-sidebar .home-nav-list {
+  flex: 1 1 auto;
+  /* The legacy list is a column; the items' flex-basis rule below is written
+     for this row axis. Without this the basis 0 collapses every item to 0px
+     tall and the bar renders empty. */
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
 .web-touch .home-sidebar .home-nav-item {
   flex: 1 1 0;
   min-width: 0;
+  width: auto;
+  height: calc(var(--touch-nav-height) - 14px);
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  font-size: 22px;
+}
+
+.web-touch .home-sidebar .home-nav-label {
+  /* The legacy rail hides labels (opacity 0 / width 0) until the sidebar is
+     content-expanded, which never happens on touch. */
+  opacity: 1;
+  width: auto;
+  transform: none;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+.web-touch .home-sidebar .home-nav-icon,
+.web-touch .home-sidebar .root-sidebar-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .web-touch .home-screen-shell {
@@ -504,4 +539,90 @@
 
 .web-touch .movie-cast-name {
   font-size: 13px;
+}
+
+/* ---------- Settings ----------
+   .settings-workspace is a TV card: 48/64px margins, a 440px nav column plus
+   content column, 112px nav items. On a 390dp phone that card alone is
+   568px wide and every nav row overflows. The tier stacks nav over content
+   at phone scale. */
+.web-touch .settings-workspace {
+  width: auto;
+  height: calc(100dvh - 24px);
+  margin: 12px 12px calc(var(--touch-nav-height) + var(--touch-safe-bottom) + 12px) 12px;
+  margin-left: 12px;
+  border-radius: 16px;
+  padding: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.web-touch .settings-sidebar-frame {
+  overflow: hidden;
+}
+
+.web-touch .settings-sidebar {
+  /* A vertical list of 13 sections eats the whole card and crushes the
+     content frame to nothing; make it one swipeable chip rail instead. */
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 8px;
+  height: auto;
+  padding-bottom: 4px;
+}
+
+.web-touch .settings-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.web-touch .settings-nav-item {
+  min-height: 48px;
+  height: auto;
+  flex: 0 0 auto;
+  min-width: 88px;
+  max-width: 150px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.web-touch .settings-nav-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.web-touch .settings-nav-label-wrap {
+  font-size: 14px;
+}
+
+.web-touch .settings-content {
+  padding-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.web-touch .settings-section-title,
+.web-touch .settings-content-title {
+  font-size: 18px;
+}
+
+.web-touch .settings-action-row,
+.web-touch .settings-collapsible-row {
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.web-touch .settings-dialog {
+  width: min(92vw, 420px);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.web-touch .settings-dialog-option,
+.web-touch .settings-text-dialog-button {
+  min-height: 48px;
+  font-size: 15px;
 }
