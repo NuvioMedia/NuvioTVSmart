@@ -911,3 +911,118 @@
   min-height: 48px;
   font-size: 15px;
 }
+
+/* Player. The Android TV port sizes everything with min(xvw, px) tokens at
+   #playerUiRoot; on a 390px-wide phone the vw branch wins and collapses the
+   controls to half their intended size (5vw = 19px), while the episode
+   panel (clamp(560px, 36vw, 760px)) overflows the viewport outright.
+   Phone tier: pin the tokens to the Nuvio Mobile player metrics. */
+.web-touch #playerUiRoot {
+  --player-controls-x: 16px;
+  --player-controls-y: 12px;
+  --player-control-size: clamp(44px, 11.5vw, 48px);
+  --player-control-icon: 24px;
+  --player-panel-width: 100%;
+  --player-panel-padding: 16px;
+  --player-overlay-left: 16px;
+  --player-overlay-bottom: calc(64px + var(--touch-safe-bottom));
+  --player-action-controls-open-bottom: clamp(240px, 34vh, 340px);
+}
+
+.web-touch .player-control-buttons {
+  gap: 8px;
+}
+
+/* Seek bar: the 8px TV track is a d-pad affordance; give the finger a
+   taller hit zone without changing the visual bar. */
+.web-touch .player-seek-overlay {
+  padding-block: 10px;
+}
+
+.web-touch .player-seek-overlay-track {
+  height: 12px;
+  border-radius: 6px;
+}
+
+.web-touch .player-episode-panel {
+  left: 0;
+  right: 0;
+  width: auto;
+  max-width: none;
+  border-radius: 0;
+  padding: 16px;
+  padding-bottom: calc(16px + var(--touch-safe-bottom));
+}
+
+.web-touch .player-episode-panel-title {
+  font-size: 20px;
+}
+
+.web-touch .player-episode-close-btn {
+  height: 44px;
+  min-width: 44px;
+}
+
+.web-touch .player-episode-season-tab {
+  height: 44px;
+  padding: 0 16px;
+}
+
+.web-touch .player-episode-season-tabs {
+  -webkit-overflow-scrolling: touch;
+}
+
+.web-touch .player-pause-overlay-content {
+  left: 16px;
+  right: 16px;
+  bottom: 22vh;
+}
+
+.web-touch .player-still-watching-btn,
+.web-touch .player-sources-filter {
+  min-height: 44px;
+}
+
+.web-touch .player-dialog-item {
+  min-height: 48px;
+}
+
+.web-touch .player-subtitle-modal,
+.web-touch .player-audio-modal {
+  left: 16px;
+  right: 16px;
+  top: 16px;
+  bottom: calc(16px + var(--touch-safe-bottom));
+  width: auto;
+  height: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The subtitle/audio scaffold is a three-rail TV grid (up to 1560px wide).
+   Phone tier: one scrolling column of heading + rail blocks. */
+.web-touch .player-subtitle-overlay-grid {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  height: auto;
+  min-height: 100%;
+}
+
+.web-touch .player-subtitle-rail {
+  height: auto;
+  max-height: none;
+}
+
+.web-touch .player-subtitle-rail-heading {
+  font-size: 15px;
+}
+
+.web-touch .player-skip-intro {
+  left: 16px;
+  bottom: calc(16px + var(--touch-safe-bottom));
+  max-width: min(60vw, 200px);
+}
+
+.web-touch .player-skip-intro-btn {
+  min-height: 44px;
+}
