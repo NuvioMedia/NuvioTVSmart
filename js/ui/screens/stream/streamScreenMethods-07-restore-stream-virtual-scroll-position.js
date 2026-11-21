@@ -82,7 +82,17 @@ export function createStreamScreenMethods07() {
       if (!listNode || !target) {
         return;
       }
+      if (this.focusedListVisibilityCheckRaf && typeof cancelAnimationFrame === "function") {
+        cancelAnimationFrame(this.focusedListVisibilityCheckRaf);
+        this.focusedListVisibilityCheckRaf = 0;
+      }
+      if (this.focusedListVisibilityCheckTimer) {
+        clearTimeout(this.focusedListVisibilityCheckTimer);
+        this.focusedListVisibilityCheckTimer = 0;
+      }
       const run = () => {
+        this.focusedListVisibilityCheckRaf = 0;
+        this.focusedListVisibilityCheckTimer = 0;
         const root = document.documentElement || document.body;
         if (!this.container || !root?.contains?.(listNode) || !root?.contains?.(target)) {
           return;
@@ -91,10 +101,10 @@ export function createStreamScreenMethods07() {
         this.requestStreamBadgeHydration();
       };
       if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(run);
+        this.focusedListVisibilityCheckRaf = requestAnimationFrame(run);
         return;
       }
-      setTimeout(run, 0);
+      this.focusedListVisibilityCheckTimer = setTimeout(run, 0);
     },
     getFocusLists() {
       const listNode = this.container?.querySelector(".stream-route-list") || null;
