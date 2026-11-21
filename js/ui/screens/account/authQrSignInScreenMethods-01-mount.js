@@ -7,6 +7,7 @@ export function createAuthQrSignInScreenMethods01() {
     ScreenUtils,
     AuthManager,
     I18n,
+    Platform,
     renderBrandWordmarkImage,
     PluginManager,
     ProfileManager,
@@ -75,6 +76,11 @@ export function createAuthQrSignInScreenMethods01() {
           console.warn("QR login background start failed", error);
           this.setStatus(this.toFriendlyQrError(error?.message || error));
         });
+      } else if (Platform.isBrowser() && !this.isSignedIn && !this.useEmailLogin && this.container.querySelector("#qr-container")) {
+        // Server not configured for either flow (missing keys): the QR branch
+        // still rendered an empty frame. Point it at the main nuvio.tv login
+        // page so the screen offers a real path instead of dead whitespace.
+        this.renderQrMainLoginFallback();
       }
       if (this.isSignedIn) {
         void this.loadConnectedStats();

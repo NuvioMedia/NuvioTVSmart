@@ -9,6 +9,7 @@ export function createAuthQrSignInScreenMethods02() {
     LocalStore,
     I18n,
     QrCodeGenerator,
+    ServerConfigurationStore,
     GUEST_QR_BYPASS_KEY,
     escapeHtml,
     formatDuration,
@@ -150,6 +151,14 @@ export function createAuthQrSignInScreenMethods02() {
         if (!this.isMounted || this.isLeaving) return;
         if (!result || !result.code) {
           this.setStatus(this.toFriendlyQrError(QrLoginService.getLastError()));
+          // Browser/phone tier only: when the device-login backend is
+          // unreachable or unconfigured, the screen must not sit on an empty
+          // white QR frame. Point the QR and the tap link at the main
+          // nuvio.tv login page instead (Tizen/webOS are not isBrowser(), so
+          // TV rendering is unchanged).
+          if (Platform.isBrowser()) {
+            this.renderQrMainLoginFallback();
+          }
           return;
         }
         this.renderQr(result);
@@ -188,11 +197,62 @@ export function createAuthQrSignInScreenMethods02() {
           .replace(/^https?:\/\//i, "")
           .replace(/\/+$/, "");
         manualText.innerText = manualUrl && (displayCode || code) ? I18n.t("auth.qr.manualInstruction", { url: manualUrl }) : "";
+        this.appendOpenOnThisDeviceLink(manualText, loginUrl || verificationUri);
       }
       codeText.innerText = I18n.t("auth.qr.codeLabel", {
         code: displayCode || code || ""
       });
       this.startCountdown(expiresAt);
+    },
+    // Browser tier fallback: the device-login flow could not start (backend
+    // unconfigured or unreachable), so encode the configured Nuvio web login
+    // page (https://nuvio.tv/tv-login on the official server) as the QR and
+    // expose it as a tap link, instead of leaving the QR frame blank.
+    renderQrMainLoginFallback() {
+      const qrContainer = this.container?.querySelector("#qr-container");
+      if (!qrContainer) return;
+      const loginUrl = String(
+        this.serverConfiguration?.tvLoginWebBaseUrl || ServerConfigurationStore.getActive?.()?.tvLoginWebBaseUrl || ""
+      ).trim();
+      if (!/^https?:\/\//i.test(loginUrl)) return;
+      qrContainer.innerHTML = `<canvas class="qr-image qr-image-canvas" aria-label="${escapeHtml(I18n.t("auth.qr.qrImageAlt"))}"></canvas>`;
+      try {
+        QrCodeGenerator.generate(qrContainer.querySelector("canvas"), loginUrl, 320);
+      } catch (error) {
+        console.warn("Unable to render fallback login QR", error);
+        qrContainer.innerHTML = "";
+        return;
+      }
+      const manualText = this.container?.querySelector("#qr-manual-text");
+      if (manualText) {
+        manualText.innerText = "";
+        this.appendOpenOnThisDeviceLink(manualText, loginUrl);
+      }
+      const codeText = this.container?.querySelector("#qr-code-text");
+      if (codeText) {
+        codeText.innerText = String(loginUrl)
+          .replace(/^https?:\/\//i, "")
+          .replace(/\/+$/, "");
+      }
+    },
+    // Touch/web tier: a QR is useless on a device that already owns the browser.
+    // Expose the same URL the QR encodes as a tappable anchor so login needs no second screen.
+    appendOpenOnThisDeviceLink(targetNode, rawUrl) {
+      // Browser/phone tier only: the anchor must never be inserted on Tizen or
+      // webOS, which keep the stock QR screen rendering.
+      if (!targetNode || !Platform.isBrowser()) return null;
+      const linkTarget = String(rawUrl || "").trim();
+      if (!/^https?:\/\//i.test(linkTarget)) return null;
+      if (targetNode.querySelector(".qr-open-link")) return null;
+      const anchor = document.createElement("a");
+      anchor.className = "qr-open-link qr-open-link-primary focusable";
+      anchor.href = linkTarget;
+      anchor.rel = "noopener noreferrer";
+      anchor.target = "_blank";
+      anchor.textContent = I18n.t("auth.qr.openOnThisDevice") || "Open on this device";
+      targetNode.appendChild(document.createElement("br"));
+      targetNode.appendChild(anchor);
+      return anchor;
     },
     clearQr() {
       this.qrResult = null;

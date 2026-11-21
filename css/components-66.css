@@ -1,0 +1,1055 @@
+/* Touch tier, sized from the official Nuvio Mobile (Kotlin Multiplatform /
+   Compose) specs rather than guessed.
+
+   Root cause of "way too big": this web CSS was ported from Android TV, whose
+   canvas is 960dp wide rendered at 1920px, so the port doubles every dp to px
+   (css/components-07.css: "ATV legacyCollapsedWidth 72dp -> 144px";
+   js/ui/components/nuvioDialog.js: "all dp->vw at 320dpi, 1920px = 960dp,
+   16dp = 32px, 20sp = 40px"). A phone is ~390dp, not 960dp, so dp x 2 is
+   wrong by ~2.5x. In this web tier a CSS px is already equivalent to dp, so
+   the touch tier uses dp x 1.
+
+   Verified against NuvioMedia/NuvioMobile (GPL v3, same licence as this repo):
+     poster base width      110dp   (core/ui/PosterCardDimensions.kt: 180f/110f)
+     landscape poster       scale 180/110, aspect 1.77
+     catalog grid columns   >=1400dp:7 >=1200:6 >=1000:5 >=840:4 else 3
+                            (features/catalog/CatalogScreen.kt:423)
+     navigation bar         58dp tall, 24-28dp icons (core/ui/NavigationBar.kt)
+     title / body text      20sp / 14sp (js/ui/components/nuvioDialog.js header)
+   Consistency check: 3 columns at 390dp with 16dp gutters and 12dp gaps gives
+   (390 - 32 - 24)/3 = 111dp, matching the 110dp base.
+*/
+
+/* iOS Safari reports 100vh as the large-toolbar height, putting the bottom of
+   every screen under the browser chrome. dvh is the real visible box. */
+.web-touch #app,
+.web-touch .screen {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.web-touch html,
+.web-touch body {
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+.web-touch {
+  --touch-safe-top: env(safe-area-inset-top, 0px);
+  --touch-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --touch-safe-left: env(safe-area-inset-left, 0px);
+  --touch-safe-right: env(safe-area-inset-right, 0px);
+  --touch-poster-columns: 3;
+  --touch-gutter: 16px;
+  --touch-gap: 12px;
+  --touch-nav-height: 58px;
+}
+
+/* Typography: the TV tier resolves these clamp()s to their 1920px canvas
+   minimums (42px title / 20px body), which is the dp x 2 doubled scale. On
+   touch, use the phone app's sp values directly. */
+.web-touch {
+  --tv-title-text: 22px;
+  --tv-subtitle-text: 17px;
+  --tv-body-text: 15px;
+  --tv-secondary-text: 13px;
+  --tv-caption-text: 12px;
+  --tv-button-height: 44px;
+  --tv-button-padding-x: 18px;
+  --tv-control-size: 44px;
+  --tv-control-icon-size: 22px;
+  --tv-safe-gutter: 16px;
+  --tv-safe-gutter-wide: 16px;
+  --tv-card-radius: 12px;
+  --tv-card-gap: 12px;
+}
+
+/* Sidebar becomes a bottom bar; the 144px rail is a third of a phone width.
+   The rail variables are also the content offset (css/components-08.css
+   .home-main margin-left), so they go to 0 rather than 100vw: the sidebar is
+   position:fixed here and must not push or pad the content. */
+.web-touch .home-shell {
+  --legacy-sidebar-rail-width: 0px;
+  --legacy-sidebar-open-width: 0px;
+  --legacy-sidebar-item-width: 28px;
+  --legacy-sidebar-item-expanded-width: 28px;
+  --legacy-sidebar-item-height: 58px;
+  --legacy-sidebar-item-radius: 14px;
+  --legacy-sidebar-padding: 8px;
+  --legacy-sidebar-item-gap: 8px;
+  --legacy-sidebar-profile-top-gap: 0px;
+  --legacy-sidebar-profile-bottom-gap: 0px;
+  flex-direction: column;
+}
+
+.web-touch .home-sidebar {
+  position: fixed;
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: calc(var(--touch-nav-height) + var(--touch-safe-bottom));
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 12px;
+  padding-bottom: var(--touch-safe-bottom);
+  background: rgb(13 13 13 / 92%);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.web-touch .home-sidebar .home-nav-list {
+  flex: 1 1 auto;
+  /* The legacy list is a column; the items' flex-basis rule below is written
+     for this row axis. Without this the basis 0 collapses every item to 0px
+     tall and the bar renders empty. */
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.web-touch .home-sidebar .home-nav-item {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  height: calc(var(--touch-nav-height) - 14px);
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  font-size: 22px;
+}
+
+.web-touch .home-sidebar .home-nav-label {
+  /* The legacy rail hides labels (opacity 0 / width 0) until the sidebar is
+     content-expanded, which never happens on touch. */
+  opacity: 1;
+  width: auto;
+  transform: none;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+.web-touch .home-sidebar .home-nav-icon,
+.web-touch .home-sidebar .root-sidebar-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.web-touch .home-screen-shell {
+  --home-sidebar-width: 0px;
+  --home-content-start: var(--touch-gutter);
+  --home-track-end: var(--touch-gutter);
+  --home-row-gap: var(--touch-gap);
+  --home-poster-radius: 10px;
+  /* derived: (viewport - 2 gutters - (columns-1) gaps) / columns */
+  --touch-poster-width: calc(
+    (100vw - (2 * var(--touch-gutter)) - ((var(--touch-poster-columns) - 1) * var(--touch-gap))) /
+      var(--touch-poster-columns)
+  );
+  --home-poster-width: var(--touch-poster-width);
+  --home-poster-height: calc(var(--touch-poster-width) * 1.5);
+  --home-landscape-poster-width: calc(var(--touch-poster-width) * (180 / 110));
+  --home-landscape-poster-height: calc(var(--home-landscape-poster-width) / 1.77);
+  --home-continue-width: calc((100vw - (2 * var(--touch-gutter))) * 0.86);
+  --home-continue-height: calc(var(--home-continue-width) / 1.7777);
+}
+
+.web-touch .home-screen-shell .home-main {
+  padding-bottom: calc(var(--touch-nav-height) + var(--touch-safe-bottom) + 16px);
+  -webkit-overflow-scrolling: touch;
+}
+
+.web-touch .home-screen-shell .home-track {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  padding-left: max(var(--touch-gutter), var(--touch-safe-left));
+  padding-right: max(var(--touch-gutter), var(--touch-safe-right));
+}
+
+.web-touch .home-screen-shell .home-poster-card,
+.web-touch .home-screen-shell .home-content-card {
+  scroll-snap-align: start;
+}
+
+/* 400px hero min-height is a whole phone screen before any content. */
+.web-touch .home-screen-shell .home-hero-card {
+  min-height: 62vh;
+}
+
+/* ---------- Modern home layout ----------
+   The default browser-tier home (home-layout-modern) is the Android TV
+   screen: full-bleed hero with a rows overlay pinned to the bottom 52%, a
+   108px sidebar content offset, 104px track gutters and hover-focus cards
+   that inflate to 2.66x. None of that is right on a phone. */
+.web-touch .home-screen-shell.home-layout-modern {
+  --home-sidebar-content-offset: 0px;
+  --home-track-end: var(--touch-gutter);
+  --home-continue-track-end: var(--touch-gutter);
+  --modern-track-peek-extension: 0px;
+  --modern-rows-viewport-height: 46%;
+  --modern-rows-viewport-padding-bottom: calc(
+    var(--touch-nav-height) + var(--touch-safe-bottom) + 24px
+  );
+  --modern-rows-page-height: 50vh;
+  --modern-hero-media-width: 100%;
+  --modern-hero-media-height: calc(100% - var(--modern-rows-viewport-height));
+  --modern-hero-copy-top-safe: 12px;
+  --modern-hero-copy-right: 16px;
+  --modern-hero-copy-max-width: 82%;
+  --modern-hero-logo-max-width: 210px;
+  --modern-hero-logo-max-height: 64px;
+  --modern-hero-title-size: 26px;
+  --modern-hero-title-line-height: 32px;
+  --modern-hero-copy-gap: 8px;
+  --modern-hero-meta-size: 13px;
+  --modern-hero-secondary-size: 13px;
+  --modern-hero-description-size: 14px;
+  --modern-hero-description-line-height: 20px;
+  --modern-hero-description-max-width: 100%;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-modern-rows-scroll {
+  gap: 24px;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-modern-catalogs {
+  gap: 24px;
+}
+
+.web-touch
+  .home-screen-shell.home-layout-modern.home-modern-landscape-posters
+  .home-modern-catalogs,
+.web-touch
+  .home-screen-shell.home-layout-modern.home-modern-landscape-posters
+  .home-modern-rows-scroll {
+  gap: 24px;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-row-title {
+  font-size: 16px;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-row-head {
+  margin-bottom: 10px;
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-track {
+  --home-track-gap: 12px;
+  padding-right: var(--touch-gutter);
+}
+
+.web-touch .home-screen-shell.home-layout-modern .home-modern-hero-media {
+  right: 0;
+}
+
+/* Focus rings are a remote aid; touch gets a press state instead. Scoped to
+   outline only so screens that use .focused for real layout changes (expanded
+   cards, hero swaps) keep that behaviour. */
+.web-touch .focusable.focused {
+  outline: none;
+}
+
+.web-touch .focusable:active {
+  transform: scale(0.97);
+  transition: transform 90ms ease-out;
+}
+
+/* iOS zooms the whole page when a focused control is under 16px. */
+.web-touch input,
+.web-touch select,
+.web-touch textarea {
+  font-size: 16px;
+}
+
+.web-touch .focusable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ---------- Auth / QR sign-in ----------
+   The TV layout is a fixed-height two-column grid (css/components-01.css): a
+   52px title, a 360px QR frame and 78px pill buttons. On a 390dp phone the
+   columns overlap and the card's fixed min(852px) height makes its stacked
+   states (instructions, status, terms, actions) paint on top of each other.
+   The tier re-derives it as one scrolling column at dp x 1. */
+.web-touch .qr-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100vh;
+  height: 100dvh;
+  padding: calc(16px + var(--touch-safe-top)) calc(16px + var(--touch-safe-right))
+    calc(16px + var(--touch-safe-bottom)) calc(16px + var(--touch-safe-left));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.web-touch .qr-left-panel {
+  justify-content: flex-start;
+  flex: 0 0 auto;
+}
+
+.web-touch .qr-brand-lockup {
+  margin-bottom: 14px;
+}
+
+.web-touch .qr-logo {
+  height: 56px;
+  max-width: 70%;
+}
+
+.web-touch .qr-copy-block {
+  max-width: none;
+}
+
+.web-touch .qr-title {
+  font-size: 26px;
+}
+
+.web-touch .qr-description {
+  margin-top: 12px;
+  font-size: 15px;
+  max-width: none;
+}
+
+.web-touch .qr-connected-identity {
+  margin-top: 14px;
+  gap: 4px;
+}
+
+.web-touch .qr-connected-email {
+  font-size: 15px;
+}
+
+.web-touch .qr-card-panel {
+  flex: 1 1 auto;
+  align-items: flex-start;
+}
+
+.web-touch .qr-card {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 20px 16px 16px;
+  border-radius: 16px;
+  gap: 10px;
+}
+
+.web-touch .qr-card-header {
+  gap: 6px;
+}
+
+.web-touch .qr-card-title {
+  font-size: 20px;
+}
+
+.web-touch .qr-card-subtitle {
+  font-size: 14px;
+}
+
+.web-touch .qr-login-instruction {
+  font-size: 14px;
+  /* In every auth state this paragraph resolves to the same i18n string the
+     card subtitle already shows (js/i18n/index.js: cardSubtitleSignedOut and
+     scanInstruction both map to auth_qr_scan_instruction), so on a phone it
+     renders the same sentence twice. */
+  display: none;
+}
+
+.web-touch .qr-code-frame {
+  width: min(220px, 60vw);
+  height: min(220px, 60vw);
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.web-touch .qr-code-text {
+  font-size: 15px;
+}
+
+.web-touch .qr-manual-text,
+.web-touch .qr-expiry {
+  font-size: 13px;
+}
+
+.web-touch .qr-status {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.web-touch .qr-open-link {
+  min-height: 44px;
+  min-width: 200px;
+  margin-top: 10px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  font-size: 16px;
+}
+
+.web-touch .qr-actions {
+  margin-top: 14px;
+  gap: 12px;
+  padding-top: 0;
+}
+
+.web-touch .qr-action-btn {
+  flex: 1 1 0;
+  min-height: 46px;
+  height: auto;
+  padding: 12px 18px;
+  font-size: 16px;
+}
+
+.web-touch .qr-server-menu-trigger {
+  top: calc(12px + var(--touch-safe-top));
+  left: calc(12px + var(--touch-safe-left));
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+}
+
+.web-touch .qr-server-menu {
+  top: calc(64px + var(--touch-safe-top));
+  left: calc(12px + var(--touch-safe-left));
+  width: min(320px, calc(100vw - 24px));
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.web-touch .qr-server-menu-title {
+  font-size: 14px;
+  padding: 6px 10px 8px;
+}
+
+.web-touch .qr-server-menu-item {
+  min-height: 48px;
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
+.web-touch .qr-email-form {
+  gap: 8px;
+  width: 100%;
+}
+
+.web-touch .qr-input-label {
+  font-size: 13px;
+}
+
+.web-touch .qr-auth-input {
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+
+.web-touch .qr-login-error {
+  font-size: 14px;
+}
+
+.web-touch .qr-terms {
+  font-size: 13px;
+}
+
+/* Column count follows the mobile grid breakpoints (840dp and up gets 4). */
+@media (min-width: 600px) {
+  .web-touch {
+    --touch-poster-columns: 4;
+    --touch-gutter: 24px;
+    --touch-gap: 16px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .web-touch {
+    --touch-poster-columns: 5;
+  }
+}
+
+@media (min-width: 1200px) {
+  .web-touch {
+    --touch-poster-columns: 6;
+  }
+}
+
+@media (min-width: 1400px) {
+  .web-touch {
+    --touch-poster-columns: 7;
+  }
+}
+
+/* ---------- Detail screen (series/movie) ----------
+   .series-detail-shell carries the Android TV dp x 2 port as design tokens
+   (css/components-52.css: 96px buttons, 72px title, 28px body). Re-derive
+   them at phone size, then fix the few places with hardcoded 300px geometry
+   that overflow a 390dp viewport. */
+.web-touch .series-detail-shell {
+  --detail-safe-x: 16px;
+  --detail-episode-safe-x: 16px;
+  --detail-action-gap: 12px;
+  --detail-button-height: 48px;
+  --detail-control-size: 48px;
+  --detail-title-size: 26px;
+  --detail-section-title-size: 18px;
+  --detail-label-size: 14px;
+  --detail-body-size: 15px;
+  --detail-caption-size: 13px;
+}
+
+.web-touch .detail-hero-section {
+  min-height: auto;
+  height: auto;
+  padding-bottom: 24px;
+}
+
+.web-touch .detail-hero-brand,
+.web-touch .series-detail-logo {
+  min-height: 0;
+  height: 72px;
+  width: 46%;
+  padding-bottom: 12px;
+}
+
+.web-touch .series-insight-tab,
+.web-touch .series-insight-divider {
+  font-size: 15px;
+}
+
+.web-touch .series-insight-tabs {
+  margin-bottom: 10px;
+}
+
+.web-touch .movie-cast-card {
+  flex: 0 0 104px;
+  width: 104px;
+}
+
+.web-touch .movie-cast-avatar {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 8px;
+}
+
+.web-touch .movie-cast-name {
+  font-size: 13px;
+}
+
+/* ---------- Settings ----------
+   .settings-workspace is a TV card: 48/64px margins, a 440px nav column plus
+   content column, 112px nav items. On a 390dp phone that card alone is
+   568px wide and every nav row overflows. The tier stacks nav over content
+   at phone scale. */
+.web-touch .settings-workspace {
+  width: auto;
+  height: calc(100dvh - 24px);
+  margin: 12px 12px calc(var(--touch-nav-height) + var(--touch-safe-bottom) + 12px) 12px;
+  margin-left: 12px;
+  border-radius: 16px;
+  padding: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.web-touch .settings-sidebar-frame {
+  overflow: hidden;
+}
+
+.web-touch .settings-sidebar {
+  /* A vertical list of 13 sections eats the whole card and crushes the
+     content frame to nothing; make it one swipeable chip rail instead. */
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 8px;
+  height: auto;
+  padding-bottom: 4px;
+}
+
+.web-touch .settings-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.web-touch .settings-nav-item {
+  min-height: 48px;
+  height: auto;
+  flex: 0 0 auto;
+  min-width: 88px;
+  max-width: 150px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.web-touch .settings-nav-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.web-touch .settings-nav-label-wrap {
+  font-size: 14px;
+}
+
+.web-touch .settings-content {
+  padding-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.web-touch .settings-section-title,
+.web-touch .settings-content-title {
+  font-size: 18px;
+}
+
+.web-touch .settings-action-row,
+.web-touch .settings-collapsible-row {
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.web-touch .settings-dialog {
+  width: min(92vw, 420px);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.web-touch .settings-dialog-option,
+.web-touch .settings-text-dialog-button {
+  min-height: 48px;
+  font-size: 15px;
+}
+
+/* Search screen: TV header is a 110px-tall grid row on a 960dp canvas.
+   Phone tier: sticky 44px control row, recent chips, and a wrapping
+   3-column poster grid (the TV results track is a single horizontal rail
+   meant for a d-pad; on touch all 38 cards render in one off-screen row). */
+.web-touch .search-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  grid-template-columns: repeat(2, 44px) minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px var(--touch-gutter);
+  background: var(--bg-color);
+  scroll-padding-top: 0;
+}
+
+.web-touch .search-header.no-discover,
+.web-touch .search-header.no-voice {
+  grid-template-columns: 44px minmax(0, 1fr);
+}
+
+.web-touch .search-header.no-discover.no-voice {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.web-touch .search-discover-btn,
+.web-touch .search-voice-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.web-touch .search-action-icon {
+  font-size: 22px;
+}
+
+.web-touch .search-input-field {
+  height: 44px;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 15px;
+}
+
+.web-touch .search-content {
+  padding: 0 0 calc(var(--touch-nav-height) + 20px);
+}
+
+.web-touch .search-empty-state {
+  min-height: 280px;
+}
+
+.web-touch .search-empty-state-results {
+  min-height: 300px;
+}
+
+.web-touch .search-empty-icon {
+  font-size: 48px;
+}
+
+.web-touch .search-empty-state h2 {
+  margin: 14px 0 8px;
+  font-size: 22px;
+}
+
+.web-touch .search-empty-state p {
+  font-size: 15px;
+  padding: 0 24px;
+}
+
+.web-touch .search-recent-section {
+  margin: 0 var(--touch-gutter) 12px;
+  padding-bottom: 16px;
+}
+
+.web-touch .search-recent-title {
+  font-size: 17px;
+}
+
+.web-touch .search-recent-clear {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.web-touch .search-recent-list {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.web-touch .search-recent-item {
+  gap: 8px;
+}
+
+.web-touch .search-recent-query {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+.web-touch .search-recent-remove {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.web-touch .search-recent-remove .material-icons {
+  font-size: 20px;
+}
+
+.web-touch .search-results-row {
+  margin-bottom: 14px;
+}
+
+.web-touch .search-results-title {
+  padding: 0 var(--touch-gutter);
+  font-size: 18px;
+}
+
+.web-touch .search-results-subtitle {
+  padding: 0 var(--touch-gutter);
+  font-size: 13px;
+}
+
+.web-touch .search-results-track {
+  display: grid;
+  grid-template-columns: repeat(var(--touch-poster-columns), minmax(0, 1fr));
+  gap: var(--touch-gap);
+  overflow: visible;
+  padding: 4px var(--touch-gutter) 14px;
+}
+
+.web-touch .search-result-card,
+.web-touch .search-seeall-card {
+  flex: none;
+  width: auto;
+}
+
+.web-touch .search-result-poster-wrap {
+  height: auto;
+  aspect-ratio: 2 / 3;
+}
+
+.web-touch .search-result-name {
+  font-size: 14px;
+}
+
+.web-touch .search-result-date {
+  font-size: 12px;
+}
+
+.web-touch .search-seeall-inner {
+  gap: 10px;
+}
+
+.web-touch .search-seeall-arrow {
+  font-size: 26px;
+}
+
+.web-touch .search-seeall-label {
+  font-size: 13px;
+}
+
+/* Library: TV scale from Android TV LibraryScreen (56px titles, 150px chip
+   buttons, 100px picker anchors, 96px side padding). Phone tier follows the
+   mobile app: 16px gutters, 44-48px controls, 26px page title. */
+.web-touch .library-main {
+  padding: 16px var(--touch-gutter) calc(var(--touch-nav-height) + 20px);
+}
+
+.web-touch .library-page {
+  min-height: 0;
+}
+
+.web-touch .library-page-header {
+  margin-bottom: 16px;
+}
+
+.web-touch .library-page-title {
+  font-size: 26px;
+  letter-spacing: 0;
+}
+
+.web-touch .library-page-source {
+  padding-top: 4px;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.web-touch .library-view-mode-row,
+.web-touch .library-cloud-toolbar {
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.web-touch .library-view-mode-button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.web-touch .library-picker-groups {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.web-touch .library-picker-row {
+  gap: 10px;
+}
+
+.web-touch .library-picker-anchor {
+  min-height: 56px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  gap: 8px;
+}
+
+.web-touch .library-picker-title {
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.web-touch .library-picker-value {
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.web-touch .library-picker-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.web-touch .library-picker-option {
+  min-height: 48px;
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
+.web-touch .library-empty-state {
+  min-height: 280px;
+  gap: 12px;
+  padding-top: 24px;
+}
+
+.web-touch .library-empty-icon {
+  width: 44px;
+  height: 44px;
+}
+
+.web-touch .library-empty-title {
+  margin: 12px 0 0;
+  font-size: 22px;
+}
+
+.web-touch .library-empty-subtitle {
+  font-size: 15px;
+  padding: 0 16px;
+}
+
+.web-touch .library-dialog,
+.web-touch .library-manage-dialog {
+  width: min(92vw, 420px);
+  max-height: 82vh;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.web-touch .library-action-button,
+.web-touch .library-manage-list-button,
+.web-touch .library-privacy-button {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.web-touch .library-dialog-input {
+  min-height: 48px;
+  font-size: 15px;
+}
+
+/* Player. The Android TV port sizes everything with min(xvw, px) tokens at
+   #playerUiRoot; on a 390px-wide phone the vw branch wins and collapses the
+   controls to half their intended size (5vw = 19px), while the episode
+   panel (clamp(560px, 36vw, 760px)) overflows the viewport outright.
+   Phone tier: pin the tokens to the Nuvio Mobile player metrics. */
+.web-touch #playerUiRoot {
+  --player-controls-x: 16px;
+  --player-controls-y: 12px;
+  --player-control-size: clamp(44px, 11.5vw, 48px);
+  --player-control-icon: 24px;
+  --player-panel-width: 100%;
+  --player-panel-padding: 16px;
+  --player-overlay-left: 16px;
+  --player-overlay-bottom: calc(64px + var(--touch-safe-bottom));
+  --player-action-controls-open-bottom: clamp(240px, 34vh, 340px);
+}
+
+.web-touch .player-control-buttons {
+  gap: 8px;
+}
+
+/* Seek bar: the 8px TV track is a d-pad affordance; give the finger a
+   taller hit zone without changing the visual bar. */
+.web-touch .player-seek-overlay {
+  padding-block: 10px;
+}
+
+.web-touch .player-seek-overlay-track {
+  height: 12px;
+  border-radius: 6px;
+}
+
+/* Top control-bar text: css/components-35.css hardcodes min(xvw, px) here
+   instead of using the #playerUiRoot tokens (title 24sp, subtitle 14sp,
+   clock 13sp, ends-at 10sp), so the token pinning above never reaches them
+   and they render at 4-10px on a 390px canvas. Re-derive at Nuvio Mobile
+   metrics. */
+.web-touch .player-controls-top {
+  padding: 10px 12px;
+}
+
+.web-touch .player-title {
+  font-size: 20px;
+}
+
+.web-touch .player-subtitle {
+  font-size: 15px;
+}
+
+.web-touch .player-clock {
+  font-size: 14px;
+}
+
+.web-touch .player-ends-at {
+  font-size: 12px;
+}
+
+.web-touch .player-episode-panel {
+  left: 0;
+  right: 0;
+  width: auto;
+  max-width: none;
+  border-radius: 0;
+  padding: 16px;
+  padding-bottom: calc(16px + var(--touch-safe-bottom));
+}
+
+.web-touch .player-episode-panel-title {
+  font-size: 20px;
+}
+
+.web-touch .player-episode-close-btn {
+  height: 44px;
+  min-width: 44px;
+}
+
+.web-touch .player-episode-season-tab {
+  height: 44px;
+  padding: 0 16px;
+}
+
+.web-touch .player-episode-season-tabs {
+  -webkit-overflow-scrolling: touch;
+}
+
+.web-touch .player-pause-overlay-content {
+  left: 16px;
+  right: 16px;
+  bottom: 22vh;
+}
+
+.web-touch .player-still-watching-btn,
+.web-touch .player-sources-filter {
+  min-height: 44px;
+}
+
+.web-touch .player-dialog-item {
+  min-height: 48px;
+}
+
+.web-touch .player-subtitle-modal,
+.web-touch .player-audio-modal {
+  left: 16px;
+  right: 16px;
+  top: 16px;
+  bottom: calc(16px + var(--touch-safe-bottom));
+  width: auto;
+  height: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The subtitle/audio scaffold is a three-rail TV grid (up to 1560px wide).
+   Phone tier: one scrolling column of heading + rail blocks. */
+.web-touch .player-subtitle-overlay-grid {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  height: auto;
+  min-height: 100%;
+}
+
+.web-touch .player-subtitle-rail {
+  height: auto;
+  max-height: none;
+}
+
+.web-touch .player-subtitle-rail-heading {
+  font-size: 15px;
+}
+
+.web-touch .player-skip-intro {
+  left: 16px;
+  /* The touch tier keeps the control row visible while skip-intro shows, so
+     the button stacks above it instead of landing on the ⏮ button. */
+  bottom: calc(72px + var(--touch-safe-bottom));
+  max-width: min(60vw, 200px);
+}
+
+.web-touch .player-skip-intro-btn {
+  min-height: 44px;
+}

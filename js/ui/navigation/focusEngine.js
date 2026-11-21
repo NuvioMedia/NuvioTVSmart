@@ -67,13 +67,41 @@ export const FocusEngine = {
     this.boundHandlePointerClick = this.handlePointerClick.bind(this);
     document.addEventListener("keydown", this.boundHandleKey, true);
     document.addEventListener("keyup", this.boundHandleKeyUp, true);
+
+    // Layout tier classes are applied unconditionally. They were previously
+    // inside the pointer-support block, so any device whose media queries
+    // reported no usable pointer (desktop-class WebKit on iPadOS is one) got
+    // no tier class at all and silently kept the 1920px TV layout.
+    const compact = Platform.isCompactViewport();
+    let classes;
     if (Platform.isWebOS()) {
+      classes = ["webos-pointer-remote"];
+    } else if (Platform.isTizen()) {
+      classes = [];
+    } else {
+      // web-touch drives layout, not input: it keys off the canvas the app is
+      // laying out on, so a desktop window at phone height gets the same tier.
+      classes = compact ? ["web-touch"] : [];
+      if (Platform.supportsPointerNavigation()) {
+        classes.push("web-pointer");
+      }
+    }
+    for (const cls of classes) {
+      document.documentElement?.classList?.add(cls);
+      document.body?.classList?.add(cls);
+    }
+
+    if (!Platform.supportsPointerNavigation()) {
+      return;
+    }
+    // Hover-driven focus needs a pointer that can rest on a target without
+    // activating it. A touch pointer cannot hover, so the move path stays off
+    // there and only the click path is wired up.
+    if (Platform.hasHoverPointer()) {
       document.addEventListener("mousemove", this.boundHandlePointerMove, true);
       document.addEventListener("pointermove", this.boundHandlePointerMove, true);
-      document.addEventListener("click", this.boundHandlePointerClick, true);
-      document.documentElement?.classList?.add("webos-pointer-remote");
-      document.body?.classList?.add("webos-pointer-remote");
     }
+    document.addEventListener("click", this.boundHandlePointerClick, true);
   },
 
   handleBack(event, normalizedEvent = buildNormalizedEvent(event)) {
@@ -285,7 +313,7 @@ export const FocusEngine = {
   },
 
   handlePointerMove(event) {
-    if (!Platform.isWebOS()) {
+    if (!Platform.supportsPointerNavigation() || !Platform.hasHoverPointer()) {
       return;
     }
     this.pendingPointerMoveEvent = event;
@@ -306,7 +334,7 @@ export const FocusEngine = {
   },
 
   processPointerMove(event) {
-    if (!Platform.isWebOS()) {
+    if (!Platform.supportsPointerNavigation() || !Platform.hasHoverPointer()) {
       return;
     }
     const currentScreen = Router.getCurrentScreen();
@@ -336,7 +364,7 @@ export const FocusEngine = {
   },
 
   handlePointerClick(event) {
-    if (!Platform.isWebOS()) {
+    if (!Platform.supportsPointerNavigation()) {
       return;
     }
     const target = this.getPointerFocusable(event);

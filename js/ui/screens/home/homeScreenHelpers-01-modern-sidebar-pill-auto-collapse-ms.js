@@ -245,17 +245,36 @@ export function renderHeroBackdropImage(display) {
   return `<img class="home-hero-backdrop" src="${escapeAttribute(display.backdrop)}"${fallbackAttribute} alt="" decoding="async" fetchpriority="high" onerror="${buildImageFallbackErrorHandler()}" />`;
 }
 
+// The TV builds always lay out on a 1920x1080 CSS canvas: index.html forces
+// "viewport width=1920" on Tizen, and webOS reports a 1920-wide viewport even
+// on 1080p and 4K panels. This geometry is a port of the Android TV Compose
+// layout, whose dp values are authored against a 960dp canvas, so the port
+// doubles them - the stylesheet documents the same factor itself
+// (css/components-07.css: "ATV legacyCollapsedWidth 72dp -> 144px").
+//
+// Phones and tablets on the browser tier lay out at device width, where one CSS
+// px already equals one dp, so the doubling has to come out. This has to be
+// decided here rather than in CSS: the string this function returns is applied
+// as an inline style attribute on the shell element, and an inline custom
+// property beats any media-query rule targeting the same property on that
+// element. Before this, the width-based compaction in the stylesheet bottomed
+// out near 212px while this inline value forced 229px on top of it, which is
+// why no amount of CSS work changed the poster scale.
+export function getHomeLayoutDpToPx() {
+  return Platform.isCompactViewport() ? 1 : 2;
+}
+
 export function buildModernHomeSizingStyle(layoutPrefs = {}) {
   const baseWidthDp = Math.max(72, Number(layoutPrefs?.posterCardWidthDp ?? 126) || 126);
   const radiusDp = Math.max(0, Number(layoutPrefs?.posterCardCornerRadiusDp ?? 12));
-  const dpToPx = 2;
+  const dpToPx = getHomeLayoutDpToPx();
   const portraitWidth = Math.round(baseWidthDp * 0.84 * 1.08 * dpToPx);
   const portraitHeight = Math.round(baseWidthDp * 1.5 * 0.84 * 1.08 * dpToPx);
   const portraitExpandedWidth = Math.round(portraitHeight * (16 / 9));
   const landscapeWidth = Math.round(baseWidthDp * 1.24 * 1.34 * dpToPx);
   const landscapeHeight = Math.round(landscapeWidth / 1.77);
   const radius = Math.round(radiusDp * dpToPx);
-  return [
+  const parts = [
     `--home-poster-width:${portraitWidth}px`,
     `--home-poster-height:${portraitHeight}px`,
     `--home-modern-portrait-poster-width:${portraitWidth}px`,
@@ -265,7 +284,29 @@ export function buildModernHomeSizingStyle(layoutPrefs = {}) {
     `--home-landscape-poster-height:${landscapeHeight}px`,
     `--home-poster-expanded-width:${portraitExpandedWidth}px`,
     `--home-poster-radius:${radius}px`
-  ].join(";");
+  ];
+
+  // The Continue Watching rail is sized by --home-continue-width/-height, which
+  // this function did not previously emit, so on the browser tier the posters
+  // shrank to ~114px while these stayed at the stylesheet's 432x243. That is
+  // why a single card filled a phone screen. Only emitted for the compact tier
+  // so TV output stays byte-identical to before, and scaled with the same
+  // dpToPx factor as the rest of the geometry.
+  if (dpToPx === 1) {
+    const continueWidth = landscapeWidth;
+    parts.push(
+      `--home-continue-width:${continueWidth}px`,
+      `--home-continue-height:${Math.round(continueWidth / 1.77)}px`,
+      // Remote focus inflates the focused card 2.66x (css/components-16.css
+      // --home-poster-expanded-width). A touch device never rests focus on a
+      // card without activating it, and an inline custom property beats the
+      // stylesheet tier, so the expansion must be collapsed here, not in CSS.
+      `--home-poster-expanded-width:${landscapeWidth}px`,
+      `--home-modern-portrait-expanded-width:${portraitWidth}px`
+    );
+  }
+
+  return parts.join(";");
 }
 
 export function createCubicBezierEasing(x1, y1, x2, y2) {

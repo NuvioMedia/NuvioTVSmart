@@ -399,6 +399,7 @@ const KEY_ALIASES = {
   "auth.qr.success": "qr_login_success",
   "auth.qr.syncedData": "auth_qr_synced_data",
   "auth.qr.title": "auth_qr_title",
+  "auth.qr.openOnThisDevice": "auth_qr_open_on_this_device",
   "auth.qr.unavailable": "auth_qr_unavailable",
   "auth.email.emailLabel": "auth_email_email_label",
   "auth.email.hint": "auth_email_hint",

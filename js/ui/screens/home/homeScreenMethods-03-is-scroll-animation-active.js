@@ -150,7 +150,11 @@ export function createHomeScreenMethods03() {
       this.cachedModernPortraitPosterMetrics = {
         width: posterWidth,
         height: posterHeight,
-        expandedWidth: Math.round(posterHeight * (16 / 9))
+        // On the touch tier a focused card never inflates (no hover state), so
+        // buildModernHomeSizingStyle emits expanded == base. Writing
+        // posterHeight * 16/9 back here would re-inflate every card, since an
+        // inline setProperty beats the stylesheet tier as well.
+        expandedWidth: Platform.isCompactViewport() ? posterWidth : Math.round(posterHeight * (16 / 9))
       };
       return this.cachedModernPortraitPosterMetrics;
     },
