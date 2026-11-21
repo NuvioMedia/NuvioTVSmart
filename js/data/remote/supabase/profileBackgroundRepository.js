@@ -137,9 +137,27 @@ function startCatalogLoad() {
         return remoteCatalog || [];
       }
       const rows = Array.isArray(response) ? response : [];
-      remoteCatalog = rows
+      const previousByAssetKey = new Map();
+      (remoteCatalog || []).forEach((item) => {
+        if (item?.imageUrl) {
+          previousByAssetKey.set(assetKey(item), item.imageUrl);
+        }
+      });
+      const nextCatalog = rows
         .map((row) => mapBackground(row))
-        .filter((item) => item.id && item.storagePath);
+        .filter((item) => item.id && item.storagePath)
+        .map((item) => {
+          const existingUrl = previousByAssetKey.get(assetKey(item));
+          return existingUrl ? { ...item, imageUrl: existingUrl } : item;
+        });
+      const activeUrls = new Set(nextCatalog.map((item) => item.imageUrl).filter(Boolean));
+      previousByAssetKey.forEach((url) => {
+        if (!activeUrls.has(url)) {
+          objectUrls.delete(url);
+          revokeStorageAssetUrl(url);
+        }
+      });
+      remoteCatalog = nextCatalog;
       remoteCatalogLoaded = true;
       MemberCatalogStorage.saveProfileBackgroundCatalog({ items: rows });
       notify();
