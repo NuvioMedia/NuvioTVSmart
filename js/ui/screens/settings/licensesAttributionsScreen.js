@@ -91,7 +91,12 @@ export const LicensesAttributionsScreen = {
   revealFocused() {
     const scroller = this.container?.querySelector(".licenses-screen");
     const row = this.container?.querySelector(".focusable.focused");
-    if (!scroller || !row || typeof row.getBoundingClientRect !== "function") {
+    if (
+      !scroller ||
+      !row ||
+      typeof scroller.getBoundingClientRect !== "function" ||
+      typeof row.getBoundingClientRect !== "function"
+    ) {
       return;
     }
     const view = scroller.getBoundingClientRect();
