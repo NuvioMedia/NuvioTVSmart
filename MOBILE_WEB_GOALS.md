@@ -39,6 +39,9 @@ Grounded in branch `feat/web-touch-client` (8 commits ahead of origin). Screens 
 - [ ] Touch-native player controls: scrubber with large thumb, double-tap side to seek ±10s, tap-to-toggle-then-autohide
 - [x] Auth on touch tier: servers with `emailPasswordAuth` capability land on the native email/password form by default (capability default, all tiers); inline one-tap QR<->email switch added for the touch tier when both flows exist (`renderModeSwitch`, components-66.css). Official nuvio.tv backend is tvLogin-only, so the phone path there is QR + >=44px open-on-this-device link (audited by auth-qr-phone + auth-email-form probe gates). Full form replacement on official servers needs the backend to expose the capability.
 - [ ] Pull-to-refresh on home/library
+- [x] Press-and-hold on poster cards (home, discover, library grid) opens the title-actions menu (Play, Watch Later, Add to/Remove from Library, Manage Lists, Details) at phone scale, with haptic tick; the release click is suppressed at the card and NuvioDialog swallows all clicks for 450ms after mount (Chromium retargets the release onto the freshly mounted menu and used to activate an option silently). Gated by the home-hold-menu, discover-hold-menu and library-hold-menu probe gates using real CDP touch holds.
+- [x] Library grid scale on phones: the ATV GridCells token (252dp x 2) rendered one 365x603 mega-card at 390px; compact viewports now use 108x162 posters / 16px gaps (3 columns).
+- [x] Settings + settings-player phone tier (26px titles, 56px rows, ellipsized descriptions, 52px account buttons) — previously pure ATV 2x dp scale.
 - [x] Virtual-keyboard behavior: sign-in fields carry `autocomplete=username`/`current-password`, `type=email`, `autocapitalize=none` (authQrSignInScreenMethods-01-mount.js renderLoginContent; asserted by the auth-email-form probe gate). Search field inputmode still open if needed.
 - [ ] Performance pass on phone-class hardware: lazy poster loading, image sizing (no 1920-canvas poster sizes on a 390px screen)
 
@@ -47,7 +50,7 @@ Grounded in branch `feat/web-touch-client` (8 commits ahead of origin). Screens 
 - [ ] Test matrix: iPhone Safari, Android Chrome, iPad; portrait + landscape
 - [ ] Accessibility: focus order for screen readers, contrast on the tier sheet
 - [ ] Decide the deployment story for the mobile tier (same URL as TV app vs separate host/path)
-- [ ] Add the touch-tier probe suite to CI alongside `npm test` + `test-legacy-css-colors.mjs`
+- [x] Touch-tier probe suite in CI (.github/workflows/mobile-web-probe.yml: npm test + build + test:mobile-web, incl. route audit + PWA checks)
 
 ---
 
