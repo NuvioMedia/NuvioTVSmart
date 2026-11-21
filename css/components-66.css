@@ -449,3 +449,59 @@
     --touch-poster-columns: 7;
   }
 }
+
+/* ---------- Detail screen (series/movie) ----------
+   .series-detail-shell carries the Android TV dp x 2 port as design tokens
+   (css/components-52.css: 96px buttons, 72px title, 28px body). Re-derive
+   them at phone size, then fix the few places with hardcoded 300px geometry
+   that overflow a 390dp viewport. */
+.web-touch .series-detail-shell {
+  --detail-safe-x: 16px;
+  --detail-episode-safe-x: 16px;
+  --detail-action-gap: 12px;
+  --detail-button-height: 48px;
+  --detail-control-size: 48px;
+  --detail-title-size: 26px;
+  --detail-section-title-size: 18px;
+  --detail-label-size: 14px;
+  --detail-body-size: 15px;
+  --detail-caption-size: 13px;
+}
+
+.web-touch .detail-hero-section {
+  min-height: auto;
+  height: auto;
+  padding-bottom: 24px;
+}
+
+.web-touch .detail-hero-brand,
+.web-touch .series-detail-logo {
+  min-height: 0;
+  height: 72px;
+  width: 46%;
+  padding-bottom: 12px;
+}
+
+.web-touch .series-insight-tab,
+.web-touch .series-insight-divider {
+  font-size: 15px;
+}
+
+.web-touch .series-insight-tabs {
+  margin-bottom: 10px;
+}
+
+.web-touch .movie-cast-card {
+  flex: 0 0 104px;
+  width: 104px;
+}
+
+.web-touch .movie-cast-avatar {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 8px;
+}
+
+.web-touch .movie-cast-name {
+  font-size: 13px;
+}
