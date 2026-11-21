@@ -342,7 +342,7 @@ export function createHomeScreenMethods11() {
         if (
           shouldRescaleHomeArtwork() &&
           shouldQueueRescale(src, { width: 1, height: 1, fit: "fill" }) &&
-          !(typeof isKnownUnrescalableHomeArtwork === "function" && isKnownUnrescalableHomeArtwork(src))
+          !isKnownUnrescalableHomeArtwork(src)
         ) {
           // `.home-collection-card .home-poster-focus-gif` is object-fit: fill
           // in every layout, so the card box is exactly what Android decodes.
