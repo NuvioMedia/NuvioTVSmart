@@ -145,6 +145,60 @@ async function navTo(page, text) {
   await page.waitForTimeout(2500);
 }
 
+// Real swipe gate: dispatch a horizontal touch drag across the first home rail
+// and require the rail to actually scroll. Also asserts the rail exposes a
+// swipeable overflow with snap and does not disable touch panning.
+async function swipeGate(page) {
+  const pre = await page.evaluate(() => {
+    const track = [...document.querySelectorAll(".home-track")].find(
+      (t) => t.scrollWidth > t.clientWidth + 40
+    );
+    if (!track) return { found: false };
+    const s = getComputedStyle(track);
+    window.__swipeTarget = track;
+    const r = track.getBoundingClientRect();
+    return {
+      found: true,
+      overflowX: s.overflowX,
+      snap: s.scrollSnapType,
+      touchAction: s.touchAction,
+      scrollLeft: track.scrollLeft,
+      y: Math.round(r.top + r.height / 2)
+    };
+  });
+  if (!pre.found) return [{ kind: "swipe", why: "no swipeable .home-track found" }];
+  const cdp = await page.context().newCDPSession(page);
+  const send = (type, x) =>
+    cdp.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: type === "touchEnd" ? [] : [{ x, y: pre.y }]
+    });
+  // Continuous cadence (~15ms): gaps >20ms make Chromium end each move as its
+  // own scroll gesture, and scroll-snap yanks the rail back between moves.
+  await send("touchStart", 340);
+  for (let x = 320; x >= 70; x -= 20) {
+    await send("touchMove", x);
+    await page.waitForTimeout(15);
+  }
+  await send("touchEnd", 70);
+  await page.waitForTimeout(400);
+  const post = await page.evaluate(() => ({ scrollLeft: window.__swipeTarget.scrollLeft }));
+  const problems = [];
+  if (!["auto", "scroll"].includes(pre.overflowX))
+    problems.push({ kind: "swipe", why: "overflowX=" + pre.overflowX });
+  if (pre.touchAction === "none")
+    problems.push({ kind: "swipe", why: "touchAction=" + pre.touchAction });
+  if (!/x/.test(pre.snap)) problems.push({ kind: "swipe", why: "scroll-snap=" + pre.snap });
+  // Chromium reports pan-allowing touch-action as "manipulation"/"auto"; pan-x
+  // and pan-y still allow panning the rail. Only "none" is a hard block.
+  if (post.scrollLeft - pre.scrollLeft < 50)
+    problems.push({
+      kind: "swipe",
+      why: `rail did not scroll (${pre.scrollLeft} -> ${post.scrollLeft})`
+    });
+  return problems;
+}
+
 const browser = await chromium.launch();
 const ctx = await browser.newContext({
   viewport: { width: VW, height: VH },
@@ -157,6 +211,11 @@ if (!harnessOnly) {
   const page = await ctx.newPage();
   await gotoHome(page); // first run bypasses auth (guest); later runs go straight home
   await audit(page, "home");
+  const swipeProblems = await swipeGate(page);
+  results.push({ label: "home-swipe", ok: swipeProblems.length === 0, fails: swipeProblems });
+  console.log(
+    `${swipeProblems.length ? "FAIL" : "PASS"} home-swipe${swipeProblems.length ? " " + JSON.stringify(swipeProblems) : ""}`
+  );
 
   await page.evaluate(() => document.querySelector(".home-track .home-poster-card")?.click());
   await page.waitForTimeout(2500);

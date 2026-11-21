@@ -244,6 +244,24 @@
   padding-right: var(--touch-gutter);
 }
 
+/* Detail rails are horizontal overflow scrollers already (css/components-40.css
+   .detail-morelike-track). Give them the same phone carousel feel as the home
+   rails: inertial scrolling and proximity snap. touch-action stays default so
+   a vertical swipe started on a rail still scrolls the page. */
+.web-touch .detail-morelike-track,
+.web-touch .detail-trailer-track,
+.web-touch .detail-comments-track,
+.web-touch .detail-company-track {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.web-touch .detail-morelike-card,
+.web-touch .detail-comments-track > *,
+.web-touch .detail-company-track > * {
+  scroll-snap-align: start;
+}
+
 .web-touch .home-screen-shell.home-layout-modern .home-modern-hero-media {
   right: 0;
 }

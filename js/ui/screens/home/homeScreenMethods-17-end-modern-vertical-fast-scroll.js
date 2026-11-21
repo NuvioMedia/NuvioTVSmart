@@ -1,4 +1,5 @@
 import * as internals from "./homeScreenContext.js";
+import { Platform } from "../../../platform/index.js";
 
 export function createHomeScreenMethods17() {
   const { MODERN_HOME_CONSTANTS } = internals;
@@ -220,6 +221,11 @@ export function createHomeScreenMethods17() {
     },
     ensureTrackHorizontalVisibility(target, direction = null, layoutAdjustment = 0) {
       if (this.layoutMode === "modern") {
+        if (Platform.isCompactViewport()) {
+          // Touch tier: rails are native touch scrollers. A tap focuses an already-visible
+          // card, and re-centering the rail under the finger fights/swipes away the pan.
+          return;
+        }
         if (this._trackHorizRaf) {
           cancelAnimationFrame(this._trackHorizRaf);
           this._trackHorizRaf = null;

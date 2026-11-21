@@ -1,4 +1,5 @@
 import * as internals from "./homeScreenContext.js";
+import { Platform } from "../../../platform/index.js";
 
 export function createHomeScreenMethods16() {
   const { Router, MODERN_HOME_CONSTANTS, HOME_PERF_DEBUG, homePerfNow, logHomePerf } = internals;
@@ -88,6 +89,10 @@ export function createHomeScreenMethods16() {
       };
     },
     applyModernCameraFollowTargets(horizontal = null, vertical = null) {
+      if (Platform.isCompactViewport()) {
+        // Touch tier owns horizontal rail scroll natively (see ensureTrackHorizontalVisibility).
+        horizontal = null;
+      }
       if (horizontal?.container?.isConnected) {
         if (Math.abs(Number(horizontal.container.scrollLeft || 0) - Number(horizontal.value || 0)) > 1) {
           this.animateScroll(horizontal.container, "x", horizontal.value, MODERN_HOME_CONSTANTS.cameraFollowDurationXMs, {
