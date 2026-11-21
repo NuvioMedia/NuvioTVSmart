@@ -42,12 +42,23 @@ export function createWebOsExactSeekMethods({
     return true;
   }
 
+  function resolveRestoreMuted(controller, operation) {
+    if (
+      operation.startedGated &&
+      !controller.startupAudioGateActive &&
+      !controller.startupPresentationAudioMuted
+    ) {
+      return false;
+    }
+    return operation.muted;
+  }
+
   function complete(controller, operation) {
     if (!cleanup(controller, operation)) return;
     const video = operation.video;
     if (operation.paused) video.pause();
     controller.isPlaying = !operation.paused && !video.ended;
-    video.muted = operation.muted;
+    video.muted = resolveRestoreMuted(controller, operation);
     controller.syncWebOsPlaybackKeepAwake?.();
     controller.emitVideoEvent("seeked", { exactNativeSeek: true });
     controller.emitVideoEvent("canplay", { exactNativeSeek: true });
@@ -59,7 +70,7 @@ export function createWebOsExactSeekMethods({
     if (!cleanup(controller, operation)) return;
     // Never leave the internal decode pass audible or playing after failure.
     operation.video.pause();
-    operation.video.muted = operation.muted;
+    operation.video.muted = resolveRestoreMuted(controller, operation);
     controller.isPlaying = false;
     controller.syncWebOsPlaybackKeepAwake?.();
     controller.lastPlaybackErrorCode = 2;
@@ -84,17 +95,29 @@ export function createWebOsExactSeekMethods({
       this.isPlaying = !operation.paused;
       return true;
     },
+    syncWebOsExactSeekMuted(muted) {
+      const operation = operations.get(this);
+      if (!operation) return false;
+      const nextMuted = Boolean(muted);
+      operation.muted = nextMuted;
+      operation.startedGated = nextMuted;
+      operation.video.muted = true;
+      return true;
+    },
     cancelWebOsExactSeek({ pause } = {}) {
       const operation = operations.get(this);
       if (!operation || !cleanup(this, operation)) return;
       if (pause ?? operation.paused) operation.video.pause();
-      operation.video.muted = operation.muted;
+      operation.video.muted = resolveRestoreMuted(this, operation);
     },
     seekWebOsExactly(seconds, { paused = this.video?.paused } = {}) {
       const video = this.video;
       if (!video || !Number.isFinite(seconds) || seconds < 0) return false;
       this.cancelProgressSyncAfterSeek?.();
       const previous = operations.get(this);
+      const startedGated = Boolean(
+        this.startupAudioGateActive || this.startupPresentationAudioMuted
+      );
       const muted = previous ? previous.muted : video.muted;
       if (previous) cleanup(this, previous);
       const duration = Number(video.duration);
@@ -105,6 +128,7 @@ export function createWebOsExactSeekMethods({
         target,
         paused: Boolean(paused),
         muted,
+        startedGated: previous ? Boolean(previous.startedGated) : startedGated,
         generation: this.playRequestToken,
         last: target,
         advanced: false,
@@ -127,7 +151,7 @@ export function createWebOsExactSeekMethods({
       operation.error = () => {
         if (cleanup(this, operation)) {
           video.pause();
-          video.muted = muted;
+          video.muted = resolveRestoreMuted(this, operation);
           this.isPlaying = false;
         }
       };

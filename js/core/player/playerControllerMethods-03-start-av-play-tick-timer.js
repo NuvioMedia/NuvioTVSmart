@@ -41,11 +41,14 @@ export function createPlayerControllerMethods03() {
         const gated = Boolean(this.startupAudioGateActive || this.startupPresentationAudioMuted);
         // A pending conversion reload must restore the latest startup mute state.
         if (this.webOsDtsAudioState) this.webOsDtsAudioState.originalMuted = gated;
-        this.video.muted = gated;
         this.video.defaultMuted = gated;
         if (!gated && (!Number.isFinite(Number(this.video.volume)) || Number(this.video.volume) <= 0)) {
           this.video.volume = 1;
         }
+        if (this.syncWebOsExactSeekMuted?.(gated)) {
+          return;
+        }
+        this.video.muted = gated;
       } catch (_) {
         // Ignore unsupported volume/mute operations.
       }
