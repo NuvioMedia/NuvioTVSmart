@@ -16,11 +16,13 @@ export function createHomeScreenMethods07() {
     normalizeCatalogItem
   } = internals;
 
+  // FolderDetailScreen inherits these methods and opens the same hold menu, so the
+  // guard checks the screen that started the request, not the "home" route name.
   const isDialogRequestActive = (screen, loadToken, dialogToken) =>
     loadToken === screen.homeLoadToken &&
     dialogToken === screen.homeDialogRequestToken &&
     Boolean(screen.container) &&
-    (!Router?.getCurrent || Router.getCurrent() === "home");
+    Router.getCurrentScreen?.() === screen;
 
   return {
     mountContinueWatchingDialog() {
@@ -300,6 +302,7 @@ export function createHomeScreenMethods07() {
       if (!item?.contentId) {
         return false;
       }
+      this.homeDialogRequestToken = (this.homeDialogRequestToken || 0) + 1;
       this.cancelPendingContinueWatchingEnter();
       this.posterHoldMenu = null;
       this.holdMenuScrollState = this.captureHoldMenuScrollState();
