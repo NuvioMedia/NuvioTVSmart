@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-test("CW enrichment cache memoizes reads, detects external localStorage edits, and skips duplicate writes", async () => {
+test("CW enrichment cache memoizes reads, sees external edits, and only writes real changes", async () => {
   const storage = new Map();
   let setCalls = 0;
   let parseCalls = 0;
@@ -65,6 +65,27 @@ test("CW enrichment cache memoizes reads, detects external localStorage edits, a
       assert.equal(getCachedContinueWatchingEnrichment(baseItem)?.episodeTitle, "External Update");
     }
     assert.equal(parseCalls, parsesAfterRawEdit + 1);
+
+    // Changed metadata is written immediately, even inside the dedupe window.
+    const updatedItem = { ...baseItem, episodeTitle: "Updated" };
+    const setsBeforeChange = setCalls;
+    saveContinueWatchingEnrichment(updatedItem);
+    assert.equal(setCalls, setsBeforeChange + 1);
+    assert.equal(getCachedContinueWatchingEnrichment(baseItem)?.episodeTitle, "Updated");
+
+    // An identical entry older than the dedupe window is refreshed, so the
+    // 14-day cache age can still revalidate its metadata.
+    const staleObj = previousJsonParse(storage.get("homeContinueWatchingEnrichmentCache"));
+    staleObj["series:tt999:1:1"].cachedAt = Date.now() - 2 * 60 * 60 * 1000;
+    storage.set("homeContinueWatchingEnrichmentCache", JSON.stringify(staleObj));
+    const setsBeforeStale = setCalls;
+    saveContinueWatchingEnrichment(updatedItem);
+    assert.equal(setCalls, setsBeforeStale + 1);
+    assert.ok(Date.now() - getCachedContinueWatchingEnrichment(baseItem).cachedAt < 60 * 1000);
+
+    // Clearing the cache (Settings) invalidates the memo through the null raw value.
+    storage.delete("homeContinueWatchingEnrichmentCache");
+    assert.equal(getCachedContinueWatchingEnrichment(baseItem), null);
   } finally {
     JSON.parse = previousJsonParse;
     if (previousLocalStorage === undefined) {

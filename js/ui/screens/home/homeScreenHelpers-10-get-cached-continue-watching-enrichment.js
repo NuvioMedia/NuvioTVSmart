@@ -201,6 +201,11 @@ import { isCollectionFolderItem } from "./homeScreenHelpers-04-animate-hero-logo
 import { normalizeCollectionFolderItem } from "./homeScreenHelpers-05-normalize-collection-folder-item.js";
 import { normalizeCatalogItem } from "./homeScreenHelpers-08-partition-continue-watching-rows.js";
 
+// Unchanged enrichment is not rewritten within this window, which keeps every
+// render pass from bumping cachedAt; older entries are refreshed so the 14-day
+// cache age still revalidates their metadata.
+const CW_ENRICHMENT_WRITE_DEDUPE_MS = 60 * 60 * 1000;
+
 let cwEnrichmentMemoRaw;
 let cwEnrichmentMemoRevision = -1;
 let cwEnrichmentMemoCache = null;
@@ -313,9 +318,12 @@ export function saveContinueWatchingEnrichment(item = {}) {
     return;
   }
   const cache = getMemoizedContinueWatchingEnrichmentCache();
+  const enrichmentCacheLimit = getTvRuntimePerformanceProfile().isPerformanceConstrained ? 50 : 200;
+  const cacheSize = Object.keys(cache).length;
+  const now = Date.now();
   const prev = cache[key];
   const nextEntry = {
-    cachedAt: Date.now(),
+    cachedAt: now,
     title: normalized.title,
     name: normalized.name,
     landscapePoster: normalized.landscapePoster,
@@ -340,13 +348,17 @@ export function saveContinueWatchingEnrichment(item = {}) {
     episodeDescription: normalized.episodeDescription,
     continueWatchingMetaResolved: true
   };
-  if (prev && Date.now() - Number(prev.cachedAt || 0) < 60 * 60 * 1000 && cwEnrichmentEntryEquals(prev, nextEntry)) {
+  if (
+    prev &&
+    cacheSize <= enrichmentCacheLimit &&
+    now - Number(prev.cachedAt || 0) < CW_ENRICHMENT_WRITE_DEDUPE_MS &&
+    cwEnrichmentEntryEquals(prev, nextEntry)
+  ) {
     return;
   }
   cache[key] = nextEntry;
-  const enrichmentCacheLimit = getTvRuntimePerformanceProfile().isPerformanceConstrained ? 50 : 200;
   let nextCache = cache;
-  if (Object.keys(cache).length > enrichmentCacheLimit) {
+  if ((prev ? cacheSize : cacheSize + 1) > enrichmentCacheLimit) {
     const entries = Object.entries(cache)
       .sort(([, left], [, right]) => Number(right?.cachedAt || 0) - Number(left?.cachedAt || 0))
       .slice(0, enrichmentCacheLimit);
