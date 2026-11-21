@@ -103,6 +103,24 @@ function image(connection, item, type = "Primary", parentId = null) {
     api_key: connection.token
   });
 }
+// Like the Android app, an episode in the resume row stands for its series: the
+// card carries the series id and images, none of the episode's own details.
+function resumeCardItem(item) {
+  if (String(item?.Type).toLowerCase() !== "episode") return item;
+  if (!item.SeriesId) return null;
+  return {
+    Id: item.SeriesId,
+    SeriesId: item.SeriesId,
+    Name: item.SeriesName || item.Name,
+    Type: "Series",
+    ImageTags: {
+      ...(item.SeriesPrimaryImageTag ? { Primary: item.SeriesPrimaryImageTag } : {}),
+      ...(item.ParentLogoImageTag ? { Logo: item.ParentLogoImageTag } : {})
+    },
+    BackdropImageTags: item.ParentBackdropImageTags,
+    ParentBackdropItemId: item.ParentBackdropItemId
+  };
+}
 export function mapServerItem(connection, item) {
   if (!item?.Id || item.IsMissing) return null;
   const type = mediaType(item);
@@ -490,6 +508,7 @@ export const MediaServerRepository = {
       if (profile() !== pid) return { status: "error", message: "servers_error_failed" };
       const seen = new Set();
       const items = (data?.Items || [])
+        .map((item) => (catalogId === "resume" ? resumeCardItem(item) : item))
         .map((item) => mapServerItem(connection, item))
         .filter((item) => item && !seen.has(item.id) && seen.add(item.id));
       return {
@@ -523,11 +542,17 @@ export const MediaServerRepository = {
     if (!ref) return null;
     const connection = this.connection(ref.connectionId);
     if (!connection?.enabled) return null;
-    const item = await get(connection, "item", ref.itemId, { fields: LIST_FIELDS }, signal);
+    let item = await get(connection, "item", ref.itemId, { fields: LIST_FIELDS }, signal);
     if (profile() !== pid) return null;
+    // Cards and progress saved from the resume row can still carry an episode id.
+    const fromEpisode = String(item?.Type).toLowerCase() === "episode" && Boolean(item.SeriesId);
+    if (fromEpisode) {
+      item = await get(connection, "item", item.SeriesId, { fields: LIST_FIELDS }, signal);
+      if (profile() !== pid) return null;
+    }
     const result = mapServerItem(connection, item);
     if (!result) return null;
-    result.id = id;
+    result.id = fromEpisode ? serverId(connection, item.Id) : id;
     result.videos = [];
     let stateItems = [item];
     if (result.type === "series") {
