@@ -32,6 +32,7 @@ globalThis.Worker = FakeWorker;
 
 const {
   rescaleHomeArtwork,
+  rescaleHomeLogoBlob,
   releaseHomeArtwork,
   resetHomeArtworkRescaler,
   suspendIdleHomeArtworkWorkers
@@ -251,4 +252,56 @@ test("a job already running finishes before its worker is stopped", async () => 
   worker.onmessage({ data: { id: job.id, ok: true, blob: { size: 1 } } });
   assert.equal(typeof (await running), "string", "the card gets its rescaled artwork");
   assert.equal(worker.terminated, true, "the pool stops once the job is done");
+});
+
+test("hero logo jobs use the shared pool off the main thread and deduplicate in flight", async () => {
+  reset();
+  const logoUrl = "https://art/hero-logo.png";
+  const fakeBlob = { size: 42, type: "image/webp" };
+  const first = rescaleHomeLogoBlob(logoUrl, { width: 440, height: 200, timeoutMs: 1500 });
+  const second = rescaleHomeLogoBlob(logoUrl, { width: 440, height: 200, timeoutMs: 1500 });
+
+  const worker = created.find((candidate) => candidate.posted.length);
+  assert.ok(worker, "logo job must dispatch to a pool worker");
+  assert.equal(worker.posted.length, 1, "duplicate in-flight logo requests share one worker job");
+  const message = worker.posted.shift();
+  assert.deepEqual(message, {
+    id: message.id,
+    url: logoUrl,
+    width: 440,
+    height: 200,
+    fit: "contain",
+    kind: "logo",
+    timeoutMs: 1500
+  });
+
+  worker.onmessage({ data: { id: message.id, ok: true, blob: fakeBlob } });
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(a, fakeBlob);
+  assert.equal(b, fakeBlob);
+});
+
+test("deterministic hero logo failures return null and skip repeated worker dispatches", async () => {
+  reset();
+  const logoUrl = "https://art/small-logo.png";
+  const first = rescaleHomeLogoBlob(logoUrl, { width: 440, height: 200 });
+  const worker = created.find((candidate) => candidate.posted.length);
+  const message = worker.posted.shift();
+  worker.onmessage({ data: { id: message.id, ok: false, reason: "logo already small" } });
+  assert.equal(await first, null);
+
+  const second = await rescaleHomeLogoBlob(logoUrl, { width: 440, height: 200 });
+  assert.equal(second, null);
+  assert.equal(
+    created.reduce((total, candidate) => total + candidate.posted.length, 0),
+    0,
+    "negative-cached logo must not dispatch again"
+  );
+});
+
+test("resetHomeArtworkRescaler settles pending hero logo jobs to null", async () => {
+  reset();
+  const pending = rescaleHomeLogoBlob("https://art/pending-logo.png", { width: 440, height: 200 });
+  resetHomeArtworkRescaler();
+  assert.equal(await pending, null);
 });

@@ -425,3 +425,49 @@ test("TV continue watching cards defer their backdrop to the artwork pass", asyn
     Platform.current = null;
   }
 });
+
+test("lazy hydration completes all rescaler geometry reads before mutating image loading attributes", () => {
+  const events = [];
+  const context = buildHome({
+    tv: true,
+    rescale: {
+      enabled: () => true,
+      fit: () => {
+        events.push("read:fit");
+        return "cover";
+      },
+      rescale: () => Promise.resolve(null)
+    }
+  });
+  const row = makeRow(context, { top: 100 });
+  const images = [
+    makeImage(context, { row, src: "https://art/one.jpg", left: 0 }),
+    makeImage(context, { row, src: "https://art/two.jpg", left: 260 })
+  ];
+  images.forEach((image) => {
+    const origRect = image.getBoundingClientRect;
+    image.getBoundingClientRect = () => {
+      events.push("read:rect");
+      return origRect();
+    };
+    const origRemove = image.removeAttribute;
+    image.removeAttribute = (name) => {
+      events.push(`write:removeAttribute:${name}`);
+      origRemove(name);
+    };
+  });
+
+  const screen = makeScreen(context, { rows: [row], images });
+  screen.hydrateHomeLazyImages(null, { forceFullScan: true, refreshIndex: true });
+
+  const firstWriteIdx = events.findIndex((entry) => entry.startsWith("write:"));
+  const lastReadIdx = events.reduce(
+    (last, entry, idx) => (entry.startsWith("read:") ? idx : last),
+    -1
+  );
+  assert.ok(firstWriteIdx > 0, "hydration must read geometry before writing attributes");
+  assert.ok(
+    lastReadIdx < firstWriteIdx,
+    "all rect and fit reads must precede DOM attribute mutations"
+  );
+});

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  canUseModernTvArtworkBounding,
   getArtworkCacheLimit,
   getArtworkEvictIdleMs,
   getArtworkEvictMarginPx,
@@ -54,4 +55,36 @@ test("only constrained sets wait for focus to rest before enriching the hero", (
   assert.equal(getHeroEnrichDwellMs({ isTvRuntime: true, isPerformanceConstrained: true }), 500);
   assert.equal(getHeroEnrichDwellMs({ isTvRuntime: true, isPerformanceConstrained: false }), 0);
   assert.equal(getHeroEnrichDwellMs(null), 0);
+});
+
+test("modern >=2 GB TVs keep bounded artwork rescaling even when measured slow", () => {
+  assert.equal(canUseModernTvArtworkBounding(modern, 2), true);
+  assert.equal(
+    canUseModernTvArtworkBounding(
+      {
+        isTvRuntime: true,
+        isLegacyTvRuntime: false,
+        isPerformanceConstrained: true,
+        isMeasuredSlow: true
+      },
+      2
+    ),
+    true
+  );
+  assert.equal(
+    canUseModernTvArtworkBounding(
+      {
+        isTvRuntime: true,
+        isLegacyTvRuntime: false,
+        isPerformanceConstrained: true,
+        isMeasuredSlow: true
+      },
+      1
+    ),
+    false
+  );
+  assert.equal(canUseModernTvArtworkBounding(constrained, 4), false);
+  assert.equal(canUseModernTvArtworkBounding(legacyOnly, 4), false);
+  assert.equal(canUseModernTvArtworkBounding(browser, 4), false);
+  assert.equal(canUseModernTvArtworkBounding(null, 4), false);
 });

@@ -9,6 +9,7 @@ import {
   isJpegHeader,
   isRescalableArtworkFit,
   jpegDimensions,
+  pngStillDimensions,
   rescaleArtwork,
   rescaleHomeArtwork,
   shouldQueueRescale,
@@ -289,6 +290,41 @@ test("a bounded source size is read from the JPEG header", () => {
   assert.equal(jpegDimensions(null), null);
   assert.equal(jpegDimensions(new Uint8Array([0xff, 0xd8, 0xff])), null);
   assert.equal(jpegDimensions(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), null);
+});
+
+function pngWithDimensions(width, height, { apng = false } = {}) {
+  const chunk = (type, data) => {
+    const head = new Uint8Array(8);
+    new DataView(head.buffer).setUint32(0, data.length);
+    for (let index = 0; index < 4; index += 1) head[4 + index] = type.charCodeAt(index);
+    return [...head, ...data, 0, 0, 0, 0];
+  };
+  const ihdr = new Uint8Array(13);
+  const view = new DataView(ihdr.buffer);
+  view.setUint32(0, width);
+  view.setUint32(4, height);
+  return new Uint8Array([
+    0x89,
+    0x50,
+    0x4e,
+    0x47,
+    0x0d,
+    0x0a,
+    0x1a,
+    0x0a,
+    ...chunk("IHDR", ihdr),
+    ...(apng ? chunk("acTL", new Uint8Array(8)) : []),
+    ...chunk("IDAT", new Uint8Array(4)),
+    ...chunk("IEND", [])
+  ]);
+}
+
+test("a bounded source size is read from the PNG header, animation refused", () => {
+  assert.deepEqual(pngStillDimensions(pngWithDimensions(1664, 437)), { width: 1664, height: 437 });
+  assert.equal(pngStillDimensions(pngWithDimensions(1664, 437, { apng: true })), null);
+  assert.equal(pngStillDimensions(null), null);
+  assert.equal(pngStillDimensions(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), null);
+  assert.equal(pngStillDimensions(new Uint8Array(24)), null);
 });
 
 test("only an oversized JPEG asks for a clamped decode", () => {

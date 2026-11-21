@@ -45,9 +45,6 @@ export function createHomeScreenMethods18() {
         deferUntilVerticalSettle: deferHomeArtworkUntilSettle,
         focusedRowOnly: this.isLegacyTvRuntime()
       });
-      if (this.isCollectionFolderNode(current)) {
-        this.hydrateCollectionFocusGif(current, false);
-      }
       if (this.isCollectionFolderNode(target)) {
         this.hydrateCollectionFocusGif(target, true);
       }
