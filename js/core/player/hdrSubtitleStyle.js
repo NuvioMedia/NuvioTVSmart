@@ -66,6 +66,35 @@ export function scaleHexColorBrightness(color, factor) {
   return `#${scaled}${hasAlpha ? alpha : ""}`;
 }
 
+/** Scale linear RGB channels of RGBA pixel bytes by a 0-1 factor, keeping alpha. */
+export function scaleRgbaBrightness(source, factor, target = null) {
+  if (!source || typeof source.length !== "number") {
+    return target;
+  }
+  const output = target || new Uint8ClampedArray(source.length);
+  const parsedFactor = Number(factor);
+  const clampedFactor = Number.isFinite(parsedFactor) ? Math.min(1, Math.max(0, parsedFactor)) : 1;
+  if (clampedFactor >= 1) {
+    output.set(source);
+    return output;
+  }
+  for (let index = 0; index < source.length; index += 4) {
+    const alpha = source[index + 3];
+    if (!alpha) {
+      output[index] = 0;
+      output[index + 1] = 0;
+      output[index + 2] = 0;
+      output[index + 3] = 0;
+      continue;
+    }
+    output[index] = Math.round(source[index] * clampedFactor);
+    output[index + 1] = Math.round(source[index + 1] * clampedFactor);
+    output[index + 2] = Math.round(source[index + 2] * clampedFactor);
+    output[index + 3] = alpha;
+  }
+  return output;
+}
+
 export function isHdrMediaInfo(info = {}) {
   const hdr = Array.isArray(info?.hdr) ? info.hdr.filter(Boolean) : [];
   if (hdr.length) {
@@ -77,6 +106,14 @@ export function isHdrMediaInfo(info = {}) {
 /** Whether in-player subtitle style editors target the HDR override instead of the base color. */
 export function isEditingHdrSubtitleStyle(style = {}, isHdrVideo = false) {
   return Boolean(isHdrVideo && style?.hdrStyleEnabled === true);
+}
+
+/** Brightness factor for HDR subtitles across text and bitmap renderers; 1 means no dimming. */
+export function hdrSubtitleBrightnessFactor(style = {}, isHdrVideo = false) {
+  if (!isEditingHdrSubtitleStyle(style, isHdrVideo)) {
+    return 1;
+  }
+  return hdrBrightnessFactor(style?.hdrBrightness);
 }
 
 /**
@@ -92,7 +129,7 @@ export function resolveHdrSubtitleStyle(style = {}, isHdrVideo = false) {
   if (!isEditingHdrSubtitleStyle(style, isHdrVideo)) {
     return colors;
   }
-  const factor = hdrBrightnessFactor(style?.hdrBrightness);
+  const factor = hdrSubtitleBrightnessFactor(style, isHdrVideo);
   return {
     textColor: scaleHexColorBrightness(normalizeHdrTextColor(style?.hdrTextColor), factor),
     backgroundColor: scaleHexColorBrightness(colors.backgroundColor, factor),
