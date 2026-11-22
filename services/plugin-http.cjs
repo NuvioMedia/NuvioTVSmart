@@ -81,6 +81,33 @@ function destroyStream(stream) {
   if (stream && typeof stream.destroy === "function") stream.destroy();
 }
 
+function destroyRequest(request, error) {
+  if (!request) return;
+  if (typeof request.destroy === "function") {
+    request.destroy(error);
+    return;
+  }
+  if (typeof request.abort === "function") {
+    try {
+      request.abort();
+    } catch (_) {}
+  }
+  if (request.socket && typeof request.socket.destroy === "function") {
+    try {
+      request.socket.destroy();
+    } catch (_) {}
+  }
+}
+
+function isResponseClosed(response) {
+  if (!response) return true;
+  if (response.writableEnded || response.finished || response.destroyed) {
+    return true;
+  }
+  var socket = response.socket || response.connection;
+  return Boolean(socket && socket.destroyed);
+}
+
 // OpenSSL 1.0.2 cannot speak TLS 1.3 or ChaCha20-only servers; name the
 // cause instead of the raw "alert" text so provider failures are readable.
 function legacyTlsFailure(error) {
@@ -797,7 +824,10 @@ function performFetch(payload, callback, redirects, trace, networkState) {
           wireLength += chunk.length;
           if (wireLength > MAX_WIRE_RESPONSE_BYTES) {
             responseDone(new Error("Plugin provider response exceeds the wire quota"));
-            response.destroy();
+            destroyStream(response);
+            if (typeof response.destroy !== "function") {
+              destroyRequest(request);
+            }
           }
         });
         response.on("error", function (error) {
@@ -926,7 +956,7 @@ function performFetch(payload, callback, redirects, trace, networkState) {
           });
           if (stream !== response) response.unpipe(stream);
           destroyStream(stream);
-          if (stream !== response) response.destroy();
+          if (stream !== response) destroyStream(response);
         };
         stream.on("data", function (chunk) {
           if (length >= validation.maxResponseBytes) {
@@ -997,7 +1027,7 @@ function performFetch(payload, callback, redirects, trace, networkState) {
             })
           );
           failTransport(timeoutError);
-          if (request && typeof request.destroy === "function") request.destroy(timeoutError);
+          destroyRequest(request, timeoutError);
         }, connectTimeoutMs);
         if (typeof socket.once === "function") socket.once("connect", clearConnectTimer);
       });
@@ -1014,7 +1044,7 @@ function performFetch(payload, callback, redirects, trace, networkState) {
           })
         );
         failTransport(timeoutError);
-        request.destroy(timeoutError);
+        destroyRequest(request, timeoutError);
       });
       request.on("error", function (error) {
         var tlsFailure = legacyTlsFailure(error);
@@ -1209,7 +1239,7 @@ function createPluginHttpServer(options) {
     state.finished = true;
     removeQueuedRequest(state);
     delete inFlightRequests[state.requestId];
-    if (state.response && !state.response.writableEnded && !state.response.destroyed) {
+    if (state.response && !isResponseClosed(state.response)) {
       send(state.response, 502, {
         returnValue: false,
         errorText: errorText || "Plugin request cancelled",
@@ -1241,9 +1271,7 @@ function createPluginHttpServer(options) {
       pumpQueue();
       return true;
     }
-    if (state.request && typeof state.request.destroy === "function") {
-      state.request.destroy(new Error("Plugin request cancelled"));
-    }
+    destroyRequest(state.request, new Error("Plugin request cancelled"));
     return true;
   }
 
@@ -1270,7 +1298,7 @@ function createPluginHttpServer(options) {
           error: error ? traceError(error) : undefined
         })
       );
-      if (!response || response.writableEnded || response.destroyed) {
+      if (isResponseClosed(response)) {
         pumpQueue();
         return;
       }
@@ -1288,7 +1316,7 @@ function createPluginHttpServer(options) {
     callback.registerRequest = function (id, activeRequest) {
       activeRequests[id] = activeRequest;
       state.request = activeRequest;
-      if (state.cancelled) activeRequest.destroy(new Error("Plugin request cancelled"));
+      if (state.cancelled) destroyRequest(activeRequest, new Error("Plugin request cancelled"));
     };
     try {
       performFetch(
@@ -1310,11 +1338,20 @@ function createPluginHttpServer(options) {
   function readBody(request, callback) {
     var chunks = [];
     var length = 0;
+    var settled = false;
+    request.on("error", function (error) {
+      if (settled) return;
+      settled = true;
+      callback(error);
+    });
     request.on("data", function (chunk) {
+      if (settled) return;
       length += chunk.length;
       if (length <= MAX_SERVICE_REQUEST_BYTES) chunks.push(chunk);
     });
     request.on("end", function () {
+      if (settled) return;
+      settled = true;
       if (length > MAX_SERVICE_REQUEST_BYTES) {
         callback(new Error("Plugin service request is too large"));
         return;
@@ -1432,7 +1469,7 @@ function createPluginHttpServer(options) {
           var state = inFlightRequests[cancelId];
           var active = activeRequests[cancelId];
           var cancelled = cancelRequest(state);
-          if (!cancelled && active) active.destroy(new Error("Plugin request cancelled"));
+          if (!cancelled && active) destroyRequest(active, new Error("Plugin request cancelled"));
           send(response, 200, {
             returnValue: true,
             requestId: cancelId,
