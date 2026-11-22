@@ -183,6 +183,7 @@ import {
   firstNonEmpty,
   formatContentTypeLabel,
   formatCatalogRowTitle,
+  isMediaServerResumeRow,
   limitTextToWordCount,
   parseCssPx,
   prettyId,
@@ -288,7 +289,7 @@ export function renderLegacyCatalogRowsMarkup(rows = [], options = {}) {
 
     const rowTitle = isCollectionRow
       ? String(rowData.collectionTitle || rowData.collection?.title || "Collection")
-      : formatCatalogRowTitle(rowData.catalogName, rowData.type, showCatalogTypeSuffix);
+      : formatCatalogRowTitle(rowData.catalogName, rowData.type, showCatalogTypeSuffix && !isMediaServerResumeRow(rowData));
     const rowSubtitle = layoutMode === "classic" && showCatalogAddonName && rowData.addonName ? `from ${rowData.addonName}` : "";
     const maxItems = Math.max(1, Number(layoutMode === "grid" ? gridMaxDisplayItems : rowItemLimit || HOME_MAX_ITEMS_PER_ROW_DEFAULT));
     const hasSeeAll =

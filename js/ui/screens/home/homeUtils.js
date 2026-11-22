@@ -59,6 +59,14 @@ function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// The resume row of a media server mixes movies and series, so a type suffix
+// would be wrong; its name carries the server name instead.
+export function isMediaServerResumeRow(rowData) {
+  return (
+    String(rowData?.addonId || "").startsWith("media-server-") && rowData?.catalogId === "resume"
+  );
+}
+
 export function formatCatalogRowTitle(catalogName, type, showTypeSuffix = true) {
   const rawBase = String(catalogName || "").trim();
   const base = rawBase ? rawBase.charAt(0).toUpperCase() + rawBase.slice(1) : "";

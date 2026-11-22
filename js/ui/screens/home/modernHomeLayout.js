@@ -1,6 +1,7 @@
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 import { unchangedHomeRowMarkup } from "./homeDomUpdate.js";
 import { I18n } from "../../../i18n/index.js";
+import { isMediaServerResumeRow } from "./homeUtils.js";
 
 export const MODERN_HOME_CONSTANTS = {
   heroFocusDelayMs: 450,
@@ -125,7 +126,11 @@ export function renderModernHomeLayout({
       : rowItems.slice(0, Math.max(maxItems, focusedItemLimit));
     const rowTitle = isCollectionRow
       ? String(rowData.collectionTitle || rowData.collection?.title || "Collection")
-      : formatCatalogRowTitle(rowData.catalogName, rowData.type, showCatalogTypeSuffix);
+      : formatCatalogRowTitle(
+          rowData.catalogName,
+          rowData.type,
+          showCatalogTypeSuffix && !isMediaServerResumeRow(rowData)
+        );
     const deferRowImages =
       typeof shouldDeferRowImages === "function"
         ? shouldDeferRowImages(rowIndex, rowKey, focusedRowKey)

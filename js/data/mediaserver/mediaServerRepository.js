@@ -385,7 +385,7 @@ export const MediaServerRepository = {
               id: "resume",
               type: "movie",
               apiType: "movie",
-              name: I18n.t("servers_resume_row"),
+              name: `${connection.name} · ${I18n.t("servers_resume_row")}`,
               extra: []
             },
             ...connection.libraries
