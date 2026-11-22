@@ -20,6 +20,12 @@ test("Detail mount does not preload stream badge images", async () => {
 
 test("Streams flow still warms matched badge images before rendering rows", async () => {
   const loadStreamsSource = await read("./streamScreenMethods-04-load-streams.js");
-  assert.equal(loadStreamsSource.includes("preloadMatchedStreamBadgeImages(chunkStreams, badgeSettings)"), true);
-  assert.equal(loadStreamsSource.includes("preloadMatchedStreamBadgeImages(missingStreams, badgeSettings)"), true);
+  assert.equal(
+    loadStreamsSource.includes("preloadMatchedStreamBadgeImages(chunkStreams, badgeSettings)"),
+    true
+  );
+  assert.equal(
+    loadStreamsSource.includes("preloadMatchedStreamBadgeImages(missingStreams, badgeSettings)"),
+    true
+  );
 });

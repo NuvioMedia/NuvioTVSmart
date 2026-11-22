@@ -5,10 +5,14 @@ globalThis.localStorage = {
   setItem: (k, v) => storage.set(k, v),
   removeItem: (k) => storage.delete(k)
 };
-const { createPlayerScreenMethods62 } = await import("../js/ui/screens/player/playerScreenMethods-62-render-audio-control-item.js");
-const { createPlayerScreenMethods64 } = await import("../js/ui/screens/player/playerScreenMethods-64-move-sources-focus.js");
-const { createPlayerScreenMethods65 } = await import("../js/ui/screens/player/playerScreenMethods-65-render-parental-guide-overlay.js");
-const { createPlayerScreenMethods66 } = await import("../js/ui/screens/player/playerScreenMethods-66-get-filtered-episode-panel-streams.js");
+const { createPlayerScreenMethods62 } =
+  await import("../js/ui/screens/player/playerScreenMethods-62-render-audio-control-item.js");
+const { createPlayerScreenMethods64 } =
+  await import("../js/ui/screens/player/playerScreenMethods-64-move-sources-focus.js");
+const { createPlayerScreenMethods65 } =
+  await import("../js/ui/screens/player/playerScreenMethods-65-render-parental-guide-overlay.js");
+const { createPlayerScreenMethods66 } =
+  await import("../js/ui/screens/player/playerScreenMethods-66-get-filtered-episode-panel-streams.js");
 
 const methods = {
   ...createPlayerScreenMethods62(),
@@ -29,8 +33,12 @@ const sources = Object.assign(Object.create(methods), {
   sourcesPanelVisible: true,
   renders: 0
 });
-sources.getOrderedStreamCandidates = function () { return this.streamCandidates; };
-sources.renderSourcesPanel = function () { this.renders += 1; };
+sources.getOrderedStreamCandidates = function () {
+  return this.streamCandidates;
+};
+sources.renderSourcesPanel = function () {
+  this.renders += 1;
+};
 sources.moveSourcesFocus("right");
 assert.equal(sources.sourceFilter, "A");
 assert.deepEqual(sources.sourcesFocus, { zone: "filter", index: 1 });
@@ -76,7 +84,11 @@ panel.handleEpisodePanelKey(key(39));
 assert.equal(panel.episodePanelSeason, 2, "the last season is a boundary");
 panel.handleEpisodePanelKey(key(37));
 assert.equal(panel.episodePanelSeason, 1);
-assert.equal(panel.episodePanelIndex, 1, "returning to the playing season focuses the playing episode");
+assert.equal(
+  panel.episodePanelIndex,
+  1,
+  "returning to the playing season focuses the playing episode"
+);
 panel.handleEpisodePanelKey(key(37));
 assert.equal(panel.episodePanelFocusZone, "seasons", "Left on the first season moves to the tabs");
 panel.handleEpisodePanelKey(key(39));

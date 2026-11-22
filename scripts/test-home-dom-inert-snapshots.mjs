@@ -320,14 +320,22 @@ context.api.updateAttributes(
   sourceNode({ src: "blob:logo", alt: "old" }),
   sourceNode({ src: "https://cdn/original.png", alt: "new" })
 );
-assert.equal(heroLogo.getAttribute("src"), "blob:logo", "the rescaled hero logo survives a refresh");
+assert.equal(
+  heroLogo.getAttribute("src"),
+  "blob:logo",
+  "the rescaled hero logo survives a refresh"
+);
 assert.equal(heroLogo.getAttribute("alt"), "new");
 context.api.updateAttributes(
   heroLogo,
   sourceNode({ src: "blob:logo", alt: "new" }),
   sourceNode({ src: "https://cdn/next.png", alt: "new" })
 );
-assert.equal(heroLogo.getAttribute("src"), "https://cdn/next.png", "a different hero logo still updates");
+assert.equal(
+  heroLogo.getAttribute("src"),
+  "https://cdn/next.png",
+  "a different hero logo still updates"
+);
 
 // On Tizen the hero backdrop is painted by a bitmap <canvas>; the <img> is a
 // hidden anchor left without src. A refresh repeating that url must not put the
@@ -356,7 +364,11 @@ context.api.updateAttributes(
   sourceNode({ src: "https://cdn/old.jpg" }),
   sourceNode({ src: "https://cdn/backdrop.jpg" })
 );
-assert.equal(canvasBackdrop.getAttribute("src"), null, "the canvas keeps sole ownership of the decode");
+assert.equal(
+  canvasBackdrop.getAttribute("src"),
+  null,
+  "the canvas keeps sole ownership of the decode"
+);
 context.api.updateAttributes(
   canvasBackdrop,
   sourceNode({ src: "https://cdn/old.jpg" }),
@@ -385,7 +397,11 @@ context.api.updateAttributes(
   sourceNode({ src: "https://cdn/old.jpg" }),
   sourceNode({ src: "https://cdn/new.jpg" })
 );
-assert.equal(plainImage.getAttribute("src"), "https://cdn/new.jpg", "other images still follow the markup");
+assert.equal(
+  plainImage.getAttribute("src"),
+  "https://cdn/new.jpg",
+  "other images still follow the markup"
+);
 
 console.log(
   "Home snapshots and parsing share the inert document, including early live-node registration."

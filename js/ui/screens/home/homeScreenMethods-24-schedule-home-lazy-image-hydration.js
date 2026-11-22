@@ -327,10 +327,7 @@ export function createHomeScreenMethods24() {
       // Only posters and Continue Watching card backdrops are worth rescaling.
       // Logos carry transparency a JPEG would flatten, and they are small
       // enough not to matter.
-      if (
-        !shouldRescaleHomeArtwork() ||
-        (!image.classList.contains("content-poster") && !image.classList.contains("home-continue-bg"))
-      ) {
+      if (!shouldRescaleHomeArtwork() || (!image.classList.contains("content-poster") && !image.classList.contains("home-continue-bg"))) {
         image.src = src;
         return;
       }

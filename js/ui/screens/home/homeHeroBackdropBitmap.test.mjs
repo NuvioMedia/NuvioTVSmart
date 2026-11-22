@@ -5,7 +5,12 @@ import vm from "node:vm";
 
 // Drives the real hero backdrop swap against a minimal DOM: Tizen's bitmap
 // layer must keep the Android crossfade and fall back to the <img> layer.
-const source = (await readFile(new URL("./homeScreenHelpers-03-animate-hero-backdrop-swap.js", import.meta.url), "utf8"))
+const source = (
+  await readFile(
+    new URL("./homeScreenHelpers-03-animate-hero-backdrop-swap.js", import.meta.url),
+    "utf8"
+  )
+)
   .replace(/^import [\s\S]*?";$/gm, "")
   .replace(/^export /gm, "");
 
@@ -72,7 +77,9 @@ class FakeElement {
   querySelectorAll(selector) {
     const ghostsOnly = selector === `.${GHOST}`;
     return this.children.filter((node) =>
-      ghostsOnly ? node.classList.has(GHOST) : node.classList.has("home-hero-backdrop-canvas") && !node.classList.has(GHOST)
+      ghostsOnly
+        ? node.classList.has(GHOST)
+        : node.classList.has("home-hero-backdrop-canvas") && !node.classList.has(GHOST)
     );
   }
   querySelector(selector) {

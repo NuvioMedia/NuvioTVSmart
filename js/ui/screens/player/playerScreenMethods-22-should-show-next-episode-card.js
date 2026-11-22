@@ -212,10 +212,7 @@ export function createPlayerScreenMethods22() {
       this.renderNextEpisodeCard();
     },
     resetNextEpisodeCardCycle({ render = true } = {}) {
-      const hadState =
-        this.nextEpisodeCardTriggered ||
-        this.nextEpisodeBackExitArmed ||
-        this.controlFocusZone === "nextEpisode";
+      const hadState = this.nextEpisodeCardTriggered || this.nextEpisodeBackExitArmed || this.controlFocusZone === "nextEpisode";
       if (!hadState) {
         return false;
       }

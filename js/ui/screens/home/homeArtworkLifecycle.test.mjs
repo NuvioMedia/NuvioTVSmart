@@ -411,7 +411,8 @@ test("TV continue watching cards defer their backdrop to the artwork pass", asyn
   globalThis.__NUVIO_PLATFORM__ = "tizen";
   Platform.current = null;
   try {
-    const { renderContinueWatchingCard } = await import("./homeScreenHelpers-12-build-hero-indicators.js");
+    const { renderContinueWatchingCard } =
+      await import("./homeScreenHelpers-12-build-hero-indicators.js");
     const card = renderContinueWatchingCard(
       { contentId: "tt1", contentType: "series", title: "Show", poster: "https://art/poster.jpg" },
       0,

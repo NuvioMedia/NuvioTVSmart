@@ -63,11 +63,7 @@ import { WatchProgressSource } from "../../../data/local/traktSettingsStore.js";
 
 import { watchProgressCompletedThreshold } from "../../../domain/model/watchProgress.js";
 
-import {
-  getTvArtworkPixelRatio,
-  getTvHeroTransitionMode,
-  getTvRuntimePerformanceProfile
-} from "../../../platform/tvRuntimePerformance.js";
+import { getTvArtworkPixelRatio, getTvHeroTransitionMode, getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
 
 import { canUseModernTvArtworkBounding } from "../../../platform/tvPerformancePolicy.js";
 
@@ -326,9 +322,7 @@ function uint16le(bytes, offset) {
 }
 
 function uint32le(bytes, offset) {
-  return (
-    (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0
-  );
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
 }
 
 function webpLogoDimensions(bytes) {
