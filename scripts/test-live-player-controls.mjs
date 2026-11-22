@@ -83,6 +83,10 @@ const { createPlayerScreenMethods29 } =
   await import("../js/ui/screens/player/playerScreenMethods-29-sync-post-play-player-surface.js");
 const { createPlayerScreenMethods31 } =
   await import("../js/ui/screens/player/playerScreenMethods-31-seek-playback-seconds.js");
+const { createPlayerScreenMethods09 } =
+  await import("../js/ui/screens/player/playerScreenMethods-09-render-skip-intro-button.js");
+const { createPlayerScreenMethods64 } =
+  await import("../js/ui/screens/player/playerScreenMethods-64-move-sources-focus.js");
 const { createPlayerScreenMethods32 } =
   await import("../js/ui/screens/player/playerScreenMethods-32-update-ui-tick.js");
 const { createPlayerScreenMethods69 } =
@@ -613,4 +617,63 @@ test("live progress bar is really hidden and playlist 5xx retries match Android"
   const retry = PlayerController.buildHlsConfig({}).playlistLoadPolicy.default.errorRetry;
   assert.equal(retry.maxNumRetry, 12);
   assert.equal(retry.maxRetryDelayMs, 5000);
+});
+
+test("post-play window hides the skip button and keeps the playback surface", () => {
+  const classes = new Set();
+  const skipButton = {
+    innerHTML: "stale",
+    classList: {
+      toggle(name, enabled) {
+        enabled ? classes.add(name) : classes.delete(name);
+      },
+      contains: (name) => classes.has(name)
+    }
+  };
+  const skip = {
+    ...createPlayerScreenMethods09(),
+    uiRefs: { skipIntro: skipButton },
+    activeSkipInterval: { type: "movie-credits", startTime: 100, endTime: 110 },
+    skipIntervalDismissed: false,
+    skipIntroAutoHidden: false,
+    skipIntroCountdownProgress: 0,
+    skipIntroRenderedKey: "",
+    controlsVisible: false,
+    controlFocusZone: "buttons",
+    isSkipIntroPlaybackReady: () => true,
+    isPostPlayVisible: () => true,
+    getPlaybackDurationSeconds: () => 120,
+    isSeekBarAvailable: () => false
+  };
+  skip.renderSkipIntroButton();
+  assert.equal(skipButton.innerHTML, "", "Android clears the interval during post-play");
+  assert.equal(skipButton.classList.contains("hidden"), true);
+
+  const videoStyle = {};
+  const previousVideo = PlayerController.video;
+  const previousViewport = PlayerController.getPlayerViewportSize;
+  const previousDisplayRect = PlayerController.setAvPlayDisplayRect;
+  const rectCalls = [];
+  PlayerController.video = { videoWidth: 1920, videoHeight: 1080, style: videoStyle };
+  PlayerController.getPlayerViewportSize = () => ({ width: 1920, height: 1080 });
+  PlayerController.setAvPlayDisplayRect = (...args) => rectCalls.push(args);
+  try {
+    const aspect = {
+      ...createPlayerScreenMethods64(),
+      isPostPlayVisible: () => true,
+      renderBitmapSubtitleAtCurrentTime() {}
+    };
+    aspect.applyAspectMode();
+    assert.equal(rectCalls.length, 0, "the mini window owns the AVPlay rect");
+    assert.equal(videoStyle.width, undefined, "the mini window owns the video element");
+
+    aspect.isPostPlayVisible = () => false;
+    aspect.applyAspectMode();
+    assert.equal(rectCalls.length, 1, "returning to the player restores the aspect surface");
+    assert.equal(videoStyle.width, "1920px");
+  } finally {
+    PlayerController.video = previousVideo;
+    PlayerController.getPlayerViewportSize = previousViewport;
+    PlayerController.setAvPlayDisplayRect = previousDisplayRect;
+  }
 });

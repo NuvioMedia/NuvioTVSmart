@@ -46,6 +46,12 @@ export function createPlayerScreenMethods29() {
         this.postPlayHiddenTextTrackIndexes = [];
       }
       if (Environment.isTizen() && PlayerController.isUsingAvPlay?.()) {
+        if (PlayerController.avplaySeekInFlight) {
+          // Samsung rejects other AVPlay calls until seekTo() reports back.
+          // Clear the memo so the next overlay sync retries the mute.
+          this.postPlaySubtitleOutputHidden = undefined;
+          return;
+        }
         try {
           PlayerController.getAvPlay?.()?.setSilentSubtitle?.(next ? true : PlayerController.avplaySubtitleRenderMode === "html");
         } catch (_) {
@@ -137,6 +143,9 @@ export function createPlayerScreenMethods29() {
 
       const currentRect = this.postPlayPlayerSurfaceRect || fullRect;
       const nativeViewport = PlayerController.getAvPlayViewportSize?.() || { width: 1920, height: 1080 };
+      // Android resizes the player surface and keeps the selected aspect mode
+      // inside it; the mini window must not force a stretched picture.
+      const avPlayDisplayMethod = this.aspectDisplayMethod || "PLAYER_DISPLAY_MODE_LETTER_BOX";
       const applyRect = (rect) => {
         this.postPlayPlayerSurfaceRect = { ...rect };
         if (usingAvPlay) {
@@ -148,7 +157,8 @@ export function createPlayerScreenMethods29() {
               width: (rect.width * nativeViewport.width) / viewportWidth,
               height: (rect.height * nativeViewport.height) / viewportHeight
             },
-            "PLAYER_DISPLAY_MODE_FULL_SCREEN"
+            avPlayDisplayMethod,
+            { honorRect: true }
           );
         } else if (video?.style) {
           // Keep the native video plane rectangular: a border-radius on the

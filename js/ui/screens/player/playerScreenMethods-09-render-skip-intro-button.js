@@ -29,7 +29,9 @@ export function createPlayerScreenMethods09() {
       }
       const activeInterval = this.activeSkipInterval;
       const playbackReady = this.isSkipIntroPlaybackReady();
-      const shouldShow = Boolean(activeInterval) && playbackReady && !this.skipIntervalDismissed;
+      // Android clears the interval while the post-play window owns the
+      // player, so the skip button never competes with the recommendation UI.
+      const shouldShow = Boolean(activeInterval) && playbackReady && !this.skipIntervalDismissed && !this.isPostPlayVisible?.();
       const isVisible = shouldShow && (!this.skipIntroAutoHidden || this.controlsVisible);
       const activeKey = activeInterval ? `${activeInterval.type}:${activeInterval.startTime}:${activeInterval.endTime}` : "none";
       const renderKey = `${activeKey}|ready:${playbackReady ? 1 : 0}|controls:${this.controlsVisible ? 1 : 0}|hidden:${this.skipIntroAutoHidden ? 1 : 0}|dismissed:${this.skipIntervalDismissed ? 1 : 0}`;
