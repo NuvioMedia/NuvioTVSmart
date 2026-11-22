@@ -31,6 +31,21 @@ const row = (index, tag = "") => ({
   }
 });
 
+test("the media-server resume row keeps its server name and no type suffix", () => {
+  const resume = {
+    ...row(0),
+    addonId: "media-server-conn",
+    catalogId: "resume",
+    catalogName: "Home Emby · Continue watching"
+  };
+  const { markup } = renderLegacyCatalogRowsMarkup([resume], {
+    layoutMode: "classic",
+    showCatalogTypeSuffix: true
+  });
+  assert.match(markup, /Home Emby · Continue watching/);
+  assert.doesNotMatch(markup, /Continue watching - Movie/);
+});
+
 for (const layoutMode of ["grid", "classic"]) {
   test(`${layoutMode} rows already mounted are not sent to the DOM again`, () => {
     const first = renderLegacyCatalogRowsMarkup([row(0), row(1)], { layoutMode });

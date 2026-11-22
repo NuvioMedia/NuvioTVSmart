@@ -62,7 +62,7 @@ const rowOf = (addon, catalog) => ({
 test("the resume row is named after the server", () => {
   const { catalogs } = serverCatalogs();
   const resume = catalogs.find((catalog) => catalog.id === "resume");
-  assert.equal(resume.name, `${I18n.t("servers_resume_row")} - Home Emby`);
+  assert.equal(resume.name, `Home Emby · ${I18n.t("servers_resume_row")}`);
 });
 
 test("the resume row gets no type suffix on Home", () => {
