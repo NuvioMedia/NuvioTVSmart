@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import {
   hasVisibleSubtitleBackground,
@@ -70,6 +71,28 @@ test("the settings preview scales the outline for Android's half-unit stroke per
   assert.match(preview(2), /-0\.0417em 0 0 rgba\(0, 0, 0, 1\)/);
   assert.match(preview(5), /-0\.1042em 0 0 rgba\(0, 0, 0, 1\)/);
   assert.doesNotMatch(preview(1), /0\.1042em/);
+});
+
+test("the appearance dialog columns state their width for old Chromium", async () => {
+  const css = await readFile(new URL("../css/components-24.css", import.meta.url), "utf8");
+  const list = css.match(
+    /\.settings-subtitle-appearance-dialog \.settings-dialog-list \{([^}]*)\}/
+  )?.[1];
+  const preview = css.match(/^\.settings-subtitle-preview \{([^}]*)\}/m)?.[1];
+  assert.ok(list && preview, "the appearance dialog columns must exist");
+  // Chromium 68 (webOS 5) keeps a zero-basis item on the full-width header line
+  // instead of wrapping it, collapsing the controls next to the preview.
+  for (const [name, block] of [
+    ["controls", list],
+    ["preview", preview]
+  ]) {
+    assert.doesNotMatch(
+      block,
+      /flex:\s*[\d.]+ +\d+ +0(?:[;%\s])/,
+      `${name} needs a width, not a zero basis`
+    );
+    assert.match(block, /width:\s*calc\(/, `${name} must state its width`);
+  }
 });
 
 test("roundness, fonts and background visibility", () => {
