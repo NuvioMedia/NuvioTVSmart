@@ -240,10 +240,20 @@ export function createPlayerScreenMethods64() {
       return avplayWidth > 0 && avplayHeight > 0 ? avplayWidth / avplayHeight : null;
     },
     applyAspectMode({ showToast = false } = {}) {
+      // The post-play window owns the playback surface, including its AVPlay
+      // display rect, until it returns to the player. Lifecycle refreshes
+      // (canplay after a seek, track changes) must not restore full screen
+      // behind the overlay.
+      if (this.isPostPlayVisible?.()) {
+        return;
+      }
       const mode = this.getAspectModeDefinition();
       const video = PlayerController.video;
       if (video) {
         const rect = this.calculateAspectRect(mode.id, video);
+        // The post-play mini window keeps the same aspect handling as the
+        // full-screen player, like Android's player surface modifier.
+        this.aspectDisplayMethod = rect.displayMethod;
         const usingTizenAvPlay = Boolean(Environment.isTizen() && PlayerController.isUsingAvPlay?.());
         const usingTizenHtmlVideo = Environment.isTizen() && !usingTizenAvPlay;
         // Keep the video element on the player viewport wherever native text

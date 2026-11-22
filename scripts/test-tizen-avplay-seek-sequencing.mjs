@@ -258,6 +258,81 @@ function startPlayback({ seekDuringPrepare = false, seekOnLoadedMetadata = false
   const order = avplay.calls.map(([n]) => n).filter((n) => n === "seekTo" || n === "play");
   assert.deepEqual(order, ["seekTo", "play"]);
 }
+// 11. Display-rect updates wait for seekTo() to settle, then apply the latest
+// geometry (the post-play mini window is resized while credits are seeking).
+{
+  reset({ state: "PLAYING", currentMs: 10_000 });
+  const { Platform } = await import("../js/platform/index.js");
+  const previousPlatform = Platform.current;
+  Platform.current = { name: "tizen" };
+  const displayCalls = [];
+  avplay.setDisplayRect = (x, y, width, height) => displayCalls.push(["rect", x, y, width, height]);
+  avplay.setDisplayMethod = (method) => displayCalls.push(["method", method]);
+  PlayerController.avplayDisplayRect = { x: 0, y: 0, width: 1920, height: 1080 };
+  PlayerController.avplayDisplayMethod = "PLAYER_DISPLAY_MODE_LETTER_BOX";
+  const previousReapply = PlayerController.reapplyTizenAvPlayDisplayRect;
+  let reapplied = 0;
+  PlayerController.reapplyTizenAvPlayDisplayRect = function () {
+    reapplied += 1;
+    this.setAvPlayDisplayRect();
+  };
+  try {
+    PlayerController.seekAvPlayTo(80_000);
+    PlayerController.setAvPlayDisplayRect(
+      { x: 1280, y: 40, width: 600, height: 337 },
+      "PLAYER_DISPLAY_MODE_FULL_SCREEN"
+    );
+    assert.equal(displayCalls.length, 0, "no AVPlay display call while seekTo is pending");
+    assert.equal(PlayerController.avplayDisplayRectDeferred, true);
+    assert.deepEqual(PlayerController.avplayDisplayRect, {
+      x: 1280,
+      y: 40,
+      width: 600,
+      height: 337
+    });
+    avplay.completeSeek();
+    assert.equal(PlayerController.avplayDisplayRectDeferred, false);
+    assert.equal(reapplied, 1, "the held display rect is applied when the seek settles");
+    assert.deepEqual(displayCalls[0], ["rect", 1280, 40, 600, 337]);
+    assert.deepEqual(displayCalls[1], ["method", "PLAYER_DISPLAY_MODE_FULL_SCREEN"]);
+  } finally {
+    PlayerController.reapplyTizenAvPlayDisplayRect = previousReapply;
+    Platform.current = previousPlatform;
+  }
+}
+
+// 12. The post-play mini rect keeps its own area with letterboxing; the
+// existing full-viewport aspect calls still ignore an already letterboxed rect.
+{
+  reset({ state: "PLAYING", currentMs: 10_000 });
+  const { Platform } = await import("../js/platform/index.js");
+  const previousPlatform = Platform.current;
+  Platform.current = { name: "tizen" };
+  const displayCalls = [];
+  avplay.setDisplayRect = (x, y, width, height) => displayCalls.push(["rect", x, y, width, height]);
+  avplay.setDisplayMethod = (method) => displayCalls.push(["method", method]);
+  PlayerController.avplayDisplayRect = { x: 0, y: 0, width: 1920, height: 1080 };
+  PlayerController.avplayDisplayMethod = "PLAYER_DISPLAY_MODE_LETTER_BOX";
+  try {
+    PlayerController.setAvPlayDisplayRect(
+      { x: 1274, y: 32, width: 614, height: 345 },
+      "PLAYER_DISPLAY_MODE_LETTER_BOX",
+      { honorRect: true }
+    );
+    assert.deepEqual(displayCalls[0], ["rect", 1274, 32, 614, 345]);
+    assert.deepEqual(displayCalls[1], ["method", "PLAYER_DISPLAY_MODE_LETTER_BOX"]);
+
+    displayCalls.length = 0;
+    PlayerController.setAvPlayDisplayRect(
+      { x: 1274, y: 32, width: 614, height: 345 },
+      "PLAYER_DISPLAY_MODE_LETTER_BOX"
+    );
+    assert.deepEqual(displayCalls[0], ["rect", 0, 0, 1920, 1080]);
+  } finally {
+    Platform.current = previousPlatform;
+  }
+}
+
 startPlayback({ seekDuringPrepare: true });
 startPlayback({ seekOnLoadedMetadata: true });
 

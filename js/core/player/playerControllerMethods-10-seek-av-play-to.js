@@ -78,6 +78,12 @@ export function createPlayerControllerMethods10() {
         this.clearAvPlaySeekTimeout();
 
         this.avplaySeekInFlight = false;
+        // Apply the display rect that was held back while seekTo() was
+        // pending (for example the post-play mini window).
+        if (this.avplayDisplayRectDeferred) {
+          this.avplayDisplayRectDeferred = false;
+          this.reapplyTizenAvPlayDisplayRect();
+        }
         // Record every completed native seek, including failed ones. Failed
         // seeks do not emit "seeked", so the player UI uses this marker to stop
         // waiting for a seek that Samsung has already finished.
