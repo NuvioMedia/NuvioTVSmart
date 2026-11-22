@@ -6,6 +6,7 @@ import {
   getTorrentProfilePeerLimits
 } from "../../data/local/torrentSettingsStore.js";
 
+import { DEFAULT_TORRENT_TRACKERS } from "./defaultTorrentTrackers.js";
 import { createTizenStreamingServerResolverMethods01 } from "./tizenStreamingServerResolverMethods-01-can-resolve-stream.js";
 
 export {
@@ -224,7 +225,7 @@ function withTimeout(promise, timeoutMs, message) {
 
 function buildPeerSearchSources(infoHash, trackerSources = []) {
   const sources = [`dht:${infoHash}`];
-  trackerSources.forEach((source) => {
+  DEFAULT_TORRENT_TRACKERS.concat(trackerSources).forEach((source) => {
     const normalized = String(source || "").trim();
     if (!normalized) {
       return;
