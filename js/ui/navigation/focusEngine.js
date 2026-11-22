@@ -63,10 +63,21 @@ export const FocusEngine = {
   init() {
     this.boundHandleKey = this.handleKey.bind(this);
     this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+    this.boundResetActiveKeys = () => {
+      this.activeBackKeyIdentities.clear();
+      this.activeKeyDownStartedAt.clear();
+    };
+    this.boundHandleVisibilityReset = () => {
+      if (document.hidden) {
+        this.boundResetActiveKeys();
+      }
+    };
     this.boundHandlePointerMove = this.handlePointerMove.bind(this);
     this.boundHandlePointerClick = this.handlePointerClick.bind(this);
     document.addEventListener("keydown", this.boundHandleKey, true);
     document.addEventListener("keyup", this.boundHandleKeyUp, true);
+    window.addEventListener("blur", this.boundResetActiveKeys);
+    document.addEventListener("visibilitychange", this.boundHandleVisibilityReset);
     if (Platform.isWebOS()) {
       document.addEventListener("mousemove", this.boundHandlePointerMove, true);
       document.addEventListener("pointermove", this.boundHandlePointerMove, true);
