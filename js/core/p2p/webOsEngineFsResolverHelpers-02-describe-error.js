@@ -4,6 +4,8 @@ import { isWebOsCompanionServiceAvailable, requestWebOsCompanionService } from "
 
 import { TorrentSettingsStore, getTorrentProfilePeerLimits } from "../../data/local/torrentSettingsStore.js";
 
+import { DEFAULT_TORRENT_TRACKERS } from "./defaultTorrentTrackers.js";
+
 import { normalizeBaseUrl, withTimeout, ENGINEFS_CREATE_TIMEOUT_MS } from "./webOsEngineFsResolverHelpers-01-enginefs-create-timeout-ms.js";
 
 export function describeError(error) {
@@ -47,6 +49,7 @@ export function buildNuvioPeerSearchSources(infoHash, trackerSources = []) {
   if (infoHash) {
     addSource(`dht:${infoHash}`);
   }
+  DEFAULT_TORRENT_TRACKERS.forEach(addSource);
   trackerSources.forEach(addSource);
   return sources;
 }
@@ -64,7 +67,7 @@ export function buildDirectCreateBody({ infoHash, trackerSources = [], hasExplic
     };
   } else if (peerLimits.min !== 40 || peerLimits.max !== 200) {
     body.peerSearch = {
-      sources: [`dht:${infoHash}`],
+      sources: [`dht:${infoHash}`, ...DEFAULT_TORRENT_TRACKERS.map((tracker) => `tracker:${tracker}`)],
       ...peerLimits
     };
   }
