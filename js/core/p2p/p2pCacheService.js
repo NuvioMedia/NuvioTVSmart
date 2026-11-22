@@ -1,4 +1,5 @@
 import { Platform } from "../../platform/index.js";
+import { TizenCapabilities } from "../../platform/tizen/tizenCapabilities.js";
 import { TizenEngineFsService } from "../../platform/tizen/tizenEngineFsService.js";
 import { requestWebOsCompanionService } from "../../platform/webos/webosCompanionService.js";
 
@@ -91,11 +92,11 @@ export function formatByteSize(value) {
 
 export const P2pCacheService = {
   /**
-   * Reads the live EngineFS cache state. The webOS runtime ships with caching
-   * disabled, so the UI keeps its cache rows disabled on that platform.
+   * Reads the live EngineFS cache state. Tizen < 5.0 (no EngineFS P2P) and the
+   * webOS runtime ship without cache controls, so keep them disabled there.
    */
   supportsCacheControls() {
-    return Platform.isTizen();
+    return TizenCapabilities.canUseP2p();
   },
 
   async getState() {
