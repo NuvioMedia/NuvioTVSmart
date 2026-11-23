@@ -2,7 +2,7 @@
   "name": "nuvio-tv-smart",
   "private": true,
   "type": "module",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "scripts": {
     "build": "node ./scripts/build.mjs",
     "test": "node --test scripts/test-dash-mime-hints.mjs scripts/test-profile-scoped-store-cache.mjs scripts/test-plugin-service-lifecycle.mjs js/core/debrid/torboxCacheAliases.test.mjs js/data/remote/api/debridApiTimeout.test.mjs js/core/network/httpClientCooldown.test.mjs js/core/p2p/p2pCacheServiceCapabilities.test.mjs js/data/local/storeReadMemoization.test.mjs js/core/profile/mediaServerSyncScope.test.mjs js/ui/navigation/focusEngineBlurReset.test.mjs && node --test scripts/test-media-server-sync.mjs scripts/test-media-server-provider-ids.mjs scripts/test-media-server-resume-series.mjs scripts/test-media-server-resume-row-title.mjs scripts/test-catalog-order-media-server-rows.mjs && npm run test:plugins && npm run test:perf",
