@@ -336,4 +336,64 @@ function startPlayback({ seekDuringPrepare = false, seekOnLoadedMetadata = false
 startPlayback({ seekDuringPrepare: true });
 startPlayback({ seekOnLoadedMetadata: true });
 
+// 13. Some firmware reports prepareAsync() success while AVPlay is still IDLE,
+// so the resume seek deferred inside the prepared callback has no later
+// callback to apply it. It must land when buffering completes (READY), before
+// the startup gate plays the stream.
+{
+  reset({ state: "NONE", currentMs: 0 });
+  PlayerController.isPlaying = false;
+  let prepared = null;
+  let listener = null;
+  Object.assign(avplay, {
+    open() {
+      this.calls.push(["open"]);
+      this.state = "IDLE";
+    },
+    close() {},
+    stop() {},
+    setListener(value) {
+      listener = value;
+    },
+    prepareAsync(ok) {
+      prepared = ok;
+    }
+  });
+  Object.assign(PlayerController, {
+    canUseAvPlay: () => true,
+    isPlaybackRequestActive: () => true,
+    getPlatformAvplayEngineName: () => "tizen-avplay",
+    setAvPlayDisplayRect() {},
+    configureAvPlayForSource() {},
+    configureAvPlayBuffering() {},
+    startupAudioGateActive: true,
+    emitVideoEvent: (name) => {
+      events.push(name);
+      if (name === "loadedmetadata") {
+        PlayerController.seekAvPlayTo(61_015); // UI resume restore
+      }
+    }
+  });
+  assert.equal(
+    PlayerController.playWithAvPlay("https://example.invalid/movie.mkv", {}, null, 1),
+    true
+  );
+  prepared();
+  assert.equal(
+    calls("seekTo").length,
+    0,
+    "the firmware still reports IDLE in the prepared callback"
+  );
+  assert.equal(PlayerController.avplayDeferredSeekMs, 61_015, "the resume seek stays queued");
+  assert.equal(calls("play").length, 0, "the startup gate keeps playback closed");
+
+  avplay.state = "READY";
+  listener.onbufferingcomplete();
+  assert.equal(calls("seekTo").length, 1, "the queued resume seek is applied once AVPlay is READY");
+  assert.equal(PlayerController.avplayDeferredSeekMs, 0);
+  avplay.completeSeek();
+  assert.equal(avplay.currentMs, 61_015);
+  assert.ok(events.includes("seeked"));
+}
+
 console.log("tizen avplay seek sequencing tests passed");

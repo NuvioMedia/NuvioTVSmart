@@ -108,6 +108,31 @@ export function createPlayerScreenMethods31() {
         return;
       }
 
+      // Tizen AVPlay applies the start position through the seekTo() callback,
+      // while getCurrentTime() only reports the position once playback runs. A
+      // firmware that keeps the clock at 0 until play, or a source that rejects
+      // the seek (non-seekable file, redirect endpoint), would otherwise leave
+      // this restore pending forever and the startup gate would never start
+      // playback. Android also starts from the beginning when the item cannot
+      // be seeked, so finish the restore when the native seek reports back.
+      const avplaySeekActive = this.isTizenAvPlaySeekActive();
+      if (
+        avplaySeekActive &&
+        Number(restore.attempts || 0) > 0 &&
+        !PlayerController.avplaySeekInFlight &&
+        Number(PlayerController.avplaySeekSettledAt || 0) >= Number(restore.lastAttemptAt || 0)
+      ) {
+        if (PlayerController.avplayLastSeekOutcome?.success === false && !restore.seekFailureLogged) {
+          restore.seekFailureLogged = true;
+          console.warn("Tizen AVPlay could not apply the resume position; starting from the current position", {
+            targetSeconds: Math.round(targetSeconds * 100) / 100,
+            outcome: { ...(PlayerController.avplayLastSeekOutcome || {}) }
+          });
+        }
+        this.finalizePendingPlaybackRestore(restore);
+        return;
+      }
+
       const now = Date.now();
       if (!force && now - Number(restore.lastAttemptAt || 0) < 700) {
         return;
@@ -118,7 +143,13 @@ export function createPlayerScreenMethods31() {
       restore.attempts = Number(restore.attempts || 0) + 1;
 
       const didSeek = this.seekPlaybackSeconds(targetSeconds);
-      if (!didSeek && restore.attempts >= 8) {
+      if (!didSeek) {
+        if (restore.attempts >= 8) {
+          this.finalizePendingPlaybackRestore(restore);
+        }
+      } else if (avplaySeekActive && restore.attempts >= 8 && !PlayerController.avplaySeekInFlight) {
+        // Do not keep the restore queued forever when the native seek never
+        // reports back; playback must still start.
         this.finalizePendingPlaybackRestore(restore);
       }
     },

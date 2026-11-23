@@ -87,6 +87,19 @@ export function createPlayerControllerMethods09() {
             if (this.avplaySeekInFlight) {
               return;
             }
+            // prepareAsync() reports success before some firmware leaves IDLE,
+            // so a start-position seek requested from the prepared events is
+            // deferred a second time with no later callback to apply it. The
+            // player is READY here, which is enough to land the resume seek
+            // before the first play().
+            const deferredSeekMs = Number(this.avplayDeferredSeekMs || 0);
+            if (deferredSeekMs > 0) {
+              this.avplayDeferredSeekMs = 0;
+              if (this.seekAvPlayTo(deferredSeekMs)) {
+                return;
+              }
+              this.avplayDeferredSeekMs = deferredSeekMs;
+            }
             this.avplayReady = true;
             this.reapplyAvPlayPlaybackRate();
             this.retryPendingAvPlayStartupAudioTrackSelection();

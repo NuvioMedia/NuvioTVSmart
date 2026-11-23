@@ -202,7 +202,14 @@ export function createPlayerScreenMethods30() {
         return Boolean(this.startupAudioPreferenceApplied) && Number.isFinite(readyState) && readyState >= 2;
       }
       if (this.pendingPlaybackRestore) {
-        return false;
+        // Tizen AVPlay queues the startup play() after the resume seek callback
+        // (startPreparedAvPlayPlayback), so the restore must not hold the gate:
+        // a firmware whose clock only moves during playback, or a source that
+        // cannot seek, would keep the gate closed forever and playback would
+        // never start. Every other engine keeps waiting for the seek.
+        if (!this.isTizenAvPlaySeekActive()) {
+          return false;
+        }
       }
       const audioPreferenceSettled =
         !this.pendingWebOsAudioSelection &&
