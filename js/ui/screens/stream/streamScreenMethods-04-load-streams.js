@@ -21,7 +21,8 @@ export function createStreamScreenMethods04() {
     ensureAddonLogoImageProxyReady,
     preloadMatchedStreamBadgeImages,
     sortStreamsByAddonOrder,
-    TizenStreamingServerResolver
+    TizenStreamingServerResolver,
+    DirectDebridResolver
   } = internals;
 
   return {
@@ -174,8 +175,17 @@ export function createStreamScreenMethods04() {
           console.warn("Stream badge/logo warmup failed", error);
         });
         this.streams = mergeStreamItems(this.streams, chunkStreams);
-        if (this.p2pWarmUpToken !== token && TizenStreamingServerResolver.warmUpForStreams(chunkStreams)) {
-          this.p2pWarmUpToken = token;
+        if (this.p2pWarmUpToken !== token) {
+          // The player resolves torrents through debrid first; only those debrid
+          // cannot resolve use P2P, so only those start the service early.
+          const resolveContext = {
+            season: this.params?.season == null ? null : Number(this.params.season),
+            episode: this.params?.episode == null ? null : Number(this.params.episode)
+          };
+          const p2pOnlyStreams = chunkStreams.filter((stream) => !DirectDebridResolver.canResolveStream(stream, resolveContext));
+          if (TizenStreamingServerResolver.warmUpForStreams(p2pOnlyStreams)) {
+            this.p2pWarmUpToken = token;
+          }
         }
         markSuccessfulSources(
           groups.map((group) => ({
