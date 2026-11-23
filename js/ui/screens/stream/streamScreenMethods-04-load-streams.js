@@ -20,7 +20,8 @@ export function createStreamScreenMethods04() {
     mergeStreamItems,
     ensureAddonLogoImageProxyReady,
     preloadMatchedStreamBadgeImages,
-    sortStreamsByAddonOrder
+    sortStreamsByAddonOrder,
+    TizenStreamingServerResolver
   } = internals;
 
   return {
@@ -173,6 +174,9 @@ export function createStreamScreenMethods04() {
           console.warn("Stream badge/logo warmup failed", error);
         });
         this.streams = mergeStreamItems(this.streams, chunkStreams);
+        if (this.p2pWarmUpToken !== token && TizenStreamingServerResolver.warmUpForStreams(chunkStreams)) {
+          this.p2pWarmUpToken = token;
+        }
         markSuccessfulSources(
           groups.map((group) => ({
             name: group?.addonName || "",

@@ -12,6 +12,7 @@ import { createTizenStreamingServerResolverMethods01 } from "./tizenStreamingSer
 export {
   Platform,
   TizenEngineFsService,
+  TorrentSettingsStore,
   TizenCapabilities,
   TIZEN_STREAMING_KIND,
   CREATE_TIMEOUT_MS,

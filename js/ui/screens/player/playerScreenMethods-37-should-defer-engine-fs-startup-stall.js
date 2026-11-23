@@ -2,6 +2,9 @@
 import * as internals from "./playerScreenContext.js";
 
 const TIZEN_AVPLAY_DIRECT_STARTUP_STALL_TIMEOUT_MS = 20000;
+// Less than this between two stall checks (12 s apart) while the swarm is paused
+// is trickle traffic, not a reader consuming data.
+const STALLED_READER_MIN_DOWNLOAD_BYTES = 1024 * 1024;
 
 export function createPlayerScreenMethods37() {
   const {
@@ -28,6 +31,15 @@ export function createPlayerScreenMethods37() {
       const activelyDownloading = snapshot.downloadSpeed > 0 || progressIncreased || downloadedIncreased;
       const swarmIsAlive = snapshot.peers > 0 || snapshot.unique > 0 || snapshot.connectionTries > 0 || snapshot.peerSearchRunning;
 
+      // The engine pauses its swarm once it is ahead of every reader. Before the
+      // first frame, a pause with no new data since the last check means the
+      // player stopped reading while preparing (#1609): more waiting cannot help.
+      const swarmPauseSeen = snapshot.swarmPaused || Boolean(previous?.swarmPaused);
+      const downloadedSincePrevious =
+        previous && snapshot.downloaded >= 0 && previous.downloaded >= 0 ? snapshot.downloaded - previous.downloaded : null;
+      if (swarmPauseSeen && downloadedSincePrevious !== null && downloadedSincePrevious < STALLED_READER_MIN_DOWNLOAD_BYTES) {
+        return false;
+      }
       if (activelyDownloading) {
         return true;
       }

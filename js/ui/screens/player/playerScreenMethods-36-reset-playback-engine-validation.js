@@ -492,6 +492,7 @@ export function createPlayerScreenMethods36() {
         connectionTries,
         seeds,
         peerSearchRunning: Boolean(stats.peerSearchRunning ?? stats.peerSearch),
+        swarmPaused: stats.swarmPaused === true,
         streamName: String(stats.streamName || "")
       };
     }

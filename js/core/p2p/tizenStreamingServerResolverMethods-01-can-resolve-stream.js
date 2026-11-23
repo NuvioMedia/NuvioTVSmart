@@ -5,6 +5,7 @@ export function createTizenStreamingServerResolverMethods01() {
   const {
     Platform,
     TizenEngineFsService,
+    TorrentSettingsStore,
     TizenCapabilities,
     TIZEN_STREAMING_KIND,
     removeRequestsByInfoHash,
@@ -28,6 +29,15 @@ export function createTizenStreamingServerResolverMethods01() {
   return {
     canResolveStream(stream = {}) {
       return Platform.isTizen() && TizenCapabilities.canUseP2p() && Boolean(getInfoHash(stream));
+    },
+    // Starting EngineFS takes several seconds on Tizen 6 (#1609); begin while the
+    // source list is open so playback does not wait for it.
+    warmUpForStreams(streams = []) {
+      if (!TorrentSettingsStore.get().p2pEnabled || !streams.some((stream) => this.canResolveStream(stream))) {
+        return false;
+      }
+      void TizenEngineFsService.ensureStarted({ purpose: "p2p" }).catch(() => {});
+      return true;
     },
     isTorrentStream(stream = {}) {
       return Boolean(getInfoHash(stream));
