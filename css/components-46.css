@@ -358,14 +358,6 @@
   margin-top: 12px;
 }
 
-.no-flex-gap .cast-credit-track > * {
-  margin-right: 16px;
-}
-
-.no-flex-gap .cast-credit-track > *:last-child {
-  margin-right: 0;
-}
-
 .no-aspect-ratio .home-content-card .content-poster {
   height: 450px;
 }

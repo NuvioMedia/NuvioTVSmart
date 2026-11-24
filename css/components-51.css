@@ -269,150 +269,126 @@
   }
 }
 
+/* Android CastDetailScreen (x2 TV canvas: every value is the Android dp/sp value doubled). */
 .cast-detail-shell {
+  position: relative;
   width: 100vw;
   height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  background:
-    radial-gradient(
-      140% 90% at 78% 0%,
-      rgba(var(--secondary-color-rgb-legacy), 0.22),
-      transparent 40%
-    ),
-    var(--bg-color);
-  color: var(--text-color);
-  padding: 26px var(--tv-safe-gutter-wide, 96px) 38px;
-  box-sizing: border-box;
-  position: relative;
-}
-
-/* The legacy Tizen build cannot resolve clamp() through this custom property. */
-
-html.tizen-tv.no-css-math .cast-detail-shell {
-  padding: 26px 69.12px 38px;
-}
-
-/* Tizen 5 drops padding declarations that contain min()/clamp(). Keep the
-   Android-TV safe-area spacing on the legacy engine without changing modern
-   Tizen or browser layouts. */
-
-html.tizen-tv.no-css-math .addons-route-shell,
-html.tizen-tv.no-css-math .trakt-route-shell {
-  padding: 56px 96px;
-}
-
-html.tizen-tv.no-css-math .plugins-route-shell {
-  padding: 48px 96px;
-}
-
-.cast-detail-shell::-webkit-scrollbar {
-  display: none;
-}
-
-.cast-detail-loading,
-.cast-detail-error {
-  margin-top: 36vh;
-  text-align: center;
-  font-size: 28px;
-  color: var(--text-secondary);
-}
-
-.cast-detail-loading {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.cast-detail-loading .nuvio-loading-indicator {
-  width: 96px;
-  height: 96px;
+  overflow: hidden;
+  box-sizing: border-box;
+  color: var(--text-color);
+  /* Left accent gradient over the plain background. */
+  background:
+    linear-gradient(
+      90deg,
+      rgba(var(--secondary-color-rgb-legacy), 0.26) 0%,
+      rgba(var(--secondary-color-rgb-legacy), 0.18) 12%,
+      rgba(var(--secondary-color-rgb-legacy), 0.1) 28%,
+      rgba(var(--secondary-color-rgb-legacy), 0.04) 45%,
+      rgba(var(--secondary-color-rgb-legacy), 0) 60%
+    ),
+    var(--bg-color);
 }
 
 .cast-detail-hero {
-  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 64px 96px 16px; /* top xxl, sides xxxl, bottom sm */
 }
 
-.cast-detail-back {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  display: inline-flex;
+.cast-detail-hero.is-expanded {
+  flex: 1 1 auto;
+}
+
+.cast-detail-portrait {
+  position: relative;
+  flex: 0 0 320px;
+  width: 320px;
+  height: 480px;
+  margin-right: 48px; /* spacing.xl */
+  overflow: hidden;
+  border-radius: 32px; /* radii.xl */
+  border: 2px solid var(--border-color);
+  background: #2d2d2d; /* SurfaceVariant */
+  box-sizing: border-box;
+  display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.22);
-  background: rgba(var(--focus-color-rgb-legacy), 0.08);
-  color: var(--text-color);
-  margin-bottom: 10px;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
-.cast-detail-back .material-icons {
-  font-size: 28px;
-  line-height: 1;
-}
-
-.cast-detail-back.focused {
-  transform: none;
+.cast-detail-portrait.focused {
   border-color: var(--focus-color);
-  box-shadow: 0 0 0 3px rgba(var(--focus-color-rgb-legacy), 0.2);
+  box-shadow: 0 0 0 2px var(--focus-color);
+  transform: scale(1.1);
 }
 
-.cast-detail-hero-content {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 24px;
-  align-items: flex-start;
+.cast-detail-portrait-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.cast-detail-avatar {
-  width: 220px;
-  height: 320px;
-  border-radius: 18px;
-  background: var(--card-bg) center center / cover no-repeat;
-  border: 1px solid rgba(var(--focus-color-rgb-legacy), 0.14);
+.cast-detail-portrait-initial {
+  color: var(--text-tertiary);
+  font-size: 96px;
+  line-height: 112px;
+  font-weight: 700;
 }
 
-.cast-detail-meta {
+.cast-detail-info {
+  flex: 1 1 auto;
   min-width: 0;
+  padding-top: 8px;
+}
+
+.cast-detail-hero.is-expanded .cast-detail-info {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
 }
 
 .cast-detail-name {
-  margin: 4px 0 12px;
-  font-size: 48px;
-  line-height: 1.05;
+  margin: 0 0 36px; /* spacing.sm + 10dp */
+  color: var(--text-color);
+  font-size: 56px;
+  line-height: 72px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cast-detail-facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  color: var(--text-secondary);
-  font-size: 18px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
-.cast-detail-facts span {
-  display: inline-flex;
-  height: 34px;
-  padding: 0 12px;
-  align-items: center;
-  border-radius: 999px;
-  background: rgba(var(--focus-color-rgb-legacy), 0.08);
+.cast-detail-fact {
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 28px;
+  line-height: 40px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cast-detail-bio {
   margin: 0;
-  font-size: 20px;
-  line-height: 1.45;
-  color: var(--text-color);
-  max-width: 1200px;
+  color: var(--text-secondary);
+  font-size: 28px;
+  line-height: 40px;
+  letter-spacing: 0.5px;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 5;
@@ -420,62 +396,289 @@ html.tizen-tv.no-css-math .plugins-route-shell {
   overflow: hidden;
 }
 
-.cast-detail-section-title {
-  margin: 0 0 14px;
-  font-size: 34px;
-}
-
-.cast-credit-section + .cast-credit-section {
-  margin-top: 34px;
-}
-
-.cast-credit-track {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  overflow-y: visible;
+.cast-detail-hero.is-expanded .cast-detail-bio-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   scrollbar-width: none;
-  padding-bottom: 8px;
+  -ms-overflow-style: none;
 }
 
-.cast-credit-track::-webkit-scrollbar {
+.cast-detail-hero.is-expanded .cast-detail-bio-wrap::-webkit-scrollbar {
   display: none;
 }
 
-.cast-credit-card {
-  flex: 0 0 248px;
-  width: 248px;
-  min-width: 248px;
+.cast-detail-hero.is-expanded .cast-detail-bio {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
   overflow: visible;
-  border: 0;
-  border-radius: 12px;
-  padding: 0;
-  background: transparent;
+  padding-right: 24px;
+}
+
+.cast-detail-bio-hint {
+  margin-top: 16px;
+  color: var(--text-tertiary);
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: 0.8px;
+}
+
+.cast-filmography-header {
+  display: flex;
+  align-items: center;
+  padding: 24px 96px 16px; /* top md, sides xxxl, bottom sm */
+}
+
+.cast-filmography-title {
+  margin: 0;
   color: var(--text-color);
+  font-size: 40px;
+  line-height: 56px;
+  font-weight: 600;
+}
+
+.cast-filmography-count {
+  margin-left: 24px;
+  padding: 4px 16px;
+  border-radius: 8px;
+  background: #2d2d2d; /* SurfaceVariant */
+  color: var(--text-tertiary);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* TV Material TabRow + pill indicator: the pill sits under the selected tab. With focus in the
+   row it is onSurface and the focused tab text surfaceVariant; otherwise it is secondaryContainer
+   at 40% with onPrimaryContainer text, and the other tabs fade to 40%. */
+.cast-filmography-tabs {
+  display: flex;
+  margin-left: 32px;
+}
+
+.cast-filmography-tab + .cast-filmography-tab {
+  margin-left: 16px;
+}
+
+.cast-filmography-tab {
+  padding: 8px 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font: inherit;
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.cast-filmography-tabs.has-focus .cast-filmography-tab {
+  color: #ffffff;
+}
+
+.cast-filmography-tab.is-selected {
+  background: rgba(74, 68, 88, 0.4);
+  color: #eaddff;
+}
+
+.cast-filmography-tabs.has-focus .cast-filmography-tab.is-selected {
+  background: #ffffff;
+  color: #2d2d2d;
+}
+
+.cast-filmography-row {
+  flex: 0 0 auto;
+}
+
+.cast-filmography-track {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 8px 96px; /* vertical xs, horizontal xxxl */
+}
+
+.cast-filmography-track::-webkit-scrollbar {
+  display: none;
+}
+
+.cast-film-card {
+  flex: 0 0 224px;
+  width: 224px;
+  min-width: 224px;
   box-sizing: border-box;
 }
 
-.cast-credit-card.focused {
-  transform: none;
+.cast-film-card + .cast-film-card {
+  margin-left: 24px; /* spacing.md */
 }
 
-.cast-credit-poster {
+.cast-film-card-media {
+  position: relative;
+  width: 100%;
+  height: 336px;
+  overflow: hidden;
+  border-radius: var(--cast-poster-radius, 24px);
+  background: var(--card-bg);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.cast-film-card.focused .cast-film-card-media {
+  box-shadow: 0 0 0 4px var(--focus-color);
+  transform: scale(1.02);
+}
+
+.cast-film-card-image {
   display: block;
   width: 100%;
-  height: 372px;
-  overflow: hidden;
-  border: 2px solid transparent;
-  border-radius: 14px;
-  background: var(--card-bg) center center / cover no-repeat;
-  box-sizing: border-box;
-  transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease,
-    background-color 120ms ease;
+  height: 100%;
+  object-fit: cover;
 }
 
-.cast-credit-card.focused .cast-credit-poster {
-  border-color: var(--secondary-color);
-  box-shadow: 0 0 0 2px var(--secondary-color);
-  background-color: var(--focus-bg);
+.cast-film-card-title {
+  padding: 16px 4px 0;
+  color: var(--text-color);
+  font-size: 32px;
+  line-height: 48px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Landscape poster mode: the card is as wide as the poster is tall (240dp) at 16:9. */
+.cast-filmography.is-landscape .cast-film-card {
+  flex-basis: 480px;
+  width: 480px;
+  min-width: 480px;
+}
+
+.cast-filmography.is-landscape .cast-film-card-media {
+  height: 270px;
+}
+
+.cast-detail-skeleton .cast-skeleton-block {
+  background: var(--card-bg);
+  animation: castSkeletonPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes castSkeletonPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.cast-detail-skeleton .cast-detail-name {
+  margin-bottom: 36px;
+}
+
+.cast-skeleton-line {
+  height: 28px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.cast-skeleton-title {
+  width: 280px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.cast-skeleton-count {
+  width: 72px;
+  height: 36px;
+  margin-left: 24px;
+  border-radius: 8px;
+}
+
+.cast-skeleton-row {
+  display: flex;
+  padding: 8px 96px 0;
+  overflow: hidden;
+}
+
+.cast-skeleton-card {
+  flex: 0 0 224px;
+  width: 224px;
+}
+
+.cast-skeleton-card + .cast-skeleton-card {
+  margin-left: 24px;
+}
+
+.cast-skeleton-poster {
+  height: 336px;
+  border-radius: 24px;
+}
+
+.cast-skeleton-label {
+  height: 32px;
+  margin-top: 16px;
+  border-radius: 8px;
+}
+
+.cast-detail-error {
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-color);
+}
+
+.cast-detail-error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cast-detail-error-title {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 40px;
+  line-height: 56px;
+  font-weight: 500;
+}
+
+.cast-detail-error-message {
+  margin: 16px 0 0;
+  color: var(--text-secondary);
+  font-size: 28px;
+  line-height: 40px;
+}
+
+.cast-detail-retry {
+  margin-top: 48px;
+  padding: 20px 40px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--secondary-color);
+  color: var(--on-secondary);
+  font: inherit;
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 600;
+}
+
+.cast-detail-retry.focused {
+  background: var(--secondary-variant);
+  transform: scale(1.1);
+}
+
+.legacy-tizen .cast-detail-portrait,
+.legacy-webos .cast-detail-portrait,
+.legacy-tizen .cast-film-card-media,
+.legacy-webos .cast-film-card-media {
+  transition: none;
 }

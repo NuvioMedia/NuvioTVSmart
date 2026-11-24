@@ -739,6 +739,7 @@
     <string name="cast_detail_error">Đã xảy ra sự cố</string>
     <string name="cast_detail_retry">Thử lại</string>
     <string name="cast_detail_filmography">Sự nghiệp</string>
+    <string name="cast_detail_filter_all">Tất cả</string>
     <string name="catalog_see_all_from">từ %1$s</string>
     <string name="catalog_see_all_empty_title">Không có mục nào</string>
     <string name="catalog_see_all_empty_subtitle">Thử danh mục khác hoặc quay lại sau</string>
