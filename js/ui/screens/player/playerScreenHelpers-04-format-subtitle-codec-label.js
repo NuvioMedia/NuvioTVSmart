@@ -471,3 +471,64 @@ export function getAudioTrackSupportState(track = {}) {
     unsupportedReason: supported ? null : "codec"
   };
 }
+
+// Android TrackInfo.subtitleFormatBadge: only the formats that matter to a viewer get a badge,
+// ASS for styled text and PGS, VobSub or DVB for image subtitles; other codecs show nothing.
+const SUBTITLE_FORMAT_BADGES = new Map([
+  ...[
+    "ass",
+    "ssa",
+    "textass",
+    "textssa",
+    "textxass",
+    "textxssa",
+    "applicationass",
+    "applicationssa",
+    "applicationxass",
+    "applicationxssa",
+    "advancedsubstationalpha",
+    "substationalpha"
+  ].map((key) => [key, "ASS"]),
+  ...["pgs", "hdmvpgs", "hdmvpgssubtitle", "pgssub", "applicationpgs"].map((key) => [key, "PGS"]),
+  ...["vobsub", "dvdsubtitle", "dvdsub", "applicationxvobsub", "applicationvobsub"].map((key) => [key, "VobSub"]),
+  ...["dvb", "dvbsub", "dvbsubs", "dvbsubtitle", "applicationdvbsubs", "applicationdvbsubtitle"].map((key) => [key, "DVB"])
+]);
+
+export function getSubtitleFormatBadge(track = {}) {
+  const codecs = [
+    track?.bitmapSubtitleFormat,
+    track?.codec,
+    track?.subtitleCodec,
+    track?.codec_name,
+    track?.codecId,
+    track?.codec_id,
+    track?.codecs,
+    track?.format,
+    track?.raw?.codec,
+    track?.raw?.codec_name,
+    track?.raw?.codecId
+  ];
+  for (const codec of codecs) {
+    // Matroska ids (S_TEXT/ASS, S_HDMV/PGS, S_VOBSUB, S_DVBSUB), MIME types and ffprobe names.
+    const key = String(codec || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^s_/, "")
+      .replace(/[^a-z0-9]/g, "");
+    const badge = SUBTITLE_FORMAT_BADGES.get(key);
+    if (badge) {
+      return badge;
+    }
+  }
+  return null;
+}
+
+/** Android Subtitle.subtitleFormatBadge: add-on and stream subtitles get ASS for an .ass/.ssa file. */
+export function getAddonSubtitleFormatBadge(subtitle = {}) {
+  const path = String(subtitle?.url || "")
+    .split("#")[0]
+    .split("?")[0]
+    .replace(/\/+$/, "")
+    .toLowerCase();
+  return path.endsWith(".ass") || path.endsWith(".ssa") ? "ASS" : null;
+}

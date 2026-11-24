@@ -255,10 +255,13 @@ export function createPlayerScreenMethods55() {
       return `
                 <div class="player-dialog-item focusable${item.selected ? " selected" : ""}${item.disabled ? " disabled" : ""}" role="radio" aria-checked="${item.selected ? "true" : "false"}" data-subtitle-rail="options" data-subtitle-index="${index}" data-subtitle-key="${escapeAttribute(optionKey)}" aria-disabled="${item.disabled ? "true" : "false"}">
                   <div class="player-subtitle-option-copy">
-                    <span class="player-subtitle-source-chip">${escapeHtml(item.sourceLabel || "")}</span>
+                    <div class="player-subtitle-option-source-row">
+                      <span class="player-subtitle-source-chip">${escapeHtml(item.sourceLabel || "")}</span>
+                      ${autoSyncedChip}
+                    </div>
                     <div class="player-subtitle-option-title-row">
                       <div class="player-dialog-item-main">${escapeHtml(item.title || "")}</div>
-                      ${autoSyncedChip}
+                      ${item.formatBadge ? `<span class="player-subtitle-format-badge">${escapeHtml(item.formatBadge)}</span>` : ""}
                     </div>
                     ${item.meta ? `<div class="player-dialog-item-sub">${escapeHtml(item.meta)}</div>` : ""}
                   </div>

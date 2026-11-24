@@ -86,6 +86,7 @@ import { getSubRipSubtitleCodecValue } from "./playerScreenHelpers-04-format-sub
 import { isSubRipSubtitleTrack } from "./playerScreenHelpers-04-format-subtitle-codec-label.js";
 
 import { getBitmapSubtitleFormatLabel } from "./playerScreenHelpers-04-format-subtitle-codec-label.js";
+import { getSubtitleFormatBadge, getAddonSubtitleFormatBadge } from "./playerScreenHelpers-04-format-subtitle-codec-label.js";
 
 import { getBitmapSubtitleSupportState } from "./playerScreenHelpers-04-format-subtitle-codec-label.js";
 
@@ -341,6 +342,8 @@ export {
   getSubRipSubtitleCodecValue,
   isSubRipSubtitleTrack,
   getBitmapSubtitleFormatLabel,
+  getSubtitleFormatBadge,
+  getAddonSubtitleFormatBadge,
   getBitmapSubtitleSupportState,
   getTx3gSubtitleSupportState,
   getEmbeddedSubtitleSupportState,

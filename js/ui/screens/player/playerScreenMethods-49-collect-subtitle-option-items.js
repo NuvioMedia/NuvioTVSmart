@@ -11,14 +11,15 @@ export function createPlayerScreenMethods49() {
     cleanDisplayText,
     stableSubtitleTextKey,
     pushUniqueText,
-    getSubtitleCodecDisplayLabel,
-    getBitmapSubtitleFormatLabel,
+    getSubtitleFormatBadge,
+    getAddonSubtitleFormatBadge,
     getTx3gSubtitleSupportMessage,
     getBitmapSubtitleSupportMessage,
     isBitmapSubtitleSupportReason,
     isForcedSubtitleTrack,
     isForcedAddonSubtitle,
     getSubtitleEntryLanguageSource,
+    getTrackLanguageValue,
     clamp,
     normalizeSubtitleLanguageKey,
     subtitleLanguageLabel
@@ -59,14 +60,21 @@ export function createPlayerScreenMethods49() {
         const languageLabel = subtitleLanguageLabel(languageKey);
         const track = entry.track || entry;
         const isForced = Boolean(entry.isForced) || isForcedSubtitleTrack(track);
+        // Android internalSubtitleTitle: the track label, else the language name from the
+        // language column, else Unknown; never the raw language code.
+        const trackLabel = cleanDisplayText(track?.name) || cleanDisplayText(track?.label) || cleanDisplayText(track?.title);
+        const trackLanguage = cleanDisplayText(getTrackLanguageValue(track) || languageSource);
+        const labelIsLanguage = [trackLanguage, cleanDisplayText(languageSource)].some(
+          (language) => language && language.toLowerCase() === trackLabel.toLowerCase()
+        );
         const title =
-          cleanDisplayText(track?.name) ||
-          cleanDisplayText(track?.label) ||
-          cleanDisplayText(track?.title) ||
-          entry.label ||
-          subtitleLabel(options.length);
+          trackLabel && !labelIsLanguage
+            ? trackLabel
+            : trackLanguage && languageKey !== SUBTITLE_LANGUAGE_UNKNOWN_KEY && languageKey !== "und"
+              ? languageLabel
+              : t("subtitle_language_unknown", {}, "Unknown");
+        // Android shows no codec here: the formats that matter get a badge instead.
         const metaParts = [];
-        pushUniqueText(metaParts, getSubtitleCodecDisplayLabel(track));
         if (isForced) {
           pushUniqueText(metaParts, t("sub_forced_lang", {}, "Forced"));
         }
@@ -80,7 +88,6 @@ export function createPlayerScreenMethods49() {
             t("player_subtitle_tizen_dash_unsupported", {}, "Subtitle switching for DASH streams may not be supported by this TV.")
           );
         } else if (isBitmapSubtitleSupportReason(entry.unsupportedReason)) {
-          pushUniqueText(metaParts, getBitmapSubtitleFormatLabel(track));
           pushUniqueText(metaParts, getBitmapSubtitleSupportMessage());
         }
         options.push({
@@ -91,6 +98,7 @@ export function createPlayerScreenMethods49() {
           sourceLabel: t("subtitle_built_in", {}, "Built in"),
           meta: metaParts.join(" • "),
           secondary: metaParts.join(" • "),
+          formatBadge: getSubtitleFormatBadge(track),
           selected: Boolean(entry.selected),
           disabled: Boolean(entry.disabled),
           sourceType: "internal",
@@ -121,10 +129,12 @@ export function createPlayerScreenMethods49() {
           id: optionId,
           languageKey,
           languageLabel,
-          title: languageLabel,
+          // Android: the Stremio subtitle label is the title; the id stays the description.
+          title: cleanDisplayText(track?.stremioLabel) || languageLabel,
           sourceLabel: entry.secondary || track?.addonName || t("subtitle_tab_addons", {}, "Addons"),
           meta,
           secondary: meta,
+          formatBadge: getAddonSubtitleFormatBadge(track),
           selected: Boolean(entry.selected),
           sourceType: "addon",
           isForced,
