@@ -239,7 +239,7 @@
     <string name="supporters_contributors_donate_copy">Nuvio vil forbli gratis og åpen kildekode. Hvis du vil støtte prosjektet, kan du donere for å dekke kostnadene for infrastrukturen bak det.</string>
     <string name="supporters_contributors_donate_button">Doner til Nuvio</string>
     <string name="supporters_contributors_qr_title">Skann for å donere</string>
-    <string name="supporters_contributors_qr_subtitle">Åpne lenken på telefonen din og støtt Nuvio gjennom Ko-fi.</string>
+    <string name="supporters_contributors_qr_subtitle">Åpne lenken på telefonen din for å støtte Nuvio.</string>
     <string name="supporters_contributors_qr_hint">Pek kameraet på QR-koden eller bruk knappen nedenfor.</string>
     <string name="supporters_contributors_back_button">Tilbake til detaljer</string>
     <string name="supporters_tab">Støttespillere</string>
@@ -462,7 +462,7 @@
     <string name="layout_trailer_muted">Spill trailer uten lyd</string>
     <string name="layout_trailer_muted_sub_preview">Dempet trailerlyd under autoavspillingsforhåndsvisning.</string>
     <string name="layout_trailer_muted_sub_expanded">Dempet trailerlyd i utvidede kort.</string>
-    <string name="layout_section_card_style">Stil for plakatkort</string>
+    <string name="layout_section_card_style">Plakatkort</string>
     <string name="layout_section_card_style_desc">Juster kortbredde og hjørneradius.</string>
     <string name="layout_open">Åpne</string>
     <string name="layout_closed">Stengt</string>
@@ -567,7 +567,7 @@
     <string name="trakt_watch_progress_dialog_title">Seeframgang</string>
     <string name="trakt_watch_progress_dialog_subtitle">Velg om gjenopptagelse og fortsett å se skal bruke Trakt eller Nuvio Sync mens Trakt-skrobletmeldinger forblir aktive.</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
-    <string name="trakt_watch_progress_source_nuvio">Nuvio-synkronisering</string>
+    <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_setting_on">På</string>
     <string name="trakt_setting_off">Av</string>
     <string name="trakt_watch_progress_trakt_selected">Seeframgangskilden satt til Trakt</string>
@@ -853,7 +853,7 @@
     <string name="library_syncing">Synkroniserer Trakt-bibliotek\u2026</string>
     <string name="library_title">Bibliotek</string>
     <string name="library_filter_list">Liste</string>
-    <string name="library_filter_type">Velg type</string>
+    <string name="library_filter_type">Type</string>
     <string name="library_filter_sort">Sortering</string>
     <string name="library_sort_trakt_order">Trakt-rekkefølge</string>
     <string name="library_sort_added_desc">Lagt til ↓</string>
@@ -924,7 +924,7 @@
     <string name="sync_claim_done">Ferdig</string>
     <string name="sync_claim_code_label">Synkkode</string>
     <string name="sync_claim_code_placeholder">XXXX-XXXX-XXXX-XXXX-XXXX</string>
-    <string name="sync_claim_pin_label">PIN-kode</string>
+    <string name="sync_claim_pin_label">PIN</string>
     <string name="sync_claim_pin_placeholder">Skriv inn PIN</string>
     <string name="plugin_readonly_notice">Bruker primær profilens programtillegg og kan ikke endres</string>
     <string name="plugin_repositories_section">Depoter (%1$d)</string>

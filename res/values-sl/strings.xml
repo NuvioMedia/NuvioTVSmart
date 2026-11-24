@@ -477,7 +477,7 @@
     <string name="supporters_contributors_donate_copy">Nuvio bo ostal brezplačen in odprtokoden. Če želite podpreti projekt, lahko pomagate pokriti porabljen čas in infrastrukturo, ki stoji za njim.</string>
     <string name="supporters_contributors_donate_button">Donirajte za Nuvio</string>
     <string name="supporters_contributors_qr_title">Skenirajte za donacijo</string>
-    <string name="supporters_contributors_qr_subtitle">Odprite povezavo na telefonu in podprite Nuvio prek Ko-fi.</string>
+    <string name="supporters_contributors_qr_subtitle">Odprite povezavo v telefonu in podprite Nuvio.</string>
     <string name="supporters_contributors_qr_hint">Usmerite kamero v QR kodo ali uporabite spodnji gumb.</string>
     <string name="supporters_contributors_back_button">Nazaj na podrobnosti</string>
     <string name="supporters_tab">Podporniki</string>
@@ -619,7 +619,7 @@
     <string name="sub_outline_color">Barva obrobe</string>
     <string name="sub_advanced_section">Napredno izrisovanje podnapisov</string>
     <string name="sub_libass">Uporabi libass za ASS/SSA podnapise</string>
-    <string name="sub_libass_sub">Začasno onemogočeno zaradi vzdrževanja</string>
+    <string name="sub_libass_sub">Napredno upodabljanje ASS/SSA (slogi, pozicioniranje, animacije)</string>
     <string name="sub_libass_mode">Način izrisovanja Libass</string>
     <string name="sub_mode_overlay_gl">Prekrivanje OpenGL (Priporočeno)</string>
     <string name="sub_mode_overlay_gl_sub">Najboljša kakovost s HDR podporo. Podnapise izriše v ločeni niti.</string>
@@ -777,7 +777,7 @@
     <string name="layout_trailer_muted">Predvajaj napovednik brez zvoka</string>
     <string name="layout_trailer_muted_sub_preview">Utišaj zvok napovednika med samodejnim predogledom.</string>
     <string name="layout_trailer_muted_sub_expanded">Utišaj zvok napovednika v razširjenih karticah.</string>
-    <string name="layout_section_card_style">Slog kartice plakata</string>
+    <string name="layout_section_card_style">Kartica plakata</string>
     <string name="layout_section_card_style_desc">Prilagodite širino kartice in radij vogalov.</string>
     <string name="layout_open">Razširjeno</string>
     <string name="layout_closed">Strnjeno</string>
@@ -827,7 +827,7 @@
     <string name="mdblist_dialog_placeholder">Vnesite MDBList API ključ</string>
     <string name="mdblist_not_set">Ni nastavljeno</string>
     <string name="mdblist_invalid_api_key">Napačen MDBList API ključ</string>
-    <string name="animeskip_title">Preskok animeja</string>
+    <string name="animeskip_title">Anime Skip</string>
     <string name="animeskip_subtitle">Konfigurirajte svoj Anime Skip ID odjemalca za preskakovanje uvodov/odjav animejev</string>
     <string name="animeskip_enable_title">Omogoči Anime Skip</string>
     <string name="animeskip_enable_subtitle">Pridobi časovne žige za preskok s spletnega mesta anime-skip.com</string>
@@ -1110,7 +1110,7 @@
     <string name="stream_player_picker_title">Kateri predvajalnik naj se uporabi?</string>
     <string name="stream_player_internal">Notranji</string>
     <string name="stream_player_external">Zunanji</string>
-    <string name="stream_filter_all">Vse</string>
+    <string name="stream_filter_all">All</string>
     <string name="player_no_external_player">Zunanjega predvajalnika ni bilo mogoče najti</string>
     <string name="player_loading_preparing">Pripravljanje predvajanja…</string>
     <string name="player_loading_detecting_format">Zaznavanje formata…</string>
@@ -1914,7 +1914,7 @@
     <string name="collections_editor_tmdb_genre_reality">Resničnostni šov</string>
     <string name="autoplay_regex_preset_any_1080p_plus">Katerikoli 1080p+</string>
     <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
-    <string name="autoplay_regex_preset_1080p_standard">Standard 1080p</string>
+    <string name="autoplay_regex_preset_1080p_standard">1080p Standard</string>
     <string name="autoplay_regex_preset_720p_smaller">720p / Manjše</string>
     <string name="autoplay_regex_preset_web_sources">WEB Viri</string>
     <string name="autoplay_regex_preset_bluray_quality">BluRay Kakovost</string>

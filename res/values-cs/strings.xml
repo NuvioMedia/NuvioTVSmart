@@ -206,7 +206,7 @@
     <string name="cast_role_writer">Scenárista</string>
     <string name="detail_tab_ratings">Hodnocení</string>
     <string name="detail_tab_more_like_this">Podobné</string>
-    <string name="detail_tab_trailer">Upoutávka</string>
+    <string name="detail_tab_trailer">Trailer</string>
     <string name="detail_more_like_this_powered_by_tmdb">Běží na TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Běží na Trakt</string>
     <string name="detail_comments_title">Komentáře</string>
@@ -323,7 +323,7 @@
     <string name="licenses_attributions_section_playback">LICENCE PRO PŘEHRÁVÁNÍ ANDROID</string>
     <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">Zdrojový kód a licenční podmínky jsou dostupné v repozitáři projektu. Licencováno pod GNU General Public License v3.0.</string>
-    <string name="licenses_attributions_tmdb_title">Databáze filmů (TMDB)</string>
+    <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio používá API TMDB pro metadata filmů a seriálů, artwork, trailery, obsazení, produkční detaily, kolekce a doporučení. Tento produkt používá API TMDB, ale není schválen ani certifikován TMDB.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">Nuvio se připojuje k Trakt pro autentizaci účtu, historii sledování, synchronizaci postupu, data knihovny, hodnocení, seznamy a komentáře. Nuvio není spojen ani schválen Trakt.</string>
@@ -385,11 +385,11 @@
     <string name="advanced_section_cache">Mezipaměť</string>
     <string name="advanced_fast_horizontal_navigation">Rychlá horizontální navigace</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Zvýšit rychlost opakování D-padu v řádcích při zachování omezení opakování.</string>
-    <string name="advanced_nuvio_focus_scroll">Posouvání s funkcí Nuvio Focus</string>
+    <string name="advanced_nuvio_focus_scroll">Nuvio Focus Scrolling</string>
     <string name="advanced_nuvio_focus_scroll_subtitle">Použít vlastní globální animaci a umístění posunu fokusu Nuvio.</string>
     <string name="advanced_memory_only_vertical_scroll">Vertikální posun pouze v paměti</string>
     <string name="advanced_memory_only_vertical_scroll_subtitle">Přeskočit požadavky na obrázky z disku a sítě při vertikálním posouvání domovských řádků.</string>
-    <string name="advanced_compose_highlighter">Zvýrazňovač Compose</string>
+    <string name="advanced_compose_highlighter">Compose Highlighter</string>
     <string name="advanced_compose_highlighter_subtitle">Blikat okraje kolem překreslovaných UI prvků pro ladění výkonu.</string>
     <string name="advanced_clear_cw_cache">Vymazat mezipaměť Pokračovat ve sledování</string>
     <string name="advanced_clear_cw_cache_subtitle">Odebrat miniatury, názvy a obohacená data z mezipaměti pro Pokračovat ve sledování</string>
@@ -425,7 +425,7 @@
     <string name="supporters_contributors_donate_copy">Nuvio zůstane zdarma a open source. Pokud chcete projekt podpořit, můžete pomoci pokrýt čas a infrastrukturu za ním.</string>
     <string name="supporters_contributors_donate_button">Přispět Nuvio</string>
     <string name="supporters_contributors_qr_title">Naskenujte pro darování</string>
-    <string name="supporters_contributors_qr_subtitle">Otevřete odkaz na telefonu a podpořte Nuvio přes Ko-fi.</string>
+    <string name="supporters_contributors_qr_subtitle">Otevřete odkaz na telefonu a podpořte Nuvio.</string>
     <string name="supporters_contributors_qr_hint">Namiřte fotoaparát na QR kód nebo použijte tlačítko níže.</string>
     <string name="supporters_contributors_back_button">Zpět na podrobnosti</string>
     <string name="supporters_tab">Podporovatelé</string>
@@ -450,11 +450,11 @@
     <string name="contributors_show_kofi_qr">Zobrazit Ko-fi QR</string>
     <string name="contributors_hide_kofi_qr">Skrýt Ko-fi QR</string>
     <string name="contributors_profile_unavailable">Odkaz na GitHub profil nedostupný.</string>
-    <string name="audio_trailer_section">Upoutávka</string>
+    <string name="audio_trailer_section">Trailer</string>
     <string name="audio_autoplay_trailers">Automaticky přehrávat trailery</string>
     <string name="audio_autoplay_trailers_sub">Automaticky přehrát trailery na detailní obrazovce po chvíli nečinnosti</string>
     <string name="audio_trailer_delay">Zpoždění traileru</string>
-    <string name="audio_section">Zvuk</string>
+    <string name="audio_section">Audio</string>
     <string name="audio_lang_default">Výchozí (podle souboru)</string>
     <string name="audio_lang_device">Jazyk zařízení</string>
     <string name="audio_preferred_lang">Preferovaný jazyk audia</string>
@@ -499,7 +499,7 @@
     <string name="playback_player_ask">Pokaždé se zeptat</string>
     <string name="playback_internal_player_engine">Interní engine</string>
     <string name="playback_engine_exoplayer">ExoPlayer</string>
-    <string name="playback_engine_mvplayer">Libmpv (beta)</string>
+    <string name="playback_engine_mvplayer">Libmpv (Beta)</string>
     <string name="playback_auto_switch_internal_player_on_error">Automaticky přepnout engine při chybě spuštění</string>
     <string name="playback_auto_switch_internal_player_on_error_sub">Pokud spuštění streamu selže, automaticky přepnout mezi ExoPlayer a libmpv.</string>
     <string name="playback_section_audio">Audio a video</string>
@@ -538,7 +538,7 @@
     <string name="audio_mpv_hwdec_dialog_subtitle">Vyberte, jak má libmpv používat hardwarové dekodéry.</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy">Starší (přímé -> kopírování)</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy_desc">Předchozí výchozí chování: zkusit nejprve přímý hardware, poté kopírování zpět.</string>
-    <string name="audio_mpv_hwdec_auto_safe">Auto (automatické uložení)</string>
+    <string name="audio_mpv_hwdec_auto_safe">Auto (auto-safe)</string>
     <string name="audio_mpv_hwdec_auto_safe_desc">Bezpečnější automatický režim s náhradním řešením, když některé hardwarové dekodéry selžou.</string>
     <string name="audio_mpv_hwdec_hardware_copy">Hardware (kopírování) (mediacodec-copy)</string>
     <string name="audio_mpv_hwdec_hardware_copy_desc">Používá hardwarové dekódování s kopírováním zpět do softwarové paměti.</string>
@@ -719,7 +719,7 @@
     <string name="layout_trailer_muted">Přehrát trailer ztlumený</string>
     <string name="layout_trailer_muted_sub_preview">Ztlumit zvuk traileru během automatického náhledu.</string>
     <string name="layout_trailer_muted_sub_expanded">Ztlumit zvuk traileru v rozšířených kartách.</string>
-    <string name="layout_section_card_style">Styl karty plakátu</string>
+    <string name="layout_section_card_style">Karta plakátu</string>
     <string name="layout_section_card_style_desc">Vyladit šířku karty a poloměr rohů.</string>
     <string name="layout_open">Otevřeno</string>
     <string name="layout_closed">Zavřeno</string>
@@ -769,13 +769,13 @@
     <string name="mdblist_dialog_placeholder">Zadejte MDBList API klíč</string>
     <string name="mdblist_not_set">Nenastaveno</string>
     <string name="mdblist_invalid_api_key">Neplatný MDBList API klíč</string>
-    <string name="animeskip_title">Přeskočení anime</string>
+    <string name="animeskip_title">Anime Skip</string>
     <string name="animeskip_subtitle">Konfigurovat vaše Anime Skip Client ID pro přeskakování intra/outra anime</string>
     <string name="animeskip_enable_title">Povolit Anime Skip</string>
     <string name="animeskip_enable_subtitle">Získávat časové značky přeskočení z anime-skip.com</string>
-    <string name="animeskip_client_id_title">ID klienta</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">Vyžadováno pro získání časových značek přeskočení z anime-skip.com</string>
-    <string name="animeskip_dialog_title">ID klienta Anime Skip</string>
+    <string name="animeskip_dialog_title">Anime Skip Client ID</string>
     <string name="animeskip_dialog_subtitle">Vytvořte si vlastní Client ID na anime-skip.com/account/settings</string>
     <string name="animeskip_dialog_placeholder">Zadejte Client ID</string>
     <string name="animeskip_invalid_client_id">Neplatné Client ID</string>
@@ -790,7 +790,7 @@
     <string name="tmdb_enrich_continue_watching_subtitle">Aplikovat obohacení TMDB na položky Pokračovat ve sledování</string>
     <string name="tmdb_language_title">Jazyk</string>
     <string name="tmdb_language_subtitle">Jazyk metadat TMDB pro název, logo a povolená pole</string>
-    <string name="tmdb_artwork_title">Grafika</string>
+    <string name="tmdb_artwork_title">Artwork</string>
     <string name="tmdb_artwork_subtitle">Obrázky loga a pozadí z TMDB</string>
     <string name="tmdb_basic_info_title">Základní informace</string>
     <string name="tmdb_basic_info_subtitle">Popis, žánry a hodnocení z TMDB</string>
@@ -837,7 +837,7 @@
     <string name="trakt_watch_progress_dialog_title">Postup sledování</string>
     <string name="trakt_watch_progress_dialog_subtitle">Vyberte, zda má pokračování a pokračovat ve sledování používat Trakt nebo Nuvio Sync, zatímco scrobblování Trakt zůstává aktivní.</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
-    <string name="trakt_watch_progress_source_nuvio">Synchronizace Nuvio</string>
+    <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_library_source_title">Zdroj knihovny</string>
     <string name="trakt_library_source_subtitle">Vyberte, kterou knihovnu použít pro ukládání a prohlížení vaší sbírky</string>
     <string name="trakt_library_source_dialog_title">Zdroj knihovny</string>
@@ -1063,7 +1063,7 @@
     <string name="playback_show_loading_status_sub">Zobrazit postup krok za krokem během inicializace přehrávače.</string>
     <string name="player_sync_line">Synchronizační linie</string>
     <string name="subtitle_timing_press_sync">Stiskněte Sync, když uslyšíte linii dialogu.</string>
-    <string name="subtitle_timing_sync_button">Synchronizovat</string>
+    <string name="subtitle_timing_sync_button">Sync</string>
     <string name="subtitle_timing_select_addon_first">Nejprve vyberte stopu titulků z doplňku.</string>
     <string name="subtitle_auto_sync_select_addon_track">Vyberte stopu titulků z doplňku pro použití Auto Sync.</string>
     <string name="subtitle_auto_sync_applied">Synchronizace aplikována: %1$s</string>
@@ -1170,7 +1170,7 @@
     <string name="subtitle_style_title">Styl titulků</string>
     <string name="subtitle_style_customize">Přizpůsobit</string>
     <string name="subtitle_style_color">Barva</string>
-    <string name="subtitle_style_reset">Obnovit</string>
+    <string name="subtitle_style_reset">Reset</string>
     <string name="subtitle_style_font_size">Velikost písma</string>
     <string name="subtitle_style_bold">Tučné</string>
     <string name="subtitle_style_text_color">Barva textu</string>
@@ -1234,11 +1234,11 @@
     <string name="genre_tv_movie">TV film</string>
     <string name="genre_thriller">Thriller</string>
     <string name="genre_war">Válečný</string>
-    <string name="genre_western">Západní</string>
+    <string name="genre_western">Western</string>
     <string name="genre_action_adventure">Akční a dobrodružný</string>
     <string name="genre_kids">Dětský</string>
     <string name="genre_news">Zprávy</string>
-    <string name="genre_reality">Realita</string>
+    <string name="genre_reality">Reality</string>
     <string name="genre_sci_fi_fantasy">Sci-Fi a fantasy</string>
     <string name="genre_soap">Telenovela</string>
     <string name="genre_talk">Talk show</string>
@@ -1267,7 +1267,7 @@
     <string name="library_source_local">MÍSTNÍ</string>
     <string name="library_source_nuvio">NUVIO</string>
     <string name="library_source_trakt">TRAKT</string>
-    <string name="library_watchlist">Seznam sledovaných</string>
+    <string name="library_watchlist">Watchlist</string>
     <string name="library_syncing_library">Synchronizace knihovny…</string>
     <string name="library_type_all">Vše</string>
     <string name="library_type_items">položky</string>
@@ -1745,8 +1745,8 @@
     <string name="collections_editor_tmdb_rating_min_placeholder">7.0</string>
     <string name="collections_editor_tmdb_rating_max_placeholder">10</string>
     <string name="collections_editor_tmdb_votes_min_placeholder">100</string>
-    <string name="collections_editor_tmdb_language_placeholder">cs, en, ko, ja, hi</string>
-    <string name="collections_editor_tmdb_country_placeholder">CZ, US, KR, JP, IN</string>
+    <string name="collections_editor_tmdb_language_placeholder">en, ko, ja, hi</string>
+    <string name="collections_editor_tmdb_country_placeholder">US, KR, JP, IN</string>
     <string name="collections_editor_tmdb_year_placeholder">2024</string>
     <string name="collections_editor_language_english">Angličtina</string>
     <string name="collections_editor_language_korean">Korejština</string>
@@ -1814,9 +1814,9 @@
     <string name="player.audio.unsupportedCodec">Tento kodek zařízení nepodporuje</string>
     <string name="player.audio.noSupportedTracks">Nejsou k dispozici žádné podporované zvukové stopy</string>
     <string name="settings_stream_addon_logo_title">Logo doplňku</string>
-    <string name="settings_stream_addon_logo_description">Zobrazovat logo a název doplňku vedle zdrojů streamů.</string>
-    <string name="autoplay_reuse_binge_group">Znovu použít skupinu pro binge</string>
-    <string name="autoplay_reuse_binge_group_sub">Zapamatovat a znovu použít poslední skupinu mezi relacemi (Pokračovat ve sledování, Podrobnosti atd.).</string>
+    <string name="settings_stream_addon_logo_description">Zobrazit logo a název doplňku vedle zdrojů streamu.</string>
+    <string name="autoplay_reuse_binge_group">Znovu použít binge skupinu</string>
+    <string name="autoplay_reuse_binge_group_sub">Zapamatovat a znovu použít poslední binge skupinu napříč relacemi (Pokračovat ve sledování, Detail atd.).</string>
     <string name="unsupported_device_title">Televizor není podporován</string>
     <string name="unsupported_device_message">Tento televizor nesplňuje minimální požadavky pro tuto verzi Nuvio TV.</string>
     <string name="unsupported_device_current_platform">Aktuální platforma</string>
@@ -2149,7 +2149,7 @@
     <string name="playback_net_nuvio_performance_mode_not_supported">Tato funkce není vaším zařízením podporována.</string>
     <string name="playback_buffer_custom">Vlastní buffery přehrávání</string>
     <string name="playback_buffer_custom_sub">Přepsat výchozí buferování Media3 níže uvedenými hodnotami. Je-li vypnuto, přehrávač používá výchozí délky bufferu a cílovou velikost Media3.</string>
-    <string name="playback_buffer_header">Vyrovnávací paměť</string>
+    <string name="playback_buffer_header">Buffer</string>
     <string name="playback_buffer_warning">Toto nastavení ovlivňuje chování bufferování. Nesprávné hodnoty mohou způsobit problémy s přehráváním.</string>
     <string name="playback_buffer_min">Min. délka bufferu</string>
     <string name="playback_buffer_min_sub">Minimální množství médií k bufferování. Přehrávač se pokusí zajistit, aby bylo vždy nabufferováno alespoň tolik obsahu před aktuální pozicí přehrávání.</string>
@@ -2545,14 +2545,14 @@
     <string name="account_error_service_unavailable">Služba není dostupná. Zkuste to prosím později.</string>
     <string name="account_error_invalid_request">Neplatný požadavek. Zkontrolujte prosím zadané údaje.</string>
     <string name="account_error_unexpected">Došlo k neočekávané chybě.</string>
-    <string name="advanced_section_dv_diagnostics">Diagnostika DV</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
     <string name="video_section">Video</string>
     <string name="audio_number_of_channels">Počet kanálů</string>
     <string name="audio_number_of_channels_desc">Nastavuje rozložení reproduktorů použité pro downmix FFmpeg.</string>
     <string name="audio_enable_downmix_title">Povolit downmix</string>
     <string name="dv7_mode_auto">Automaticky (doporučeno)</string>
     <string name="dv7_mode_auto_desc">Rozpozná váš displej a vybere nejlepší režim. Pokud dochází k problémům s přehráváním, zkuste HDR10 base layer.</string>
-    <string name="dv7_mode_hdr10_base_layer">Základní vrstva HDR10</string>
+    <string name="dv7_mode_hdr10_base_layer">HDR10 base layer</string>
     <string name="dv7_mode_dv81_libdovi">Převést na DV8.1</string>
     <string name="dv7_mode_dv81_libdovi_desc">Převede DV7 na jednovrstvé DV8.1. Vyžaduje displej podporující Dolby Vision.</string>
     <string name="dv7_mode_off">Vypnuto (nativní)</string>
@@ -2561,20 +2561,20 @@
     <string name="audio_dv5_to_dv81_sub">Signalizuje streamy profilu 5 jako profil 8.1 pro výstup kompatibilní s HDR10. Pomáhá na zařízeních bez nativního dekodéru DV5.</string>
     <string name="audio_dv7_preserve_mapping_title">Zachovat mapování DV (DV7 na DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">Zachová původní tone-mapping zamýšlený tvůrcem za cenu mírně vyššího zpracování na snímek.</string>
-    <string name="dv7_libdovi_mode_caption">Režim převodu (vybrán automaticky, neměňte, pokud není uvedeno jinak). Vyberte jednu možnost, chcete-li ji vynutit; volba „Žádný“ používá automatický režim. Aktivní pouze v případě, že je nastavení DV7 nastaveno na „Převést na DV8.1“.</string>
-    <string name="dv7_libdovi_mode_row_title">Režim převodu</string>
-    <string name="dv7_libdovi_mode_none_title">Žádné</string>
-    <string name="dv7_libdovi_mode_none_sub">Žádné přepsání. Používá automaticky vybraný režim převodu.</string>
-    <string name="dv7_libdovi_mode_0_title">Režim 0 — Kopírování (bez převodu)</string>
-    <string name="dv7_libdovi_mode_0_sub">Analyzujte RPU a zapište jej zpět beze změn. Žádná konverze profilu.</string>
-    <string name="dv7_libdovi_mode_1_title">Režim 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">Převést RPU tak, aby byl kompatibilní s MEL (Minimum Enhancement Layer).</string>
-    <string name="dv7_libdovi_mode_2_title">Režim 2 — 8.1 (mapování bez operace)</string>
-    <string name="dv7_libdovi_mode_2_sub">Převést na profil 8.1 s mapováním jasu a barevného odstupu nastaveným na no-op. Standardní převod.</string>
-    <string name="dv7_libdovi_mode_3_title">Režim 3 — profil 5 až 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">Převést streamy profilu 5 (DV5) na profil 8.1. Stejný převod, jaký používá přepínač „Převést DV5 na DV8.1“.</string>
-    <string name="dv7_libdovi_mode_4_title">Režim 4 — 8,4 (statický)</string>
-    <string name="dv7_libdovi_mode_4_sub">Převést na statický profil 8.4.</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="streams_size">VELIKOST %1$s</string>
     <string name="action_import">Importovat</string>
     <string name="action_delete">Odstranit</string>
@@ -2626,7 +2626,7 @@
     <string name="collections_editor_tmdb_genre_scifi">Sci-Fi</string>
     <string name="collections_editor_tmdb_genre_drama">Drama</string>
     <string name="collections_editor_tmdb_genre_crime">Krimi</string>
-    <string name="collections_editor_tmdb_genre_reality">Realita</string>
+    <string name="collections_editor_tmdb_genre_reality">Reality</string>
     <string name="autoplay_regex_preset_any_1080p_plus">Jakékoli 1080p+</string>
     <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
     <string name="autoplay_regex_preset_1080p_standard">1080p standardní</string>

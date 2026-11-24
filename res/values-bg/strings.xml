@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hero_play">Пусни</string>
-    <string name="play_manually">Пусни ръчно</string>
+    <string name="hero_play">Учаватват</string>
+    <string name="play_manually">Ръчно възпроизвеждане</string>
     <string name="player_post_play_play_manually">Пусни ръчно</string>
     <string name="player_post_play_manual_subtitle">Пусни</string>
 <string name="server_options_title">Опции на сървъра</string>
@@ -15,7 +15,7 @@
 <string name="custom_server_description">Въведете URL адреса на бекенда, предоставен от вашия администратор на сървъра.</string>
 <string name="custom_server_url_placeholder">https://backend.example.com</string>
 <string name="custom_server_check">Проверка на сървъра</string>
-<string name="custom_server_checking">Проверява се…</string>
+<string name="custom_server_checking">Проверка\u2026</string>
 <string name="custom_server_review_title">Преглед на персонализиран сървър</string>
 <string name="custom_server_review_description">Документът за откриване е валиден. Свързването ще ви отпише от текущия сървър и ще рестартира приложението. Потвърдете, че това е сървър, който притежавате или на който имате доверие.</string>
 <string name="custom_server_verified_label">Открит бекенд</string>
@@ -28,7 +28,7 @@
 <string name="custom_server_warning_private">Изглежда, че това е сървър от частна мрежа, но приложението все още не може да провери кой го контролира.</string>
 <string name="custom_server_warning_credentials">Операторът на сървъра може да получи идентификационните данни за вашия акаунт и да има достъп до данните, които синхронизирате чрез този сървър.</string>
 <string name="custom_server_trust_action">Доверявам се на този сървър</string>
-<string name="custom_server_switching">Превключване…</string>
+<string name="custom_server_switching">Превключване\u2026</string>
 <string name="official_server_title">Да се използва официален сървър?</string>
 <string name="official_server_description">Ще излезете от персонализирания сървър и приложението ще се рестартира с официалната услуга.</string>
 <string name="official_server_action">Използване на официален сървър</string>
@@ -54,7 +54,7 @@
 <string name="auth_email_placeholder">Имейл адрес</string>
 <string name="auth_password_placeholder">Парола</string>
 <string name="auth_email_sign_in">Вход</string>
-<string name="auth_email_signing_in">Влизане…</string>
+<string name="auth_email_signing_in">Влизане\u2026</string>
 <string name="auth_email_required">Въведете имейл адреса и паролата си.</string>
 <string name="auth_email_invalid_credentials">Имейлът или паролата са неправилни.</string>
 <string name="auth_email_network_error">Не може да се установи връзка със сървъра. Проверете връзката си и опитайте отново.</string>
@@ -80,67 +80,67 @@
 
     <string name="player_post_play_because">Защото гледахте %1$s</string>
     <string name="player_post_play_recommended">Препоръчано за вас</string>
-    <string name="player_post_play_play">Пусни</string>
+    <string name="player_post_play_play">Играй</string>
     <string name="player_post_play_previous_recommendation">Предишна препоръка</string>
     <string name="player_post_play_next_recommendation">Следваща препоръка</string>
-    <string name="player_post_play_return_to_player">Назад към плейъра</string>
+    <string name="player_post_play_return_to_player">Връщане към играча</string>
     <string name="player_post_play_trailer_countdown">Трейлър след %1$d</string>
     <string name="player_post_play_trailer_playing">Трейлърът се възпроизвежда</string>
     <string name="player_post_play_trailer">Трейлър</string>
 
-    <string name="mdblist_show_on_hero_title">Използване на оценки в основния банер</string>
-    <string name="mdblist_show_on_hero_subtitle">Показване на оценки от MDBList в основния банер (Modern и Classic/Grid)</string>
-    <string name="mdblist_rating_order_title">Ред на оценките</string>
+    <string name="mdblist_show_on_hero_title">Използване на оценки за герой</string>
+    <string name="mdblist_show_on_hero_subtitle">Показване на оценките от MDBList в карусела на героите (модерни и класически/мрежови)</string>
+    <string name="mdblist_rating_order_title">Ред на оценяване</string>
     <string name="mdblist_rating_order_subtitle">В банера Modern се показват първите 3 включени и налични оценки. Използвайте стрелките за промяна на реда.</string>
-    <string name="cd_move_up">Премести нагоре</string>
-    <string name="cd_move_down">Премести надолу</string>
+    <string name="cd_move_up">Преместване нагоре</string>
+    <string name="cd_move_down">Преместване надолу</string>
 
     <string name="stream_info_section_source">ИЗТОЧНИК</string>
     <string name="stream_info_section_file">ФАЙЛ</string>
     <string name="stream_info_section_video">ВИДЕО</string>
     <string name="stream_info_section_audio">АУДИО</string>
     <string name="stream_info_section_subtitle">СУБТИТРИ</string>
-    <string name="stream_info_filename">Име на файла</string>
+    <string name="stream_info_filename">Име на файл</string>
     <string name="stream_info_size">Размер</string>
     <string name="stream_info_codec">Кодек</string>
-    <string name="stream_info_resolution">Резолюция</string>
+    <string name="stream_info_resolution">Разделителна способност</string>
     <string name="stream_info_frame_rate">Честота на кадрите</string>
     <string name="stream_info_bitrate">Битрейт</string>
     <string name="stream_info_channels">Канали</string>
-    <string name="stream_info_sample_rate">Честота на семплиране</string>
+    <string name="stream_info_sample_rate">Честота на дискретизация</string>
     <string name="stream_info_language">Език</string>
     <string name="stream_info_name">Име</string>
     <string name="stream_info_source">Източник</string>
     <string name="stream_info_subtitle_source_addon">Добавка</string>
-    <string name="stream_info_subtitle_source_embedded">Вградени</string>
-    <string name="stream_info_player_engine">Двигател на плейъра</string>
-    <string name="trakt_account_login">Вписване в акаунт</string>
+    <string name="stream_info_subtitle_source_embedded">Вграден</string>
+    <string name="stream_info_player_engine">Плейър енджин</string>
+    <string name="trakt_account_login">Вход в акаунта</string>
     <string name="trakt_all_history">Цялата история</string>
-    <string name="trakt_awaiting_instruction">Отиди на trakt.tv/activate и въведи този код:</string>
+    <string name="trakt_awaiting_instruction">Отидете на trakt.tv/activate и въведете този код:</string>
     <string name="trakt_code_expires">Кодът изтича след %1$s</string>
-    <string name="trakt_comments_subtitle">Показвай Trakt отзиви на страниците с метаданни</string>
+    <string name="trakt_comments_subtitle">Показване на отзиви за Trakt на страници с метаданни</string>
     <string name="trakt_comments_title">Коментари</string>
     <string name="trakt_connected_as">Свързан като %1$s</string>
-    <string name="trakt_continue_watching_subtitle">Trakt история, взета предвид за Продължи гледането</string>
-    <string name="trakt_continue_watching_window">Прозорец на Продължи гледането</string>
+    <string name="trakt_continue_watching_subtitle">Историята на тракта се взема предвид за продължаване на гледането</string>
+    <string name="trakt_continue_watching_window">Прозорец за продължаване на гледането</string>
     <string name="trakt_days_format">%1$d дни</string>
-    <string name="trakt_disconnect">Прекъсни</string>
-    <string name="trakt_disconnect_subtitle">Това ще прекъсне връзката на Trakt акаунта ти с Nuvio.</string>
-    <string name="trakt_disconnect_title">Прекъсни Trakt?</string>
-    <string name="trakt_error_code_expired">Device кодът е изтекъл. Стартирай отново.</string>
-    <string name="trakt_error_code_used">Device кодът вече е използван. Стартирай отново.</string>
-    <string name="trakt_error_denied">Удостоверяването е отказано в Trakt.</string>
-    <string name="trakt_error_network_retry">Мрежова грешка, моля опитай отново</string>
-    <string name="trakt_error_network_will_retry">Мрежова грешка, ще се опита отново</string>
-    <string name="trakt_library_source_title">Източник на библиотека</string>
-    <string name="trakt_missing_credentials">Липсват TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET в local.properties.</string>
-    <string name="trakt_status_rate_limited_slowing_polling">Rate limited, забавяне на polling...</string>
-    <string name="trakt_token_refreshes">Trakt access token се обновява след %1$s</string>
-    <string name="trakt_login">Вписване</string>
-    <string name="trakt_more_like_this_source_subtitle">Избери откъде да идват препоръките на страниците с детайли</string>
-    <string name="trakt_more_like_this_source_title">Източник на „Подобни“</string>
-    <string name="trakt_watch_progress_title">Прогрес на гледане</string>
-    <string name="trakt_status_enter_activation_code">Въведи кода на trakt.tv/activate</string>
+    <string name="trakt_disconnect">Изключване</string>
+    <string name="trakt_disconnect_subtitle">Това ще прекъсне връзката на вашия Trakt акаунт с Nuvio.</string>
+    <string name="trakt_disconnect_title">Да се прекъсне ли връзката с Trakt?</string>
+    <string name="trakt_error_code_expired">Кодът на устройството е изтекъл. Започнете отново.</string>
+    <string name="trakt_error_code_used">Кодът на устройството вече е използван. Започнете отново.</string>
+    <string name="trakt_error_denied">Авторизацията е отказана в Trakt.</string>
+    <string name="trakt_error_network_retry">Мрежова грешка, моля опитайте отново</string>
+    <string name="trakt_error_network_will_retry">Мрежова грешка, ще опитам отново</string>
+    <string name="trakt_library_source_title">Източник на библиотеката</string>
+    <string name="trakt_missing_credentials">Липсва TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET в local.properties.</string>
+    <string name="trakt_status_rate_limited_slowing_polling">Скоростта е ограничена, анкетирането е забавено...</string>
+    <string name="trakt_token_refreshes">Токенът за достъп до Trakt се обновява в %1$s</string>
+    <string name="trakt_login">Вход</string>
+    <string name="trakt_more_like_this_source_subtitle">Изберете откъде да идват препоръките на екраните с подробности и след игра</string>
+    <string name="trakt_more_like_this_source_title">Още подобни източници</string>
+    <string name="trakt_watch_progress_title">Наблюдение на напредъка</string>
+    <string name="trakt_status_enter_activation_code">Въведете кода на trakt.tv/activate</string>
 
     <!-- Watch party -->
     <string name="party_title">Съвместно гледане</string>
@@ -247,7 +247,7 @@
     <string name="stream_autoplay_countdown">Започва след %1$d секунди</string>
     <string name="stream_autoplay_hint">Натиснете OK, за да започнете възпроизвеждането веднага, или която и да е клавиша, за да изберете ръчно</string>
     <string name="collections_editor_no_catalogs">Няма налични каталози</string>
-    <string name="app_name">НУВИО</string>
+    <string name="app_name">Nuvio</string>
     <string name="tv_channel_continue_watching">Продължи гледането</string>
     <string name="type_movie">Филм</string>
     <string name="type_movies">Филми</string>
@@ -691,7 +691,7 @@
     <string name="advanced_section_performance">Производителност и навигация</string>
     <string name="advanced_section_diagnostics">Диагностика</string>
     <string name="advanced_section_cache">Кеш</string>
-    <string name="advanced_section_dv_diagnostics">ДВ диагностика</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">ДВ диагностика</string>
     <string name="advanced_fast_horizontal_navigation">Бърза хоризонтална навигация</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Увеличете скоростта на повторение на D-pad в редове, като същевременно запазите активирано ограничаване на повторението.</string>
     <string name="advanced_nuvio_focus_scroll">Превъртане на фокуса с Nuvio</string>
@@ -744,8 +744,8 @@
     <string name="supporters_empty">Все още не са намерени поддръжници.</string>
     <string name="supporters_error_title">Не можаха да се заредят поддръжниците</string>
     <string name="supporters_no_message">Няма споделено съобщение.</string>
-    <string name="supporters_level_supporter">Supporter</string>
-    <string name="supporters_level_supporter_plus">Supporter+</string>
+    <string name="supporters_level_supporter">Поддръжник</string>
+    <string name="supporters_level_supporter_plus">Поддръжник+</string>
     <string name="supporters_since">Подкрепяме Nuvio от %1$s</string>
     <string name="supporters_since_unknown">С гордост подкрепяме Nuvio</string>
     <string name="supporters_open_donations">Отваряне на страницата за поддръжка</string>
@@ -760,8 +760,8 @@
     <string name="supporter_membership_you_are">Вие сте</string>
     <string name="supporter_membership_thank_you">Благодаря.</string>
     <string name="supporter_membership_supporter_since">Поддръжник от %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Supporter</string>
-    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
+    <string name="supporter_membership_tier_supporter">Поддръжник</string>
+    <string name="supporter_membership_tier_supporter_plus">Поддръжник Плюс</string>
     <string name="supporter_membership_connected_title">Patreon е свързан</string>
     <string name="supporter_membership_connected_description">В този Patreon акаунт не е намерено активно ниво в Nuvio. Вижте наличните опции или опреснете страницата, след като промените членството си в Patreon.</string>
     <string name="supporter_membership_scan_support">Сканирайте, за да видите членството</string>
@@ -871,23 +871,23 @@
     <string name="audio_dv5_to_dv81_sub">Signal Profile 5 предава поточно като Profile 8.1 за HDR10-съвместим изход. Помага на устройства, които нямат вграден DV5 декодер.</string>
     <string name="audio_dv7_preserve_mapping_title">Запазване на DV съпоставянето (DV7 към DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">Запазва оригиналното тонално картографиране, замислено от създателя, с цената на малко повече обработка на кадър.</string>
-    <string name="dv7_libdovi_mode_caption">Режим на конвертиране (избран автоматично, не променяйте, освен ако не е указано). Изберете един, за да го наложите; „Никой не използва автоматичен режим“. Активен само когато DV7 Handling е „Конвертиране в DV8.1“.</string>
-    <string name="dv7_libdovi_mode_row_title">Режим на преобразуване</string>
-    <string name="dv7_libdovi_mode_none_title">Няма</string>
-    <string name="dv7_libdovi_mode_none_sub">Без отмяна. Използва автоматично избрания режим на преобразуване.</string>
-    <string name="dv7_libdovi_mode_0_title">Режим 0 — Копиране (без конвертиране)</string>
-    <string name="dv7_libdovi_mode_0_sub">Разделете RPU и го запишете обратно непроменен. Без преобразуване на профил.</string>
-    <string name="dv7_libdovi_mode_1_title">Режим 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">Конвертирайте RPU, за да бъде съвместим с MEL (Minimum Enhancement Layer).</string>
-    <string name="dv7_libdovi_mode_2_title">Режим 2 — 8.1 (съпоставяне без операции)</string>
-    <string name="dv7_libdovi_mode_2_sub">Конвертиране в профил 8.1 с картографиране на яркостта и цветността, зададено на „no-op“. Стандартното преобразуване.</string>
-    <string name="dv7_libdovi_mode_3_title">Режим 3 — Профил 5 до 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">Конвертиране на потоци от Profile 5 (DV5) в Profile 8.1. Същото преобразуване, което използва превключвателят „Конвертиране на DV5 в DV8.1“.</string>
-    <string name="dv7_libdovi_mode_4_title">Режим 4 — 8.4 (статичен)</string>
-    <string name="dv7_libdovi_mode_4_sub">Конвертиране в статичен профил 8.4.</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Режим на конвертиране (избран автоматично, не променяйте, освен ако не е указано). Изберете един, за да го наложите; „Никой не използва автоматичен режим“. Активен само когато DV7 Handling е „Конвертиране в DV8.1“.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Режим на преобразуване</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">Няма</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">Без отмяна. Използва автоматично избрания режим на преобразуване.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Режим 0 — Копиране (без конвертиране)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Разделете RPU и го запишете обратно непроменен. Без преобразуване на профил.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Режим 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Конвертирайте RPU, за да бъде съвместим с MEL (Minimum Enhancement Layer).</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Режим 2 — 8.1 (съпоставяне без операции)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Конвертиране в профил 8.1 с картографиране на яркостта и цветността, зададено на „no-op“. Стандартното преобразуване.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Режим 3 — Профил 5 до 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Конвертиране на потоци от Profile 5 (DV5) в Profile 8.1. Същото преобразуване, което използва превключвателят „Конвертиране на DV5 в DV8.1“.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Режим 4 — 8.4 (статичен)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Конвертиране в статичен профил 8.4.</string>
     <string name="audio_mpv_hwdec_title">Хардуерно декодиране (само за MPV)</string>
     <string name="audio_mpv_hwdec_dialog_subtitle">Изберете как libmpv трябва да използва хардуерни декодери.</string>
-    <string name="audio_mpv_hwdec_legacy_direct_copy">Наследен (директно -&gt; копиране)</string>
+    <string name="audio_mpv_hwdec_legacy_direct_copy">Наследен (директно -> копиране)</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy_desc">Предишно поведение по подразбиране: първо опитайте директно хардуерно копиране, след това копирайте обратно.</string>
     <string name="audio_mpv_hwdec_auto_safe">Автоматично (автоматично безопасно)</string>
     <string name="audio_mpv_hwdec_auto_safe_desc">По-безопасен автоматичен режим с резервен режим, когато някои хардуерни декодери се повредят.</string>
@@ -2098,7 +2098,7 @@
     <string name="cd_expand">Разгъване на %1$s</string>
     <string name="cd_collapse">Свиване на %1$s</string>
     <string name="cd_qr_login">QR код за вход</string>
-    <string name="cd_nuvio">НУВИО</string>
+    <string name="cd_nuvio">Nuvio</string>
     <string name="debug_signin_success">Влизането е осъществено успешно</string>
     <string name="debug_generate_description">Генериран от грешки %1$s елемент #%2$d</string>
     <string name="debug_generate_result_failed">Неуспешно: %1$s</string>
@@ -2748,7 +2748,7 @@
     <string name="playback_buffer_target_danger_warning">Опасност: Над лимита за предупреждение (%1$d MB). Висок риск от срив.</string>
     <string name="playback_estimated_memory_usage">Приблизително използване на паметта: %1$d / %2$d MB</string>
     <string name="licenses_attributions_simkl_body">Nuvio се свързва със Simkl за удостоверяване на акаунт, списъци за гледане, история на гледане, напредък на възпроизвеждане и скробълинг. Данните за проследяване на филми, телевизионни предавания и аниме се предоставят от Simkl. Nuvio не е свързан с или одобрен от Simkl.</string>
-    <string name="licenses_attributions_simkl_title">Симкл</string>
+    <string name="licenses_attributions_simkl_title">Simkl</string>
     <string name="licenses_attributions_premiumize_title">Премиумизиране</string>
     <string name="licenses_attributions_premiumize_body">Nuvio се свързва с Premiumize за удостоверяване на акаунт, достъп до облачна библиотека, проверки на кеша и функции за възпроизвеждане в облака. Nuvio не е свързан с Premiumize или одобрен от него.</string>
     <string name="licenses_attributions_torbox_title">TorBox</string>

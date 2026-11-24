@@ -111,8 +111,8 @@
     <string name="cast_role_writer">脚本</string>
     <string name="detail_tab_ratings">評価</string>
     <string name="detail_tab_more_like_this">関連作品</string>
-    <string name="detail_more_like_this_powered_by_tmdb">TMDB 提供</string>
-    <string name="detail_more_like_this_powered_by_trakt">Trakt 提供</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Powered by TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Powered by Trakt</string>
     <string name="detail_comments_title">コメント</string>
     <string name="detail_comments_subtitle">Traktのレビュー</string>
     <string name="detail_comments_empty">Traktのレビューはまだありません</string>
@@ -201,7 +201,7 @@
     <string name="settings_network">通信速度</string>
     <string name="settings_network_subtitle">レイテンシとダウンロードの診断</string>
     <string name="settings_advanced">詳細設定</string>
-    <string name="settings_advanced_subtitle">ネットワーク速度診断を実行</string>
+    <string name="settings_advanced_subtitle">パフォーマンス、ナビゲーション、キャッシュ、診断</string>
     <string name="network_speed_test_run">速度テストを実行</string>
     <string name="network_speed_test_running">速度テスト実行中</string>
     <string name="network_speed_test_subtitle">ダウンロード速度とレイテンシを計測</string>
@@ -211,7 +211,7 @@
     <string name="network_latency_label">レイテンシ</string>
     <string name="network_download_label">ダウンロード</string>
     <string name="network_error_prefix">エラー: %1$s</string>
-    <string name="network_powered_by_fast">fast.com 提供</string>
+    <string name="network_powered_by_fast">Powered by fast.com</string>
     <string name="network_connection_wifi">Wi-Fi</string>
     <string name="network_connection_ethernet">有線LAN</string>
     <string name="network_connection_offline">オフライン</string>
@@ -241,7 +241,7 @@
     <string name="supporters_contributors_donate_copy">Nuvioは無料のオープンソースプロジェクトです。サポートしたい方は、開発・インフラの維持にご協力いただけます</string>
     <string name="supporters_contributors_donate_button">Nuvioに寄付</string>
     <string name="supporters_contributors_qr_title">QRをスキャンして寄付</string>
-    <string name="supporters_contributors_qr_subtitle">スマートフォンでリンクを開き、Ko-fiでNuvioをサポート</string>
+    <string name="supporters_contributors_qr_subtitle">スマートフォンでリンクを開いてNuvioをサポート</string>
     <string name="supporters_contributors_qr_hint">カメラをQRコードに向けるか、下のボタンを使用してください</string>
     <string name="supporters_contributors_back_button">詳細に戻る</string>
     <string name="supporters_tab">サポーター</string>
@@ -269,7 +269,7 @@
     <string name="playback_osd_clock">OSD時計</string>
     <string name="playback_skip_intro">イントロスキップ</string>
     <string name="playback_skip_intro_sub">introdb.appを使用してイントロとリキャップを検出</string>
-    <string name="playback_auto_frame_rate">自動フレームレート</string>
+    <string name="playback_auto_frame_rate">自動フレームレート &amp; 解像度</string>
     <string name="playback_section_player">プレーヤーとストリーム選択</string>
     <string name="playback_section_player_desc">プレーヤー設定、自動再生、ソースフィルター</string>
     <string name="playback_player">プレーヤー</string>
@@ -310,7 +310,7 @@
     <string name="audio_decoder_priority">デコーダー優先度</string>
     <string name="audio_tunneled">トンネル再生</string>
     <string name="audio_tunneled_sub">ハードウェアレベルの音声/映像同期。一部のAndroid TVデバイスで再生を改善する可能性があります</string>
-    <string name="audio_decoder_device_only_desc">内蔵ハードウェアデコーダーのみ使用。最も互換性が高いですが、すべての形式に対応していない場合があります</string>
+    <string name="audio_decoder_device_only_desc">内蔵ハードウェアデコーダーのみ使用。最も互換性が高いが、すべての形式に対応していない場合があります</string>
     <string name="audio_decoder_prefer_device_desc">利用可能な場合はハードウェアデコーダーを使用し、FFmpegにフォールバック。ほとんどのデバイスで推奨</string>
     <string name="audio_decoder_prefer_app_desc">利用可能な場合はFFmpegデコーダーを使用。対応形式は増えますがCPU使用率が上がります</string>
     <string name="audio_decoder_controls">音声と動画にハードウェアまたはソフトウェア(FFmpeg)デコーダーを使用するかを制御</string>
@@ -431,8 +431,8 @@
     <string name="layout_fullscreen_hero_backdrop_sub">ヒーローの背景画像を画面全体に広げます</string>
     <string name="layout_show_hero">ヒーローセクションを表示</string>
     <string name="layout_show_hero_sub">ホームの上部にヒーローカルーセルを表示</string>
-    <string name="layout_show_discover">検索にディスカバーを表示</string>
-    <string name="layout_show_discover_sub">検索が空のときにディスカバーセクションを表示</string>
+    <string name="layout_show_discover">ディスカバーを表示/非表示</string>
+    <string name="layout_show_discover_sub">ブラウズ用のディスカバーセクションを追加</string>
     <string name="layout_poster_labels">ポスターラベルを表示</string>
     <string name="layout_poster_labels_sub">行、グリッド、全表示のポスター下にタイトルを表示</string>
     <string name="layout_addon_name">アドオン名を表示</string>
@@ -466,7 +466,7 @@
     <string name="layout_trailer_muted">予告編をミュートで再生</string>
     <string name="layout_trailer_muted_sub_preview">自動再生プレビュー中の予告編音声をミュート</string>
     <string name="layout_trailer_muted_sub_expanded">拡大カードの予告編音声をミュート</string>
-    <string name="layout_section_card_style">ポスターカードスタイル</string>
+    <string name="layout_section_card_style">ポスターカード</string>
     <string name="layout_section_card_style_desc">カードの幅と角の丸みを調整</string>
     <string name="layout_open">閉じる</string>
     <string name="layout_closed">開く</string>
@@ -514,13 +514,13 @@
     <string name="mdblist_dialog_placeholder">MDBList APIキーを入力</string>
     <string name="mdblist_not_set">未設定</string>
     <string name="mdblist_invalid_api_key">無効なMDBList APIキー</string>
-    <string name="animeskip_title">アニメスキップ</string>
+    <string name="animeskip_title">Anime Skip</string>
     <string name="animeskip_subtitle">アニメのイントロ/アウトロスキップ用のAnime Skip Client IDを設定</string>
     <string name="animeskip_enable_title">Anime Skipを有効にする</string>
     <string name="animeskip_enable_subtitle">anime-skip.comからスキップタイムスタンプを取得</string>
-    <string name="animeskip_client_id_title">クライアントID</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">anime-skip.comからスキップタイムスタンプを取得するために必要</string>
-    <string name="animeskip_dialog_title">アニメスキップのクライアントID</string>
+    <string name="animeskip_dialog_title">Anime Skip Client ID</string>
     <string name="animeskip_dialog_subtitle">anime-skip.com/account/settingsでClient IDを作成</string>
     <string name="animeskip_dialog_placeholder">Client IDを入力</string>
     <string name="animeskip_invalid_client_id">無効なClient ID</string>
@@ -571,7 +571,7 @@
     <string name="trakt_watch_progress_dialog_title">視聴進行状況</string>
     <string name="trakt_watch_progress_dialog_subtitle">Traktのスクロブルが有効な間、再開と視聴を続けるにTraktとNuvio Syncのどちらを使用するか選択してください</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
-    <string name="trakt_watch_progress_source_nuvio">Nuvio同期</string>
+    <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_setting_on">オン</string>
     <string name="trakt_setting_off">オフ</string>
     <string name="trakt_watch_progress_trakt_selected">視聴進行状況ソースをTraktに設定しました</string>
@@ -714,10 +714,10 @@
     <string name="addon_empty">アドオンがインストールされていません。追加して始めましょう</string>
     <string name="addon_remove">削除</string>
     <string name="addon_manage_from_phone_title">スマートフォンから管理</string>
-    <string name="addon_manage_from_phone_subtitle">QRコードをスキャンしてスマートフォンからアドオンとホームカタログを管理</string>
+    <string name="addon_manage_from_phone_subtitle">QRコードをスキャンしてスマートフォンからアドオン、カタログ、コレクションを管理</string>
     <string name="addon_reorder_title">ホームカタログを並び替え</string>
     <string name="addon_reorder_subtitle">ホームのカタログ行の順序を制御(クラシック + モダン + グリッド)</string>
-    <string name="addon_qr_scan_instruction">スマートフォンでスキャンしてアドオンとカタログを管理</string>
+    <string name="addon_qr_scan_instruction">スマートフォンでスキャンしてアドオン、カタログ、コレクションを管理</string>
     <string name="addon_qr_close">閉じる</string>
     <string name="addon_confirm_title">アドオンとカタログの変更を確認</string>
     <string name="addon_confirm_subtitle">スマートフォンから以下の変更が行われました:</string>
@@ -765,24 +765,24 @@
     <string name="player_more_speed">再生速度</string>
     <string name="player_more_aspect_ratio">アスペクト比</string>
     <string name="player_more_open_external">外部プレーヤーで開く</string>
-    <string name="stream_info_section_source">ソース</string>
-    <string name="stream_info_section_file">ファイル</string>
-    <string name="stream_info_section_video">映像</string>
-    <string name="stream_info_section_audio">オーディオ</string>
-    <string name="stream_info_section_subtitle">サブタイトル</string>
-    <string name="stream_info_filename">ファイル名</string>
-    <string name="stream_info_size">サイズ</string>
-    <string name="stream_info_codec">コーデック</string>
-    <string name="stream_info_resolution">解像度</string>
-    <string name="stream_info_frame_rate">フレームレート</string>
-    <string name="stream_info_bitrate">ビットレート</string>
-    <string name="stream_info_channels">チャンネル</string>
-    <string name="stream_info_sample_rate">サンプリングレート</string>
-    <string name="stream_info_language">言語</string>
-    <string name="stream_info_name">名前</string>
-    <string name="stream_info_source">ソース</string>
-    <string name="stream_info_subtitle_source_addon">アドオン</string>
-    <string name="stream_info_subtitle_source_embedded">組み込み</string>
+    <string name="stream_info_section_source">SOURCE</string>
+    <string name="stream_info_section_file">FILE</string>
+    <string name="stream_info_section_video">VIDEO</string>
+    <string name="stream_info_section_audio">AUDIO</string>
+    <string name="stream_info_section_subtitle">SUBTITLE</string>
+    <string name="stream_info_filename">Filename</string>
+    <string name="stream_info_size">Size</string>
+    <string name="stream_info_codec">Codec</string>
+    <string name="stream_info_resolution">Resolution</string>
+    <string name="stream_info_frame_rate">Frame Rate</string>
+    <string name="stream_info_bitrate">Bitrate</string>
+    <string name="stream_info_channels">Channels</string>
+    <string name="stream_info_sample_rate">Sample Rate</string>
+    <string name="stream_info_language">Language</string>
+    <string name="stream_info_name">Name</string>
+    <string name="stream_info_source">Source</string>
+    <string name="stream_info_subtitle_source_addon">Addon</string>
+    <string name="stream_info_subtitle_source_embedded">Embedded</string>
     <string name="sources_title">ソース</string>
     <string name="sources_reload">再読み込み</string>
     <string name="sources_close">閉じる</string>
@@ -808,7 +808,7 @@
     <string name="audio_mix_value_db">%1$d dB</string>
     <string name="audio_mix_persist_on">設定を保持: オン</string>
     <string name="audio_mix_persist_off">設定を保持: オフ</string>
-    <string name="audio_mix_range">範囲: %1$d dB から %2$d dB</string>
+    <string name="audio_mix_range">範囲: %1$d dB ～ %2$d dB</string>
     <string name="audio_mix_range_saved">範囲: %1$d dB ～ %2$d dB(保存済み)</string>
     <string name="audio_mix_unavailable">このデバイスでは増幅は利用できません</string>
     <string name="subtitle_dialog_title">字幕</string>
@@ -1084,7 +1084,7 @@
     <string name="watchlist_removed">ウォッチリストから削除しました</string>
     <string name="playback_player_auto">自動(コンテンツに最適化)</string>
     <string name="playback_player_auto_desc">映画やドラマにはExoPlayer・アニメにはMPV</string>
-    <string name="audio_dv_sub">DV対応ハードウェアがないデバイス向けにDolby Vision Profile 7を標準HEVCにマッピング</string>
+    <string name="audio_dv_sub">ハードウェアDVサポートがないデバイス用にDolby Vision Profile 7を標準HEVCにマッピング</string>
     <string name="subtitle_none_forced_only">なし（強制のみ）</string>
     <string name="audio_dv_title">DV7 - HEVCフォールバック</string>
     <string name="common.auto">自動</string>
@@ -1229,7 +1229,7 @@
     <string name="player.audio.unsupportedCodec">このデバイスではコーデックがサポートされていません</string>
     <string name="player.audio.noSupportedTracks">対応している音声トラックがありません</string>
     <string name="settings_stream_addon_logo_title">アドオンロゴ</string>
-    <string name="settings_stream_addon_logo_description">ストリームソースの横にアドオンのロゴと名前を表示します。</string>
+    <string name="settings_stream_addon_logo_description">ストリームソースの横にアドオンロゴと名前を表示します。</string>
     <string name="autoplay_reuse_binge_group">一気見グループを再利用</string>
     <string name="autoplay_reuse_binge_group_sub">セッション間で最後の一気見グループを記憶・再利用(視聴を続ける、詳細など)。</string>
     <string name="unsupported_device_title">このテレビはサポートされていません</string>
@@ -1432,7 +1432,7 @@
     <string name="debrid_stream_min_quality_720">720p以上</string>
     <string name="debrid_stream_min_quality_1080">1080p以上</string>
     <string name="debrid_stream_min_quality_2160">4Kのみ</string>
-    <string name="debrid_stream_dolby_vision_title">ドルビービジョン</string>
+    <string name="debrid_stream_dolby_vision_title">Dolby Vision</string>
     <string name="debrid_stream_dolby_vision_subtitle">Dolby Visionソースを表示、非表示、または必須にします。</string>
     <string name="debrid_stream_hdr_title">HDR</string>
     <string name="debrid_stream_hdr_subtitle">HDRソースを表示、非表示、または必須にします。</string>
@@ -1692,7 +1692,7 @@
     <string name="licenses_attributions_section_playback">Android再生ライセンス</string>
     <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">ソースコードとライセンス条項はプロジェクトリポジトリで入手可能です。GNU General Public License v3.0 の下でライセンスされています。</string>
-    <string name="licenses_attributions_tmdb_title">The Movie Database（TMDB）</string>
+    <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvioは映画・TVのメタデータ、アートワーク、予告編、キャスト、制作詳細、コレクション、レコメンドにTMDB APIを使用しています。この製品はTMDB APIを使用していますが、TMDBによって承認または認定されていません。</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">NuvioはTraktと接続し、アカウント認証、視聴履歴、進行状況同期、ライブラリデータ、評価、リスト、コメントを利用します。NuvioはTraktと提携または承認されていません。</string>
@@ -1833,7 +1833,7 @@
     <string name="plugin_error_refresh">更新に失敗しました: %1$s</string>
     <string name="plugin_error_test">テストに失敗しました: %1$s</string>
     <string name="plugin_test_no_results">結果が見つかりません</string>
-    <string name="plugin_test_found_streams">%1$d件のストリームが見つかりました</string>
+    <string name="plugin_test_found_streams">%1$d個のストリームが見つかりました</string>
     <string name="plugin_default_supported_types">映画／テレビ</string>
     <string name="settings.plugins.openSubtitle">実行可能なNuvio JSプロバイダーと保持された外部メタデータを管理</string>
     <string name="home.continueStatusWatchedPercent">{{percent}}% 視聴済み</string>
@@ -1919,10 +1919,10 @@
     <string name="mdblist_show_on_hero_subtitle">ヒーローカルーセルでMDBList評価を表示(モダンとクラシック/グリッド)</string>
     <string name="mdblist_rating_order_title">評価の順序</string>
     <string name="mdblist_rating_order_subtitle">最初の3つの有効で利用可能な評価がモダンヒーローに表示されます。矢印を使用して並べ替えます。</string>
-    <string name="cd_move_up">上へ移動</string>
-    <string name="cd_move_down">下へ移動</string>
+    <string name="cd_move_up">上に移動</string>
+    <string name="cd_move_down">下に移動</string>
 
-    <string name="stream_info_player_engine">プレイヤーエンジン</string>
+    <string name="stream_info_player_engine">Player Engine</string>
 
     <!-- Watch party -->
     <string name="party_title">ウォッチパーティー</string>
@@ -2178,7 +2178,7 @@
     <string name="advanced_section_performance">パフォーマンス &amp; ナビゲーション</string>
     <string name="advanced_section_diagnostics">診断</string>
     <string name="advanced_section_cache">キャッシュ</string>
-    <string name="advanced_section_dv_diagnostics">DV 診断</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
     <string name="advanced_fast_horizontal_navigation">高速水平ナビゲーション</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">D-padのリピート速度を上げます(リピートスロットリングは有効のまま)。</string>
     <string name="advanced_nuvio_focus_scroll">Nuvioフォーカススクロール</string>
@@ -2219,20 +2219,20 @@
     <string name="audio_dv5_to_dv81_sub">Profile 5ストリームをProfile 8.1としてHDR10互換出力用に変換。ネイティブDV5デコーダーがないデバイスに有効。</string>
     <string name="audio_dv7_preserve_mapping_title">DVマッピングを保持(DV7→DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">制作者が意図したトーンマッピングを保持しますが、フレームごとの処理が若干増えます。</string>
-    <string name="dv7_libdovi_mode_caption">変換モード（自動選択、指示がない限り変更しない）。強制的に適用するにはいずれかを選択してください。「なし」を選択すると自動設定が適用されます。「DV7処理」が「DV8.1に変換」に設定されている場合にのみ有効です。</string>
-    <string name="dv7_libdovi_mode_row_title">変換モード</string>
-    <string name="dv7_libdovi_mode_none_title">なし</string>
-    <string name="dv7_libdovi_mode_none_sub">オーバーライドなし。自動的に選択された変換モードを使用します。</string>
-    <string name="dv7_libdovi_mode_0_title">モード 0 — コピー（変換なし）</string>
-    <string name="dv7_libdovi_mode_0_sub">RPUを解析し、変更を加えずにそのまま書き戻す。プロファイルの変換は行わない。</string>
-    <string name="dv7_libdovi_mode_1_title">モード 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">RPUをMEL（Minimum Enhancement Layer）に対応するように変換する。</string>
-    <string name="dv7_libdovi_mode_2_title">モード 2 — 8.1（ノーオペレーションマッピング）</string>
-    <string name="dv7_libdovi_mode_2_sub">ルマおよびクロママッピングを「no-op」に設定して、プロファイル8.1に変換します。標準的な変換です。</string>
-    <string name="dv7_libdovi_mode_3_title">モード 3 — プロファイル 5 ～ 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">プロファイル 5 (DV5) ストリームをプロファイル 8.1 に変換します。「DV5 を DV8.1 に変換」トグルが使用するのと同じ変換処理です。</string>
-    <string name="dv7_libdovi_mode_4_title">モード 4 — 8.4（静的）</string>
-    <string name="dv7_libdovi_mode_4_sub">静的プロファイル 8.4 に変換する。</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="audio_mpv_hwdec_title">ハードウェアデコード (MPVのみ)</string>
     <string name="audio_mpv_hwdec_dialog_subtitle">libmpvがハードウェアデコーダーを使用する方法を選択します。</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy">レガシー (direct -&gt; copy)</string>
@@ -2712,21 +2712,21 @@
     <string name="collections_editor_tmdb_genre_crime">犯罪</string>
     <string name="collections_editor_tmdb_genre_reality">リアリティ</string>
     <string name="autoplay_regex_preset_any_1080p_plus">任意の1080p+</string>
-    <string name="autoplay_regex_preset_4k_remux">4K / リムックス</string>
+    <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
     <string name="autoplay_regex_preset_1080p_standard">1080p標準</string>
     <string name="autoplay_regex_preset_720p_smaller">720p / 小さいサイズ</string>
     <string name="autoplay_regex_preset_web_sources">WEBソース</string>
     <string name="autoplay_regex_preset_bluray_quality">BluRay品質</string>
     <string name="autoplay_regex_preset_hevc_x265">HEVC / x265</string>
     <string name="autoplay_regex_preset_avc_x264">AVC / x264</string>
-    <string name="autoplay_regex_preset_hdr_dolby_vision">HDR / ドルビービジョン</string>
-    <string name="autoplay_regex_preset_dolby_atmos_dts">ドルビーアトモス / DTS</string>
+    <string name="autoplay_regex_preset_hdr_dolby_vision">HDR / Dolby Vision</string>
+    <string name="autoplay_regex_preset_dolby_atmos_dts">Dolby Atmos / DTS</string>
     <string name="autoplay_regex_preset_english">英語</string>
     <string name="autoplay_regex_preset_no_cam_ts">CAM/TSなし</string>
     <string name="autoplay_regex_preset_no_remux_hdr">REMUX/HDRなし</string>
     <string name="player_torrent_peer_info">%1$dシード · %2$dピア</string>
     <string name="player_torrent_buffered_status">%1$s バッファ済み · %2$s · %3$s</string>
-    <string name="player_torrent_status">%1$s: %2$s。</string>
+    <string name="player_torrent_status">%1$s · %2$s</string>
     <string name="player_torrent_stats">%1$dピア · %2$dシード · %3$d%%</string>
     <string name="player_torrent_connecting_peers">ピアに接続中…</string>
     <string name="player_track_audio_fallback">音声%1$d</string>

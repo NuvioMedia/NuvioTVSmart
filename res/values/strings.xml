@@ -140,7 +140,7 @@
     <string name="cw_resume">Resume</string>
     <string name="cw_percent_watched">%1$d%% Watched</string>
     <string name="cw_hours_min_left">%1$dh %2$dm left</string>
-    <string name="cw_min_left">%1$dm Left</string>
+    <string name="cw_min_left">%1$dm left</string>
     <string name="cw_almost_done">Almost Done</string>
     <string name="cw_airs_date">Airs %1$s</string>
     <string name="cw_airs_today">Airs Today</string>
@@ -305,7 +305,7 @@
     <string name="custom_theme_color_2">Color 2</string>
     <string name="custom_theme_color_3">Color 3</string>
     <string name="custom_theme_hex_title">Hex color</string>
-    <string name="custom_theme_hex_hint">Enter a six-character hex color (0–9, A–F).</string>
+    <string name="custom_theme_hex_hint">Choose six characters (0–9, A–F). Your first key replaces the current code.</string>
     <string name="custom_theme_use_color">Use color</string>
     <string name="custom_theme_save">Save theme</string>
     <string name="custom_theme_preview">PREVIEW</string>
@@ -356,7 +356,7 @@
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">Nuvio connects to Trakt for account authentication, watched history, progress sync, library data, ratings, lists, and comments. Nuvio is not affiliated with or endorsed by Trakt.</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
-    <string name="licenses_attributions_mdblist_body">Nuvio uses MDBList for ratings and external score provider data. Nuvio is not affiliated with or endorsed by MDBList.</string>
+    <string name="licenses_attributions_mdblist_body">Nuvio uses MDBList for ratings, watched history and playback tracking. Nuvio is not affiliated with or endorsed by MDBList.</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
     <string name="licenses_attributions_introdb_body">Nuvio uses the IntroDB API for community-provided intro, recap, credits, and preview timestamps used by skip controls. Nuvio is not affiliated with or endorsed by IntroDB.</string>
     <string name="licenses_attributions_imdb_title">IMDb Non-Commercial Datasets</string>
@@ -467,7 +467,7 @@
     <string name="advanced_section_performance">Performance &amp; navigation</string>
     <string name="advanced_section_diagnostics">Diagnostics</string>
     <string name="advanced_section_cache">Cache</string>
-    <string name="advanced_section_dv_diagnostics">DV Diagnostics</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
     <string name="advanced_fast_horizontal_navigation">Fast Horizontal Navigation</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Increase D-pad repeat speed in rows while keeping repeat throttling enabled.</string>
     <string name="advanced_nuvio_focus_scroll">Nuvio Focus Scrolling</string>
@@ -581,8 +581,8 @@
     <string name="auto_skip_recap_sub">Skip recap segments automatically.</string>
     <string name="auto_skip_outro">Outro / Ending</string>
     <string name="auto_skip_outro_sub">Skip outros and anime endings automatically.</string>
-    <string name="auto_skip_movie_credits">Movie Credits</string>
-    <string name="auto_skip_movie_credits_sub">Skip movie credits automatically.</string>
+    <string name="auto_skip_movie_credits">End Credits</string>
+    <string name="auto_skip_movie_credits_sub">Skip movie credits automatically, keeping post-credits scenes.</string>
     <string name="playback_auto_frame_rate">Auto Frame Rate &amp; Resolution</string>
     <string name="playback_section_player">Player &amp; Stream Selection</string>
     <string name="playback_section_player_desc">Player preference, auto-play, and source filtering.</string>
@@ -628,7 +628,7 @@
     <string name="video_section">Video</string>
     <string name="audio_trailer_section">Trailer</string>
     <string name="audio_autoplay_trailers">Auto-play Trailers</string>
-    <string name="audio_autoplay_trailers_sub">Automatically play trailers on the detail screen after a period of inactivity</string>
+    <string name="audio_autoplay_trailers_sub">Automatically play trailers on detail and post-play screens</string>
     <string name="audio_trailer_delay">Trailer Delay</string>
     <string name="audio_section">Audio</string>
     <string name="audio_lang_default">Default (media file)</string>
@@ -655,15 +655,15 @@
     <string name="audio_decoder_prefer_app">Prefer app decoders (FFmpeg)</string>
     <string name="audio_decoder_priority">Decoder Priority</string>
     <string name="audio_enable_downmix_title">Enable downmix</string>
-    <string name="audio_enable_downmix_subtitle">Uses the FFmpeg downmix path. When disabled, audio follows the previous Android/device path.</string>
+    <string name="audio_enable_downmix_subtitle">Uses the FFmpeg downmix path. Requires Prefer app decoders (FFmpeg). When disabled, audio follows the previous Android/device path.</string>
     <string name="audio_tunneled">Tunneled Playback</string>
     <string name="audio_tunneled_sub">Hardware-level audio/video sync. May improve playback on some Android TV devices</string>
-    <string name="dv7_handling_title">Dolby Vision Profile 7 Handling</string>
-    <string name="dv7_handling_dialog_subtitle">Choose how DV Profile 7 streams are processed at playback time.</string>
+    <string name="dv7_handling_title">Dolby Vision Handling</string>
+    <string name="dv7_handling_dialog_subtitle">Choose how DV streams are processed at playback time.</string>
     <string name="dv7_mode_auto">Auto (recommended)</string>
     <string name="dv7_mode_auto_desc">Detects your display and picks the best mode. If playback issues occur, try HDR10 base layer.</string>
     <string name="dv7_mode_hdr10_base_layer">HDR10 base layer</string>
-    <string name="dv7_mode_hdr10_base_layer_desc">Always strip Dolby Vision and play the HEVC HDR10 base layer.</string>
+    <string name="dv7_mode_hdr10_base_layer_desc">Ignore Dolby Vision enhancement data. Can help on devices that support HDR but struggle with DV Profile 7.</string>
     <string name="dv7_mode_dv81_libdovi">Convert to DV8.1</string>
     <string name="dv7_mode_dv81_libdovi_desc">Convert DV7 to single-layer DV8.1. Requires Dolby Vision display.</string>
     <string name="dv7_mode_off">Off (native)</string>
@@ -672,20 +672,20 @@
     <string name="audio_dv5_to_dv81_sub">Signal Profile 5 streams as Profile 8.1 for HDR10-compatible output. Helps on devices that do not have a native DV5 decoder.</string>
     <string name="audio_dv7_preserve_mapping_title">Preserve DV mapping (DV7 to DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">Keeps original creator-intended tone-mapping at the cost of slightly more processing per frame.</string>
-    <string name="dv7_libdovi_mode_caption">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
-    <string name="dv7_libdovi_mode_row_title">Conversion mode</string>
-    <string name="dv7_libdovi_mode_none_title">None</string>
-    <string name="dv7_libdovi_mode_none_sub">No override. Uses the automatically selected conversion mode.</string>
-    <string name="dv7_libdovi_mode_0_title">Mode 0 — Copy (no convert)</string>
-    <string name="dv7_libdovi_mode_0_sub">Parse the RPU and write it back untouched. No profile conversion.</string>
-    <string name="dv7_libdovi_mode_1_title">Mode 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
-    <string name="dv7_libdovi_mode_2_title">Mode 2 — 8.1 (no-op mapping)</string>
-    <string name="dv7_libdovi_mode_2_sub">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
-    <string name="dv7_libdovi_mode_3_title">Mode 3 — Profile 5 to 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
-    <string name="dv7_libdovi_mode_4_title">Mode 4 — 8.4 (static)</string>
-    <string name="dv7_libdovi_mode_4_sub">Convert to static profile 8.4.</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="audio_mpv_hwdec_title">Hardware Decoding (MPV-only)</string>
     <string name="audio_mpv_hwdec_dialog_subtitle">Select how libmpv should use hardware decoders.</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy">Legacy (direct -&gt; copy)</string>
@@ -731,7 +731,7 @@
     <string name="sub_hdr_dim_player_controls_sub">Apply the HDR brightness to the player controls and menus shown over HDR and Dolby Vision video</string>
     <string name="sub_advanced_section">Advanced Subtitle Rendering</string>
     <string name="sub_libass">Use libass for ASS/SSA subtitles</string>
-    <string name="sub_libass_sub">Experimental: advanced ASS/SSA rendering (styles, positioning, animations)</string>
+    <string name="sub_libass_sub">Advanced ASS/SSA rendering (styles, positioning, animations)</string>
     <string name="sub_libass_mode">Libass Render Mode</string>
     <string name="sub_mode_overlay_gl">Overlay OpenGL (Recommended)</string>
     <string name="sub_mode_overlay_gl_sub">Best quality with HDR support. Renders subtitles on a separate thread.</string>
@@ -821,8 +821,8 @@
     <string name="layout_modern_desc">Fixed hero with a single active row for faster browsing</string>
     <string name="layout_section_home">Home Layout</string>
     <string name="layout_section_home_desc">Choose structure and hero source.</string>
-    <string name="layout_landscape_posters">Landscape Posters</string>
-    <string name="layout_landscape_posters_sub">Switch between portrait and landscape cards for Modern view.</string>
+    <string name="layout_landscape_posters">Landscape Poster Mode</string>
+    <string name="layout_landscape_posters_sub">Use landscape cards everywhere.</string>
     <string name="layout_animations_effects">Animations &amp; effects</string>
     <string name="layout_animations_effects_sub">Reduce visual effects if the TV feels slow.</string>
     <string name="layout_perf_auto">Automatic</string>
@@ -905,7 +905,7 @@
     <string name="layout_trailer_muted">Play Trailer Muted</string>
     <string name="layout_trailer_muted_sub_preview">Mute trailer audio during autoplay preview.</string>
     <string name="layout_trailer_muted_sub_expanded">Mute trailer audio in expanded cards.</string>
-    <string name="layout_section_card_style">Poster Card Style</string>
+    <string name="layout_section_card_style">Poster Card</string>
     <string name="layout_section_card_style_desc">Tune card width and corner radius.</string>
     <string name="layout_open">Open</string>
     <string name="layout_closed">Closed</string>
@@ -1153,7 +1153,7 @@
     <string name="tmdb_trailers_title">Trailers</string>
     <string name="tmdb_trailers_subtitle">Trailer candidates from TMDB videos for the detail trailer section</string>
     <string name="tmdb_more_like_this_title">More Like This</string>
-    <string name="tmdb_more_like_this_subtitle">TMDB recommendation backdrops on detail page</string>
+    <string name="tmdb_more_like_this_subtitle">TMDB recommendation backdrops on detail and post-play screens</string>
     <string name="tmdb_collections_title">Collections</string>
     <string name="tmdb_collections_subtitle">TMDB movie collections in release order</string>
     <string name="tmdb_language_dialog_title">TMDB Language</string>
@@ -1183,7 +1183,7 @@
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_library_source_title">Library Source</string>
-    <string name="trakt_library_source_subtitle">Choose which library to use for saving and viewing your collection</string>
+    <string name="trakt_library_source_subtitle">Choose which source Nuvio reads for your Library</string>
     <string name="trakt_library_source_dialog_title">Library Source</string>
     <string name="trakt_library_source_dialog_subtitle">Choose where to save and manage your library items</string>
     <string name="trakt_library_source_trakt">Trakt</string>
@@ -1209,9 +1209,9 @@
     <string name="trakt_comments_now_shown">Trakt reviews on metadata pages are now shown</string>
     <string name="trakt_comments_now_hidden">Trakt reviews on metadata pages are now hidden</string>
     <string name="trakt_more_like_this_source_title">More Like This source</string>
-    <string name="trakt_more_like_this_source_subtitle">Choose where recommendations come from on detail pages</string>
+    <string name="trakt_more_like_this_source_subtitle">Choose where recommendations come from on detail and post-play screens</string>
     <string name="trakt_more_like_this_source_dialog_title">More Like This source</string>
-    <string name="trakt_more_like_this_source_dialog_subtitle">Select the source for recommendations shown on detail pages.</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Select the source for recommendations shown on detail and post-play screens.</string>
     <string name="trakt_more_like_this_source_trakt">Trakt</string>
     <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="trakt_cached_label">Cached</string>
@@ -1285,7 +1285,7 @@
     <string name="profile_addons">addons</string>
     <string name="profile_plugins">plugins</string>
     <string name="profile_choose_avatar">Choose Avatar</string>
-    <string name="profile_custom_avatar_web_panel_note">Custom avatar URLs can be configured from the Nuvio account panel.</string>
+    <string name="profile_custom_avatar_web_panel_note">Custom avatar URLs can be configured from the Nuvio web panel.</string>
     <string name="profile_avatar_none_selected">No avatar selected</string>
     <string name="profile_avatar_focus_hint">Focus an avatar to view its name</string>
     <string name="profile_avatar_category_all">All</string>
@@ -1298,7 +1298,7 @@
     <string name="profile_editor_tab_avatar">Avatar</string>
     <string name="profile_editor_tab_background">Background</string>
     <string name="profile_choose_background">Choose Profile Background</string>
-    <string name="profile_background_member_note">Custom background URLs can be configured from the Nuvio account panel.</string>
+    <string name="profile_background_member_note">Custom background URLs can be configured from the Nuvio web panel.</string>
     <string name="profile_background_normal">Normal</string>
     <string name="profile_background_custom">Custom</string>
     <string name="profile_add_new">Add Profile</string>
@@ -1335,7 +1335,7 @@
     <string name="profile_pin_overlay_set_support">This PIN will be required before opening this profile.</string>
     <string name="profile_pin_overlay_confirm_support">Re-enter the same 4 digits to finish setup.</string>
     <string name="profile_pin_overlay_mismatch">PINs did not match. Enter a new PIN again.</string>
-    <string name="profile_pin_overlay_forgot_hint">Forgot PIN? Reset it from your Nuvio account page.</string>
+    <string name="profile_pin_overlay_forgot_hint">Forgot PIN? Reset it from your Nuvio account on nuvio website.</string>
     <string name="profile_pin_overlay_back_hint">Press back to cancel</string>
     <string name="essential_addon_setup_title">Set up add-ons</string>
     <string name="essential_addon_setup_subtitle">Install one add-on to start streaming. You can add more later from Addons.</string>
@@ -1487,7 +1487,7 @@
     <string name="player_via">via %1$s</string>
     <string name="season_episode_format">S%1$d E%2$d</string>
     <string name="player_subtitle_delay">Subtitles Delay</string>
-    <string name="subtitle_delay_reset">Reset Delay</string>
+    <string name="subtitle_delay_reset">Reset</string>
     <string name="player_error_title">Playback Error</string>
     <string name="player_error_details">Playback error details</string>
     <string name="player_go_back">Go Back</string>
@@ -1633,7 +1633,7 @@
     <string name="skip_ending">Skip Ending</string>
     <string name="skip_recap">Skip Recap</string>
     <string name="skip_generic">Skip</string>
-    <string name="skip_movie_credits">Skip Movie Credits</string>
+    <string name="skip_movie_credits">Skip Credits</string>
     <string name="skip_to_post_credits">Skip to Post-Credits</string>
     <string name="display_mode_refresh">Refresh</string>
     <string name="display_mode_resolution">Resolution</string>
@@ -1807,7 +1807,7 @@
     <string name="custom_server_description">Enter the Backend URL provided by your server administrator.</string>
     <string name="custom_server_url_placeholder">https://backend.example.com</string>
     <string name="custom_server_check">Check server</string>
-    <string name="custom_server_checking">Checking…</string>
+    <string name="custom_server_checking">Checking\u2026</string>
     <string name="custom_server_review_title">Review custom server</string>
     <string name="custom_server_review_description">The discovery document is valid. Connecting will sign you out of the current server and restart the app. Confirm that this is a server you own or trust.</string>
     <string name="custom_server_verified_label">Discovered backend</string>
@@ -1820,7 +1820,7 @@
     <string name="custom_server_warning_private">This appears to be a private-network server, but the app still cannot verify who controls it.</string>
     <string name="custom_server_warning_credentials">The server operator can receive your account credentials and access data you sync through this server.</string>
     <string name="custom_server_trust_action">I trust this server</string>
-    <string name="custom_server_switching">Switching…</string>
+    <string name="custom_server_switching">Switching\u2026</string>
     <string name="official_server_title">Use official server?</string>
     <string name="official_server_description">You will be signed out of the custom server and the app will restart with the official service.</string>
     <string name="official_server_action">Use official server</string>
@@ -1846,7 +1846,7 @@
     <string name="auth_email_placeholder">Email address</string>
     <string name="auth_password_placeholder">Password</string>
     <string name="auth_email_sign_in">Sign In</string>
-    <string name="auth_email_signing_in">Signing in…</string>
+    <string name="auth_email_signing_in">Signing in\u2026</string>
     <string name="auth_email_required">Enter your email and password.</string>
     <string name="auth_email_invalid_credentials">The email or password is incorrect.</string>
     <string name="auth_email_network_error">Could not reach the server. Check your connection and try again.</string>
@@ -1862,7 +1862,7 @@
     <string name="auth_qr_code_label">Code: %1$s</string>
     <string name="auth_qr_expires">Expires in %1$s</string>
     <string name="auth_qr_phone_hint">Use your phone to sign in with email/password. TV stays QR-only for faster login.</string>
-    <string name="auth_qr_scan_instruction">Scan QR, approve in browser, then return here.</string>
+    <string name="auth_qr_scan_instruction">Scan the QR code or enter the short code in your browser.</string>
     <string name="auth_qr_code_display">Code: %1$s</string>
     <string name="auth_qr_refresh">Refresh QR</string>
     <string name="auth_qr_continue_without_account">Continue without account</string>
@@ -1999,7 +1999,7 @@
     <string name="layout_selection_continue">Continue</string>
     <string name="update_title">App Update</string>
     <string name="update_installer_required">Use Nuvio TV Installer to update the app on your TV.</string>
-    <string name="update_release_notes">What\'s new</string>
+    <string name="update_release_notes">Release notes</string>
     <string name="update_release_notes_unavailable">No release description is available.</string>
     <string name="update_downloading">Downloading update</string>
     <string name="update_download">Download</string>
@@ -2138,7 +2138,7 @@
     <string name="cd_open_discover">Open discover</string>
     <string name="cd_voice_search">Voice search</string>
     <string name="cd_donation_qr">Donation QR code</string>
-    <string name="cd_membership_qr">Membership QR code</string>
+    <string name="cd_membership_qr">Membership page QR code</string>
     <string name="cd_contributor_qr">Contributor support QR code</string>
     <string name="cd_expand">Expand %1$s</string>
     <string name="cd_collapse">Collapse %1$s</string>
@@ -2558,7 +2558,7 @@
     <string name="torrent_error_add_failed">Failed to add torrent</string>
     <string name="torrent_error_binary_missing">TorrServer binary not found at %1$s</string>
     <string name="torrent_error_process_died">TorrServer process died on startup (exit code %1$d)</string>
-    <string name="torrent_error_start_timeout">TorrServer failed to start within %1$ds</string>
+    <string name="torrent_error_start_timeout">Torrent stream did not start within %1$ds</string>
     <string name="player_torrent_starting_engine">Starting P2P engine…</string>
     <string name="player_torrent_rebuffer_status">%1$s buffered</string>
     <string name="player_stream_error_invalid_external_url">Invalid external URL</string>
@@ -2924,7 +2924,7 @@
     <string name="tracking_library_source_dialog_subtitle">Choose the service Nuvio reads for your Library. Playback scrobbles to every connected service.</string>
     <string name="tracking_trakt_features_title">Trakt features</string>
     <string name="tracking_simkl_anime_id_title">Anime ID preference</string>
-    <string name="tracking_simkl_anime_id_subtitle">Controls how anime series are identified.</string>
+    <string name="tracking_simkl_anime_id_subtitle">Controls how anime series are identified. Choosing MAL or Kitsu gives each season its own entry instead of grouping under one IMDB ID.</string>
     <string name="simkl_account_title">Simkl account</string>
     <string name="simkl_connect">Connect Simkl</string>
     <string name="simkl_disconnect">Disconnect Simkl</string>
@@ -2934,9 +2934,9 @@
     <string name="simkl_sync_info_action">How syncing works</string>
     <string name="simkl_sync_info_title">How Simkl syncing works</string>
     <string name="simkl_sync_info_description">Nuvio automatically checks Simkl at most once every %1$d minutes. Changes made through another app or the Simkl website may take that long to appear.</string>
-    <string name="simkl_sync_info_activity">Each refresh first checks whether Simkl reports any changes and downloads only the updates.</string>
-    <string name="simkl_sync_info_manual">Changes made in Nuvio are sent to Simkl immediately. Use Sync now to check remote changes sooner.</string>
-    <string name="simkl_sync_info_library_statuses">Shows placed in Simkl’s On Hold or Dropped lists are hidden from Continue Watching.</string>
+    <string name="simkl_sync_info_activity">Each refresh first checks whether Simkl reports any changes and downloads only the updates. This follows Simkl’s API rules, reduces unnecessary data use, and helps keep the service stable.</string>
+    <string name="simkl_sync_info_manual">Changes made in Nuvio are sent to Simkl immediately. Use Sync now whenever you want Nuvio to check for remote changes sooner.</string>
+    <string name="simkl_sync_info_library_statuses">Shows placed in Simkl’s On Hold or Dropped lists are hidden from Continue Watching. They remain hidden for as long as they stay in either list.</string>
     <string name="simkl_sync_info_docs">Read the Simkl sync guide</string>
     <string name="simkl_status_syncing">Syncing Simkl…</string>
     <string name="settings_card_depth_title">Card Depth Effect</string>
@@ -3084,7 +3084,7 @@
     <string name="mdblist_show_on_hero_title">Use Ratings on Hero</string>
     <string name="mdblist_show_on_hero_subtitle">Show MDBList ratings on hero carousel (modern and classic/grid)</string>
     <string name="mdblist_rating_order_title">Rating Order</string>
-    <string name="mdblist_rating_order_subtitle">First 3 enabled and available ratings are shown on the modern hero. Use arrows to reorder.</string>
+    <string name="mdblist_rating_order_subtitle">First 3 enabled and available ratings are shown on the modern hero. Use the reorder button to change their order.</string>
     <string name="addon_remote_title">Nuvio TV - Manage Addons</string>
     <string name="addon_remote_signed_in">Signed in. Addon and home catalog changes can be pushed through the web sync backend.</string>
     <string name="addon_remote_signed_out">Signed out. Changes save only in this browser unless you sign in on this phone.</string>
@@ -3135,9 +3135,9 @@
     <string name="servers_enabled">Enabled</string>
     <string name="servers_enabled_description">Show this server in Home, search, and stream results.</string>
     <string name="servers_catalog_metadata">Use addon metadata</string>
-    <string name="servers_catalog_metadata_description">Titles open with your addons' details and sync like any other catalog title, with playback and watched marks still sent to %1$s. Some titles may not match or play if your addons number or identify them differently.</string>
+    <string name="servers_catalog_metadata_description">Titles open with your addons\' details and sync like any other catalog title, with playback and watched marks still sent to %1$s. Some titles may not match or play if your addons number or identify them differently.</string>
     <string name="servers_import_watch_state">Import watch progress</string>
-    <string name="servers_import_watch_state_description">Add titles you're watching in %1$s to Continue watching, along with its watched marks. Playback resumes from %1$s either way.</string>
+    <string name="servers_import_watch_state_description">Add titles you\'re watching in %1$s to Continue watching, along with its watched marks. Playback resumes from %1$s either way.</string>
     <string name="servers_sign_in_again">Sign in again</string>
     <string name="servers_remove">Remove server</string>
     <string name="servers_remove_confirm_title">Remove this server?</string>
@@ -3155,11 +3155,11 @@
     <string name="servers_failure_auth">Sign in to this server again in Settings.</string>
     <string name="servers_failure_unreachable">The server is unavailable.</string>
     <string name="servers_failure_not_found">This item is no longer available on the server.</string>
-    <string name="servers_failure_unsupported">The server doesn't support this item.</string>
-    <string name="servers_failure_incomplete">Still checking this server's library. Try again in a moment.</string>
+    <string name="servers_failure_unsupported">The server doesn\'t support this item.</string>
+    <string name="servers_failure_incomplete">Still checking this server\'s library. Try again in a moment.</string>
     <string name="servers_playback_failed">Could not start playback from the server.</string>
-    <string name="servers_audio_switch_failed">Couldn't switch the audio track.</string>
-    <string name="servers_subtitle_switch_failed">Couldn't switch the subtitle track.</string>
+    <string name="servers_audio_switch_failed">Couldn\'t switch the audio track.</string>
+    <string name="servers_subtitle_switch_failed">Couldn\'t switch the subtitle track.</string>
     <string name="servers_play_method_direct_play">Direct play</string>
     <string name="servers_play_method_direct_stream">Direct stream</string>
     <string name="servers_play_method_transcode">Transcoding</string>
@@ -3211,7 +3211,7 @@
     <string name="ambient_mode_timeout_minutes_one">%1$d minute</string>
     <string name="ambient_mode_timeout_minutes_other">%1$d minutes</string>
     <string name="home_empty_no_sources_title">No content sources</string>
-    <string name="library_server_title_unsupported">Titles from your media server can't be added to this library. Turn on Use addon metadata for the server to save them here.</string>
+    <string name="library_server_title_unsupported">Titles from your media server can\'t be added to this library. Turn on Use addon metadata for the server to save them here.</string>
     <string name="library_source_servers">Servers</string>
     <string name="library_servers_empty_title">No libraries selected</string>
     <string name="library_servers_empty_message">Choose which libraries to show in Settings, under Content &amp; Discovery, then Media servers.</string>
@@ -3340,7 +3340,7 @@
     <string name="party_invite_qr">Watch party invite QR code</string>
 
     <string name="stream_resume_from_time">Resume from %1$s</string>
-    <string name="stream_resume_from_percent">Resume from %1$d%</string>
+    <string name="stream_resume_from_percent">Resume from %1$d%%</string>
     <string name="settings_player_badges_title">Badges in player</string>
     <string name="settings_player_badges_description">Show badges for the playing video and selected audio track.</string>
     <string name="settings_player_badges_pack_title">Player badge pack</string>
