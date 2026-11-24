@@ -105,7 +105,7 @@
     <string name="stream_info_codec">Codec</string>
     <string name="stream_info_resolution">Opløsning</string>
     <string name="stream_info_frame_rate">Billedfrekvens</string>
-    <string name="stream_info_bitrate">Bithastighed</string>
+    <string name="stream_info_bitrate">Bitrate</string>
     <string name="stream_info_channels">Kanaler</string>
     <string name="stream_info_sample_rate">Samplingsfrekvens</string>
     <string name="stream_info_language">Sprog</string>
@@ -408,8 +408,8 @@
     <string name="hero_press_back_trailer">Tryk tilbage for at lukke traileren</string>
     <string name="cd_rating">Bedømmelse</string>
     <string name="episodes_season">Sæson %1$d</string>
-    <string name="episodes_specials">Tilbud</string>
-    <string name="episodes_episode">Afsnit</string>
+    <string name="episodes_specials">Specials</string>
+    <string name="episodes_episode">Episode</string>
     <string name="episodes_cd_watched">Set</string>
     <string name="episodes_dialog_subtitle">Episodehandlinger</string>
     <string name="episodes_mark_watched">Markér som set</string>
@@ -453,7 +453,7 @@
     <string name="detail_comments_subtitle">Anmeldelser fra Trakt</string>
     <string name="detail_comments_subtitle_episode">Anmeldelser fra Trakt for S%1$dE%2$d</string>
     <string name="detail_comments_mode_show">Serie</string>
-    <string name="detail_comments_mode_episode">Afsnit</string>
+    <string name="detail_comments_mode_episode">Episode</string>
     <string name="detail_comments_mode_episode_change">Skift episode (%1$s)</string>
     <string name="detail_comments_episode_picker_title">Vælg episode</string>
     <string name="detail_comments_episode_picker_subtitle">Vælg en episode for at se dens Trakt-anmeldelser</string>
@@ -470,7 +470,7 @@
     <string name="detail_comments_badge_review">Anmeldelse</string>
     <string name="detail_comments_badge_spoiler">Spoiler</string>
     <string name="detail_comments_badge_rating">%1$d/10</string>
-    <string name="detail_comments_likes">%1$d synes godt om</string>
+    <string name="detail_comments_likes">%1$d likes</string>
     <string name="tmdb_entity_kind_company">Produktionsselskab</string>
     <string name="tmdb_entity_kind_network">Netværk</string>
     <string name="tmdb_entity_rail_popular">Populær</string>
@@ -563,7 +563,7 @@
     <string name="licenses_attributions_section_app">APP-LICENS</string>
     <string name="licenses_attributions_section_data">DATA &amp; TJENESTER</string>
     <string name="licenses_attributions_section_playback">ANDROID-AFSPILNINGSLICENSER</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio-tv</string>
+    <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">Kildekode og licensvilkår er tilgængelige i projektets repository. Licenseret under GNU General Public License v3.0.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio bruger TMDB API til film- og TV-metadata, artwork, trailere, cast, produktionsdetaljer, samlinger og anbefalinger. Dette produkt bruger TMDB API, men er ikke godkendt eller certificeret af TMDB.</string>
@@ -572,7 +572,7 @@
     <string name="licenses_attributions_mdblist_title">MDBList</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
     <string name="licenses_attributions_introdb_body">Nuvio bruger IntroDB API til fællesskabsleverede intro-, recap-, credits- og preview-tidsstempler brugt af spring-over-kontrolelementer. Nuvio er ikke tilknyttet eller godkendt af IntroDB.</string>
-    <string name="licenses_attributions_imdb_title">Ikke-kommercielle datasæt fra IMDb</string>
+    <string name="licenses_attributions_imdb_title">IMDb Non-Commercial Datasets</string>
     <string name="licenses_attributions_imdb_body">Nuvio bruger IMDb Non-Commercial Datasets, herunder title.ratings.tsv.gz, til IMDb-vurderinger og stemmeantal. Information venligst stillet til rådighed af IMDb (https://www.imdb.com). Brugt med tilladelse. IMDb-data er til personlig og ikke-kommerciel brug under IMDb\'s vilkår.</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Brugt som Android-afspilningsmotor. Licenseret under Apache License, Version 2.0.</string>
@@ -674,7 +674,7 @@
     <string name="advanced_section_performance">Ydeevne &amp; navigation</string>
     <string name="advanced_section_diagnostics">Diagnostik</string>
     <string name="advanced_section_cache">Cache</string>
-    <string name="advanced_section_dv_diagnostics">DV-diagnostik</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
     <string name="advanced_fast_horizontal_navigation">Hurtig vandret navigation</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Øg D-pad-gentagnelseshastighed i rækker mens gentagelsesbegrænsning forbliver aktiv.</string>
     <string name="advanced_nuvio_focus_scroll">Nuvio fokusscrolling</string>
@@ -688,7 +688,7 @@
     <string name="advanced_clear_cw_cache_done">Cache ryddet</string>
     <string name="advanced_remember_last_profile">Husk seneste profil</string>
     <string name="advanced_remember_last_profile_subtitle">Husk senest valgte profil ved opstart</string>
-    <string name="settings_debug">Fejlfinding</string>
+    <string name="settings_debug">Debug</string>
     <string name="settings_plugins_section_subtitle">Administrer repositories, udbydere og plugintilstande</string>
     <string name="settings_account_section_subtitle">Konto- og synkroniseringsstatus</string>
     <string name="account_stat_addons">addons</string>
@@ -756,7 +756,7 @@
     <string name="playback_auto_skip_segments_sub">Vælg hvilke segmenter der springes over automatisk.</string>
     <string name="auto_skip_intro">Intro / Åbning</string>
     <string name="auto_skip_intro_sub">Spring intros og anime-åbninger over automatisk.</string>
-    <string name="auto_skip_recap">Opsummering</string>
+    <string name="auto_skip_recap">Recap</string>
     <string name="auto_skip_recap_sub">Spring recap-segmenter over automatisk.</string>
     <string name="auto_skip_outro">Outro / Afslutning</string>
     <string name="auto_skip_outro_sub">Spring outros og anime-afslutninger over automatisk.</string>
@@ -831,29 +831,29 @@
     <string name="audio_dv5_to_dv81_sub">Signalér Profil 5-streams som Profil 8.1 for HDR10-kompatibelt output. Hjælper på enheder der ikke har en native DV5-decoder.</string>
     <string name="audio_dv7_preserve_mapping_title">Bevar DV-mapping (DV7 til DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">Bevarer den originale tone-mapping som skaberen tilsigtede, på bekostning af lidt mere behandling pr. frame.</string>
-    <string name="dv7_libdovi_mode_caption">Konverteringsindstilling (vælges automatisk, ændres ikke medmindre andet angives). Vælg en for at tvinge den; Ingen bruger automatisk. Aktiv kun når DV7-håndtering er indstillet til Konverter til DV8.1.</string>
-    <string name="dv7_libdovi_mode_row_title">Konverteringsfunktion</string>
-    <string name="dv7_libdovi_mode_none_title">Ingen</string>
-    <string name="dv7_libdovi_mode_none_sub">Ingen overskrivning. Bruger den automatisk valgte konverteringsindstilling.</string>
-    <string name="dv7_libdovi_mode_0_title">Tilstand 0 — Kopier (ingen konvertering)</string>
-    <string name="dv7_libdovi_mode_0_sub">Analyser RPU\'en og skriv den tilbage uændret. Ingen profilkonvertering.</string>
-    <string name="dv7_libdovi_mode_1_title">Mode 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">Konverter RPU\'en, så den er kompatibel med MEL (Minimum Enhancement Layer).</string>
-    <string name="dv7_libdovi_mode_2_title">Mode 2 — 8.1 (no-op-mapping)</string>
-    <string name="dv7_libdovi_mode_2_sub">Konverter til profil 8.1 med luma- og chroma-mapping indstillet til no-op. Standardkonverteringen.</string>
-    <string name="dv7_libdovi_mode_3_title">Mode 3 — Profil 5 til 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">Konverter Profile 5 (DV5)-streams til Profile 8.1. Samme konvertering som den, der bruges af knappen "Konverter DV5 til DV8.1".</string>
-    <string name="dv7_libdovi_mode_4_title">Mode 4 — 8,4 (statisk)</string>
-    <string name="dv7_libdovi_mode_4_sub">Konverter til statisk profil 8.4.</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="audio_mpv_hwdec_title">Hardwaredekodning (kun MPV)</string>
     <string name="audio_mpv_hwdec_dialog_subtitle">Vælg hvordan libmpv skal bruge hardwaredecoder.</string>
-    <string name="audio_mpv_hwdec_legacy_direct_copy">Ældre version (direkte -&gt; kopi)</string>
+    <string name="audio_mpv_hwdec_legacy_direct_copy">Legacy (direct -&gt; copy)</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy_desc">Tidligere standardadfærd: prøv direkte hardware først, derefter copy-back.</string>
     <string name="audio_mpv_hwdec_auto_safe">Automatisk (auto-safe)</string>
     <string name="audio_mpv_hwdec_auto_safe_desc">Sikrere automatisk tilstand med fallback når nogle hardwaredecoder fejler.</string>
-    <string name="audio_mpv_hwdec_hardware_copy">Hardware (kopi) (mediacodec-kopi)</string>
+    <string name="audio_mpv_hwdec_hardware_copy">Hardware (copy) (mediacodec-copy)</string>
     <string name="audio_mpv_hwdec_hardware_copy_desc">Bruger hardwaredekodning med copy-back til softwarehukommelse.</string>
-    <string name="audio_mpv_hwdec_hardware_direct">Hardware (direkte) (mediacodec)</string>
+    <string name="audio_mpv_hwdec_hardware_direct">Hardware (direct) (mediacodec)</string>
     <string name="audio_mpv_hwdec_hardware_direct_desc">Bruger direkte hardwaredekodning. Hurtigste sti på kompatible enheder.</string>
     <string name="audio_mpv_hwdec_disabled">Deaktiveret (no)</string>
     <string name="audio_mpv_hwdec_disabled_desc">Deaktiverer hardwaredekodning og bruger kun softwaredekodning.</string>
@@ -1128,11 +1128,11 @@
     <string name="debrid_prepare_stream_count">Links der skal forberedes</string>
     <string name="debrid_prepare_stream_count_warning">Brug et lavere antal, når det er muligt. Tilknyttede tjenester kan begrænse, hvor mange links der kan løses op i en given periode. Åbning af en film eller et afsnit kan tælle mod disse grænser, selv hvis du ikke trykker på Afspil, fordi links forberedes på forhånd.</string>
     <string name="debrid_prepare_count_one">1 link</string>
-    <string name="debrid_prepare_count_many">%1$d-links</string>
+    <string name="debrid_prepare_count_many">%1$d links</string>
     <string name="debrid_stream_max_results_title">Maks. resultater</string>
     <string name="debrid_stream_max_results_subtitle">Begræns, hvor mange Direct Debrid-kilder der vises.</string>
     <string name="debrid_stream_max_results_all">Alle streams</string>
-    <string name="debrid_stream_max_results_count">%1$d-streams</string>
+    <string name="debrid_stream_max_results_count">%1$d streams</string>
     <string name="debrid_stream_sort_title">Sortér resultater</string>
     <string name="debrid_stream_sort_subtitle">Vælg hvordan resultater sorteres.</string>
     <string name="debrid_stream_sort_original">Oprindelig rækkefølge</string>
@@ -1200,7 +1200,7 @@
     <string name="debrid_formatter_reset_title">Nulstil formatering</string>
     <string name="debrid_formatter_reset_subtitle">Gendan standardformatering af kilder.</string>
     <string name="debrid_formatter_qr_instruction">Scan denne QR-kode på din telefon for at konfigurere Debrid-kildeindstillinger.</string>
-    <string name="settings_stream_badges_section">Fusion-stil</string>
+    <string name="settings_stream_badges_section">Fusion Style</string>
     <string name="settings_stream_size_badges_title">Størrelsesbadges</string>
     <string name="settings_stream_size_badges_description">Vis størrelsesbadges i streamresultater og afspillerens kildevisning.</string>
     <string name="settings_stream_addon_logo_title">Addon-logo</string>
@@ -1231,13 +1231,13 @@
     <string name="streams_size">STØRRELSE %1$s</string>
     <string name="action_import">Importér</string>
     <string name="action_delete">Slet</string>
-    <string name="animeskip_title">Anime-spring</string>
+    <string name="animeskip_title">Anime Skip</string>
     <string name="animeskip_subtitle">Konfigurér dit Anime Skip Client ID til at springe anime-intro/-outro over</string>
     <string name="animeskip_enable_title">Aktivér Anime Skip</string>
     <string name="animeskip_enable_subtitle">Hent spring-tidsstempler fra anime-skip.com</string>
-    <string name="animeskip_client_id_title">Klient-ID</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">Påkrævet for at hente spring-tidsstempler fra anime-skip.com</string>
-    <string name="animeskip_dialog_title">Anime Skip-klient-ID</string>
+    <string name="animeskip_dialog_title">Anime Skip Client ID</string>
     <string name="animeskip_dialog_subtitle">Opret dit eget Client ID på anime-skip.com/account/settings</string>
     <string name="animeskip_dialog_placeholder">Indtast Client ID</string>
     <string name="animeskip_invalid_client_id">Ugyldigt Client ID</string>
@@ -1258,7 +1258,7 @@
     <string name="tmdb_basic_info_subtitle">Beskrivelse, genrer og bedømmelse fra TMDB</string>
     <string name="tmdb_details_title">Detaljer</string>
     <string name="tmdb_details_subtitle">Varighed, status, land og sprog fra TMDB</string>
-    <string name="tmdb_credits_title">Kreditering</string>
+    <string name="tmdb_credits_title">Credits</string>
     <string name="tmdb_credits_subtitle">Medvirkende med fotos, instruktør og manuskriptforfatter fra TMDB</string>
     <string name="tmdb_productions_title">Produktioner</string>
     <string name="tmdb_productions_subtitle">Produktionsselskaber fra TMDB</string>
@@ -1289,7 +1289,7 @@
     <string name="trakt_watch_progress_dialog_title">Se-fremdrift</string>
     <string name="trakt_watch_progress_dialog_subtitle">Vælg om genoptagelse og fortsæt med at se skal bruge Trakt eller Nuvio Sync, mens Trakt-scrobbling forbliver aktiv.</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
-    <string name="trakt_watch_progress_source_nuvio">Nuvio-synkronisering</string>
+    <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_library_source_dialog_title">Bibliotekskilde</string>
     <string name="trakt_library_source_dialog_subtitle">Vælg, hvor du vil gemme og administrere dine bibliotekets indhold</string>
     <string name="trakt_library_source_trakt">Trakt</string>
@@ -1326,7 +1326,7 @@
     <string name="trakt_unaired_dialog_subtitle">Vælg om fortsæt med at se skal inkludere kommende afsnit, inden de udgives.</string>
     <string name="trakt_show_unaired">Vis kommende afsnit</string>
     <string name="trakt_hide_unaired">Skjul kommende afsnit</string>
-    <string name="debug_title">Fejlfinding</string>
+    <string name="debug_title">Debug</string>
     <string name="debug_subtitle">Udviklerværktøjer og feature flags (kun debug-builds)</string>
     <string name="debug_section_popup">Popup / Dialog-test</string>
     <string name="debug_playback_error_title">Afspilningsfejl-skærm</string>
@@ -1385,7 +1385,7 @@
     <string name="profile_avatar_category_animation">Animation</string>
     <string name="profile_avatar_category_movie">Film</string>
     <string name="profile_avatar_category_tv">TV</string>
-    <string name="profile_avatar_category_gaming">Spil</string>
+    <string name="profile_avatar_category_gaming">Gaming</string>
     <string name="profile_add_new">Tilføj profil</string>
     <string name="profile_cancel">Annullér</string>
     <string name="profile_save">Gem</string>
@@ -1677,7 +1677,7 @@
     <string name="library_filter_sort">Sorter</string>
     <string name="library_filter_genre">Genre</string>
     <string name="library_filter_year">År</string>
-    <string name="genre_action">Handling</string>
+    <string name="genre_action">Action</string>
     <string name="genre_adventure">Eventyr</string>
     <string name="genre_animation">Animation</string>
     <string name="genre_comedy">Komedie</string>
@@ -1685,7 +1685,7 @@
     <string name="genre_documentary">Dokumentar</string>
     <string name="genre_drama">Drama</string>
     <string name="genre_family">Familie</string>
-    <string name="genre_fantasy">Fantasi</string>
+    <string name="genre_fantasy">Fantasy</string>
     <string name="genre_history">Historie</string>
     <string name="genre_horror">Gyser</string>
     <string name="genre_music">Musik</string>
@@ -1695,14 +1695,14 @@
     <string name="genre_tv_movie">TV-film</string>
     <string name="genre_thriller">Thriller</string>
     <string name="genre_war">Krig</string>
-    <string name="genre_western">Vestlig</string>
+    <string name="genre_western">Western</string>
     <string name="genre_action_adventure">Action &amp; Eventyr</string>
     <string name="genre_kids">Børn</string>
     <string name="genre_news">Nyheder</string>
-    <string name="genre_reality">Virkelighed</string>
+    <string name="genre_reality">Reality</string>
     <string name="genre_sci_fi_fantasy">Sci-fi &amp; Fantasy</string>
     <string name="genre_soap">Soap</string>
-    <string name="genre_talk">Diskussion</string>
+    <string name="genre_talk">Talk</string>
     <string name="genre_war_politics">Krig &amp; Politik</string>
     <string name="library_sort_trakt_order">Trakt-rækkefølge</string>
     <string name="library_sort_added_desc">Tilføjet ↓</string>
@@ -1827,7 +1827,7 @@
     <string name="sync_claim_pin_placeholder">Indtast PIN-kode</string>
     <string name="sync_claim_linking">Tilknytter\u2026</string>
     <string name="plugin_readonly_notice">Bruger primær profils plugins og kan ikke ændres</string>
-    <string name="plugin_repositories_section">Repositorier (%1$d)</string>
+    <string name="plugin_repositories_section">Repositories (%1$d)</string>
     <string name="plugin_providers_section">Udbydere (%1$d)</string>
     <string name="plugin_title">Plugins</string>
     <string name="plugin_subtitle">Administrer lokale scrapere og udbydere</string>
@@ -2198,7 +2198,7 @@
     <string name="collections_editor_trakt_list_with_id">Trakt-liste %1$d</string>
     <string name="collections_editor_trakt_public_list">Offentlig Trakt-liste</string>
     <string name="collections_editor_trakt_items_count">%1$d elementer</string>
-    <string name="collections_editor_trakt_likes_count">%1$d synes godt om</string>
+    <string name="collections_editor_trakt_likes_count">%1$d likes</string>
     <string name="collections_editor_error_valid_tmdb_id_or_url">Indtast et gyldigt TMDB-ID eller URL</string>
     <string name="collections_editor_error_load_tmdb_source">Kunne ikke indlæse TMDB-kilde</string>
     <string name="collections_editor_error_trakt_list_id_or_url">Indtast et Trakt-liste-ID eller URL</string>
@@ -2208,12 +2208,12 @@
     <string name="collections_editor_error_search_trakt_lists">Kunne ikke søge i Trakt-lister</string>
     <string name="collections_editor_error_trakt_list_not_found">Trakt-liste ikke fundet</string>
     <string name="collections_editor_error_trakt_list_missing_numeric_id">Trakt-listen indeholdt ikke et numerisk ID</string>
-    <string name="collections_editor_tmdb_placeholder_list">https://www.themoviedb.org/list/8504994 eller 8504994</string>
-    <string name="collections_editor_tmdb_placeholder_collection">10 til Star Wars-samlingen</string>
-    <string name="collections_editor_tmdb_placeholder_company">Marvel Studios, 420 eller virksomhedens URL</string>
+    <string name="collections_editor_tmdb_placeholder_list">https://www.themoviedb.org/list/8504994 or 8504994</string>
+    <string name="collections_editor_tmdb_placeholder_collection">10 for Star Wars Collection</string>
+    <string name="collections_editor_tmdb_placeholder_company">Marvel Studios, 420, or company URL</string>
     <string name="collections_editor_tmdb_placeholder_network">213 for Netflix, 49 for HBO, 2739 for Disney+</string>
-    <string name="collections_editor_tmdb_person_placeholder">31 for Tom Hanks eller person-URL</string>
-    <string name="collections_editor_trakt_id_placeholder">https://trakt.tv/lists/123456 eller 123456</string>
+    <string name="collections_editor_tmdb_person_placeholder">31 for Tom Hanks, or person URL</string>
+    <string name="collections_editor_trakt_id_placeholder">https://trakt.tv/lists/123456 or 123456</string>
     <string name="collections_editor_url_short_placeholder">https://...</string>
     <string name="collections_editor_tmdb_genres_movie_placeholder">28,12</string>
     <string name="collections_editor_tmdb_genres_tv_placeholder">18,35</string>
@@ -2267,18 +2267,18 @@
     <string name="collection_editor_choice_both">Begge</string>
     <string name="collection_editor_resolved_trakt_list">Løst Trakt-liste</string>
     <string name="collection_editor_trakt_search_placeholder">Søg titel, Trakt-URL eller liste-ID</string>
-    <string name="collection_editor_trakt_name_placeholder">Weekend Watch, prisvindere</string>
+    <string name="collection_editor_trakt_name_placeholder">Weekend Watch, Award Winners</string>
     <string name="collection_editor_folder_count_one">%1$d element</string>
     <string name="collection_editor_folder_count_other">%1$d elementer</string>
     <string name="collections_editor_delete_folder_title">Slet mappe?</string>
     <string name="collections_editor_delete_folder_subtitle">Dette vil permanent slette \"%1$s\" og dens indhold.</string>
-    <string name="collections_editor_tmdb_movie_title_placeholder">Marvel-film, Netflix-originaler, Pixar</string>
+    <string name="collections_editor_tmdb_movie_title_placeholder">Marvel Movies, Netflix Originals, Pixar</string>
     <string name="collections_editor_tmdb_tv_title_placeholder">Bedste actionfilm, Koreanske dramaer, 2024 Animation</string>
     <string name="collections_editor_tmdb_person_title_placeholder">Tom Hanks-film, Yndlingsskuespillere</string>
     <string name="collections_editor_tmdb_director_title_placeholder">Christopher Nolan-film, Yndlingsinstruktører</string>
-    <string name="collections_editor_tmdb_keywords_placeholder">9715 for superhelte</string>
-    <string name="collections_editor_tmdb_companies_placeholder">420 til Marvel Studios</string>
-    <string name="collections_editor_tmdb_networks_placeholder">213 til Netflix</string>
+    <string name="collections_editor_tmdb_keywords_placeholder">9715 for superhero</string>
+    <string name="collections_editor_tmdb_companies_placeholder">420 for Marvel Studios</string>
+    <string name="collections_editor_tmdb_networks_placeholder">213 for Netflix</string>
     <string name="folder_detail_not_found">Mappe ikke fundet</string>
     <string name="cast_error_load_details_for">Kunne ikke indlæse detaljer for %1$s</string>
     <string name="tmdb_entity_error_load_named">Kunne ikke indlæse %1$s</string>
@@ -2297,9 +2297,9 @@
     <string name="collections_editor_emoji_category_flags">Flag</string>
     <string name="collections_editor_emoji_category_symbols">Symboler</string>
     <string name="collections_editor_tmdb_network_placeholder_example">213 for Netflix, 49 for HBO, 2739 for Disney+</string>
-    <string name="collections_editor_tmdb_collection_placeholder_example">10 til Star Wars-samlingen</string>
-    <string name="collections_editor_tmdb_company_placeholder_example">Marvel Studios, 420 eller virksomhedens URL</string>
-    <string name="collections_editor_tmdb_genre_action">Handling</string>
+    <string name="collections_editor_tmdb_collection_placeholder_example">10 for Star Wars Collection</string>
+    <string name="collections_editor_tmdb_company_placeholder_example">Marvel Studios, 420, or company URL</string>
+    <string name="collections_editor_tmdb_genre_action">Action</string>
     <string name="collections_editor_tmdb_genre_adventure">Eventyr</string>
     <string name="collections_editor_tmdb_genre_animation">Animation</string>
     <string name="collections_editor_tmdb_genre_comedy">Komedie</string>
@@ -2307,20 +2307,20 @@
     <string name="collections_editor_tmdb_genre_scifi">Sci-Fi</string>
     <string name="collections_editor_tmdb_genre_drama">Drama</string>
     <string name="collections_editor_tmdb_genre_crime">Krimi</string>
-    <string name="collections_editor_tmdb_genre_reality">Virkelighed</string>
-    <string name="autoplay_regex_preset_any_1080p_plus">Enhver opløsning på 1080p eller højere</string>
+    <string name="collections_editor_tmdb_genre_reality">Reality</string>
+    <string name="autoplay_regex_preset_any_1080p_plus">Any 1080p+</string>
     <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
-    <string name="autoplay_regex_preset_1080p_standard">1080p-standard</string>
-    <string name="autoplay_regex_preset_720p_smaller">720p / Mindre</string>
-    <string name="autoplay_regex_preset_web_sources">WEB-kilder</string>
-    <string name="autoplay_regex_preset_bluray_quality">Blu-ray-kvalitet</string>
+    <string name="autoplay_regex_preset_1080p_standard">1080p Standard</string>
+    <string name="autoplay_regex_preset_720p_smaller">720p / Smaller</string>
+    <string name="autoplay_regex_preset_web_sources">WEB Sources</string>
+    <string name="autoplay_regex_preset_bluray_quality">BluRay Quality</string>
     <string name="autoplay_regex_preset_hevc_x265">HEVC / x265</string>
     <string name="autoplay_regex_preset_avc_x264">AVC / x264</string>
     <string name="autoplay_regex_preset_hdr_dolby_vision">HDR / Dolby Vision</string>
     <string name="autoplay_regex_preset_dolby_atmos_dts">Dolby Atmos / DTS</string>
     <string name="autoplay_regex_preset_english">Engelsk</string>
-    <string name="autoplay_regex_preset_no_cam_ts">Ingen CAM/TS</string>
-    <string name="autoplay_regex_preset_no_remux_hdr">Ingen REMUX/HDR</string>
+    <string name="autoplay_regex_preset_no_cam_ts">No CAM/TS</string>
+    <string name="autoplay_regex_preset_no_remux_hdr">No REMUX/HDR</string>
     <string name="playback_player_internal_desc">Brug NuvioTV\'s indbyggede afspiller</string>
     <string name="player_torrent_peer_info">%1$d seeders · %2$d peers</string>
     <string name="player_torrent_buffered_status">%1$s bufferet · %2$s · %3$s</string>
@@ -2412,8 +2412,8 @@
     <string name="stream_quality_unknown">Ukendt</string>
     <string name="stream_addon_unknown">Ukendt</string>
     <string name="tmdb_unknown_entity">Ukendt</string>
-    <string name="web_tmdb_company_fallback">TMDB-selskab %1$d</string>
-    <string name="web_tmdb_collection_fallback">TMDB-samling %1$d</string>
+    <string name="web_tmdb_company_fallback">TMDB Company %1$d</string>
+    <string name="web_tmdb_collection_fallback">TMDB Collection %1$d</string>
     <string name="web_error_invalid_request_body">Ugyldig forespørgselstekst</string>
     <string name="language_english">Engelsk</string>
     <string name="supporters_error_load">Kunne ikke indlæse støtter.</string>

@@ -361,7 +361,7 @@
     <string name="licenses_attributions_section_playback">LICENCAT E RIPRODHIMIT ANDROID</string>
     <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">Kodi burimor dhe kushtet e licencës janë të disponueshme në depon e projektit. Licencuar sipas GNU General Public License v3.0.</string>
-    <string name="licenses_attributions_tmdb_title">Baza e të dhënave të filmave (TMDB)</string>
+    <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio përdor API-në TMDB për metadata të filmave dhe serialeve, grafika, trailera, aktorë, detaje produksioni, koleksione dhe rekomandime. Ky produkt përdor API-në TMDB, por nuk mbështetet ose certifikohet nga TMDB.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">Nuvio lidhet me Trakt për autentifikimin e llogarisë, historikun e shikimit, sinkronizimin e progresit, të dhënat e bibliotekës, vlerësimet, listat dhe komentet. Nuvio nuk është i lidhur me dhe as i mbështetur nga Trakt.</string>
@@ -375,7 +375,7 @@
     <string name="licenses_attributions_mdblist_body">Nuvio përdor MDBList për vlerësime dhe të dhëna nga ofrues të jashtëm të pikëve. Nuvio nuk është i lidhur me dhe as i mbështetur nga MDBList.</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
     <string name="licenses_attributions_introdb_body">Nuvio përdor API-në IntroDB për kohëshënuesit e hyrjes, përmbledhjes, krediteve dhe pamjes paraprake të ofruara nga komuniteti, të cilët përdoren nga kontrollet e kapërcimit. Nuvio nuk është i lidhur me dhe as i mbështetur nga IntroDB.</string>
-    <string name="licenses_attributions_imdb_title">Grumbuj të dhënash jo-komerciale të IMDb</string>
+    <string name="licenses_attributions_imdb_title">IMDb Non-Commercial Datasets</string>
     <string name="licenses_attributions_imdb_body">Nuvio përdor IMDb Non-Commercial Datasets, përfshirë title.ratings.tsv.gz, për vlerësimet IMDb dhe numrin e votave. Informacioni ofrohet me mirësjellje nga IMDb (https://www.imdb.com). Përdoret me leje. Të dhënat e IMDb janë për përdorim personal dhe jokomercial sipas kushteve të IMDb.</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Përdoret si motor riprodhimi në Android. Licencuar sipas Apache License, Version 2.0.</string>
@@ -529,8 +529,8 @@
     <string name="sentry_keep_enabled">Mbaje aktiv</string>
     <string name="sentry_turn_off">Çaktivizo</string>
     <string name="sentry_turn_on">Aktivizo</string>
-    <string name="advanced_section_cache">Kesh</string>
-    <string name="advanced_section_dv_diagnostics" translatable="false">Diagnostika DV</string>
+    <string name="advanced_section_cache">Cache</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
     <string name="advanced_fast_horizontal_navigation">Navigim i shpejtë horizontal</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Rrit shpejtësinë e përsëritjes së D-pad-it në rreshta duke mbajtur aktiv kufizimin e përsëritjes.</string>
     <string name="advanced_nuvio_performance_mode">Memoria native e ExoPlayer</string>
@@ -551,7 +551,7 @@
     <string name="advanced_clear_cw_cache_done">Cache-i u pastrua</string>
     <string name="advanced_remember_last_profile">Mbaj mend profilin e fundit</string>
     <string name="advanced_remember_last_profile_subtitle">Mbaj mend profilin e fundit të zgjedhur gjatë nisjes</string>
-    <string name="settings_debug">Debugim</string>
+    <string name="settings_debug">Debug</string>
     <string name="settings_debug_subtitle">Mjete zhvilluesi dhe flamuj veçorish</string>
     <string name="settings_plugins_section_subtitle">Menaxho depot, ofruesit dhe gjendjet e shtojcave</string>
     <string name="settings_account_section_subtitle">Llogaria dhe statusi i sinkronizimit</string>
@@ -597,8 +597,8 @@
     <string name="supporters_empty">Ende nuk u gjetën mbështetës.</string>
     <string name="supporters_error_title">Nuk mund të ngarkohen mbështetësit</string>
     <string name="supporters_no_message">Nuk u nda asnjë mesazh.</string>
-    <string name="supporters_level_supporter">Supporter</string>
-    <string name="supporters_level_supporter_plus">Supporter+</string>
+    <string name="supporters_level_supporter">Mbështetës</string>
+    <string name="supporters_level_supporter_plus">Mbështetës+</string>
     <string name="supporters_since">Mbështet Nuvio që nga %1$s</string>
     <string name="supporters_since_unknown">Duke mbështetur me krenari Nuvio</string>
     <string name="supporters_open_donations">Hap faqen e mbështetjes</string>
@@ -728,20 +728,20 @@
     <string name="audio_strip_hdr10plus_sub">Hiq metadata dinamike HDR10+ nga transmetimet. Kur Konverto në DV8.1 është gjithashtu aktiv, heqja kryhet pas konvertimit.</string>
     <string name="audio_dv7_preserve_mapping_title">Ruaj hartëzimin DV (DV7 në DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">Ruan tone-mapping-un origjinal të synuar nga krijuesi, me koston e pak më shumë përpunimi për kuadër.</string>
-    <string name="dv7_libdovi_mode_caption" translatable="false">Modi i konvertimit (i zgjedhur automatikisht, mos e ndrysho përveç nëse udhëzohet). Zgjidh një për ta detyruar; None përdor automatikisht. Aktiv vetëm kur DV7 Handling konvertohet në DV8.1.</string>
-    <string name="dv7_libdovi_mode_row_title" translatable="false">Modi i konvertimit</string>
-    <string name="dv7_libdovi_mode_none_title" translatable="false">Asnjë</string>
-    <string name="dv7_libdovi_mode_none_sub" translatable="false">Pa mbishkrim. Përdor modalitetin e konvertimit të zgjedhur automatikisht.</string>
-    <string name="dv7_libdovi_mode_0_title" translatable="false">Modi 0 — Kopjo (pa konvertim)</string>
-    <string name="dv7_libdovi_mode_0_sub" translatable="false">Analizo RPU-në dhe riktheje pa ndryshuar. Pa konvertim profili.</string>
-    <string name="dv7_libdovi_mode_1_title" translatable="false">Modi 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub" translatable="false">Konverto RPU-në që të jetë e pajtueshme me MEL (Shtresa Minimale e Përmirësimit).</string>
-    <string name="dv7_libdovi_mode_2_title" translatable="false">Modi 2 — 8.1 (mappim pa veprim)</string>
-    <string name="dv7_libdovi_mode_2_sub" translatable="false">Konverto në profilin 8.1 me hartimin e lumës dhe kromës të vendosur në pa-veprim. Konvertimi standard.</string>
-    <string name="dv7_libdovi_mode_3_title" translatable="false">Modi 3 — Profili 5 deri në 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub" translatable="false">Konverto transmetimet e Profilit 5 (DV5) në Profil 8.1. E njëjta konvertim që përdoret nga çelësi Konverto DV5 në DV8.1.</string>
-    <string name="dv7_libdovi_mode_4_title" translatable="false">Modi 4 — 8.4 (statik)</string>
-    <string name="dv7_libdovi_mode_4_sub" translatable="false">Konverto në profil statik 8.4.</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="audio_mpv_hwdec_title">Dekodimi harduerik (vetëm MPV)</string>
     <string name="audio_mpv_hwdec_dialog_subtitle">Zgjidh si duhet t’i përdorë libmpv dekoderët harduerikë.</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy">I vjetër (direct -&gt; copy)</string>
@@ -954,7 +954,7 @@
     <string name="layout_trailer_muted">Luaj trailerin pa zë</string>
     <string name="layout_trailer_muted_sub_preview">Çaktivizo zërin e trailerit gjatë pamjes paraprake automatike.</string>
     <string name="layout_trailer_muted_sub_expanded">Çaktivizo zërin e trailerit në kartat e zgjeruara.</string>
-    <string name="layout_section_card_style">Stili i kartës së posterit</string>
+    <string name="layout_section_card_style">Karta e posterit</string>
     <string name="layout_section_card_style_desc">Rregullo gjerësinë e kartës dhe rrezen e qosheve.</string>
     <string name="settings_card_depth_title">Efekti i thellësisë së kartës</string>
     <string name="settings_card_depth_description">Shton një skaj të sipërm të ndriçuar dhe një shkëlqim të butë në kartat me imazh për një ndjesi të lehtë thellësie.</string>
@@ -1001,7 +1001,7 @@
     <string name="layout_preset_subtle">I lehtë</string>
     <string name="layout_preset_classic">Klasik</string>
     <string name="layout_preset_rounded">I rrumbullakosur</string>
-    <string name="layout_preset_pill">Pilulë</string>
+    <string name="layout_preset_pill">Pill</string>
     <string name="layout_card_width">Gjerësia</string>
     <string name="layout_card_radius">Rrezja e qosheve</string>
     <string name="layout_reset_default">Rikthe në parazgjedhje</string>
@@ -1197,7 +1197,7 @@
     <string name="animeskip_subtitle">Konfiguro Client ID-në tënde Anime Skip për kapërcimin e hyrjeve/daljeve të animeve</string>
     <string name="animeskip_enable_title">Aktivizo Anime Skip</string>
     <string name="animeskip_enable_subtitle">Merr kohëshënuesit e kapërcimit nga anime-skip.com</string>
-    <string name="animeskip_client_id_title">ID-ja e klientit</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">Kërkohet për të marrë kohëshënuesit e kapërcimit nga anime-skip.com</string>
     <string name="animeskip_dialog_title">Client ID i Anime Skip</string>
     <string name="animeskip_dialog_subtitle">Krijo Client ID-në tënde në anime-skip.com/account/settings</string>
@@ -1313,7 +1313,7 @@
     <string name="trakt_hide_unaired">Fshih episodet që ende nuk janë transmetuar</string>
     <string name="trakt_all_history">I gjithë historiku</string>
     <string name="trakt_days_format">%1$d ditë</string>
-    <string name="debug_title">Debugim</string>
+    <string name="debug_title">Debug</string>
     <string name="debug_subtitle">Mjete zhvilluesi dhe flamuj veçorish (vetëm build-et debug)</string>
     <string name="debug_section_popup">Testimi i dritareve / dialogëve</string>
     <string name="debug_playback_error_title">Ekrani i gabimit të riprodhimit</string>
@@ -1749,11 +1749,11 @@
     <string name="genre_tv_movie">Film televiziv</string>
     <string name="genre_thriller">Thriller</string>
     <string name="genre_war">Luftë</string>
-    <string name="genre_western">Perëndimor</string>
+    <string name="genre_western">Western</string>
     <string name="genre_action_adventure">Aksion dhe Aventurë</string>
     <string name="genre_kids">Fëmijë</string>
     <string name="genre_news">Lajme</string>
-    <string name="genre_reality">Realiteti</string>
+    <string name="genre_reality">Reality</string>
     <string name="genre_sci_fi_fantasy">Fantashkencë dhe Fantazi</string>
     <string name="genre_soap">Telenovelë</string>
     <string name="genre_talk">Talk show</string>
@@ -1784,7 +1784,7 @@
     <string name="library_source_nuvio">NUVIO</string>
     <string name="library_source_trakt">TRAKT</string>
     <string name="library_source_saved">Ruajtur</string>
-    <string name="library_source_cloud">Reja</string>
+    <string name="library_source_cloud">Cloud</string>
     <string name="library_watchlist">Lista e shikimit</string>
     <string name="library_status_watching">Duke shikuar</string>
     <string name="library_status_plan_to_watch">Planifikuar për t’u shikuar</string>
@@ -2408,7 +2408,7 @@
     <string name="collections_editor_country_japan">Japoni</string>
     <string name="collections_editor_country_india">Indi</string>
     <string name="collections_editor_country_uk">Mbretëria e Bashkuar</string>
-    <string name="collections_editor_keyword_superhero">Superheronj</string>
+    <string name="collections_editor_keyword_superhero">Superhero</string>
     <string name="collections_editor_keyword_based_on_novel">Bazuar në roman</string>
     <string name="collections_editor_keyword_time_travel">Udhëtim në kohë</string>
     <string name="collections_editor_keyword_space">Hapësirë</string>
@@ -2440,15 +2440,15 @@
     <string name="collection_editor_choice_both">Të dyja</string>
     <string name="collection_editor_resolved_trakt_list">Lista Trakt u zgjidh</string>
     <string name="collection_editor_trakt_search_placeholder">Kërko titullin, URL-në Trakt ose ID-në e listës</string>
-    <string name="collection_editor_trakt_name_placeholder">Weekend Watch, Fituesit e Çmimeve</string>
+    <string name="collection_editor_trakt_name_placeholder">Weekend Watch, Award Winners</string>
     <string name="collection_editor_folder_count_one">%1$d artikull</string>
     <string name="collection_editor_folder_count_other">%1$d artikuj</string>
     <string name="collections_editor_delete_folder_title">Të fshihet dosja?</string>
     <string name="collections_editor_delete_folder_subtitle">Kjo do ta fshijë përgjithmonë \"%1$s\" dhe përmbajtjen e saj.</string>
-    <string name="collections_editor_tmdb_movie_title_placeholder">Filmat Marvel, Origjinalet Netflix, Pixar</string>
-    <string name="collections_editor_tmdb_tv_title_placeholder">Filmat më të mirë të aksionit, dramat koreane, animacioni 2024</string>
-    <string name="collections_editor_tmdb_person_title_placeholder">Filmat e Tom Hanks, Aktorët e preferuar</string>
-    <string name="collections_editor_tmdb_director_title_placeholder">Filmat e Christopher Nolan, regjisorët e preferuar</string>
+    <string name="collections_editor_tmdb_movie_title_placeholder">Marvel Movies, Netflix Originals, Pixar</string>
+    <string name="collections_editor_tmdb_tv_title_placeholder">Best Action Movies, Korean Dramas, 2024 Animation</string>
+    <string name="collections_editor_tmdb_person_title_placeholder">Tom Hanks Movies, Favorite Actors</string>
+    <string name="collections_editor_tmdb_director_title_placeholder">Christopher Nolan Movies, Favorite Directors</string>
     <string name="collections_editor_tmdb_keywords_placeholder">9715 për superhero</string>
     <string name="collections_editor_tmdb_without_keywords_placeholder">9715</string>
     <string name="collections_editor_tmdb_companies_placeholder">420 për Marvel Studios</string>
@@ -2485,7 +2485,7 @@
     <string name="collections_editor_tmdb_genre_scifi">Fantashkencë</string>
     <string name="collections_editor_tmdb_genre_drama">Dramë</string>
     <string name="collections_editor_tmdb_genre_crime">Krim</string>
-    <string name="collections_editor_tmdb_genre_reality">Realiteti</string>
+    <string name="collections_editor_tmdb_genre_reality">Reality</string>
     <!-- Auto-play regex presets -->
     <string name="autoplay_regex_preset_any_1080p_plus">Çdo 1080p+</string>
     <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
@@ -2559,7 +2559,7 @@
     <string name="library_error_reorder_lists_failed">Riorganizimi i listave dështoi</string>
     <string name="library_list_fallback_title">Lista</string>
     <!-- Library privacy display labels (mapped from API value, not used as a key) -->
-    <string name="library_privacy_private">Privat</string>
+    <string name="library_privacy_private">Private</string>
     <string name="library_privacy_link">Lidhje</string>
     <string name="library_privacy_friends">Miqtë</string>
     <string name="library_privacy_public">Publike</string>
@@ -2807,7 +2807,7 @@
     <string name="playback_net_nuvio_performance_mode_not_supported">Kjo veçori nuk mbështetet nga pajisja jote.</string>
     <string name="playback_buffer_custom">Buffer-a të personalizuar të riprodhimit</string>
     <string name="playback_buffer_custom_sub">Anashkalo buffer-in e parazgjedhur të Media3 me vlerat më poshtë. Kur është joaktiv, luajtësi përdor kohëzgjatjet standarde të buffer-it dhe madhësinë e synuar të Media3.</string>
-    <string name="playback_buffer_header">Tampon</string>
+    <string name="playback_buffer_header">Buffer</string>
     <string name="playback_buffer_warning">Këto cilësime ndikojnë në sjelljen e buffer-it. Vlerat e pasakta mund të shkaktojnë probleme riprodhimi.</string>
     <string name="playback_buffer_min">Kohëzgjatja minimale e buffer-it</string>
     <string name="playback_buffer_min_sub">Sasia minimale e medias për t’u ruajtur në buffer. Luajtësi do të përpiqet të sigurojë që të paktën kaq përmbajtje të jetë gjithmonë e ruajtur përpara pozicionit aktual të riprodhimit.</string>

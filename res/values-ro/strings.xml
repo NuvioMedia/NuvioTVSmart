@@ -25,7 +25,7 @@
     <string name="catalog_from_addon">de la %1$s</string>
     <string name="action_see_all">Vezi tot</string>
     <string name="hero_creator">Creator: %1$s</string>
-    <string name="hero_director">Regizor: %1$s</string>
+    <string name="hero_director">Director: %1$s</string>
     <string name="hero_writer">Scriitor: %1$s</string>
     <string name="hero_play">Redă</string>
     <string name="hero_play_episode">Redă S%1$d E%2$d</string>
@@ -206,7 +206,7 @@
     <string name="sub_outline_color">Culoarea conturului</string>
     <string name="sub_advanced_section">Redare avansată a subtitrărilor</string>
     <string name="sub_libass">Folosește libass pentru subtitrările ASS/SSA</string>
-    <string name="sub_libass_sub">Dezactivat temporar pentru mentenanță</string>
+    <string name="sub_libass_sub">Randare avansată ASS/SSA (stiluri, poziționare, animații)</string>
     <string name="sub_libass_mode">Mod de redare Libass</string>
     <string name="sub_mode_overlay_gl">Suprapunere OpenGL (Recomandat)</string>
     <string name="sub_mode_overlay_gl_sub">Calitate superioară cu suport HDR. Redă subtitrările pe un thread separat.</string>
@@ -318,7 +318,7 @@
     <string name="layout_trailer_muted">Redă trailerul pe mut</string>
     <string name="layout_trailer_muted_sub_preview">Amuțește sunetul trailerului în timpul previzualizării automate.</string>
     <string name="layout_trailer_muted_sub_expanded">Amuțește sunetul trailerului în cardurile extinse.</string>
-    <string name="layout_section_card_style">Stil card poster</string>
+    <string name="layout_section_card_style">Card poster</string>
     <string name="layout_section_card_style_desc">Ajustează lățimea cardului și raza colțurilor.</string>
     <string name="layout_open">Deschis</string>
     <string name="layout_closed">Închis</string>
@@ -390,7 +390,7 @@
     <string name="tmdb_more_like_this_subtitle">Fundaluri de recomandare TMDB pe pagina de detalii</string>
     <string name="tmdb_language_dialog_title">Limba TMDB</string>
     <string name="trakt_description">Sincronizați lista de vizionare, progresul de vizionare, continuarea vizionării, scrobbles și listele personale cu Trakt.</string>
-    <string name="trakt_connected_as">Conectat ca %1$s</string>
+    <string name="trakt_connected_as">Connected as %1$s</string>
     <string name="trakt_account_login">Autentificare cont</string>
     <string name="trakt_awaiting_instruction">Accesați trakt.tv/activate și introduceți acest cod:</string>
     <string name="trakt_waiting_approval">Aștept aprobare…</string>

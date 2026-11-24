@@ -171,7 +171,7 @@
     <string name="settings_playback_subtitle">Spelare, undertexter, och automatisk uppspelning</string>
     <string name="settings_trakt_subtitle">Öppna Trakt anslutningsskärm</string>
     <string name="settings_about_subtitle">Version och policyer</string>
-    <string name="settings_debug">Felsökning</string>
+    <string name="settings_debug">Debug</string>
     <string name="settings_debug_subtitle">Utvecklarverktyg och funktionsflaggor</string>
     <string name="settings_plugins_section_subtitle">Hantera arkiv, leverantörer, och plugin-status</string>
     <string name="settings_account_section_subtitle">Konto och synkroniseringsstatus</string>
@@ -198,7 +198,7 @@
     <string name="supporters_contributors_donate_copy">Nuvio förblir gratis och öppen källkod. Om du vill stödja projektet kan du hjälpa till att täcka tiden och infrastrukturen bakom det.</string>
     <string name="supporters_contributors_donate_button">Donera till Nuvio</string>
     <string name="supporters_contributors_qr_title">Skanna för att donera</string>
-    <string name="supporters_contributors_qr_subtitle">Öppna länken på din telefon och stöd Nuvio via Ko-fi.</string>
+    <string name="supporters_contributors_qr_subtitle">Öppna länken på din telefon för att stödja Nuvio.</string>
     <string name="supporters_contributors_qr_hint">Rikta kameran mot QR-koden eller använd knappen nedan.</string>
     <string name="supporters_contributors_back_button">Tillbaka till detaljer</string>
     <string name="supporters_tab">Supportrar</string>
@@ -417,7 +417,7 @@
     <string name="layout_trailer_muted">Spela trailer tyst</string>
     <string name="layout_trailer_muted_sub_preview">Tysta trailerljud under automatisk förhandsvisning.</string>
     <string name="layout_trailer_muted_sub_expanded">Tysta trailerljud i expanderade kort.</string>
-    <string name="layout_section_card_style">Affischkortstil</string>
+    <string name="layout_section_card_style">Affischkort</string>
     <string name="layout_section_card_style_desc">Justera kortbredd och hörnradie.</string>
     <string name="layout_open">Öppen</string>
     <string name="layout_closed">Stängd</string>
@@ -465,13 +465,13 @@
     <string name="mdblist_dialog_placeholder">Ange MDBList API-nyckel</string>
     <string name="mdblist_not_set">Ej inställd</string>
     <string name="mdblist_invalid_api_key">Ogiltig MDBList API-nyckel</string>
-    <string name="animeskip_title">Hoppa över anime</string>
+    <string name="animeskip_title">Anime Skip</string>
     <string name="animeskip_subtitle">Konfigurera ditt Anime Skip Client ID för att hoppa över anime-intro/outro</string>
     <string name="animeskip_enable_title">Aktivera Anime Skip</string>
     <string name="animeskip_enable_subtitle">Hämta tidsstämplar från anime-skip.com</string>
-    <string name="animeskip_client_id_title">Klient-ID</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">Krävs för att hämta tidsstämplar från anime-skip.com</string>
-    <string name="animeskip_dialog_title">Anime Skip-klient-ID</string>
+    <string name="animeskip_dialog_title">Anime Skip Client ID</string>
     <string name="animeskip_dialog_subtitle">Skapa ditt eget Client ID på anime-skip.com/account/settings</string>
     <string name="animeskip_dialog_placeholder">Ange Client ID</string>
     <string name="animeskip_invalid_client_id">Ogiltigt Client ID</string>
@@ -518,7 +518,7 @@
     <string name="trakt_watch_progress_dialog_title">Tittarframsteg</string>
     <string name="trakt_watch_progress_dialog_subtitle">Välj om återupptagning och fortsätt titta ska använda Trakt eller Nuvio Sync medan Trakt-scrobbling förblir aktiv.</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
-    <string name="trakt_watch_progress_source_nuvio">Nuvio-synkronisering</string>
+    <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_watch_progress_trakt_selected">Tittarframstegskälla satt till Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Tittarframstegskälla satt till Nuvio Sync</string>
     <string name="trakt_continue_watching_window">Fortsätt titta-fönster</string>
@@ -549,7 +549,7 @@
     <string name="trakt_all_history">All historik</string>
     <string name="trakt_days_format">%1$d dagar</string>
     <string name="trakt_status_cw_window_updated">Fortsätt titta-fönstret har uppdaterats</string>
-    <string name="debug_title">Felsökning</string>
+    <string name="debug_title">Debug</string>
     <string name="debug_subtitle">Utvecklarverktyg och funktionsflaggor (endast debug-byggen)</string>
     <string name="debug_section_popup">Popup / dialogtestning</string>
     <string name="debug_playback_error_title">Uppspelningsfelskärm</string>
@@ -760,7 +760,7 @@
     <string name="library_filter_sort">Sortera</string>
     <string name="library_filter_genre">Genre</string>
     <string name="library_filter_year">År</string>
-    <string name="genre_action">Åtgärd</string>
+    <string name="genre_action">Action</string>
     <string name="genre_adventure">Äventyr</string>
     <string name="genre_animation">Animation</string>
     <string name="genre_comedy">Komedi</string>
@@ -778,11 +778,11 @@
     <string name="genre_tv_movie">TV-film</string>
     <string name="genre_thriller">Thriller</string>
     <string name="genre_war">Krig</string>
-    <string name="genre_western">Väst</string>
+    <string name="genre_western">Western</string>
     <string name="genre_action_adventure">Action &amp; äventyr</string>
     <string name="genre_kids">Barn</string>
     <string name="genre_news">Nyheter</string>
-    <string name="genre_reality">Verklighet</string>
+    <string name="genre_reality">Reality</string>
     <string name="genre_sci_fi_fantasy">Sci-fi &amp; fantasy</string>
     <string name="genre_soap">Såpa</string>
     <string name="genre_talk">Talkshow</string>
@@ -1013,7 +1013,7 @@
     <string name="stream_info_codec">Codec</string>
     <string name="stream_info_resolution">Upplösning</string>
     <string name="stream_info_frame_rate">Bildfrekvens</string>
-    <string name="stream_info_bitrate">Bithastighet</string>
+    <string name="stream_info_bitrate">Bitrate</string>
     <string name="stream_info_channels">Kanaler</string>
     <string name="stream_info_sample_rate">Samplingsfrekvens</string>
     <string name="stream_info_language">Språk</string>
@@ -1171,7 +1171,7 @@
     <string name="audio_mpv_hwdec_dialog_subtitle">Välj hur libmpv ska använda hårdvaruavkodare.</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy">Äldre (direkt -&gt; copy)</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy_desc">Tidigare standardbeteende: prova direkt hårdvara först, sedan copy-back.</string>
-    <string name="audio_mpv_hwdec_auto_safe">Auto (automatisk säkerhet)</string>
+    <string name="audio_mpv_hwdec_auto_safe">Auto (auto-safe)</string>
     <string name="audio_mpv_hwdec_auto_safe_desc">Säkrare automatiskt läge med reserv när vissa hårdvaruavkodare misslyckas.</string>
     <string name="audio_mpv_hwdec_hardware_copy">Hårdvara (copy) (mediacodec-copy)</string>
     <string name="audio_mpv_hwdec_hardware_copy_desc">Använder hårdvaruavkodning med kopiering till mjukvaruminne.</string>

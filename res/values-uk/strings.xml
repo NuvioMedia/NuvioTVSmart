@@ -100,7 +100,7 @@
     <string name="stream_info_section_video">ВІДЕО</string>
     <string name="stream_info_section_audio">АУДІО</string>
     <string name="stream_info_section_subtitle">СУБТИТРИ</string>
-    <string name="stream_info_filename">Ім'я файлу</string>
+    <string name="stream_info_filename">Ім\'я файлу</string>
     <string name="stream_info_size">Розмір</string>
     <string name="stream_info_codec">Кодек</string>
     <string name="stream_info_resolution">Роздільна здатність</string>
@@ -565,14 +565,14 @@
     <string name="licenses_attributions_section_playback">ЛІЦЕНЗІЇ ВІДТВОРЕННЯ ANDROID</string>
     <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">Вихідний код та умови ліцензії доступні в репозиторії проєкту. Ліцензовано під GNU General Public License v3.0.</string>
-    <string name="licenses_attributions_tmdb_title">База даних фільмів (TMDB)</string>
+    <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio використовує API TMDB для метаданих фільмів та ТВ, ілюстрацій, трейлерів, акторів, виробничих деталей, колекцій та рекомендацій. Цей продукт використовує API TMDB, але не схвалений та не сертифікований TMDB.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">Nuvio підключається до Trakt для авторизації, історії переглядів, синхронізації прогресу, даних бібліотеки, рейтингів, списків та коментарів. Nuvio не афілійований з Trakt та не схвалений ним.</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
     <string name="licenses_attributions_introdb_body">Nuvio використовує API IntroDB для наданих спільнотою таймкодів вступів, рекапів, титрів та прев\'ю. Nuvio не афілійований з IntroDB та не схвалений ним.</string>
-    <string name="licenses_attributions_imdb_title">Некомерційні набори даних IMDb</string>
+    <string name="licenses_attributions_imdb_title">IMDb Non-Commercial Datasets</string>
     <string name="licenses_attributions_imdb_body">Nuvio використовує некомерційні набори даних IMDb, включаючи title.ratings.tsv.gz, для рейтингів та кількості голосів. Інформація надана IMDb (https://www.imdb.com). Використовується з дозволу для особистого та некомерційного використання.</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Використовується як рушій відтворення Android. Ліцензовано під Apache License, Version 2.0.</string>
@@ -674,7 +674,7 @@
     <string name="advanced_section_performance">Продуктивність та навігація</string>
     <string name="advanced_section_diagnostics">Діагностика</string>
     <string name="advanced_section_cache">Кеш</string>
-    <string name="advanced_section_dv_diagnostics">DV Diagnostics</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
     <string name="advanced_fast_horizontal_navigation">Швидка горизонтальна навігація</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Збільшити швидкість повторення D-pad у рядках зі збереженням дроселювання повторень.</string>
     <string name="advanced_nuvio_focus_scroll">Прокручування фокусу Nuvio</string>
@@ -831,20 +831,20 @@
     <string name="audio_dv5_to_dv81_sub">Сигналізувати потоки Profile 5 як Profile 8.1 для виводу, сумісного з HDR10. Допомагає на пристроях без нативного декодера DV5.</string>
     <string name="audio_dv7_preserve_mapping_title">Зберігати маппінг DV (DV7 в DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">Зберігає вихідний тон-маппінг ціною трохи більшої обробки на кадр.</string>
-    <string name="dv7_libdovi_mode_caption">Режим конвертації (вибирається автоматично, не змінюйте, якщо не вказано інше). Виберіть один із варіантів, щоб застосувати його примусово; «None» (Немає) використовує автоматичний режим. Активний лише тоді, коли параметр «DV7 Handling» (Обробка DV7) встановлено на «Convert to DV8.1» (Конвертувати в DV8.1).</string>
-    <string name="dv7_libdovi_mode_row_title">Режим конвертації</string>
-    <string name="dv7_libdovi_mode_none_title">Нічого</string>
-    <string name="dv7_libdovi_mode_none_sub">Перезапис не передбачено. Використовується автоматично обраний режим перетворення.</string>
-    <string name="dv7_libdovi_mode_0_title">Режим 0 — Копіювання (без конвертації)</string>
-    <string name="dv7_libdovi_mode_0_sub">Проаналізуйте RPU та запишіть його назад без змін. Без перетворення профілю.</string>
-    <string name="dv7_libdovi_mode_1_title">Режим 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">Перетворіть RPU так, щоб він був сумісний із MEL (Minimum Enhancement Layer).</string>
-    <string name="dv7_libdovi_mode_2_title">Режим 2 — 8.1 (прив\'язка без дії)</string>
-    <string name="dv7_libdovi_mode_2_sub">Конвертація у профіль 8.1 із налаштуванням маппінгу яскравості та кольоровості на «no-op». Стандартна конвертація.</string>
-    <string name="dv7_libdovi_mode_3_title">Режим 3 — Профіль 5–8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">Конвертація потоків профілю 5 (DV5) у профіль 8.1. Ця конвертація аналогічна тій, що використовується перемикачем «Конвертувати DV5 у DV8.1».</string>
-    <string name="dv7_libdovi_mode_4_title">Режим 4 — 8,4 (статичний)</string>
-    <string name="dv7_libdovi_mode_4_sub">Перетворити на статичний профіль 8.4.</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="audio_mpv_hwdec_title">Апаратне декодування (тільки MPV)</string>
     <string name="audio_mpv_hwdec_dialog_subtitle">Оберіть, як libmpv повинен використовувати апаратні декодери.</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy">Застаріле (пряме -&gt; копіювання)</string>
@@ -1235,7 +1235,7 @@
     <string name="animeskip_subtitle">Налаштуйте свій Client ID від Anime Skip для пропуску інтро/аутро</string>
     <string name="animeskip_enable_title">Увімкнути Anime Skip</string>
     <string name="animeskip_enable_subtitle">Отримувати таймкоди пропусків з anime-skip.com</string>
-    <string name="animeskip_client_id_title">Ідентифікатор клієнта</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">Потрібен для отримання таймкодів з anime-skip.com</string>
     <string name="animeskip_dialog_title">Client ID для Anime Skip</string>
     <string name="animeskip_dialog_subtitle">Створіть свій Client ID на anime-skip.com/account/settings</string>
@@ -1341,7 +1341,7 @@
     <string name="debug_section_account">Акаунт</string>
     <string name="debug_manual_signin_title">Ручний вхід</string>
     <string name="debug_manual_signin_subtitle">Вхід з Email та паролем (Supabase auth)</string>
-    <string name="debug_email_placeholder">Електронна пошта</string>
+    <string name="debug_email_placeholder">Email</string>
     <string name="debug_password_placeholder">Пароль</string>
     <string name="debug_signing_in">Вхід до системи\u2026</string>
     <string name="debug_sign_in">Увійти</string>
@@ -1770,7 +1770,7 @@
     <string name="cloud_library_type_all">Всі</string>
     <string name="cloud_library_type_torrents">Торенти</string>
     <string name="cloud_library_type_usenet">Usenet</string>
-    <string name="cloud_library_type_web">Веб</string>
+    <string name="cloud_library_type_web">Web</string>
     <string name="cloud_library_type_files">Файли</string>
     <string name="cloud_library_error_provider_unavailable">Хмарна бібліотека недоступна для %1$s.</string>
     <string name="cloud_library_error_disabled">Хмарну бібліотеку вимкнено.</string>
@@ -1823,7 +1823,7 @@
     <string name="sync_claim_done">Готово</string>
     <string name="sync_claim_code_label">Код синхронізації</string>
     <string name="sync_claim_code_placeholder">XXXX-XXXX-XXXX-XXXX-XXXX</string>
-    <string name="sync_claim_pin_label">PIN-код</string>
+    <string name="sync_claim_pin_label">PIN</string>
     <string name="sync_claim_pin_placeholder">Введіть PIN</string>
     <string name="sync_claim_linking">Зв\'язування\u2026</string>
     <string name="plugin_readonly_notice">Використовуються плагіни основного профілю, їх не можна змінити</string>
@@ -2267,12 +2267,12 @@
     <string name="collection_editor_choice_both">Обидва</string>
     <string name="collection_editor_resolved_trakt_list">Знайдений список Trakt</string>
     <string name="collection_editor_trakt_search_placeholder">Пошук за назвою, URL Trakt або ID списку</string>
-    <string name="collection_editor_trakt_name_placeholder">Що дивитися на вихідних, Лауреати премій</string>
+    <string name="collection_editor_trakt_name_placeholder">Weekend Watch, Award Winners</string>
     <string name="collection_editor_folder_count_one">%1$d елемент</string>
     <string name="collection_editor_folder_count_other">%1$d елементів</string>
     <string name="collections_editor_delete_folder_title">Видалити папку?</string>
     <string name="collections_editor_delete_folder_subtitle">Це безповоротно видалить \"%1$s\" та її вміст.</string>
-    <string name="collections_editor_tmdb_movie_title_placeholder">Фільми Marvel, оригінальні серіали Netflix, Pixar</string>
+    <string name="collections_editor_tmdb_movie_title_placeholder">Marvel Movies, Netflix Originals, Pixar</string>
     <string name="collections_editor_tmdb_tv_title_placeholder">Найкращі бойовики, Корейські дорами, Аніме 2024</string>
     <string name="collections_editor_tmdb_person_title_placeholder">Фільми з Tom Hanks, Улюблені актори</string>
     <string name="collections_editor_tmdb_director_title_placeholder">Фільми Christopher Nolan, Улюблені режисери</string>
@@ -2309,7 +2309,7 @@
     <string name="collections_editor_tmdb_genre_crime">Кримінал</string>
     <string name="collections_editor_tmdb_genre_reality">Реаліті</string>
     <string name="autoplay_regex_preset_any_1080p_plus">Будь-яке 1080p+</string>
-    <string name="autoplay_regex_preset_4k_remux">4K / Ремукс</string>
+    <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
     <string name="autoplay_regex_preset_1080p_standard">Стандартне 1080p</string>
     <string name="autoplay_regex_preset_720p_smaller">720p / Менше</string>
     <string name="autoplay_regex_preset_web_sources">WEB джерела</string>

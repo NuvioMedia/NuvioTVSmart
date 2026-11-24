@@ -17,7 +17,7 @@
 <string name="custom_server_description">輸入您的伺服器管理員提供的後端網址。</string>
 <string name="custom_server_url_placeholder">https://backend.example.com</string>
 <string name="custom_server_check">檢查伺服器</string>
-<string name="custom_server_checking">正在檢查……</string>
+<string name="custom_server_checking">檢查中…</string>
 <string name="custom_server_review_title">審查自訂伺服器</string>
 <string name="custom_server_review_description">探索文件有效。連線後您將登出目前伺服器並重新啟動應用程式。請確認這是您擁有或信任的伺服器。</string>
 <string name="custom_server_verified_label">已發現的後端</string>
@@ -30,7 +30,7 @@
 <string name="custom_server_warning_private">這似乎是專用網路伺服器，但應用程式仍無法驗證誰控制它。</string>
 <string name="custom_server_warning_credentials">伺服器營運者可以接收您的帳戶憑證並存取您透過此伺服器同步的資料。</string>
 <string name="custom_server_trust_action">我信任此伺服器</string>
-<string name="custom_server_switching">切換中……</string>
+<string name="custom_server_switching">切換中…</string>
 <string name="official_server_title">使用官方伺服器？</string>
 <string name="official_server_description">您將登出自訂伺服器，應用程式將重新啟動並連線到官方服務。</string>
 <string name="official_server_action">使用官方伺服器</string>
@@ -661,7 +661,7 @@
     <string name="licenses_attributions_section_playback">Android 播放授權</string>
     <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">原始碼和授權條款可在專案倉庫中取得。基於 GNU General Public License v3.0 授權。</string>
-    <string name="licenses_attributions_tmdb_title">電影資料庫（TMDB）</string>
+    <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio 使用 TMDB API 獲取電影和電視節目的中繼資料、美術圖、預告片、演員、製作細節、收藏和推薦內容。本產品使用 TMDB API，但未經 TMDB 認可或認證。</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">Nuvio 連線至 Trakt 以進行帳戶驗證、觀看歷史、進度同步、媒體庫資料、評分、清單和評論。Nuvio 與 Trakt 無關聯或未經其認可。</string>
@@ -770,7 +770,7 @@
     <string name="advanced_section_performance">效能與導航</string>
     <string name="advanced_section_diagnostics">診斷</string>
     <string name="advanced_section_cache">快取</string>
-    <string name="advanced_section_dv_diagnostics">DV 診斷</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
     <string name="advanced_fast_horizontal_navigation">快速水平導航</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">提高 D-pad 在行內的重複速度，同時保留重複節流功能。</string>
     <string name="advanced_nuvio_focus_scroll">Nuvio 焦點滾動</string>
@@ -823,8 +823,8 @@
     <string name="supporters_empty">尚未找到支持者。</string>
     <string name="supporters_error_title">無法載入支持者</string>
     <string name="supporters_no_message">未分享訊息。</string>
-    <string name="supporters_level_supporter">Supporter</string>
-    <string name="supporters_level_supporter_plus">Supporter+</string>
+    <string name="supporters_level_supporter">支持者</string>
+    <string name="supporters_level_supporter_plus">支持者+</string>
     <string name="supporters_since">自 %1$s 起支持 Nuvio</string>
     <string name="supporters_since_unknown">自豪地支持 Nuvio</string>
     <string name="supporters_open_donations">開啟支持頁面</string>
@@ -839,8 +839,8 @@
     <string name="supporter_membership_you_are">您是</string>
     <string name="supporter_membership_thank_you">謝謝您。</string>
     <string name="supporter_membership_supporter_since">自 %1$s 起成為支持者。</string>
-    <string name="supporter_membership_tier_supporter">Supporter</string>
-    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
+    <string name="supporter_membership_tier_supporter">支持者</string>
+    <string name="supporter_membership_tier_supporter_plus">支持者 Plus</string>
     <string name="supporter_membership_connected_title">Patreon 已連線</string>
     <string name="supporter_membership_connected_description">在此 Patreon 帳戶上未找到有效的 Nuvio 會員等級。檢視可用選項，或在變更 Patreon 會員後重新整理。</string>
     <string name="supporter_membership_scan_support">掃描以檢視會員</string>
@@ -950,23 +950,23 @@
     <string name="audio_dv5_to_dv81_sub">將 Profile 5 串流標記為 Profile 8.1 以實現 HDR10 相容輸出。在沒有原生 DV5 解碼器的裝置上有幫助。</string>
     <string name="audio_dv7_preserve_mapping_title">保留 DV 對應 (DV7 轉 DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">保留創作者原始意圖的色調對應，代價是每幀處理量略增。</string>
-    <string name="dv7_libdovi_mode_caption">轉換模式（自動選取，除非另有指示，否則不予變更）。選擇其中一項以強制啟用；選擇「無」則使用自動模式。僅在「DV7 處理」設定為「轉換為 DV8.1」時生效。</string>
-    <string name="dv7_libdovi_mode_row_title">轉換模式</string>
-    <string name="dv7_libdovi_mode_none_title">無</string>
-    <string name="dv7_libdovi_mode_none_sub">不進行覆寫。使用自動選取的轉換模式。</string>
-    <string name="dv7_libdovi_mode_0_title">模式 0 — 複製（不轉換）</string>
-    <string name="dv7_libdovi_mode_0_sub">解析 RPU 並將其原樣寫回。不進行配置檔轉換。</string>
-    <string name="dv7_libdovi_mode_1_title">模式 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">將 RPU 轉換為與 MEL（最小增強層）相容的格式。</string>
-    <string name="dv7_libdovi_mode_2_title">模式 2 — 8.1（無操作映射）</string>
-    <string name="dv7_libdovi_mode_2_sub">轉換為 8.1 配置檔，並將亮度與色度映射設定為無操作。此為標準轉換方式。</string>
-    <string name="dv7_libdovi_mode_3_title">模式 3 — 設定檔 5 至 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">將 Profile 5 (DV5) 串流轉換為 Profile 8.1。此轉換方式與「將 DV5 轉換為 DV8.1」切換鈕所使用的轉換方式相同。</string>
-    <string name="dv7_libdovi_mode_4_title">模式 4 — 8.4（靜態）</string>
-    <string name="dv7_libdovi_mode_4_sub">轉換為靜態設定檔 8.4。</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="audio_mpv_hwdec_title">硬體解碼 (僅限 MPV)</string>
     <string name="audio_mpv_hwdec_dialog_subtitle">選擇 libmpv 應如何使用硬體解碼器。</string>
-    <string name="audio_mpv_hwdec_legacy_direct_copy">傳統 (direct -&gt; copy)</string>
+    <string name="audio_mpv_hwdec_legacy_direct_copy">傳統 (direct -> copy)</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy_desc">先前的預設行為：先嘗試直接硬體，然後回退到 copy-back。</string>
     <string name="audio_mpv_hwdec_auto_safe">自動 (auto-safe)</string>
     <string name="audio_mpv_hwdec_auto_safe_desc">更安全的自動模式，當部分硬體解碼器失敗時有回退機制。</string>
@@ -1270,7 +1270,7 @@
     <string name="debrid_stream_min_quality_720">720p 及以上</string>
     <string name="debrid_stream_min_quality_1080">1080p 及以上</string>
     <string name="debrid_stream_min_quality_2160">僅 4K</string>
-    <string name="debrid_stream_dolby_vision_title">杜比視界</string>
+    <string name="debrid_stream_dolby_vision_title">Dolby Vision</string>
     <string name="debrid_stream_dolby_vision_subtitle">顯示、隱藏或要求 Dolby Vision 來源。</string>
     <string name="debrid_stream_hdr_title">HDR</string>
     <string name="debrid_stream_hdr_subtitle">顯示、隱藏或要求 HDR 來源。</string>
@@ -2458,7 +2458,7 @@
     <string name="collections_editor_tmdb_genre_crime">犯罪</string>
     <string name="collections_editor_tmdb_genre_reality">實境</string>
     <string name="autoplay_regex_preset_any_1080p_plus">任何 1080p+</string>
-    <string name="autoplay_regex_preset_4k_remux">4K / 重新封裝</string>
+    <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
     <string name="autoplay_regex_preset_1080p_standard">1080p 標準</string>
     <string name="autoplay_regex_preset_720p_smaller">720p / 較小</string>
     <string name="autoplay_regex_preset_web_sources">WEB 來源</string>
@@ -2466,14 +2466,14 @@
     <string name="autoplay_regex_preset_hevc_x265">HEVC / x265</string>
     <string name="autoplay_regex_preset_avc_x264">AVC / x264</string>
     <string name="autoplay_regex_preset_hdr_dolby_vision">HDR / Dolby Vision</string>
-    <string name="autoplay_regex_preset_dolby_atmos_dts">杜比全景聲 / DTS</string>
+    <string name="autoplay_regex_preset_dolby_atmos_dts">Dolby Atmos / DTS</string>
     <string name="autoplay_regex_preset_english">英語</string>
     <string name="autoplay_regex_preset_no_cam_ts">無 CAM/TS</string>
     <string name="autoplay_regex_preset_no_remux_hdr">無 REMUX/HDR</string>
     <string name="playback_player_internal_desc">使用 NuvioTV 的內建播放器</string>
     <string name="player_torrent_peer_info">%1$d 個種子 · %2$d 個對等節點</string>
     <string name="player_torrent_buffered_status">%1$s 已緩衝 · %2$s · %3$s</string>
-    <string name="player_torrent_status">%1$s：%2$s。</string>
+    <string name="player_torrent_status">%1$s · %2$s</string>
     <string name="player_torrent_stats">%1$d 個對等節點 · %2$d 個種子 · %3$d%%</string>
     <string name="player_torrent_connecting_peers">正在連線至對等節點…</string>
     <string name="player_track_audio_fallback">音訊 %1$d</string>

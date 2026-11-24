@@ -209,7 +209,7 @@
     <string name="cast_role_writer">Scenarist</string>
     <string name="detail_tab_ratings">Ocjene</string>
     <string name="detail_tab_more_like_this">Slično ovome</string>
-    <string name="detail_tab_trailer">Najava</string>
+    <string name="detail_tab_trailer">Trailer</string>
     <string name="detail_more_like_this_powered_by_tmdb">Pokreće TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Pokreće Trakt</string>
     <string name="detail_comments_title">Komentari</string>
@@ -352,7 +352,7 @@
     <string name="licenses_attributions_section_playback">ANDROID LICENCE ZA REPRODUKCIJU</string>
     <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">Izvorni kôd i uvjeti licence dostupni su u repozitoriju projekta. Licencirano pod GNU General Public License v3.0.</string>
-    <string name="licenses_attributions_tmdb_title">Baza filmova (TMDB)</string>
+    <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio koristi TMDB API za metapodatke o filmovima i serijama, grafike, trailere, glumce, produkcijske detalje, kolekcije i preporuke. Ovaj proizvod koristi TMDB API, ali ga TMDB ne podržava niti certificira.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">Nuvio se povezuje s Traktom radi autentifikacije računa, povijesti gledanja, sinkronizacije napretka, podataka biblioteke, ocjena, popisa i komentara. Nuvio nije povezan s Traktom niti ga Trakt podržava.</string>
@@ -475,7 +475,7 @@
     <string name="advanced_nuvio_focus_scroll_subtitle">Koristi Nuvio prilagođenu globalnu animaciju pomicanja i pozicioniranje fokusa.</string>
     <string name="advanced_memory_only_vertical_scroll">Okomito pomicanje samo iz memorije</string>
     <string name="advanced_memory_only_vertical_scroll_subtitle">Preskoči zahtjeve za slikama s diska i mreže tijekom okomitog pomicanja redova na početnom zaslonu.</string>
-    <string name="advanced_compose_highlighter">Kompozitor istaknivača</string>
+    <string name="advanced_compose_highlighter">Compose Highlighter</string>
     <string name="advanced_compose_highlighter_subtitle">Treperi obrubima oko UI elemenata koji se ponovno iscrtavaju radi otklanjanja problema s performansama.</string>
     <string name="advanced_clear_cw_cache">Očisti predmemoriju Nastavi gledati</string>
     <string name="advanced_clear_cw_cache_subtitle">Ukloni spremljene sličice, naslove i obogaćene podatke za Nastavi gledati</string>
@@ -522,8 +522,8 @@
     <string name="supporters_empty">Još nisu pronađeni podupiratelji.</string>
     <string name="supporters_error_title">Nije moguće učitati podupiratelje</string>
     <string name="supporters_no_message">Poruka nije podijeljena.</string>
-    <string name="supporters_level_supporter">Supporter</string>
-    <string name="supporters_level_supporter_plus">Supporter+</string>
+    <string name="supporters_level_supporter">Podupiratelj</string>
+    <string name="supporters_level_supporter_plus">Podupiratelj+</string>
     <string name="supporters_since">Podržava Nuvio od %1$s</string>
     <string name="supporters_since_unknown">Ponosno podržava Nuvio</string>
     <string name="supporters_open_donations">Otvori stranicu za podršku</string>
@@ -538,8 +538,8 @@
     <string name="supporter_membership_you_are">Ti si</string>
     <string name="supporter_membership_thank_you">Hvala ti.</string>
     <string name="supporter_membership_supporter_since">Podupiratelj od %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Supporter</string>
-    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
+    <string name="supporter_membership_tier_supporter">Podupiratelj</string>
+    <string name="supporter_membership_tier_supporter_plus">Podupiratelj Plus</string>
     <string name="supporter_membership_connected_title">Patreon je povezan</string>
     <string name="supporter_membership_connected_description">Na ovom Patreon računu nije pronađena aktivna Nuvio razina. Pogledaj dostupne opcije ili osvježi nakon promjene Patreon članstva.</string>
     <string name="supporter_membership_scan_support">Skeniraj za prikaz članstva</string>
@@ -1113,13 +1113,13 @@
     <string name="streams_size">VELIČINA %1$s</string>
     <string name="action_import">Uvezi</string>
     <string name="action_delete">Izbriši</string>
-    <string name="animeskip_title">Preskoči anime</string>
+    <string name="animeskip_title">Anime Skip</string>
     <string name="animeskip_subtitle">Konfiguriraj Anime Skip Client ID za preskakanje uvoda/odjave animea</string>
     <string name="animeskip_enable_title">Omogući Anime Skip</string>
     <string name="animeskip_enable_subtitle">Dohvaćaj vremenske oznake za preskakanje s anime-skip.com</string>
-    <string name="animeskip_client_id_title">ID klijenta</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">Potreban za dohvaćanje vremenskih oznaka s anime-skip.com</string>
-    <string name="animeskip_dialog_title">ID klijenta za preskakanje animea</string>
+    <string name="animeskip_dialog_title">Anime Skip Client ID</string>
     <string name="animeskip_dialog_subtitle">Stvori vlastiti Client ID na anime-skip.com/account/settings</string>
     <string name="animeskip_dialog_placeholder">Unesi Client ID</string>
     <string name="animeskip_invalid_client_id">Neispravan Client ID</string>
@@ -1293,7 +1293,7 @@
     <string name="profile_avatar_category_animation">Animacija</string>
     <string name="profile_avatar_category_movie">Film</string>
     <string name="profile_avatar_category_tv">TV</string>
-    <string name="profile_avatar_category_gaming">Igre</string>
+    <string name="profile_avatar_category_gaming">Gaming</string>
     <string name="profile_avatar_category_supporter">Podupiratelj</string>
     <string name="profile_editor_tab_avatar">Avatar</string>
     <string name="profile_editor_tab_background">Pozadina</string>
@@ -1502,7 +1502,7 @@
     <string name="stream_info_codec">Kodek</string>
     <string name="stream_info_resolution">Rezolucija</string>
     <string name="stream_info_frame_rate">Broj sličica</string>
-    <string name="stream_info_bitrate">Bitna brzina</string>
+    <string name="stream_info_bitrate">Bitrate</string>
     <string name="stream_info_channels">Kanali</string>
     <string name="stream_info_sample_rate">Frekvencija uzorkovanja</string>
     <string name="stream_info_language">Jezik</string>
@@ -1677,7 +1677,7 @@
     <string name="genre_action_adventure">Akcija i avantura</string>
     <string name="genre_kids">Za djecu</string>
     <string name="genre_news">Vijesti</string>
-    <string name="genre_reality">Stvarnost</string>
+    <string name="genre_reality">Reality</string>
     <string name="genre_sci_fi_fantasy">ZF i fantastika</string>
     <string name="genre_soap">Sapunica</string>
     <string name="genre_talk">Talk show</string>
@@ -2212,7 +2212,7 @@
     <string name="collections_editor_view_mode_tabs">Kartice</string>
     <string name="collections_editor_view_mode_rows">Redovi</string>
     <string name="collections_editor_view_mode_follow">Prati izgled početnog zaslona</string>
-    <string name="collections_editor_shape_poster">Plakat</string>
+    <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Široko</string>
     <string name="collections_editor_shape_square">Kvadrat</string>
     <string name="collections_editor_addon_missing">Dodatak nije instaliran: %1$s</string>
@@ -2243,7 +2243,7 @@
     <string name="collections_editor_tmdb_default_list">TMDB popis</string>
     <string name="collections_editor_tmdb_default_production">TMDB produkcija</string>
     <string name="collections_editor_tmdb_default_network">TMDB mreža</string>
-    <string name="collections_editor_tmdb_default_discover">TMDB Otkrijte</string>
+    <string name="collections_editor_tmdb_default_discover">TMDB Discover</string>
     <string name="collections_editor_tmdb_movie_collection">TMDB kolekcija filmova</string>
     <string name="collections_editor_tmdb_mode_presets">Predlošci</string>
     <string name="collections_editor_tmdb_mode_public_list">Javni popis</string>
@@ -2420,7 +2420,7 @@
     <string name="collections_editor_tmdb_genre_scifi">ZF</string>
     <string name="collections_editor_tmdb_genre_drama">Drama</string>
     <string name="collections_editor_tmdb_genre_crime">Kriminalistički</string>
-    <string name="collections_editor_tmdb_genre_reality">Stvarnost</string>
+    <string name="collections_editor_tmdb_genre_reality">Reality</string>
     <string name="autoplay_regex_preset_any_1080p_plus">Bilo koji 1080p+</string>
     <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
     <string name="autoplay_regex_preset_1080p_standard">1080p standard</string>

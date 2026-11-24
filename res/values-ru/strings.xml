@@ -296,7 +296,7 @@
     <string name="supporters_contributors_donate_copy">Nuvio всегда будет бесплатным и открытым. Если вы хотите поддержать проект, вы можете помочь покрыть затраты на время и инфраструктуру.</string>
     <string name="supporters_contributors_donate_button">Пожертвовать Nuvio</string>
     <string name="supporters_contributors_qr_title">Отсканируйте для пожертвования</string>
-    <string name="supporters_contributors_qr_subtitle">Откройте ссылку на телефоне и поддержите Nuvio через Ko-fi.</string>
+    <string name="supporters_contributors_qr_subtitle">Откройте ссылку на телефоне, чтобы поддержать Nuvio.</string>
     <string name="supporters_contributors_qr_hint">Наведите камеру на QR-код или используйте кнопку ниже.</string>
     <string name="supporters_contributors_back_button">Назад к деталям</string>
     <string name="supporters_tab">Спонсоры</string>
@@ -542,7 +542,7 @@
     <string name="layout_trailer_muted">Воспроизводить трейлер без звука</string>
     <string name="layout_trailer_muted_sub_preview">Отключить звук трейлера во время автовоспроизведения превью.</string>
     <string name="layout_trailer_muted_sub_expanded">Отключить звук трейлера в развернутых карточках.</string>
-    <string name="layout_section_card_style">Стиль карточки постера</string>
+    <string name="layout_section_card_style">Карточка постера</string>
     <string name="layout_section_card_style_desc">Настройка ширины карточки и радиуса углов.</string>
     <string name="layout_open">Открыть</string>
     <string name="layout_closed">Закрыть</string>
@@ -594,7 +594,7 @@
     <string name="animeskip_subtitle">Настройте свой Client ID от Anime Skip для пропуска интро/аутро</string>
     <string name="animeskip_enable_title">Включить Anime Skip</string>
     <string name="animeskip_enable_subtitle">Получать таймкоды пропусков с anime-skip.com</string>
-    <string name="animeskip_client_id_title">Идентификатор клиента</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">Требуется для получения таймкодов с anime-skip.com</string>
     <string name="animeskip_dialog_title">Client ID для Anime Skip</string>
     <string name="animeskip_dialog_subtitle">Создайте свой Client ID на anime-skip.com/account/settings</string>
@@ -649,13 +649,13 @@
     <string name="trakt_watch_progress_dialog_title">Прогресс просмотра</string>
     <string name="trakt_watch_progress_dialog_subtitle">Выберите, должен ли раздел \"Продолжить просмотр\" использовать Trakt или Nuvio Sync (скробблинг в Trakt останется активным).</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
-    <string name="trakt_watch_progress_source_nuvio">Nuvio Синхронизация</string>
+    <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_setting_on">Вкл</string>
     <string name="trakt_setting_off">Выкл</string>
     <string name="trakt_watch_progress_trakt_selected">Источник прогресса просмотра установлен на Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Источник прогресса просмотра установлен на Nuvio Sync</string>
-    <string name="trakt_continue_watching_window">Окно "Продолжить просмотр"</string>
-    <string name="trakt_continue_watching_subtitle">История Trakt, учитываемая для раздела "Продолжить просмотр"</string>
+    <string name="trakt_continue_watching_window">Окно \"Продолжить просмотр\"</string>
+    <string name="trakt_continue_watching_subtitle">История Trakt, учитываемая для раздела \"Продолжить просмотр\"</string>
     <string name="trakt_unaired_next_up">Невышедшие эпизоды \"На очереди\"</string>
     <string name="trakt_unaired_next_up_subtitle">Показывать предстоящие эпизоды до их выхода</string>
     <string name="trakt_unaired_shown">Отображаются</string>
@@ -700,7 +700,7 @@
     <string name="debug_section_account">Аккаунт</string>
     <string name="debug_manual_signin_title">Ручной вход</string>
     <string name="debug_manual_signin_subtitle">Вход с Email и паролем (Supabase auth)</string>
-    <string name="debug_email_placeholder">Электронная почта</string>
+    <string name="debug_email_placeholder">Email</string>
     <string name="debug_password_placeholder">Пароль</string>
     <string name="debug_signing_in">Вход в систему\u2026</string>
     <string name="debug_sign_in">Войти</string>
@@ -1078,7 +1078,7 @@
     <string name="sync_claim_done">Готово</string>
     <string name="sync_claim_code_label">Код синхронизации</string>
     <string name="sync_claim_code_placeholder">XXXX-XXXX-XXXX-XXXX-XXXX</string>
-    <string name="sync_claim_pin_label">PIN-код</string>
+    <string name="sync_claim_pin_label">PIN</string>
     <string name="sync_claim_pin_placeholder">Введите PIN</string>
     <string name="plugin_readonly_notice">Используются плагины основного профиля, их нельзя изменить</string>
     <string name="plugin_repositories_section">Репозитории (%1$d)</string>
@@ -1130,7 +1130,7 @@
     <string name="layout_selection_continue">Продолжить</string>
     <string name="update_title">Обновление приложения</string>
     <string name="update_installer_required">Используйте Nuvio TV Installer, чтобы обновить приложение на телевизоре.</string>
-    <string name="update_release_notes">Что нового</string>
+    <string name="update_release_notes">Список изменений</string>
     <string name="update_release_notes_unavailable">Описание выпуска недоступно.</string>
     <string name="update_downloading">Скачивание обновления</string>
     <string name="update_download">Скачать</string>
@@ -1442,7 +1442,7 @@
     <string name="licenses_attributions_section_playback">ЛИЦЕНЗИИ ВОСПРОИЗВЕДЕНИЯ ANDROID</string>
     <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">Исходный код и условия лицензии доступны в репозитории проекта. Лицензировано под GNU General Public License v3.0.</string>
-    <string name="licenses_attributions_tmdb_title">База данных фильмов (TMDB)</string>
+    <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio использует API TMDB для метаданных фильмов и ТВ, иллюстраций, трейлеров, актёров, производственных деталей, коллекций и рекомендаций. Этот продукт использует API TMDB, но не одобрен и не сертифицирован TMDB.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">Nuvio подключается к Trakt для авторизации, истории просмотров, синхронизации прогресса, данных библиотеки, рейтингов, списков и комментариев. Nuvio не аффилирован с Trakt и не одобрен им.</string>
@@ -1450,7 +1450,7 @@
     <string name="licenses_attributions_mdblist_body">Nuvio использует MDBList для рейтингов и данных внешних провайдеров оценок. Nuvio не аффилирован с MDBList и не одобрен им.</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
     <string name="licenses_attributions_introdb_body">Nuvio использует API IntroDB для предоставленных сообществом таймкодов вступлений, рекапов, титров и превью. Nuvio не аффилирован с IntroDB и не одобрен им.</string>
-    <string name="licenses_attributions_imdb_title">Некоммерческие наборы данных IMDb</string>
+    <string name="licenses_attributions_imdb_title">IMDb Non-Commercial Datasets</string>
     <string name="licenses_attributions_imdb_body">Nuvio использует некоммерческие наборы данных IMDb, включая title.ratings.tsv.gz, для рейтингов и количества голосов. Информация предоставлена IMDb (https://www.imdb.com). Используется с разрешения для личного и некоммерческого использования.</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Используется как движок воспроизведения Android. Лицензировано под Apache License, Version 2.0.</string>
@@ -1573,7 +1573,7 @@
     <string name="audio_number_of_channels">Количество каналов</string>
     <string name="audio_number_of_channels_desc">Задаёт раскладку динамиков для подмешивания FFmpeg.</string>
     <string name="audio_enable_downmix_title">Включить подмешивание</string>
-    <string name="audio_enable_downmix_subtitle">Использует путь подмешивания FFmpeg. При отключении аудио следует предыдущему пути Android/устройства.</string>
+    <string name="audio_enable_downmix_subtitle">Использует путь даунмикса FFmpeg. Требует включённой опции «Предпочитать декодеры приложения (FFmpeg)». При отключении звук идёт по прежнему пути Android/устройства.</string>
     <string name="dv7_handling_title">Обработка Dolby Vision Profile 7</string>
     <string name="dv7_handling_dialog_subtitle">Выберите, как обрабатываются потоки DV Profile 7 при воспроизведении.</string>
     <string name="dv7_mode_auto">Авто (рекомендуется)</string>
@@ -1873,7 +1873,7 @@
     <string name="cloud_library_type_all">Все</string>
     <string name="cloud_library_type_torrents">Торренты</string>
     <string name="cloud_library_type_usenet">Usenet</string>
-    <string name="cloud_library_type_web">Веб</string>
+    <string name="cloud_library_type_web">Web</string>
     <string name="cloud_library_type_files">Файлы</string>
     <string name="cloud_library_error_provider_unavailable">Облачная библиотека недоступна для %1$s.</string>
     <string name="cloud_library_error_disabled">Облачная библиотека отключена.</string>
@@ -1960,7 +1960,7 @@
     <string name="collections_editor_tmdb_default_list">Список TMDB</string>
     <string name="collections_editor_tmdb_default_production">Производство TMDB</string>
     <string name="collections_editor_tmdb_default_network">Сеть TMDB</string>
-    <string name="collections_editor_tmdb_default_discover">TMDB: «Обзор»</string>
+    <string name="collections_editor_tmdb_default_discover">TMDB Discover</string>
     <string name="collections_editor_tmdb_movie_collection">Коллекция фильмов TMDB</string>
     <string name="collections_editor_tmdb_mode_presets">Пресеты</string>
     <string name="collections_editor_tmdb_mode_public_list">Публичный список</string>
@@ -2089,12 +2089,12 @@
     <string name="collection_editor_choice_both">Оба</string>
     <string name="collection_editor_resolved_trakt_list">Найденный список Trakt</string>
     <string name="collection_editor_trakt_search_placeholder">Поиск по названию, URL Trakt или ID списка</string>
-    <string name="collection_editor_trakt_name_placeholder">Что посмотреть на выходных, лауреаты премий</string>
+    <string name="collection_editor_trakt_name_placeholder">Weekend Watch, Award Winners</string>
     <string name="collection_editor_folder_count_one">%1$d элемент</string>
     <string name="collection_editor_folder_count_other">%1$d элементов</string>
     <string name="collections_editor_delete_folder_title">Удалить папку?</string>
     <string name="collections_editor_delete_folder_subtitle">Это навсегда удалит \"%1$s\" и её содержимое.</string>
-    <string name="collections_editor_tmdb_movie_title_placeholder">Фильмы Marvel, оригинальные сериалы Netflix, Pixar</string>
+    <string name="collections_editor_tmdb_movie_title_placeholder">Marvel Movies, Netflix Originals, Pixar</string>
     <string name="collections_editor_tmdb_tv_title_placeholder">Лучшие боевики, Корейские дорамы, Аниме 2024</string>
     <string name="collections_editor_tmdb_person_title_placeholder">Фильмы с Tom Hanks, Любимые актёры</string>
     <string name="collections_editor_tmdb_director_title_placeholder">Фильмы Christopher Nolan, Любимые режиссёры</string>
@@ -2131,7 +2131,7 @@
     <string name="collections_editor_tmdb_genre_crime">Криминал</string>
     <string name="collections_editor_tmdb_genre_reality">Реалити</string>
     <string name="autoplay_regex_preset_any_1080p_plus">Любое 1080p+</string>
-    <string name="autoplay_regex_preset_4k_remux">4K / Ремультиплексирование</string>
+    <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
     <string name="autoplay_regex_preset_1080p_standard">Стандартное 1080p</string>
     <string name="autoplay_regex_preset_720p_smaller">720p / Меньше</string>
     <string name="autoplay_regex_preset_web_sources">WEB источники</string>
@@ -2273,21 +2273,21 @@
     <string name="debrid_size_range_up_to">До %1$d ГБ</string>
     <string name="debrid_size_range_min_plus">%1$d ГБ+</string>
     <string name="debrid_size_range_min_max">%1$d–%2$d ГБ</string>
-    <string name="advanced_section_dv_diagnostics">Диагностика DV</string>
-    <string name="dv7_libdovi_mode_caption">Режим конвертации (выбирается автоматически, не изменяется, если не указано иное). Выберите один из вариантов, чтобы принудительно установить его; вариант «Нет» использует автоматический режим. Активен только в том случае, если для параметра «Обработка DV7» выбран режим «Конвертировать в DV8.1».</string>
-    <string name="dv7_libdovi_mode_row_title">Режим конвертации</string>
-    <string name="dv7_libdovi_mode_none_title">Нет</string>
-    <string name="dv7_libdovi_mode_none_sub">Переопределение отсутствует. Используется автоматически выбранный режим преобразования.</string>
-    <string name="dv7_libdovi_mode_0_title">Режим 0 — Копирование (без преобразования)</string>
-    <string name="dv7_libdovi_mode_0_sub">Проанализируйте RPU и запишите его обратно без изменений. Без преобразования профиля.</string>
-    <string name="dv7_libdovi_mode_1_title">Режим 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">Преобразовать RPU для обеспечения совместимости с MEL (Minimum Enhancement Layer).</string>
-    <string name="dv7_libdovi_mode_2_title">Режим 2 — 8.1 (сопоставление без операции)</string>
-    <string name="dv7_libdovi_mode_2_sub">Преобразование в профиль 8.1 с настройкой отображения яркости и цветности на «no-op». Стандартное преобразование.</string>
-    <string name="dv7_libdovi_mode_3_title">Режим 3 — профили от 5 до 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">Конвертировать потоки профиля 5 (DV5) в профиль 8.1. Используется тот же алгоритм конвертации, что и при использовании переключателя «Конвертировать DV5 в DV8.1».</string>
-    <string name="dv7_libdovi_mode_4_title">Режим 4 — 8.4 (статический)</string>
-    <string name="dv7_libdovi_mode_4_sub">Преобразовать в статический профиль 8.4.</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Diagnostics</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="meta_error_detail_no_metadata_for_id">не вернул метаданные для этого ID</string>
     <string name="meta_error_detail_addon_unreachable">не удалось связаться с сервером аддона</string>
     <string name="meta_error_detail_addon_connection_failed">подключение к аддону не удалось</string>
@@ -2358,8 +2358,8 @@
     <string name="player.audio.unsupported">Не поддерживается</string>
     <string name="player.audio.unsupportedCodec">Кодек не поддерживается этим устройством</string>
     <string name="player.audio.noSupportedTracks">Нет доступных поддерживаемых аудиодорожек</string>
-    <string name="settings_stream_addon_logo_title">Логотип дополнения</string>
-    <string name="settings_stream_addon_logo_description">Показывать логотип и название дополнения рядом с источниками потоков.</string>
+    <string name="settings_stream_addon_logo_title">Логотип аддона</string>
+    <string name="settings_stream_addon_logo_description">Показывать логотип и название аддона рядом с источниками потоков.</string>
     <string name="unsupported_device_title">Телевизор не поддерживается</string>
     <string name="unsupported_device_message">Этот телевизор не соответствует минимальным требованиям для этой версии Nuvio TV.</string>
     <string name="unsupported_device_current_platform">Текущая платформа</string>
@@ -2384,12 +2384,12 @@
     <string name="debrid_stream_name_template_prompt">Шаблон имени потока</string>
     <string name="debrid_stream_name_template_subtitle">Шаблон, используемый для создания имен источников Direct Debrid.</string>
     <string name="debrid_stream_name_template_title">Шаблон имени потока</string>
-    <string name="cloud_library_search_label">Поиск в облачной библиотеке</string>
+    <string name="cloud_library_search_label">Поиск по облачной библиотеке</string>
     <string name="cloud_library_search_placeholder">Поиск файлов</string>
     <string name="cloud_library_search_clear">Очистить поиск</string>
-    <string name="layout_overall_ratings">Общие оценки</string>
-    <string name="layout_overall_ratings_sub_on">Стандартные оценки и оценки TMDB отображаются.</string>
-    <string name="layout_overall_ratings_sub_off">Стандартные оценки и оценки TMDB скрыты. На страницах сведений приоритет имеют настройки провайдера MDBList.</string>
+    <string name="layout_overall_ratings">Общие рейтинги</string>
+    <string name="layout_overall_ratings_sub_on">Показываются стандартные рейтинги и рейтинги TMDB.</string>
+    <string name="layout_overall_ratings_sub_off">Стандартные рейтинги и рейтинги TMDB скрыты. На страницах с описанием приоритет имеют настройки провайдера MDBList.</string>
     <string name="settings_p2p_unsupported_subtitle">Не поддерживается на этом телевизоре.</string>
     <string name="player_audio_tizen_dash_unsupported">Переключение аудиодорожек DASH не поддерживается на этом телевизоре.</string>
     <string name="player_subtitle_tizen_advanced_unsupported">Расширенное оформление субтитров может поддерживаться на этом телевизоре не полностью.</string>
@@ -2678,8 +2678,8 @@
     <string name="settings_content_discovery_subtitle">Аддоны, плагины, каталоги и источники поиска контента</string>
     <string name="settings_content_discovery_addons_subtitle">Управление аддонами, порядком каталогов и коллекциями</string>
     <string name="settings_content_discovery_plugins_subtitle">Управление репозиториями и провайдерами потоков</string>
-    <string name="supporters_level_supporter">Supporter</string>
-    <string name="supporters_level_supporter_plus">Supporter+</string>
+    <string name="supporters_level_supporter">Спонсор</string>
+    <string name="supporters_level_supporter_plus">Спонсор+</string>
     <string name="supporters_since">Поддерживает Nuvio с %1$s</string>
     <string name="supporters_since_unknown">С гордостью поддерживает Nuvio</string>
     <string name="supporter_membership_title">Членство спонсора Nuvio</string>
@@ -2693,8 +2693,8 @@
     <string name="supporter_membership_you_are">Вы —</string>
     <string name="supporter_membership_thank_you">Спасибо.</string>
     <string name="supporter_membership_supporter_since">Спонсор с %1$s.</string>
-    <string name="supporter_membership_tier_supporter">Supporter</string>
-    <string name="supporter_membership_tier_supporter_plus">Supporter Plus</string>
+    <string name="supporter_membership_tier_supporter">Спонсор</string>
+    <string name="supporter_membership_tier_supporter_plus">Спонсор Plus</string>
     <string name="supporter_membership_connected_title">Patreon подключён</string>
     <string name="supporter_membership_connected_description">На этом аккаунте Patreon не найден активный уровень Nuvio. Просмотрите доступные варианты или обновите данные после изменения членства Patreon.</string>
     <string name="supporter_membership_scan_support">Отсканируйте, чтобы просмотреть членство</string>

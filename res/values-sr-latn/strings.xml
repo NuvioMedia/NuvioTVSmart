@@ -97,9 +97,9 @@
     <string name="mdblist_show_on_hero_subtitle">Prikaži MDBList ocene u glavnom baneru (Modern i Classic/Grid)</string>
     <string name="mdblist_rating_order_title">Redosled ocena</string>
     <string name="mdblist_rating_order_subtitle">U baneru Modern prikazuju se prve 3 uključene i dostupne ocene. Koristite strelice za promenu redosleda.</string>
-    <string name="cd_move_up">Pomeri nagore</string>
-    <string name="cd_move_down">Pomeri nadole</string>
-    <string name="stream_info_bitrate">Bitrejt</string>
+    <string name="cd_move_up">Pomeri gore</string>
+    <string name="cd_move_down">Pomeri dole</string>
+    <string name="stream_info_bitrate">Bitrate</string>
     <string name="stream_info_bitrate_file">Bitrate (fajl)</string>
     <string name="stream_info_channels">Kanali</string>
     <string name="stream_info_codec">Kodek</string>
@@ -110,7 +110,7 @@
     <string name="stream_info_name">Naziv</string>
     <string name="stream_info_player_engine">Mehanizam plejera</string>
     <string name="stream_info_resolution">Rezolucija</string>
-    <string name="stream_info_sample_rate">Uzorkovanje</string>
+    <string name="stream_info_sample_rate">Sample Rate</string>
     <string name="stream_info_section_audio">ZVUK</string>
     <string name="stream_info_section_file">FAJL</string>
     <string name="stream_info_section_source">IZVOR</string>
@@ -585,7 +585,7 @@
     <string name="custom_theme_subtitle">Izaberite tri boje za temu. Izaberite boju da je izmenite.</string>
     <string name="custom_theme_solid_title">Vaša prilagođena boja</string>
     <string name="custom_theme_solid_subtitle">Izaberite boju za temu.</string>
-    <string name="custom_theme_mode_gradient">Gradijent</string>
+    <string name="custom_theme_mode_gradient">Gradient</string>
     <string name="custom_theme_mode_solid">Jedna boja</string>
     <string name="custom_theme_hex_title">Hex boja</string>
     <string name="custom_theme_use_color">Koristi boju</string>
@@ -625,12 +625,12 @@
     <string name="licenses_attributions_section_playback">ANDROID LICENCE ZA REPRODUKCIJU</string>
     <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
     <string name="licenses_attributions_nuvio_body">Izvorni kod i uslovi licenciranja su dostupni u spremištu projekta. Licencirano pod GNU General Public License v3.0.</string>
-    <string name="licenses_attributions_tmdb_title">Baza filmova (TMDB)</string>
+    <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio koristi TMDB API za metapodatke o filmovima i TV serijama, grafiku, trejlere, glumačku ekipu, detalje o produkciji, kolekcije i preporuke. Ovaj proizvod koristi TMDB API, ali nije podržan niti sertifikovan od strane TMDB-a.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
     <string name="licenses_attributions_trakt_body">Nuvio se povezuje sa Trakt-om radi autentifikacije naloga, istorije gledanja, sinhronizacije napretka, podataka biblioteke, ocena, lista i komentara. Nuvio nije povezan niti podržan od strane Trakt-a.</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
-    <string name="licenses_attributions_introdb_title">Uvod u bazu podataka</string>
+    <string name="licenses_attributions_introdb_title">IntroDB</string>
     <string name="licenses_attributions_introdb_body">Nuvio koristi IntroDB API za vremenske oznake uvodnih špica, rezimea, odjavnih špica i pregleda koje obezbeđuje zajednica, a koje se koriste za preskakanje. Nuvio nije povezan niti podržan od strane IntroDB-a.</string>
     <string name="licenses_attributions_imdb_title">IMDb nekomercijalni skupovi podataka</string>
     <string name="licenses_attributions_imdb_body">Nuvio koristi IMDb nekomercijalne skupove podataka, uključujući title.ratings.tsv.gz, za IMDb ocene i broj glasova. Podaci ljubaznošću IMDb-a (https://www.imdb.com). Korišćeno uz dozvolu. IMDb podaci su za ličnu i nekomercijalnu upotrebu pod IMDb uslovima.</string>
@@ -729,19 +729,19 @@
     <string name="network_error_prefix">Greška: %1$s</string>
     <string name="network_powered_by_fast">Omogućio fast.com</string>
     <string name="network_connection_wifi">Wi-Fi</string>
-    <string name="network_connection_ethernet">Eternet</string>
+    <string name="network_connection_ethernet">Ethernet</string>
     <string name="network_connection_offline">Bez interneta</string>
     <string name="advanced_section_performance">Performanse i navigacija</string>
     <string name="advanced_section_diagnostics">Dijagnostika</string>
     <string name="advanced_section_cache">Keš memorija</string>
-    <string name="advanced_section_dv_diagnostics">DV Dijagnostika</string>
+    <string name="advanced_section_dv_diagnostics" translatable="false">DV Dijagnostika</string>
     <string name="advanced_fast_horizontal_navigation">Brza horizontalna navigacija</string>
     <string name="advanced_fast_horizontal_navigation_subtitle">Povećaj brzinu ponavljanja na D-padu u redovima dok zadržavaš omogućeno ograničavanje ponavljanja.</string>
     <string name="advanced_nuvio_focus_scroll">Nuvio fokus skrolovanje</string>
     <string name="advanced_nuvio_focus_scroll_subtitle">Koristite Nuvio prilagođenu animaciju i pozicioniranje globalnog skrolovanja fokusa.</string>
     <string name="advanced_memory_only_vertical_scroll">Vertikalno skrolovanje samo iz memorije</string>
     <string name="advanced_memory_only_vertical_scroll_subtitle">Preskoči zahteve za slike sa diska i mreže tokom vertikalnog skrolovanja početnih redova.</string>
-    <string name="advanced_compose_highlighter">Kompozer oznaka</string>
+    <string name="advanced_compose_highlighter">Compose Highlighter</string>
     <string name="advanced_compose_highlighter_subtitle">Neka ivice oko UI elemenata koji se ponovo komponuju trepere radi otkrivanja problema sa performansama.</string>
     <string name="advanced_clear_cw_cache">Očisti keš Nastavka gledanja</string>
     <string name="advanced_clear_cw_cache_subtitle">Ukloni keširane sličice, naslove i obogaćene podatke za Nastavak gledanja</string>
@@ -914,20 +914,20 @@
     <string name="audio_dv5_to_dv81_sub">Šalje strimove profila 5 kao profil 8.1 za izlaz kompatibilan sa HDR10. Pomaže na uređajima koji nemaju nativni DV5 dekoder.</string>
     <string name="audio_dv7_preserve_mapping_title">Sačuvaj DV preslikavanje (DV7 u DV8.1)</string>
     <string name="audio_dv7_preserve_mapping_sub">Zadržava originalno mapiranje tonova koje je zamislio autor, uz cenu malo veće obrade po kadru.</string>
-    <string name="dv7_libdovi_mode_caption">Režim konverzije (automatski izabran, ne menjati osim ako nije naloženo). Izaberite jedan da biste ga primenili; "None" koristi automatski. Aktivno samo kada je DV7 Handling podešeno na Convert to DV8.1.</string>
-    <string name="dv7_libdovi_mode_row_title">Režim konverzije</string>
-    <string name="dv7_libdovi_mode_none_title">Ništa</string>
-    <string name="dv7_libdovi_mode_none_sub">Ne prekoračuje. Koristi automatski izabrani režim konverzije.</string>
-    <string name="dv7_libdovi_mode_0_title">Režim 0 — Kopiranje (bez konvertovanja)</string>
-    <string name="dv7_libdovi_mode_0_sub">Parsirajte RPU i vratite ga nepromenjenog. Bez konverzije profila.</string>
-    <string name="dv7_libdovi_mode_1_title">Režim 1 — MEL</string>
-    <string name="dv7_libdovi_mode_1_sub">Pretvorite RPU da bude kompatibilan sa MEL (Minimum Enhancement Layer).</string>
-    <string name="dv7_libdovi_mode_2_title">Režim 2 — 8.1 (mapiranje bez operacija)</string>
-    <string name="dv7_libdovi_mode_2_sub">Pretvorite u profil 8.1 sa mapiranjem lume i hrome podešenim na no-op. Standardna konverzija.</string>
-    <string name="dv7_libdovi_mode_3_title">Režim 3 — Profil 5 do 8.1</string>
-    <string name="dv7_libdovi_mode_3_sub">Konvertujte strimove Profila 5 (DV5) u Profil 8.1. Ista konverzija koju koristi prekidač za konvertovanje DV5 u DV8.1.</string>
-    <string name="dv7_libdovi_mode_4_title">Režim 4 — 8.4 (statički)</string>
-    <string name="dv7_libdovi_mode_4_sub">Pretvoriti u statički profil 8.4.</string>
+    <string name="dv7_libdovi_mode_caption" translatable="false">Conversion mode (auto-selected, do not change unless instructed). Pick one to force it; None uses auto. Active only when DV7 Handling is Convert to DV8.1.</string>
+    <string name="dv7_libdovi_mode_row_title" translatable="false">Conversion mode</string>
+    <string name="dv7_libdovi_mode_none_title" translatable="false">None</string>
+    <string name="dv7_libdovi_mode_none_sub" translatable="false">No override. Uses the automatically selected conversion mode.</string>
+    <string name="dv7_libdovi_mode_0_title" translatable="false">Mode 0 — Copy (no convert)</string>
+    <string name="dv7_libdovi_mode_0_sub" translatable="false">Parse the RPU and write it back untouched. No profile conversion.</string>
+    <string name="dv7_libdovi_mode_1_title" translatable="false">Mode 1 — MEL</string>
+    <string name="dv7_libdovi_mode_1_sub" translatable="false">Convert the RPU to be MEL (Minimum Enhancement Layer) compatible.</string>
+    <string name="dv7_libdovi_mode_2_title" translatable="false">Mode 2 — 8.1 (no-op mapping)</string>
+    <string name="dv7_libdovi_mode_2_sub" translatable="false">Convert to profile 8.1 with luma and chroma mapping set to no-op. The standard conversion.</string>
+    <string name="dv7_libdovi_mode_3_title" translatable="false">Mode 3 — Profile 5 to 8.1</string>
+    <string name="dv7_libdovi_mode_3_sub" translatable="false">Convert Profile 5 (DV5) streams to Profile 8.1. Same conversion the Convert DV5 to DV8.1 toggle uses.</string>
+    <string name="dv7_libdovi_mode_4_title" translatable="false">Mode 4 — 8.4 (static)</string>
+    <string name="dv7_libdovi_mode_4_sub" translatable="false">Convert to static profile 8.4.</string>
     <string name="audio_mpv_hwdec_title">Hardversko dekodiranje (samo za MPV)</string>
     <string name="audio_mpv_hwdec_dialog_subtitle">Izaberite kako libmpv treba da koristi hardverske dekodere.</string>
     <string name="audio_mpv_hwdec_legacy_direct_copy">Zastarelo (direktno -&gt; kopiranje)</string>
@@ -976,7 +976,7 @@
     <string name="autoplay_reuse_last_link_sub">Automatski pusti vaš poslednji funkcionalni strim za isti film/epizodu dok je keš i dalje važeći</string>
     <string name="autoplay_last_link_cache">Trajanje keša poslednje veze</string>
     <string name="cache_duration_hour_one">%1$d sat</string>
-    <string name="cache_duration_hour_other">%1$d sati</string>
+    <string name="cache_duration_hour_other">%1$d hours</string>
     <string name="cache_duration_day_one">%1$d dan</string>
     <string name="cache_duration_day_other">%1$d dana</string>
     <string name="cache_duration_days_hours">%1$dd %2$dh</string>
@@ -1144,13 +1144,13 @@
     <string name="mdblist_imdb_subtitle">Prikaži IMDb rezultat (i sakrij podrazumevanu IMDb liniju kada je dostupno)</string>
     <string name="mdblist_tmdb_title">TMDB</string>
     <string name="mdblist_tmdb_subtitle">Prikaži TMDB rezultat</string>
-    <string name="mdblist_letterboxd_title">Letterboksd</string>
+    <string name="mdblist_letterboxd_title">Letterboxd</string>
     <string name="mdblist_letterboxd_subtitle">Prikaži Letterboxd rezultat</string>
-    <string name="mdblist_tomatoes_title">Roten Tomatos</string>
+    <string name="mdblist_tomatoes_title">Rotten Tomatoes</string>
     <string name="mdblist_tomatoes_subtitle">Prikaži ocenu kritičara</string>
     <string name="mdblist_audience_title">Ocena publike</string>
     <string name="mdblist_audience_subtitle">Prikaži ocenu publike</string>
-    <string name="mdblist_metacritic_title">Metakritik</string>
+    <string name="mdblist_metacritic_title">Metacritic</string>
     <string name="mdblist_metacritic_subtitle">Prikaži Metacritic rezultat</string>
     <string name="mdblist_dialog_title">MDBList API Ključ</string>
     <string name="mdblist_dialog_subtitle">Unesite vaš API ključ za preuzimanje eksternih ocena</string>
@@ -1173,9 +1173,9 @@
     <string name="debrid_section_formatting">Formatiranje</string>
     <string name="debrid_provider_title">Provajder</string>
     <string name="debrid_provider_subtitle">Dodatni provajderi biće dodati kasnije</string>
-    <string name="debrid_provider_torbox">Torboks</string>
-    <string name="debrid_provider_available">Torboks</string>
-    <string name="debrid_api_key_title">Torboks</string>
+    <string name="debrid_provider_torbox">Torbox</string>
+    <string name="debrid_provider_available">Torbox</string>
+    <string name="debrid_api_key_title">Torbox</string>
     <string name="debrid_api_key_subtitle">Povežite vaš Torbox nalog.</string>
     <string name="debrid_provider_description">Povežite vaš %1$s nalog.</string>
     <string name="debrid_provider_device_description">Povežite vaš %1$s nalog u pregledaču.</string>
@@ -1185,9 +1185,9 @@
     <string name="debrid_dialog_title">Torbox API Ključ</string>
     <string name="debrid_dialog_subtitle">Unesite vaš Torbox API ključ.</string>
     <string name="debrid_dialog_placeholder">Unesite Torbox API ključ</string>
-    <string name="debrid_real_debrid_api_key_title">Real-Debrid API token</string>
+    <string name="debrid_real_debrid_api_key_title">Real-Debrid API Token</string>
     <string name="debrid_real_debrid_api_key_subtitle">Potrebno za lokalno razrešavanje Real-Debrid veza</string>
-    <string name="debrid_real_debrid_dialog_title">Real-Debrid API token</string>
+    <string name="debrid_real_debrid_dialog_title">Real-Debrid API Token</string>
     <string name="debrid_real_debrid_dialog_subtitle">Unesite vaš Real-Debrid API token za Direct Debrid</string>
     <string name="debrid_real_debrid_dialog_placeholder">Unesite Real-Debrid API token</string>
     <string name="debrid_not_set">Nije podešeno</string>
@@ -1314,13 +1314,13 @@
     <string name="streams_size">VELIČINA %1$s</string>
     <string name="action_import">Uvezi</string>
     <string name="action_delete">Obriši</string>
-    <string name="animeskip_title">Preskok animea</string>
+    <string name="animeskip_title">Anime Skip</string>
     <string name="animeskip_subtitle">Konfigurišite vaš Anime Skip Client ID za preskakanje uvodnih/odjavnih špica kod animea</string>
     <string name="animeskip_enable_title">Omogući Anime Skip</string>
     <string name="animeskip_enable_subtitle">Preuzmi vremenske oznake za preskakanje sa anime-skip.com</string>
-    <string name="animeskip_client_id_title">ID klijenta</string>
+    <string name="animeskip_client_id_title">Client ID</string>
     <string name="animeskip_client_id_subtitle">Potrebno za preuzimanje vremenskih oznaka sa anime-skip.com</string>
-    <string name="animeskip_dialog_title">ID klijenta za preskakivanje animea</string>
+    <string name="animeskip_dialog_title">Anime Skip Client ID</string>
     <string name="animeskip_dialog_subtitle">Kreirajte sopstveni Client ID na anime-skip.com/account/settings</string>
     <string name="animeskip_dialog_placeholder">Unesite Client ID</string>
     <string name="animeskip_invalid_client_id">Nevažeći Client ID</string>
@@ -1424,7 +1424,7 @@
     <string name="debug_section_account">Nalog</string>
     <string name="debug_manual_signin_title">Ručna prijava</string>
     <string name="debug_manual_signin_subtitle">Prijavite se putem email-a i lozinke (Supabase auth)</string>
-    <string name="debug_email_placeholder">E-pošta</string>
+    <string name="debug_email_placeholder">Email</string>
     <string name="debug_password_placeholder">Lozinka</string>
     <string name="debug_signing_in">Prijavljivanje\u2026</string>
     <string name="debug_sign_in">Prijavi se</string>
@@ -1574,7 +1574,7 @@
     <string name="debrid_missing_api_key">Dodajte Debrid API ključ u Podešavanjima.</string>
     <string name="debrid_not_cached">Nije kesirano na ovom servisu.</string>
     <string name="debrid_resolution_failed">Nije moguće razrešiti ovaj Debrid strim.</string>
-    <string name="stream_type_torrent">Torent</string>
+    <string name="stream_type_torrent">Torrent</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="p2p_consent_title">P2P strimovanje</string>
     <string name="p2p_consent_body">Ovaj strim koristi peer-to-peer (P2P) tehnologiju. Omogućavanjem P2P-a potvrđujete i saglasni ste da:\n\n\u2022 Vaša IP adresa će biti vidljiva drugim korisnicima u mreži\n\u2022 Vi ste isključivo odgovorni za sadržaj kom pristupate\n\u2022 Potvrđujete da imate zakonsko pravo na strimovanje ovog sadržaja u vašoj jurisdikciji\n\u2022 Nuvio ne hostuje, ne distribuira i ne kontroliše P2P sadržaj\n\u2022 Nuvio ne snosi nikakvu odgovornost za pravne posledice proistekle iz vašeg korišćenja P2P strimovanja\n\nOvu funkciju koristite isključivo na sopstvenu odgovornost. P2P se može onemogućiti u bilo kom trenutku u Podešavanjima.</string>
@@ -1838,7 +1838,7 @@
     <string name="library_source_nuvio">NUVIO</string>
     <string name="library_source_trakt">TRAKT</string>
     <string name="library_source_saved">Sačuvano</string>
-    <string name="library_source_cloud">Oblak</string>
+    <string name="library_source_cloud">Cloud</string>
     <string name="library_watchlist">Lista za gledanje</string>
     <string name="library_syncing_library">Sinhronizacija biblioteke\u2026</string>
     <string name="library_type_all">Sve</string>
@@ -2001,9 +2001,9 @@
     <string name="catalog_see_all_from">iz %1$s</string>
     <string name="catalog_see_all_empty_title">Nema dostupnih stavki</string>
     <string name="catalog_see_all_empty_subtitle">Pokušajte sa drugim katalogom ili proverite ponovo kasnije</string>
-    <string name="layout_selection_welcome">Dobrodošli u Nuvio</string>
+    <string name="layout_selection_welcome">Welcome to Nuvio</string>
     <string name="layout_selection_subtitle">Izaberite raspored početnog ekrana</string>
-    <string name="layout_selection_continue">Nastavi</string>
+    <string name="layout_selection_continue">Continue</string>
     <string name="update_title">Ažuriranje aplikacije</string>
     <string name="update_downloading">Preuzimanje ažuriranja</string>
     <string name="update_download">Preuzmi</string>
@@ -2421,7 +2421,7 @@
     <string name="collections_editor_tmdb_genre_crime">Kriminal</string>
     <string name="collections_editor_tmdb_genre_reality">Rijaliti</string>
     <string name="autoplay_regex_preset_any_1080p_plus">Bilo koji 1080p+</string>
-    <string name="autoplay_regex_preset_4k_remux">4K / Remuks</string>
+    <string name="autoplay_regex_preset_4k_remux">4K / Remux</string>
     <string name="autoplay_regex_preset_1080p_standard">1080p Standardni</string>
     <string name="autoplay_regex_preset_720p_smaller">720p / Manje</string>
     <string name="autoplay_regex_preset_web_sources">WEB izvori</string>
@@ -2725,7 +2725,7 @@
     <string name="settings_card_depth_coverage_top">Samo vrh</string>
     <string name="settings_card_depth_coverage_half">Pola</string>
     <string name="settings_card_depth_coverage_full">Puna kontura</string>
-    <string name="mdblist_mal_title">MojAnimeList</string>
+    <string name="mdblist_mal_title">MyAnimeList</string>
     <string name="mdblist_mal_subtitle">Prikaži MyAnimeList ocenu</string>
     <string name="settings_stream_display_section">Prikaz</string>
     <string name="simkl_user_fallback">Simkl korisnik</string>
