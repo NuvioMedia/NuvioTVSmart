@@ -144,10 +144,13 @@ export function createPlayerScreenMethods66() {
       }
       if (focus.zone === "filters") {
         if (direction === "left" || direction === "right") {
-          this.episodePanelStreamFocus = {
-            zone: "filters",
-            index: clamp(index + (direction === "right" ? 1 : -1), 0, Math.max(0, filters.length - 1))
-          };
+          // Android: focusing an addon chip selects its filter.
+          const next = filters[index + (direction === "right" ? 1 : -1)];
+          if (next) {
+            this.episodePanelStreamFilter = next;
+            this.episodePanelStreamFocus = { zone: "filters", index: filters.indexOf(next) };
+            this.renderEpisodePanel();
+          }
         } else if (direction === "up") {
           this.episodePanelStreamFocus = { zone: "actions", index: 0 };
         } else if (direction === "down" && streams.length) {
@@ -357,8 +360,9 @@ export function createPlayerScreenMethods66() {
       const selected = panel.querySelector(".player-episode-item.focused") || panel.querySelector(".player-episode-item.selected");
       scrollVerticallyWithin(panel.querySelector(".player-episode-list"), selected);
 
-      const focusedSeason = panel.querySelector(".player-episode-season-tab.focused");
-      scrollHorizontallyWithin(panel.querySelector(".player-episode-season-tabs"), focusedSeason);
+      // Android keeps the selected season tab in view even while focus is on the episodes.
+      const selectedSeason = panel.querySelector(".player-episode-season-tab.selected");
+      scrollHorizontallyWithin(panel.querySelector(".player-episode-season-tabs"), selectedSeason);
 
       const focusedStream = panel.querySelector(".player-episode-stream-card.focused");
       scrollVerticallyWithin(panel.querySelector(".player-episode-stream-list"), focusedStream);
