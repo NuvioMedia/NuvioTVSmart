@@ -2560,7 +2560,6 @@
     <string name="party_invite_scan">Pindai dengan ponsel untuk bergabung</string>
     <string name="party_invite_share">Atau bagikan kodenya. Teman dapat memasukkannya di Nonton bareng pada aplikasi Nuvio mana pun.</string>
     <string name="party_invite_qr">Kode QR undangan nonton bareng</string>
-    <string name="autosync_toast_no_fit">Sinkronisasi gagal: subtitle ini tidak cocok dengan versi video tersebut.</string>
     <string name="common.cantonese">Bahasa Kanton</string>
     <string name="layout_trailer_play_in_background">Putar di Latar Belakang</string>
     <string name="layout_trailer_play_in_background_sub">Putar trailer menggantikan latar belakang selama halaman tetap terlihat.</string>

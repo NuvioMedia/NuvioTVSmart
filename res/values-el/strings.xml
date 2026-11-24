@@ -2889,7 +2889,6 @@
     <string name="autosync_label_synced">Αυτόματα συγχρονισμένος</string>
     <string name="layout_always_show_landscape_clearlogo">Πάντα φόντο με λογότυπο για οριζόντιες αφίσες</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Αγνόηση της οριζόντιας αφίσας από το πρόσθετο και χρήση φόντου με επικάλυψη clearlogo.</string>
-    <string name="autosync_toast_no_fit">Ο συγχρονισμός απέτυχε: αυτοί οι υπότιτλοι δεν ταιριάζουν με αυτή την έκδοση του βίντεο.</string>
     <string name="common.cantonese">Καντονέζικα</string>
     <string name="layout_trailer_play_in_background">Αναπαραγωγή στο παρασκήνιο</string>
     <string name="layout_trailer_play_in_background_sub">Αναπαραγωγή του τρέιλερ στη θέση του φόντου όσο η σελίδα παραμένει ορατή.</string>

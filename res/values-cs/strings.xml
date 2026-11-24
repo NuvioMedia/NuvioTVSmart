@@ -2479,7 +2479,6 @@
     <string name="party_invite_scan">Naskenujte telefonem a připojte se</string>
     <string name="party_invite_share">Nebo sdílejte kód. Přátelé ho mohou zadat v sekci Watch party v jakékoli aplikaci Nuvio.</string>
     <string name="party_invite_qr">QR kód pozvánky do watch party</string>
-    <string name="autosync_toast_no_fit">Synchronizace se nezdařila: tyto titulky neodpovídají této verzi videa.</string>
     <string name="common.cantonese">Kantonský dialekt</string>
     <string name="layout_trailer_play_in_background">Přehrávání na pozadí</string>
     <string name="layout_trailer_play_in_background_sub">Přehrávejte upoutávku namísto pozadí, zatímco stránka zůstává viditelná.</string>

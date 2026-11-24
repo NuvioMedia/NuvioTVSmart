@@ -218,7 +218,6 @@
     <string name="party_invite_scan">Відскануйте телефоном, щоб приєднатися</string>
     <string name="party_invite_share">Або поділіться кодом. Друзі можуть ввести його в розділі «Спільний перегляд» у будь-якому застосунку Nuvio.</string>
     <string name="party_invite_qr">QR-код запрошення до спільного перегляду</string>
-    <string name="autosync_toast_no_fit">Помилка синхронізації: ці субтитри не відповідають цій версії відео.</string>
     <string name="common.cantonese">Кантонська</string>
     <string name="layout_trailer_play_in_background">Відтворення у фоновому режимі</string>
     <string name="layout_trailer_play_in_background_sub">Відтворювати трейлер замість фонового зображення, поки сторінка залишається видимою.</string>

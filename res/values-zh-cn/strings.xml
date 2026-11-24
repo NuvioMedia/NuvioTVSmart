@@ -2751,7 +2751,6 @@
     <string name="party_invite_scan">用手机扫描即可加入</string>
     <string name="party_invite_share">或者分享代码。好友可以在任意 Nuvio 应用的“一起看”中输入代码。</string>
     <string name="party_invite_qr">一起看邀请二维码</string>
-    <string name="autosync_toast_no_fit">同步失败：这些字幕与该视频版本不匹配。</string>
     <string name="common.cantonese">粤语</string>
     <string name="layout_trailer_play_in_background">后台播放</string>
     <string name="layout_trailer_play_in_background_sub">在页面保持可见的同时，播放预告片以代替背景。</string>

@@ -303,7 +303,6 @@
     <string name="party_invite_scan">用手機掃描即可加入</string>
     <string name="party_invite_share">或者分享代碼。好友可以在任何 Nuvio 應用程式的「一起看」中輸入代碼。</string>
     <string name="party_invite_qr">一起看邀請 QR 碼</string>
-    <string name="autosync_toast_no_fit">同步失敗：這些字幕與此版本的影片不符。</string>
     <string name="common.cantonese">粵語</string>
     <string name="layout_trailer_play_in_background">在背景中播放</string>
     <string name="layout_trailer_play_in_background_sub">在頁面保持可見的同時，以預告片取代背景畫面。</string>

@@ -2545,7 +2545,6 @@
     <string name="party_invite_scan">Mit dem Smartphone scannen, um beizutreten</string>
     <string name="party_invite_share">Oder teile den Code. Freunde können ihn in jeder Nuvio-App unter Watch Party eingeben.</string>
     <string name="party_invite_qr">QR-Code der Watch-Party-Einladung</string>
-    <string name="autosync_toast_no_fit">Synchronisierung fehlgeschlagen: Diese Untertitel passen nicht zu dieser Version des Videos.</string>
     <string name="common.cantonese">Kantonesisch</string>
     <string name="layout_trailer_play_in_background">Im Hintergrund abspielen</string>
     <string name="layout_trailer_play_in_background_sub">Den Trailer anstelle des Hintergrundbildes abspielen, während die Seite sichtbar bleibt.</string>

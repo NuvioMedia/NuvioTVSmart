@@ -1526,7 +1526,6 @@
     <string name="party_invite_scan">शामिल होने के लिए फ़ोन से स्कैन करें</string>
     <string name="party_invite_share">या कोड साझा करें। दोस्त इसे किसी भी Nuvio ऐप में वॉच पार्टी में डाल सकते हैं।</string>
     <string name="party_invite_qr">वॉच पार्टी आमंत्रण QR कोड</string>
-    <string name="autosync_toast_no_fit">सिंक विफल: ये उपशीर्षक इस वीडियो के इस संस्करण से मेल नहीं खाते।</string>
     <string name="common.cantonese">कैंटोनीज़</string>
     <string name="layout_trailer_play_in_background">पृष्ठभूमि में चलाएँ</string>
     <string name="layout_trailer_play_in_background_sub">जब पेज दिखाई दे रहा हो, पृष्ठभूमि के स्थान पर ट्रेलर चलाएँ।</string>

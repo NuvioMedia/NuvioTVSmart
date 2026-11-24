@@ -1,11 +1,19 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
-import { AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../../core/player/subtitleAutoSyncEngine.js";
+import { AUTO_SYNC_DEFAULT_TOLERANCE_MS, AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../../core/player/subtitleAutoSyncEngine.js";
 import { alignSubtitleAutoSyncAsync } from "../../../core/player/subtitleAutoSyncWorkerClient.js";
 import { retimeAutoSyncSubtitleText } from "../../../core/player/subtitleAutoSyncRetimer.js";
 import { confirmsAutoSyncNoFit, isConfirmedAutoSyncNoFit } from "../../../core/player/autosyncOutcome.js";
 
-const AUTO_SYNC_TOAST_MS = 2200;
+// Android AutoSyncState: where AutoSync stands with the add-on subtitle it last handled.
+export const AUTO_SYNC_STATUS = Object.freeze({
+  IN_PROGRESS: "in_progress",
+  SYNCED: "synced",
+  NOT_NEEDED: "not_needed",
+  NO_FIT: "no_fit",
+  NO_REFERENCE: "no_reference",
+  FAILED: "failed"
+});
 // Android EXCEPTIONAL_MATCH_TARGET_COVERAGE / _REFERENCE_COVERAGE: a match this complete
 // ends the search for a better same-language subtitle.
 const EXCEPTIONAL_TARGET_COVERAGE = 0.99;
@@ -23,7 +31,7 @@ function isExceptionalAutoSyncMatch(match) {
 
 function normalizeToleranceMs(value) {
   const tolerance = Math.trunc(Number(value));
-  return AUTO_SYNC_TOLERANCE_OPTIONS_MS.includes(tolerance) ? tolerance : 0;
+  return AUTO_SYNC_TOLERANCE_OPTIONS_MS.includes(tolerance) ? tolerance : AUTO_SYNC_DEFAULT_TOLERANCE_MS;
 }
 
 // Only the timing fields cross the worker boundary; cue markup stays here.
@@ -37,6 +45,38 @@ function toAutoSyncTargetCue(cue) {
   };
 }
 
+const SYNC_ICON =
+  "M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z";
+// Android AutoSyncStatusIndicator: Material icon and label for each state.
+const AUTO_SYNC_STATUS_VISUALS = {
+  [AUTO_SYNC_STATUS.SYNCED]: {
+    icon: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+    label: "autosync_status_synced",
+    fallback: "Synced"
+  },
+  [AUTO_SYNC_STATUS.NOT_NEEDED]: {
+    icon: "M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z",
+    label: "autosync_status_not_needed",
+    fallback: "Not needed"
+  },
+  [AUTO_SYNC_STATUS.IN_PROGRESS]: { icon: SYNC_ICON, label: "autosync_status_in_progress", fallback: "In progress" },
+  [AUTO_SYNC_STATUS.NO_FIT]: {
+    icon: "M10 3h4v12h-4zM12 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
+    label: "autosync_status_no_fit",
+    fallback: "May not match"
+  },
+  [AUTO_SYNC_STATUS.NO_REFERENCE]: {
+    icon: "M19 13H5v-2h14v2z",
+    label: "autosync_status_no_reference",
+    fallback: "No embedded subtitles"
+  },
+  [AUTO_SYNC_STATUS.FAILED]: {
+    icon: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
+    label: "autosync_status_failed",
+    fallback: "Failed"
+  }
+};
+
 export function createPlayerScreenMethods74() {
   const {
     PlayerSettingsStore,
@@ -46,6 +86,7 @@ export function createPlayerScreenMethods74() {
     isAssSubtitle,
     isTx3gSubtitleTrack,
     normalizeSubtitleLanguageKey,
+    escapeHtml,
     t
   } = internals;
 
@@ -56,7 +97,8 @@ export function createPlayerScreenMethods74() {
         clearTimeout(this.automaticSubtitleSyncTimer);
         this.automaticSubtitleSyncTimer = null;
       }
-      this.autoSyncedSubtitleUrl = "";
+      // Android AutoSyncSyncedSubtitle.clear(): a new or stopped subtitle shows its original timing.
+      this.autoSyncStatus = null;
       this.currentAddonSubtitleSource = null;
       if (resetStartupKey) {
         this.automaticSubtitleSyncResolved = null;
@@ -77,14 +119,53 @@ export function createPlayerScreenMethods74() {
         isAss: Boolean(isAss)
       };
     },
+    /** Android AutoSyncedChip: only on the selected subtitle, and only when its timing was corrected. */
     isSubtitleOptionAutoSynced(option) {
-      const syncedUrl = String(this.autoSyncedSubtitleUrl || "").trim();
-      if (!syncedUrl) {
+      const status = this.autoSyncStatus;
+      if (!option?.selected || status?.state !== AUTO_SYNC_STATUS.SYNCED) {
         return false;
       }
       const track = option?.entry?.track || {};
       const candidateUrl = String(track.url || option?.entry?.id || "").trim();
-      return Boolean(candidateUrl) && candidateUrl === syncedUrl;
+      return Boolean(candidateUrl) && candidateUrl === status.url;
+    },
+    /** Android AutoSyncStatusIndicator: the status of the add-on subtitle shown now, if any. */
+    getSelectedSubtitleAutoSyncState() {
+      const status = this.autoSyncStatus;
+      const selectedUrl = String(this.currentAddonSubtitleSource?.subtitleUrl || "").trim();
+      return status && selectedUrl && status.url === selectedUrl ? status.state : null;
+    },
+    setAutoSyncStatus(subtitleUrl, state) {
+      const status = { url: String(subtitleUrl || "").trim(), state };
+      this.autoSyncStatus = status;
+      this.invalidateTrackDialogCaches();
+      this.renderSubtitleDialog();
+      return status;
+    },
+    /** Android AutoSyncStatusIndicator, at the bottom start of the subtitle panel. */
+    renderSubtitleAutoSyncStatus() {
+      const node = this.uiRefs?.subtitleAutoSyncStatus;
+      if (!node) {
+        return;
+      }
+      const state = this.subtitleDialogVisible ? this.getSelectedSubtitleAutoSyncState() : null;
+      const visual = state ? AUTO_SYNC_STATUS_VISUALS[state] : null;
+      const markup = visual
+        ? `<span class="player-subtitle-autosync-status-badge"><svg${state === AUTO_SYNC_STATUS.IN_PROGRESS ? ' class="is-spinning"' : ""} viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="${visual.icon}"/></svg></span><span class="player-subtitle-autosync-status-copy"><span class="player-subtitle-autosync-status-title">${escapeHtml(t("autosync_status_title", {}, "Auto Sync Status"))}</span><span class="player-subtitle-autosync-status-label">${escapeHtml(t(visual.label, {}, visual.fallback))}</span></span>`
+        : "";
+      if (this.renderedSubtitleAutoSyncStatusMarkup !== markup) {
+        node.innerHTML = markup;
+        this.renderedSubtitleAutoSyncStatusMarkup = markup;
+      }
+      node.className = `player-subtitle-autosync-status${visual ? ` is-${state.replace(/_/g, "-")}` : " hidden"}`;
+    },
+    /** Android AutoSyncSyncedSubtitle.end: a run that ends without a result drops its In progress. */
+    endAutoSyncStatusRun(run) {
+      if (run && this.autoSyncStatus === run) {
+        this.autoSyncStatus = null;
+        this.invalidateTrackDialogCaches();
+        this.renderSubtitleDialog();
+      }
     },
     getAutomaticSubtitleSyncSettings() {
       const style = PlayerSettingsStore.get().subtitleStyle || {};
@@ -133,20 +214,6 @@ export function createPlayerScreenMethods74() {
           trackOrdinal: -1
         };
       });
-    },
-    showAutomaticSubtitleSyncNoFit() {
-      // The only AutoSync failure worth reporting: the subtitle was compared with every
-      // embedded reference and clearly matches none of them. Technical or inconclusive
-      // failures stay silent, like Android.
-      const message = t("autosync_toast_no_fit", {}, "Sync failed: these subtitles don't match this version of the video.");
-      if (typeof this.showAspectToast === "function") {
-        this.showAspectToast(message, AUTO_SYNC_TOAST_MS);
-      }
-    },
-    markSubtitleAutoSynced(subtitle) {
-      this.autoSyncedSubtitleUrl = String(subtitle?.url || subtitle?.id || "").trim();
-      this.invalidateTrackDialogCaches();
-      this.renderSubtitleDialog();
     },
     async applyAutomaticSubtitleSyncTimeline({ subtitle, source, timeline } = {}) {
       if (!timeline?.confident || !source) {
@@ -262,11 +329,6 @@ export function createPlayerScreenMethods74() {
       if (!/^https?:\/\//i.test(sourceUrl)) {
         return false;
       }
-      const referenceRequests = this.getSubtitleAutoSyncReferenceRequests(subtitle, settings.thorough);
-      if (!referenceRequests.length) {
-        // No embedded subtitles to compare with: nothing the viewer can act on.
-        return false;
-      }
       const addonSource = source || this.currentAddonSubtitleSource;
       if (!addonSource || String(addonSource.subtitleUrl || "") !== String(subtitle.url || "")) {
         return false;
@@ -277,6 +339,12 @@ export function createPlayerScreenMethods74() {
           return false;
         }
         this.automaticSubtitleSyncStartupKey = sourceUrl;
+      }
+      const referenceRequests = this.getSubtitleAutoSyncReferenceRequests(subtitle, settings.thorough);
+      if (!referenceRequests.length) {
+        // Android NO_SUBTITLE_TRACKS: the video has no text subtitles to compare with.
+        this.setAutoSyncStatus(subtitle.url, AUTO_SYNC_STATUS.NO_REFERENCE);
+        return false;
       }
 
       const runToken = Number(this.automaticSubtitleSyncRunToken || 0) + 1;
@@ -293,12 +361,12 @@ export function createPlayerScreenMethods74() {
 
       const applyTimeline = async (timeline) => {
         if (settings.toleranceMs > 0 && timeline.maxShiftMs <= settings.toleranceMs) {
-          this.markSubtitleAutoSynced(subtitle);
+          this.setAutoSyncStatus(subtitle.url, AUTO_SYNC_STATUS.NOT_NEEDED);
           return;
         }
         const applied = await this.applyAutomaticSubtitleSyncTimeline({ subtitle, source: addonSource, timeline });
-        if (applied && isStillRelevant()) {
-          this.markSubtitleAutoSynced(subtitle);
+        if (isStillRelevant()) {
+          this.setAutoSyncStatus(subtitle.url, applied ? AUTO_SYNC_STATUS.SYNCED : AUTO_SYNC_STATUS.FAILED);
         }
       };
 
@@ -419,15 +487,17 @@ export function createPlayerScreenMethods74() {
         }
 
         if (!winner) {
-          if (
-            isConfirmedAutoSyncNoFit({
-              evaluatedReferences: selectedOutcome.evaluated,
-              ambiguousReferences: selectedOutcome.ambiguous,
-              requestedReferences: referenceRequests.length
-            })
-          ) {
-            this.showAutomaticSubtitleSyncNoFit();
-          }
+          // Android failureState(): NO_FIT for a confirmed mismatch, NO_REFERENCE when no embedded
+          // subtitle could be read, FAILED for anything inconclusive.
+          const noFit = isConfirmedAutoSyncNoFit({
+            evaluatedReferences: selectedOutcome.evaluated,
+            ambiguousReferences: selectedOutcome.ambiguous,
+            requestedReferences: referenceRequests.length
+          });
+          this.setAutoSyncStatus(
+            subtitle.url,
+            noFit ? AUTO_SYNC_STATUS.NO_FIT : references.length ? AUTO_SYNC_STATUS.FAILED : AUTO_SYNC_STATUS.NO_REFERENCE
+          );
           return;
         }
         if (winner.subtitle === subtitle) {
@@ -444,12 +514,20 @@ export function createPlayerScreenMethods74() {
         this.switchToAutoSyncAlternative(winner.subtitle);
       };
 
+      const statusRun = this.setAutoSyncStatus(subtitle.url, AUTO_SYNC_STATUS.IN_PROGRESS);
       if (this.automaticSubtitleSyncTimer) {
         clearTimeout(this.automaticSubtitleSyncTimer);
       }
       this.automaticSubtitleSyncTimer = setTimeout(() => {
         this.automaticSubtitleSyncTimer = null;
-        void run();
+        run()
+          .catch((error) => {
+            console.warn("AutoSync failed", error);
+            if (isStillRelevant()) {
+              this.setAutoSyncStatus(subtitle.url, AUTO_SYNC_STATUS.FAILED);
+            }
+          })
+          .then(() => this.endAutoSyncStatusRun(statusRun));
       }, 0);
       return true;
     }

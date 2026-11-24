@@ -1459,7 +1459,6 @@
     <string name="autosync_tolerance_value">%1$d ms</string>
     <string name="autosync_thorough_title">Detaljna pretraga automatske sinkronizacije</string>
     <string name="autosync_thorough_description">Nastavite uspoređivati druge titlove i ugrađene staze radi boljeg podudaranja prije sinkronizacije. Kada je isključeno, prvi snažni podudarač se primjenjuje ranije. Samo pouzdani podudarači se ikada primjenjuju.</string>
-    <string name="autosync_toast_no_fit">Sinkronizacija nije uspjela: ovi titlovi ne odgovaraju ovoj verziji videa.</string>
     <string name="autosync_label_synced">Automatski sinkronizirano</string>
     <string name="subtitle_auto_sync_select_addon_track">Odaberi titlove iz dodatka za korištenje automatske sinkronizacije.</string>
     <string name="subtitle_auto_sync_applied">Sinkronizacija primijenjena: %1$s</string>

@@ -163,6 +163,7 @@ export function createPlayerScreenMethods15() {
 
             <div id="playerModalBackdrop" class="player-modal-backdrop hidden"></div>
             <div id="playerSubtitleDialog" class="player-modal player-subtitle-modal hidden"></div>
+            <div id="playerSubtitleAutoSyncStatus" class="player-subtitle-autosync-status hidden" role="status"></div>
             <div id="playerSubtitleDelayOverlay" class="player-subtitle-delay-overlay hidden"></div>
             <div id="playerSubtitleTimingDialog" class="player-subtitle-timing-modal hidden"></div>
             <div id="playerAudioDialog" class="player-modal player-audio-modal hidden"></div>
@@ -260,6 +261,7 @@ export function createPlayerScreenMethods15() {
             postPlay: uiRoot.querySelector("#playerPostPlayRecommendation"),
             modalBackdrop: uiRoot.querySelector("#playerModalBackdrop"),
             subtitleDialog: uiRoot.querySelector("#playerSubtitleDialog"),
+            subtitleAutoSyncStatus: uiRoot.querySelector("#playerSubtitleAutoSyncStatus"),
             subtitleDelayOverlay: uiRoot.querySelector("#playerSubtitleDelayOverlay"),
             subtitleTimingDialog: uiRoot.querySelector("#playerSubtitleTimingDialog"),
             audioDialog: uiRoot.querySelector("#playerAudioDialog"),

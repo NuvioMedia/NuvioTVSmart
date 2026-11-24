@@ -2647,7 +2647,6 @@
     <string name="party_invite_qr">QR-код приглашения к совместному просмотру</string>
     <string name="sub_strip_sdh">Удалять субтитры SDH</string>
     <string name="sub_strip_sdh_desc">Скрывать описания звуков и обозначения говорящих в текстовых субтитрах</string>
-    <string name="autosync_toast_no_fit">Сбой синхронизации: эти субтитры не соответствуют данной версии видео.</string>
     <string name="common.cantonese">Кантонский</string>
     <string name="layout_trailer_play_in_background">Воспроизведение в фоновом режиме</string>
     <string name="layout_trailer_play_in_background_sub">Воспроизвести трейлер вместо фона, пока страница остается видимой.</string>

@@ -164,6 +164,120 @@
   flex: 0 0 auto;
 }
 
+/* Android AutoSyncStatusIndicator: BottomStart of the subtitle scaffold content, offset 40dp down
+   (x2 TV canvas: start 52dp -> 104px, bottom 76dp - 40dp -> 72px). */
+.player-subtitle-autosync-status {
+  position: absolute;
+  z-index: 36;
+  left: min(5.42vw, 104px);
+  bottom: min(3.75vw, 72px);
+  display: flex;
+  align-items: center;
+  gap: min(0.63vw, 12px); /* ATV 6dp -> 12px */
+  pointer-events: none;
+}
+
+.player-subtitle-autosync-status.hidden {
+  display: none;
+}
+
+.player-subtitle-autosync-status-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(1.67vw, 32px); /* ATV 16dp -> 32px */
+  height: min(1.67vw, 32px);
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.player-subtitle-autosync-status-badge svg {
+  width: min(1.04vw, 20px); /* ATV 10dp -> 20px */
+  height: min(1.04vw, 20px);
+}
+
+.player-subtitle-autosync-status-badge svg.is-spinning {
+  animation: playerAutoSyncStatusSpin 1.2s linear infinite;
+}
+
+@keyframes playerAutoSyncStatusSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.player-subtitle-autosync-status-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-subtitle-autosync-status-title {
+  color: var(--player-atv-text-tertiary);
+  font-size: min(0.94vw, 18px); /* ATV 9sp -> 18px */
+  line-height: min(1.25vw, 24px); /* ATV 12sp -> 24px */
+}
+
+.player-subtitle-autosync-status-label {
+  font-size: min(1.15vw, 22px); /* ATV 11sp -> 22px */
+  line-height: min(1.46vw, 28px); /* ATV 14sp -> 28px */
+  font-weight: 600;
+}
+
+/* NuvioPrimitives success, neutral400, warning, violet300 and error; badge at 18% alpha. */
+.player-subtitle-autosync-status.is-synced .player-subtitle-autosync-status-label {
+  color: rgb(76, 175, 80);
+}
+
+.player-subtitle-autosync-status.is-synced .player-subtitle-autosync-status-badge {
+  background: rgba(76, 175, 80, 0.18);
+  color: rgb(76, 175, 80);
+}
+
+.player-subtitle-autosync-status.is-not-needed .player-subtitle-autosync-status-label,
+.player-subtitle-autosync-status.is-no-reference .player-subtitle-autosync-status-label {
+  color: rgb(179, 179, 179);
+}
+
+.player-subtitle-autosync-status.is-not-needed .player-subtitle-autosync-status-badge,
+.player-subtitle-autosync-status.is-no-reference .player-subtitle-autosync-status-badge {
+  background: rgba(179, 179, 179, 0.18);
+  color: rgb(179, 179, 179);
+}
+
+.player-subtitle-autosync-status.is-in-progress .player-subtitle-autosync-status-label {
+  color: rgb(255, 183, 77);
+}
+
+.player-subtitle-autosync-status.is-in-progress .player-subtitle-autosync-status-badge {
+  background: rgba(255, 183, 77, 0.18);
+  color: rgb(255, 183, 77);
+}
+
+.player-subtitle-autosync-status.is-no-fit .player-subtitle-autosync-status-label {
+  color: rgb(171, 71, 188);
+}
+
+.player-subtitle-autosync-status.is-no-fit .player-subtitle-autosync-status-badge {
+  background: rgba(171, 71, 188, 0.18);
+  color: rgb(171, 71, 188);
+}
+
+.player-subtitle-autosync-status.is-failed .player-subtitle-autosync-status-label {
+  color: rgb(207, 102, 121);
+}
+
+.player-subtitle-autosync-status.is-failed .player-subtitle-autosync-status-badge {
+  background: rgba(207, 102, 121, 0.18);
+  color: rgb(207, 102, 121);
+}
+
+html[dir="rtl"] .player-subtitle-autosync-status.is-not-needed svg {
+  transform: scaleX(-1);
+}
+
 .player-subtitle-modal .player-dialog-item.selected .player-subtitle-language-count,
 .player-subtitle-modal .player-dialog-item.selected .player-subtitle-source-chip,
 .player-subtitle-modal .player-dialog-item.selected .player-subtitle-autosync-chip {

@@ -2886,9 +2886,15 @@
     <string name="autosync_toast_failed_no_reference">Échec de la synchronisation&#160;: cette vidéo ne contient aucun sous-titre intégré à comparer.</string>
     <string name="autosync_toast_failed_unsupported">Échec de la synchronisation&#160;: la synchronisation automatique ne prend pas en charge ce format de sous-titres.</string>
     <string name="autosync_label_synced">Synchronisé automatiquement</string>
+    <string name="autosync_status_title">État de la synchronisation automatique</string>
+    <string name="autosync_status_synced">Synchronisé</string>
+    <string name="autosync_status_not_needed">Non nécessaire</string>
+    <string name="autosync_status_in_progress">En cours</string>
+    <string name="autosync_status_no_fit">Peut ne pas correspondre</string>
+    <string name="autosync_status_no_reference">Aucun sous-titre intégré</string>
+    <string name="autosync_status_failed">Échoué</string>
     <string name="layout_always_show_landscape_clearlogo">Toujours utiliser l’arrière-plan avec logo pour les affiches paysage</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Ignorer l’affiche paysage fournie par l’addon et utiliser à la place l’arrière-plan avec le logo en superposition.</string>
-    <string name="autosync_toast_no_fit">Échec de la synchronisation&#160;: ces sous-titres ne correspondent pas à cette version de la vidéo.</string>
     <string name="common.cantonese">Cantonais</string>
     <string name="layout_trailer_play_in_background">Lire en arrière-plan</string>
     <string name="layout_trailer_play_in_background_sub">Lire la bande-annonce à la place de l’arrière-plan, tout en laissant la page visible.</string>

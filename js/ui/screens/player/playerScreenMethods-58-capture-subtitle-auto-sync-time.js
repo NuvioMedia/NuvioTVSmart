@@ -259,6 +259,7 @@ export function createPlayerScreenMethods58() {
       }
 
       dialog.classList.toggle("hidden", !this.subtitleDialogVisible);
+      this.renderSubtitleAutoSyncStatus();
       if (!this.subtitleDialogVisible) {
         dialog.innerHTML = "";
         this.renderedSubtitleDialogMarkup = "";

@@ -222,7 +222,6 @@
     <string name="sub_strip_sdh_desc">Скриване на звуковите описания и етикетите на високоговорителите от текстовите субтитри</string>
     <string name="layout_always_show_landscape_clearlogo">Фон Always с лого за пейзажни постери</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Игнорирайте плаката с пейзажен режим от добавката и използвайте фон с наслагване на clearlogo.</string>
-    <string name="autosync_toast_no_fit">Синхронизацията се провали: тези субтитри не съответстват на тази версия на видеото.</string>
     <string name="common.cantonese">Кантонски</string>
     <string name="layout_trailer_play_in_background">Възпроизвеждане във фонов режим</string>
     <string name="layout_trailer_play_in_background_sub">Възпроизвеждане на трейлъра вместо фона, докато страницата остава видима.</string>
