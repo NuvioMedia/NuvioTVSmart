@@ -308,6 +308,20 @@ export const PluginsScreen = {
               : ""
           }
           ${
+            this.pendingRepositoryRemoval
+              ? `<div class="plugins-confirm-backdrop">
+            <section class="plugins-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="plugins-repo-delete-title">
+              <h2 id="plugins-repo-delete-title">${escapeHtml(t("plugin_repo_delete_confirm_title", {}, "Delete repository?"))}</h2>
+              <p>${escapeHtml(t("plugin_repo_delete_confirm_message", {}, "Are you sure you want to delete it?"))}</p>
+              <div class="plugins-confirm-actions">
+                ${button({ focusKey: "repo-delete:no", action: "dismiss-repository-removal", label: t("plugin_repo_delete_no", {}, "No") })}
+                ${button({ focusKey: "repo-delete:yes", action: "confirm-repository-removal", label: t("plugin_repo_delete_yes", {}, "Yes") })}
+              </div>
+            </section>
+          </div>`
+              : ""
+          }
+          ${
             this.pendingScraperEnable
               ? `<div class="plugins-confirm-backdrop">
             <section class="plugins-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="plugins-risky-title">
@@ -422,6 +436,14 @@ export const PluginsScreen = {
     ) {
       return;
     }
+    if (action === "dismiss-repository-removal") {
+      this.dismissRepositoryRemoval();
+      return;
+    }
+    if (action === "confirm-repository-removal") {
+      await this.confirmRepositoryRemoval();
+      return;
+    }
     if (action === "dismiss-risky-scraper") {
       this.pendingScraperEnable = null;
       this.render();
@@ -489,11 +511,32 @@ export const PluginsScreen = {
       return;
     }
     if (kind === "remove") {
-      if (await PluginManager.removeRepository(id)) {
-        this.setStatus(t("plugin_repo_removed", {}, "Repository removed."), "success");
-      }
+      // Android asks before deleting: the button sits where an accidental press is easy on TV.
+      this.pendingRepositoryRemoval = { repositoryId: id };
+      this.focusKey = "repo-delete:no";
       this.render();
     }
+  },
+  dismissRepositoryRemoval() {
+    const pending = this.pendingRepositoryRemoval;
+    this.pendingRepositoryRemoval = null;
+    if (pending) this.focusKey = `remove:${pending.repositoryId}`;
+    this.render();
+  },
+  async confirmRepositoryRemoval() {
+    const pending = this.pendingRepositoryRemoval;
+    this.pendingRepositoryRemoval = null;
+    if (!pending) return;
+    // Android: focus the neighbouring repository's delete button, or the grouping
+    // card when none is left, instead of jumping back to the top.
+    const repositories = Array.isArray(this.model?.repositories) ? this.model.repositories : [];
+    const index = repositories.findIndex((repository) => repository.id === pending.repositoryId);
+    const neighbour = index >= 0 ? repositories[index + 1] || repositories[index - 1] : null;
+    this.focusKey = neighbour ? `remove:${neighbour.id}` : "global:group";
+    if (await PluginManager.removeRepository(pending.repositoryId)) {
+      this.setStatus(t("plugin_repo_removed", {}, "Repository removed."), "success");
+    }
+    this.render();
   },
   async addRepository() {
     const value = String(this.addDraft || "").trim();

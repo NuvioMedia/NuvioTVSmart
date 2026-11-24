@@ -1718,6 +1718,10 @@
     <string name="plugin_repo_added_with_providers">Dodano %1$s z %2$d dostawcami</string>
     <string name="plugin_repo_refreshed">Repozytorium odświeżone</string>
     <string name="plugin_repo_removed">Repozytorium usunięte</string>
+    <string name="plugin_repo_delete_confirm_title">Usunąć repozytorium?</string>
+    <string name="plugin_repo_delete_confirm_message">Czy na pewno chcesz je usunąć?</string>
+    <string name="plugin_repo_delete_no">Nie</string>
+    <string name="plugin_repo_delete_yes">Tak</string>
     <string name="plugin_url_or_short_code_placeholder">URL lub krótki kod</string>
     <string name="qr_login_device_auth_failed">Nie udało się uwierzytelnić urządzenia</string>
     <string name="qr_login_preparing">Przygotowywanie logowania QR...</string>

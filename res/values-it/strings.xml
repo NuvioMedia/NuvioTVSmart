@@ -1732,6 +1732,10 @@
     <string name="action_select">Seleziona</string>
     <string name="plugin_repo_added_with_providers">Aggiunto %1$s con %2$d provider</string>
     <string name="plugin_repo_removed">Repository rimosso</string>
+    <string name="plugin_repo_delete_confirm_title">Eliminare il repository?</string>
+    <string name="plugin_repo_delete_confirm_message">Vuoi davvero eliminarlo?</string>
+    <string name="plugin_repo_delete_no">No</string>
+    <string name="plugin_repo_delete_yes">Sì</string>
     <string name="plugin_repo_refreshed">Repository aggiornato</string>
     <string name="trakt_error_missing_credentials">Credenziali TRAKT mancanti</string>
     <string name="trakt_error_network_retry">Errore di rete, riprova</string>

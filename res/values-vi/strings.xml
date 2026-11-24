@@ -1264,6 +1264,10 @@
     <string name="plugin_repo_added_with_providers">Đã thêm %1$s với %2$d nhà cung cấp</string>
     <string name="plugin_repo_refreshed">Kho lưu trữ đã làm mới</string>
     <string name="plugin_repo_removed">Kho lưu trữ đã bị xoá</string>
+    <string name="plugin_repo_delete_confirm_title">Xóa kho lưu trữ?</string>
+    <string name="plugin_repo_delete_confirm_message">Bạn có chắc chắn muốn xóa không?</string>
+    <string name="plugin_repo_delete_no">Không</string>
+    <string name="plugin_repo_delete_yes">Có</string>
     <string name="plugin_refresh_complete">Đã làm mới kho và runtime.</string>
     <string name="plugin_clear_cache">Xóa bộ nhớ đệm runtime</string>
     <string name="plugin_cache_cleared">Đã xóa bộ nhớ đệm runtime.</string>

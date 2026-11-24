@@ -1449,6 +1449,10 @@
     <string name="plugin_test_found_streams">Flux trouvés&#160;: %1$d</string>
     <string name="plugin_repo_added_with_providers">%1$s ajouté avec %2$d fournisseurs</string>
     <string name="plugin_repo_removed">Dépôt supprimé</string>
+    <string name="plugin_repo_delete_confirm_title">Supprimer le dépôt&#160;?</string>
+    <string name="plugin_repo_delete_confirm_message">Voulez-vous vraiment le supprimer&#160;?</string>
+    <string name="plugin_repo_delete_no">Non</string>
+    <string name="plugin_repo_delete_yes">Oui</string>
     <string name="plugin_repo_refreshed">Dépôt actualisé</string>
     <string name="trakt_error_code_expired">Le code a expiré. Recommence.</string>
     <string name="trakt_error_code_used">Le code a déjà été utilisé. Recommence.</string>
