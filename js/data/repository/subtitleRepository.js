@@ -165,6 +165,11 @@ class SubtitleRepository {
               `${subtitle.lang || "unk"}-${this.makeDeterministicId(subtitle.url || "")}`,
             url: subtitle.url,
             lang: subtitle.lang || "unknown",
+            // Stremio subtitle label, shown as the title only (Android Subtitle.label); kept apart
+            // from label so it never changes the language, forced or SDH detection.
+            ...(typeof subtitle.label === "string" && subtitle.label.trim()
+              ? { stremioLabel: subtitle.label.trim() }
+              : {}),
             ...(headers ? { headers } : {}),
             addonName: addon.displayName,
             addonLogo: addon.logo

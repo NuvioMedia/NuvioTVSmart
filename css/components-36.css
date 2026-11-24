@@ -136,11 +136,53 @@
   padding: min(0.21vw, 4px) min(0.52vw, 10px);
 }
 
+/* Android SubtitleOptionCard: the source chip with the Auto synced chip, then the title with
+   its format badge; title and description are capped at two lines. */
+.player-subtitle-option-source-row,
 .player-subtitle-option-title-row {
   display: flex;
   align-items: center;
-  gap: min(0.42vw, 8px);
+  gap: min(0.63vw, 12px); /* ATV 6dp -> 12px */
   min-width: 0;
+  max-width: 100%;
+}
+
+.player-subtitle-option-source-row .player-subtitle-source-chip {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: min(1.04vw, 20px);
+}
+
+.player-subtitle-option-source-row .player-subtitle-autosync-chip,
+.player-subtitle-format-badge {
+  flex: 0 0 auto;
+}
+
+.player-subtitle-option-copy .player-dialog-item-main,
+.player-subtitle-option-copy .player-dialog-item-sub {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.player-subtitle-format-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: min(1.46vw, 28px);
+  padding: min(0.16vw, 3px) min(0.52vw, 10px);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: min(0.83vw, 16px);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .player-subtitle-autosync-chip {
@@ -280,7 +322,8 @@ html[dir="rtl"] .player-subtitle-autosync-status.is-not-needed svg {
 
 .player-subtitle-modal .player-dialog-item.selected .player-subtitle-language-count,
 .player-subtitle-modal .player-dialog-item.selected .player-subtitle-source-chip,
-.player-subtitle-modal .player-dialog-item.selected .player-subtitle-autosync-chip {
+.player-subtitle-modal .player-dialog-item.selected .player-subtitle-autosync-chip,
+.player-subtitle-modal .player-dialog-item.selected .player-subtitle-format-badge {
   background: rgba(0, 0, 0, 0.14);
   color: currentColor;
 }

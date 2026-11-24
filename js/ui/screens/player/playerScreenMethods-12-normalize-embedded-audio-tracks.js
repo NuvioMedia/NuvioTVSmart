@@ -160,6 +160,7 @@ export function createPlayerScreenMethods12() {
               id: subtitle.id || `${subtitle.lang || "unk"}-${index}-${subtitle.url}`,
               url: subtitle.url,
               lang: subtitle.lang || "unknown",
+              ...(typeof subtitle.label === "string" && subtitle.label.trim() ? { stremioLabel: subtitle.label.trim() } : {}),
               ...(headers ? { headers } : {}),
               addonName: candidate?.addonName || "Stream",
               addonLogo: candidate?.addonLogo || null
