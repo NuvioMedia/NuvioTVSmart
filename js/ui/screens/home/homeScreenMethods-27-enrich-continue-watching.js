@@ -87,7 +87,7 @@ export function createHomeScreenMethods27() {
                 episodeEntry?.runtimeMinutes ?? enrichedMeta.episodeRuntime ?? enrichedMeta.runtimeMinutes ?? enrichedMeta.runtime ?? 0
               );
               const episodeImdbRating = isSeriesTypeForContinueWatching(item.contentType || item.type)
-                ? await resolveContinueWatchingEpisodeRating(item, episodeEntry?.imdbRating ?? item.episodeImdbRating)
+                ? await resolveContinueWatchingEpisodeRating(item, episodeEntry?.imdbRating ?? item.episodeImdbRating, enrichedMeta.videos)
                 : null;
               const enriched = {
                 ...item,

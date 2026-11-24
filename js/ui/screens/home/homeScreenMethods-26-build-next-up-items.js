@@ -199,7 +199,8 @@ export function createHomeScreenMethods26() {
             imdbRating: resolveImdbRating(meta),
             episodeImdbRating: await resolveContinueWatchingEpisodeRating(
               { ...progressEntry, contentId, season: nextEpisode.season, episode: nextEpisode.episode },
-              nextEpisode.imdbRating
+              nextEpisode.imdbRating,
+              meta.videos
             ),
             genres: Array.isArray(meta.genres) ? meta.genres : [],
             runtimeMinutes: Number(meta.runtimeMinutes ?? meta.runtime ?? 0) || 0,

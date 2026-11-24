@@ -1,9 +1,15 @@
 import { imdbEpisodeRatingsRepository } from "../../../data/repository/imdbEpisodeRatingsRepository.js";
+import { addonEpisodeAirDates } from "../../../data/repository/episodeRatingsAlignment.js";
 import { TmdbService } from "../../../core/tmdb/tmdbService.js";
 
 // Share the detail-screen provider and its in-flight cache. A slow rating lookup
 // must not hold Continue Watching metadata indefinitely on a TV.
-export async function resolveContinueWatchingEpisodeRating(item = {}, addonRating = null) {
+// addonVideos: the add-on's meta.videos, so ratings follow its own season split (Android).
+export async function resolveContinueWatchingEpisodeRating(
+  item = {},
+  addonRating = null,
+  addonVideos = []
+) {
   const season = item.season == null ? null : Number(item.season);
   const episode = item.episode == null ? null : Number(item.episode);
   if (
@@ -26,7 +32,11 @@ export async function resolveContinueWatchingEpisodeRating(item = {}, addonRatin
         item.tmdbId ||
         (await TmdbService.ensureTmdbId(contentId, "series", { requireEnabled: false }));
       if (!imdbId && !tmdbId) return fallbackRating;
-      const ratings = await imdbEpisodeRatingsRepository.getEpisodeRatings({ imdbId, tmdbId });
+      const ratings = await imdbEpisodeRatingsRepository.getEpisodeRatings({
+        imdbId,
+        tmdbId,
+        addonEpisodes: addonEpisodeAirDates(addonVideos)
+      });
       const rating = Number(
         ratings?.[season]?.find((entry) => Number(entry.episode) === episode)?.rating
       );
