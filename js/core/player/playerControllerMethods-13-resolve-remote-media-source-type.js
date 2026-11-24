@@ -5,6 +5,10 @@ import * as internals from "./playerController.js";
 
 const HLS_MAX_NETWORK_RECOVERY_ATTEMPTS = 2;
 const HLS_NETWORK_RECOVERY_DELAY_MS = 1500;
+// Samsung reports an unsupported audio track as a decode error on the audio
+// SourceBuffer (for example MP3 in HLS) and hls.js keeps resetting the pipeline
+// without a fatal event, so the engine ladder below never runs (#1614).
+const HLS_MAX_AUDIO_APPEND_FAILURES = 3;
 
 export function createPlayerControllerMethods13() {
   const {
@@ -105,6 +109,7 @@ export function createPlayerControllerMethods13() {
       this.playbackEngine = "hls.js";
       let networkRecoveryAttempts = 0;
       let mediaRecoveryAttempts = 0;
+      let audioAppendFailures = 0;
 
       const emitFatalHlsNetworkError = (data = {}, responseCode = 0) => {
         this.lastPlaybackErrorCode = 2;
@@ -133,6 +138,30 @@ export function createPlayerControllerMethods13() {
           // ladder to expire.
           if (responseCode === 416 && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
             emitFatalHlsNetworkError(data, responseCode);
+          }
+          // A repeated audio append failure with nothing buffered means this
+          // pipeline cannot decode the track. hls.js retries it without ever
+          // going fatal, which leaves the player frozen on the first frame;
+          // surface it so the existing engine ladder (AVPlay on Tizen) runs.
+          const sourceBuffer = String(data.sourceBufferName || data.parent || "").toLowerCase();
+          if (
+            data.type === Hls.ErrorTypes.MEDIA_ERROR &&
+            sourceBuffer === "audio" &&
+            (data.details === "bufferAppendingError" || data.details === "mediaSourceRequiresReset") &&
+            Number(this.video?.readyState || 0) === 0
+          ) {
+            audioAppendFailures += 1;
+            if (audioAppendFailures >= HLS_MAX_AUDIO_APPEND_FAILURES) {
+              this.lastPlaybackErrorCode = 3;
+              this.teardownHlsInstance();
+              this.emitVideoEvent("error", {
+                playbackEngine: "hls.js",
+                mediaErrorCode: 3,
+                hlsErrorType: String(data.type || ""),
+                hlsErrorDetails: String(data.details || "")
+              });
+              return;
+            }
           }
           return;
         }
@@ -193,6 +222,7 @@ export function createPlayerControllerMethods13() {
       // Android resets its retry budget once playback progresses again.
       hls.on(Hls.Events.FRAG_BUFFERED, () => {
         networkRecoveryAttempts = 0;
+        audioAppendFailures = 0;
       });
 
       hls.on(Hls.Events.MEDIA_ATTACHED, () => {

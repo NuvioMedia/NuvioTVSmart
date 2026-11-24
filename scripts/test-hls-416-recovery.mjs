@@ -127,3 +127,63 @@ test("a transient HLS 500 still goes through the normal retry budget", () => {
   assert.equal(controller.hlsInstance, hls);
   assert.equal(controller.events.length, 0);
 });
+
+// #1614: a TV that cannot decode the stream audio reports a decode error on the
+// audio SourceBuffer and hls.js keeps resetting it without a fatal event, which
+// left the player frozen on the first frame instead of running the engine ladder.
+function emitAudioAppendFailure(hls) {
+  hls.emit(HLS_EVENTS.ERROR, {
+    fatal: false,
+    type: FakeHls.ErrorTypes.MEDIA_ERROR,
+    details: "bufferAppendingError",
+    sourceBufferName: "audio",
+    parent: "audio"
+  });
+}
+
+test("repeated audio append failures with no buffered media surface the media error", () => {
+  const controller = createController();
+  const hls = startPlayback(controller);
+
+  emitAudioAppendFailure(hls);
+  emitAudioAppendFailure(hls);
+  assert.equal(controller.events.length, 0, "the first retries stay with hls.js");
+
+  emitAudioAppendFailure(hls);
+
+  assert.equal(controller.lastPlaybackErrorCode, 3);
+  assert.equal(controller.hlsInstance, null);
+  assert.deepEqual(
+    controller.events.map((entry) => entry.name),
+    ["error"]
+  );
+  assert.equal(controller.events[0].detail.mediaErrorCode, 3);
+  assert.equal(controller.events[0].detail.hlsErrorDetails, "bufferAppendingError");
+});
+
+test("audio append failures stop counting as soon as a fragment is buffered", () => {
+  const controller = createController();
+  const hls = startPlayback(controller);
+
+  emitAudioAppendFailure(hls);
+  emitAudioAppendFailure(hls);
+  hls.emit(HLS_EVENTS.FRAG_BUFFERED, {});
+  emitAudioAppendFailure(hls);
+  emitAudioAppendFailure(hls);
+
+  assert.equal(controller.events.length, 0);
+  assert.equal(controller.hlsInstance, hls);
+});
+
+test("an audio append failure while media is already buffered is left to hls.js", () => {
+  const controller = createController();
+  const hls = startPlayback(controller);
+  controller.video.readyState = 2;
+
+  emitAudioAppendFailure(hls);
+  emitAudioAppendFailure(hls);
+  emitAudioAppendFailure(hls);
+
+  assert.equal(controller.events.length, 0);
+  assert.equal(controller.hlsInstance, hls);
+});
