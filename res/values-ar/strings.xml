@@ -1131,6 +1131,7 @@
     <string name="cast_detail_error">حدث خطأ ما</string>
     <string name="cast_detail_retry">إعادة المحاولة</string>
     <string name="cast_detail_filmography">قائمة الأعمال</string>
+    <string name="cast_detail_filter_all">الكل</string>
     <string name="cast_detail_born">تاريخ الميلاد: %1$s</string>
     <string name="cast_detail_born_died">تاريخ الميلاد: %1$s — الوفاة: %2$s</string>
     <string name="cast_detail_age">العمر %1$d</string>

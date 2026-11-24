@@ -12,7 +12,6 @@ import {
   posterItemFromNode,
   PosterOptionsDialogController
 } from "../../components/posterOptionsMenu.js";
-import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
 
 import { createCastDetailScreenMethods01 } from "./castDetailScreenMethods-01-get-route-state-key.js";
 import { createCastDetailScreenMethods02 } from "./castDetailScreenMethods-02-remember-focused-card.js";
@@ -29,22 +28,18 @@ export {
   I18n,
   posterItemFromNode,
   PosterOptionsDialogController,
-  renderLoadingIndicator,
   TMDB_BASE_URL,
-  IMAGE_BASE_URL,
   POSTER_HOLD_DELAY_MS,
   t,
   escapeHtml,
   escapeAttribute,
   toImage,
   isBackEvent,
-  getDirection,
-  toType,
-  todayIsoDate,
-  uniqueCredits
+  getDirection
 };
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w780";
+// Android buildImageUrl(profilePath, "w500").
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const POSTER_HOLD_DELAY_MS = 650;
 
 function t(key, params = {}, fallback = key) {
@@ -89,30 +84,6 @@ function getDirection(event) {
   if (code === 38) return "up";
   if (code === 40) return "down";
   return null;
-}
-
-function toType(mediaType) {
-  const value = String(mediaType || "").toLowerCase();
-  if (value === "tv" || value === "series" || value === "show") {
-    return "series";
-  }
-  return "movie";
-}
-
-function todayIsoDate() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function uniqueCredits(items = []) {
-  const seen = new Set();
-  return items.filter((item) => {
-    const key = String(item?.itemId || item?.id || "").trim();
-    if (!key || seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
 }
 
 export const CastDetailScreen = {

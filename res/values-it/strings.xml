@@ -1281,6 +1281,7 @@
     <string name="cast_detail_error">Qualcosa è andato storto</string>
     <string name="cast_detail_retry">Riprova</string>
     <string name="cast_detail_filmography">Filmografia</string>
+    <string name="cast_detail_filter_all">Tutti</string>
     <string name="cast_detail_born">Nato: %1$s</string>
     <string name="cast_detail_born_died">Nato: %1$s — †%2$s</string>
     <string name="cast_detail_age">età %1$d</string>

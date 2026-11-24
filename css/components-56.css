@@ -50,9 +50,8 @@
   text-overflow: ellipsis;
 }
 
-/* Keep entity and cast card titles deterministic across Tizen engines. */
+/* Keep entity card titles deterministic across Tizen engines. */
 
-.cast-credit-title,
 .tmdb-entity-card-title {
   display: block;
   white-space: nowrap;

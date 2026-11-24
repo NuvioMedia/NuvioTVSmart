@@ -1744,6 +1744,7 @@
     <string name="cast_detail_error">Algo correu mal</string>
     <string name="cast_detail_retry">Tentar novamente</string>
     <string name="cast_detail_filmography">Filmografia</string>
+    <string name="cast_detail_filter_all">Tudo</string>
     <string name="cast_detail_born">Nascimento: %1$s</string>
     <string name="cast_detail_born_died">Nascimento: %1$s — †%2$s</string>
     <string name="cast_detail_age">%1$d anos</string>

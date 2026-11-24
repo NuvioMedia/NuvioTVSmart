@@ -1326,6 +1326,7 @@
     <string name="cast_detail_error">Un problème est survenu</string>
     <string name="cast_detail_retry">Réessayer</string>
     <string name="cast_detail_filmography">Filmographie</string>
+    <string name="cast_detail_filter_all">Tout</string>
     <string name="cast_detail_born">Naissance : %1$s</string>
     <string name="cast_detail_born_died">Naissance&#160;: %1$s — Décès&#160;: %2$s</string>
     <string name="cast_detail_age">%1$d ans</string>
