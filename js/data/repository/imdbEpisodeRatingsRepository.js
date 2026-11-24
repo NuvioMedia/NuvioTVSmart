@@ -1,4 +1,5 @@
 import { IMDB_RATINGS_API_BASE_URL, IMDB_TAPFRAME_API_BASE_URL } from "../../config.js";
+import { alignEpisodeRatings } from "./episodeRatingsAlignment.js";
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const CACHE = new Map();
@@ -33,31 +34,49 @@ async function fetchJson(url, timeoutMs = 4500) {
   }
 }
 
-export function mapRatingsPayload(payload = []) {
-  const seasons = {};
+/**
+ * Android toEpisodeRatings: every episode the provider lists, rated or not, with its air
+ * date, so the ratings can be matched to the add-on's own episode order.
+ */
+export function mapExternalEpisodes(payload = []) {
+  const episodes = [];
   (Array.isArray(payload) ? payload : []).forEach((seasonEntry) => {
-    const episodes = Array.isArray(seasonEntry?.episodes) ? seasonEntry.episodes : [];
-    episodes.forEach((episodeEntry) => {
+    (Array.isArray(seasonEntry?.episodes) ? seasonEntry.episodes : []).forEach((episodeEntry) => {
       const seasonNumber = Number(episodeEntry?.season_number || 0);
       const episodeNumber = Number(episodeEntry?.episode_number || 0);
-      const ratingValue = Number(episodeEntry?.vote_average);
-      if (seasonNumber < 0 || episodeNumber <= 0 || !Number.isFinite(ratingValue)) {
+      if (
+        !Number.isInteger(seasonNumber) ||
+        seasonNumber < 0 ||
+        !Number.isInteger(episodeNumber) ||
+        episodeNumber <= 0
+      ) {
         return;
       }
-      if (!Array.isArray(seasons[seasonNumber])) {
-        seasons[seasonNumber] = [];
-      }
-      seasons[seasonNumber].push({
+      const ratingValue =
+        episodeEntry?.vote_average == null ? NaN : Number(episodeEntry.vote_average);
+      episodes.push({
+        season: seasonNumber,
         episode: episodeNumber,
-        rating: Number(ratingValue.toFixed(1))
+        airDate: typeof episodeEntry?.air_date === "string" ? episodeEntry.air_date : null,
+        rating: Number.isFinite(ratingValue) ? Number(ratingValue.toFixed(1)) : null
       });
     });
   });
+  return episodes;
+}
 
+/** Ratings keyed "season:episode" as { [season]: [{ episode, rating }] }, episodes in order. */
+function toSeasonRatings(ratings) {
+  const seasons = {};
+  ratings.forEach((rating, entryKey) => {
+    const [seasonNumber, episodeNumber] = entryKey.split(":").map(Number);
+    if (!Array.isArray(seasons[seasonNumber])) {
+      seasons[seasonNumber] = [];
+    }
+    seasons[seasonNumber].push({ episode: episodeNumber, rating });
+  });
   Object.keys(seasons).forEach((seasonNumber) => {
-    seasons[seasonNumber] = seasons[seasonNumber].sort(
-      (left, right) => left.episode - right.episode
-    );
+    seasons[seasonNumber].sort((left, right) => left.episode - right.episode);
   });
   return seasons;
 }
@@ -74,10 +93,10 @@ function normalizeTmdbId(value) {
   return Number.isInteger(normalized) && normalized > 0 ? normalized : 0;
 }
 
-async function getSeasonRatingsById({ baseUrl, id, cacheKey }) {
+async function getExternalEpisodesById({ baseUrl, id, cacheKey }) {
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
   if (!normalizedBaseUrl || !id) {
-    return {};
+    return [];
   }
 
   const now = Date.now();
@@ -93,7 +112,7 @@ async function getSeasonRatingsById({ baseUrl, id, cacheKey }) {
   const request = (async () => {
     const url = `${normalizedBaseUrl}api/shows/${encodeURIComponent(String(id))}/season-ratings`;
     const payload = await fetchJson(url);
-    const mapped = payload ? mapRatingsPayload(payload) : {};
+    const mapped = payload ? mapExternalEpisodes(payload) : [];
     CACHE.set(cacheKey, {
       value: mapped,
       expiresAt: Date.now() + CACHE_TTL_MS
@@ -107,34 +126,42 @@ async function getSeasonRatingsById({ baseUrl, id, cacheKey }) {
   return request;
 }
 
+async function getExternalEpisodes(normalizedImdbId, normalizedTmdbId) {
+  if (normalizedImdbId) {
+    const primary = await getExternalEpisodesById({
+      baseUrl: IMDB_TAPFRAME_API_BASE_URL,
+      id: normalizedImdbId,
+      cacheKey: `imdb:${normalizedImdbId}`
+    });
+    if (primary.some((entry) => entry.rating != null)) {
+      return primary;
+    }
+  }
+
+  if (normalizedTmdbId) {
+    return getExternalEpisodesById({
+      baseUrl: IMDB_RATINGS_API_BASE_URL,
+      id: normalizedTmdbId,
+      cacheKey: `tmdb:${normalizedTmdbId}`
+    });
+  }
+
+  return [];
+}
+
 export const imdbEpisodeRatingsRepository = {
-  async getEpisodeRatings({ imdbId, tmdbId } = {}) {
+  /**
+   * Ratings by season in the add-on's own numbering: pass the add-on's episodes
+   * (see addonEpisodeAirDates) so a split into other seasons still lines up.
+   */
+  async getEpisodeRatings({ imdbId, tmdbId, addonEpisodes = [] } = {}) {
     const normalizedImdbId = normalizeImdbId(imdbId);
     const normalizedTmdbId = normalizeTmdbId(tmdbId);
     if (!normalizedImdbId && !normalizedTmdbId) {
       return {};
     }
-
-    if (normalizedImdbId) {
-      const primary = await getSeasonRatingsById({
-        baseUrl: IMDB_TAPFRAME_API_BASE_URL,
-        id: normalizedImdbId,
-        cacheKey: `imdb:${normalizedImdbId}`
-      });
-      if (Object.keys(primary).length) {
-        return primary;
-      }
-    }
-
-    if (normalizedTmdbId) {
-      return getSeasonRatingsById({
-        baseUrl: IMDB_RATINGS_API_BASE_URL,
-        id: normalizedTmdbId,
-        cacheKey: `tmdb:${normalizedTmdbId}`
-      });
-    }
-
-    return {};
+    const episodes = await getExternalEpisodes(normalizedImdbId, normalizedTmdbId);
+    return toSeasonRatings(alignEpisodeRatings(addonEpisodes, episodes));
   },
 
   async getSeasonRatingsByTmdbId(tmdbId) {
