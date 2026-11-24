@@ -33,9 +33,17 @@ export function nextLiveDurationGrowth(previous = null, mediaKey = "", durationM
 
 // Android LivePlaybackUiPolicy: a media window is not a watched duration.
 export function isLivePlayback(screen, controller) {
-  if (String(screen.params?.itemType || "").toLowerCase() === "channel" || screen.livePlaybackLatched) return true;
+  const itemType = String(screen?.params?.itemType || screen?.params?.catalogType || "")
+    .trim()
+    .toLowerCase();
+  if (itemType === "channel" || itemType === "tv" || screen?.livePlaybackLatched) {
+    if (screen) {
+      screen.livePlaybackLatched = true;
+    }
+    return true;
+  }
   // Ignore the previous media's native state while the new route is starting.
-  if (!screen.hasPresentedPlaybackFrame) return false;
+  if (!screen?.hasPresentedPlaybackFrame) return false;
   try {
     const hls = controller.hlsInstance;
     const reportsLive =

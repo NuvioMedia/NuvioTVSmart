@@ -6,7 +6,17 @@ export function createPlayerControllerMethods17() {
 
   return {
     saveProgressIfNeeded() {
-      if (this.currentPlaybackIsLive === true || !this.playbackSessionActive || !this.isPlaying || this.isWebOsExactSeekInFlight?.()) {
+      const activeType = String(this.currentItemType || this.currentContentType || this.params?.itemType || "")
+        .trim()
+        .toLowerCase();
+      if (
+        this.currentPlaybackIsLive === true ||
+        activeType === "tv" ||
+        activeType === "channel" ||
+        !this.playbackSessionActive ||
+        !this.isPlaying ||
+        this.isWebOsExactSeekInFlight?.()
+      ) {
         return false;
       }
 

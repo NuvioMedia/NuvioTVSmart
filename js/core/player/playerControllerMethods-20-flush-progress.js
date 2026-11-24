@@ -20,10 +20,13 @@ export function createPlayerControllerMethods20() {
       context = null,
       { allowCloudSync = true, syncRemote = allowCloudSync } = {}
     ) {
-      if (this.currentPlaybackIsLive === true) {
+      const active = context || this.createProgressContext();
+      const activeType = String(active?.itemType || this.currentItemType || this.currentContentType || "")
+        .trim()
+        .toLowerCase();
+      if (this.currentPlaybackIsLive === true || activeType === "tv" || activeType === "channel") {
         return false;
       }
-      const active = context || this.createProgressContext();
       if (!active?.itemId) {
         return;
       }

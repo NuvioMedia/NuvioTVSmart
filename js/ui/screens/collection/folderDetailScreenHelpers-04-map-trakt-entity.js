@@ -63,7 +63,10 @@ export function mapTraktEntity(entity = {}, type = "movie") {
   if (!id) {
     return null;
   }
-  const normalizedType = type === "show" ? "series" : "movie";
+  const rawType = String(type || "movie")
+    .trim()
+    .toLowerCase();
+  const normalizedType = rawType === "tv" ? "tv" : rawType === "show" || rawType === "series" ? "series" : "movie";
   return normalizeItem(
     {
       id,
@@ -79,9 +82,14 @@ export function mapTraktEntity(entity = {}, type = "movie") {
 }
 
 export async function fetchTraktSourceItems(source = {}, page = 1) {
-  const mediaType = String(source.mediaType || "MOVIE").toUpperCase() === "TV" ? "show" : "movie";
+  const isTvSource =
+    String(source.mediaType || "MOVIE")
+      .trim()
+      .toUpperCase() === "TV";
+  const endpointType = isTvSource ? "show" : "movie";
+  const itemType = isTvSource ? "tv" : "movie";
   const url = new URL(
-    `${String(TRAKT_API_URL || "https://api.trakt.tv").replace(/\/+$/, "")}/lists/${encodeURIComponent(String(source.traktListId || ""))}/items/${mediaType}`
+    `${String(TRAKT_API_URL || "https://api.trakt.tv").replace(/\/+$/, "")}/lists/${encodeURIComponent(String(source.traktListId || ""))}/items/${endpointType}`
   );
   url.searchParams.set("extended", "full,images");
   url.searchParams.set("page", String(page));
@@ -96,7 +104,7 @@ export async function fetchTraktSourceItems(source = {}, page = 1) {
   const pageCount = Number(response.headers.get("X-Pagination-Page-Count") || page);
   const items = (Array.isArray(payload) ? payload : [])
     .map((entry) => {
-      return mediaType === "show" ? mapTraktEntity(entry?.show || null, "show") : mapTraktEntity(entry?.movie || null, "movie");
+      return isTvSource ? mapTraktEntity(entry?.show || null, itemType) : mapTraktEntity(entry?.movie || null, "movie");
     })
     .filter(Boolean);
   return {
