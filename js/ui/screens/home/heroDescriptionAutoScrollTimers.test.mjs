@@ -94,17 +94,17 @@ test("heroDescriptionAutoScroll uses single setTimeout for delay/endPause, avoid
   assert.equal(frames.size, 0, "delay phase must not poll requestAnimationFrame at 60 FPS");
   assert.equal(timers.size, 1, "delay phase must schedule a single setTimeout");
   const [[delayTimerId, delayTimer]] = Array.from(timers.entries());
-  assert.equal(delayTimer.ms, 3000);
+  assert.equal(delayTimer.ms, 6000);
   const writesAfterInitialMask = maskWrites;
   assert.equal(writesAfterInitialMask, 1);
 
-  currentNow += 3000;
+  currentNow += 6000;
   timers.delete(delayTimerId);
   delayTimer.fn();
   assert.deepEqual(
     holdChanges,
     [false, true],
-    "delay timer transitions directly to scroll after 3000 ms (not 6000 ms)"
+    "delay timer transitions directly to scroll after 6000 ms (not 12000 ms)"
   );
   assert.equal(frames.size, 1);
 
@@ -129,14 +129,14 @@ test("heroDescriptionAutoScroll uses single setTimeout for delay/endPause, avoid
     "identical maskImage must not be rewritten each frame"
   );
 
-  // Complete scroll: enters endPause via a single 3000 ms timer and 0 rAF loops.
+  // Complete scroll: enters endPause via a single 4000 ms timer and 0 rAF loops.
   currentNow += 19000;
   runNextFrame(currentNow);
   assert.deepEqual(holdChanges, [false, true, false]);
   assert.equal(frames.size, 0, "endPause must not run idle rAF frames");
   assert.equal(timers.size, 1);
   const [[endTimerId, endTimer]] = Array.from(timers.entries());
-  assert.equal(endTimer.ms, 3000);
+  assert.equal(endTimer.ms, 4000);
 
   // Stopping during endPause clears the pending timer without throwing.
   scroller.stop();

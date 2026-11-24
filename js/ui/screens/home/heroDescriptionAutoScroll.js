@@ -2,8 +2,8 @@
 // clamped box. Mirrors Android AutoScrollingText: start delay, a reading pace
 // per line, end pause, quick return, a few cycles, and edge fades instead of an ellipsis.
 
-export const HERO_AUTOSCROLL_START_DELAY_MS = 3000;
-export const HERO_AUTOSCROLL_END_PAUSE_MS = 3000;
+export const HERO_AUTOSCROLL_START_DELAY_MS = 6000;
+export const HERO_AUTOSCROLL_END_PAUSE_MS = 4000;
 export const HERO_AUTOSCROLL_RETURN_DURATION_MS = 600;
 export const HERO_AUTOSCROLL_MAX_CYCLES = 3;
 export const HERO_AUTOSCROLL_FADE_FRACTION = 0.18;
