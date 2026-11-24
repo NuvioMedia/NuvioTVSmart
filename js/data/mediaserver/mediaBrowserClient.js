@@ -1,4 +1,5 @@
 import { LocalStore } from "../../core/storage/localStore.js";
+import { ProfileManager } from "../../core/profile/profileManager.js";
 export function normalizeMediaServerAddress(value, provider) {
   try {
     const url = new URL(String(value).trim());
@@ -17,7 +18,10 @@ export function normalizeMediaServerAddress(value, provider) {
     return null;
   }
 }
-export function mediaServerDeviceId() {
+// Android ServerRepository.profileDeviceId: Jellyfin revokes a user's previous token when the
+// same DeviceId signs in again, so each secondary profile gets its own. The primary profile
+// keeps the installation id, so existing sign-ins stay valid.
+export function mediaServerDeviceId(profileId = ProfileManager.getActiveProfileId()) {
   let id = LocalStore.get("mediaServerDeviceId", null);
   if (!id) {
     const data = new Uint8Array(16);
@@ -25,7 +29,8 @@ export function mediaServerDeviceId() {
     id = Array.from(data, (byte) => byte.toString(16).padStart(2, "0")).join("");
     LocalStore.set("mediaServerDeviceId", id);
   }
-  return id;
+  const pid = String(profileId ?? "1").trim() || "1";
+  return pid === "1" ? id : `${id}-p${pid}`;
 }
 export function mediaServerApiRoot(connection) {
   return connection.address + (connection.providerId === "emby" ? "/emby" : "");
