@@ -329,3 +329,67 @@ export function decodeMdbHistoryReceipt(payload, changes, remove) {
     needsSnapshot: !complete || (!remove && confirmed.length !== changes.length)
   };
 }
+
+// Android decodeMdbListUserRatings: every rated movie, show, season and episode. A row that
+// cannot be read is skipped, as Android does, instead of failing the whole page.
+function ratingRecord(type, row) {
+  const target = row[type] && typeof row[type] === "object" ? row[type] : row;
+  const parent =
+    type === "movie" || type === "show"
+      ? target
+      : (row.show ?? target.show ?? invalidMdbTracking());
+  const rawRating = row.rating_precise ?? row.rating;
+  const rating = rawRating == null || rawRating === "" ? NaN : Number(rawRating);
+  if (!Number.isFinite(rating) || rating <= 0 || rating > 10) invalidMdbTracking();
+  const season =
+    type === "season"
+      ? (target.number ?? target.season ?? null)
+      : type === "episode"
+        ? (target.season ?? null)
+        : null;
+  const episode = type === "episode" ? (target.number ?? target.episode ?? null) : null;
+  if ((type === "season" || type === "episode") && (!Number.isSafeInteger(season) || season < 0))
+    invalidMdbTracking();
+  if (type === "episode" && (!Number.isSafeInteger(episode) || episode < 1)) invalidMdbTracking();
+  if (!hasText(row.rated_at)) invalidMdbTracking();
+  mdbTime(row.rated_at);
+  const ids =
+    type === "episode" && target.ids && typeof target.ids === "object" ? target.ids : null;
+  return {
+    type,
+    media: mdbMedia(parent),
+    rating,
+    ratedAt: String(row.rated_at).trim(),
+    season,
+    episode,
+    episodeTmdbId: positiveId(ids?.tmdb ?? ids?.tmdbid),
+    episodeTvdbId: positiveId(ids?.tvdb ?? ids?.tvdbid)
+  };
+}
+export function decodeMdbUserRatings(payload) {
+  const p = mdbObject(payload);
+  if (!["movies", "shows", "seasons", "episodes"].some((key) => key in p)) invalidMdbTracking();
+  const records = [];
+  for (const type of ["movie", "show", "season", "episode"]) {
+    for (const raw of mdbArray(p[`${type}s`] ?? [])) {
+      try {
+        records.push(ratingRecord(type, mdbObject(raw)));
+      } catch (_) {
+        // Android mapNotNull(runCatching { ... }): skip the row.
+      }
+    }
+  }
+  return records;
+}
+// Android mdbListRatingFailures: rows MDBList did not find plus reported errors.
+export function mdbRatingFailures(payload) {
+  const p = payload && typeof payload === "object" ? payload : {};
+  const notFound = p.not_found && typeof p.not_found === "object" ? Object.values(p.not_found) : [];
+  const missing = notFound.reduce(
+    (sum, value) =>
+      sum +
+      (Array.isArray(value) ? value.length : Number.isFinite(Number(value)) ? Number(value) : 0),
+    0
+  );
+  return missing + (Array.isArray(p.errors) ? p.errors.length : 0);
+}

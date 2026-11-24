@@ -18,8 +18,11 @@ import {
   decodeMdbDropped,
   decodeMdbJournal,
   decodeMdbHistoryReceipt,
+  decodeMdbUserRatings,
+  mdbRatingFailures,
   mdbTrackingPages
 } from "./mdbListTrackingCodec.js";
+import { TraktSettingsStore } from "../local/traktSettingsStore.js";
 import { normalizeMdbSnapshot, projectMdbTracking } from "./mdbListTrackingProjection.js";
 import { MdbListEpisodeMappingService } from "./mdbListEpisodeMappingService.js";
 
@@ -219,7 +222,11 @@ function changed(previous, next, pattern) {
     (key) => pattern.test(key) && previous[key] !== next[key]
   );
 }
-async function synchronize(scope, previous) {
+// Android MdbListSyncRepository ratingsEnabled: ratings sync only while MDBList is the rating source.
+function ratingsEnabled() {
+  return TraktSettingsStore.get().ratingSource === "mdblist";
+}
+async function synchronize(scope, previous, includeRatings = ratingsEnabled()) {
   const request = api(scope),
     activities = decodeMdbActivities((await request("/sync/last_activities")).payload);
   const age =
@@ -282,6 +289,22 @@ async function synchronize(scope, previous) {
     changed(previous.activities, activities, /paused/)
   )
     playback = decodeMdbPlayback((await request("/sync/playback")).payload);
+  let ratings = null;
+  if (includeRatings) {
+    ratings = previous.ratings ?? null;
+    if (
+      previous.ratings == null ||
+      full ||
+      previous.invalidatedBuckets?.includes("ratings") ||
+      changed(previous.activities, activities, /^(rated_at|journal_at)$/)
+    ) {
+      try {
+        ratings = await mdbTrackingPages(request, "/sync/ratings", decodeMdbUserRatings);
+      } catch (_) {
+        ratings = previous.ratings ?? null;
+      }
+    }
+  }
   if (full || changed(previous.activities, activities, /dropped/))
     dropped = [
       ...(await mdbTrackingPages(request, "/sync/dropped", (payload) => decodeMdbDropped(payload))),
@@ -294,6 +317,7 @@ async function synchronize(scope, previous) {
     watched,
     playback,
     dropped,
+    ratings,
     activities,
     watermark: activities.server_time,
     checkedAt: Date.now(),
@@ -396,6 +420,53 @@ function scrobbleBody(target, progress) {
     ...(progress == null
       ? {}
       : { progress: Math.floor(Math.max(0, Math.min(100, progress)) * 100) / 100 })
+  };
+}
+// Android MdbListRatingRecord.matches.
+function ratingMatches(record, target) {
+  return (
+    record.type === target.type &&
+    mdbMatches(record.media.ids, target.media.ids) &&
+    (record.type !== "episode" ||
+      (record.episodeTmdbId != null && record.episodeTmdbId === target.episodeTmdbId) ||
+      (record.episodeTvdbId != null && record.episodeTvdbId === target.episodeTvdbId) ||
+      (record.season === target.season && record.episode === target.episode))
+  );
+}
+// Android mdbListRatingPayload.
+export function mdbRatingPayload(target, rating) {
+  const withRating = (ids) => [{ ids, ...(rating == null ? {} : { rating }) }];
+  const episodeIds = {
+    ...(target.episodeTmdbId ? { tmdb: target.episodeTmdbId } : {}),
+    ...(target.episodeTvdbId ? { tvdb: target.episodeTvdbId } : {})
+  };
+  if (target.type === "movie") return { movies: withRating(target.media.ids) };
+  if (target.type !== "episode") return { shows: withRating(target.media.ids) };
+  if (Object.keys(episodeIds).length) return { episodes: withRating(episodeIds) };
+  return {
+    shows: [
+      {
+        ids: target.media.ids,
+        seasons: [
+          {
+            number: target.season,
+            episodes: [{ number: target.episode, ...(rating == null ? {} : { rating }) }]
+          }
+        ]
+      }
+    ]
+  };
+}
+function ratingContext(media = {}) {
+  return {
+    contentId: media.itemId,
+    contentType: media.itemType,
+    imdbId: media.imdbId || undefined,
+    tmdbId: media.tmdbId || undefined,
+    title: media.title || null,
+    year: media.year || null,
+    season: media.episode == null ? null : media.season,
+    episode: media.episode == null ? null : media.episode
   };
 }
 export const MdbListTracking = {
@@ -576,6 +647,55 @@ export const MdbListTracking = {
         };
         save(scope, next);
       }
+    });
+  },
+  /** Android MdbListUserRatings.supports: the title has an id MDBList knows. */
+  supportsRating(media) {
+    return mdbMutationTarget(ratingContext(media), { watched: [], playback: [] }, true) != null;
+  },
+  /** Android MdbListSyncSnapshot.userRating. */
+  userRating(media) {
+    const snapshot = this.getSnapshot();
+    if (!Array.isArray(snapshot.ratings)) return null;
+    const target = mdbMutationTarget(ratingContext(media), snapshot, true);
+    if (!target) return null;
+    return snapshot.ratings.find((record) => ratingMatches(record, target))?.rating ?? null;
+  },
+  /** Android MdbListUserRatings.rate: true when MDBList took the rating or its removal. */
+  async rate(media, rating, scope = MdbListAccount.scope()) {
+    return serialize(scope, async () => {
+      const snapshot = read(scope);
+      const target = mdbMutationTarget(ratingContext(media), snapshot, true);
+      if (!target) return false;
+      const { payload } = await MdbListAccount.api(
+        scope,
+        rating == null ? "/sync/ratings/remove" : "/sync/ratings",
+        { method: "POST", body: mdbRatingPayload(target, rating) }
+      );
+      const failed = mdbRatingFailures(payload) > 0;
+      const current = read(scope);
+      if (failed) {
+        save(scope, {
+          ...current,
+          invalidatedBuckets: [...new Set([...(current.invalidatedBuckets || []), "ratings"])]
+        });
+      } else if (Array.isArray(current.ratings)) {
+        const ratings = current.ratings.filter((record) => !ratingMatches(record, target));
+        if (rating != null) {
+          ratings.push({
+            type: target.type,
+            media: target.media,
+            rating,
+            ratedAt: new Date().toISOString(),
+            season: target.season,
+            episode: target.episode,
+            episodeTmdbId: target.episodeTmdbId,
+            episodeTvdbId: target.episodeTvdbId
+          });
+        }
+        save(scope, { ...current, ratings });
+      }
+      return !failed;
     });
   },
   async writeHistory(items, remove = false, scope = MdbListAccount.scope()) {

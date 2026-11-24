@@ -252,6 +252,7 @@ export function createMetaDetailsScreenMethods07() {
                   ${renderLibraryGlyph(this.isSavedInLibrary)}
                 </button>
                 ${showWatchedButton ? `<button class="series-circle-btn focusable${this.isMarkedWatched ? " is-selected" : ""}" data-action="toggleWatched" aria-label="${escapeAttribute(this.isMarkedWatched ? t("common.markUnwatched", {}, "Mark Unwatched") : t("common.markWatched", {}, "Mark Watched"))}">${renderWatchedGlyph(this.isMarkedWatched)}</button>` : ""}
+                ${this.renderRatingButton()}
                 ${trailerButton}
               </div>
               ${this.renderResumeIndicator()}

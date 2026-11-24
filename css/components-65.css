@@ -1,0 +1,247 @@
+/* Android RatingActionButton, RatingDialog/RatingPanel/RatingStars and the detail userMessage
+   (x2 TV canvas: every value is the Android dp/sp value doubled). */
+.series-circle-btn.series-rating-btn.is-rated {
+  width: auto;
+  min-width: var(--detail-control-size, 96px);
+  padding: 0 32px;
+}
+
+.series-rating-btn.is-rated:not(.focused) .series-rating-star {
+  color: var(--secondary-color);
+}
+
+.series-rating-value {
+  margin-left: 12px;
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 700;
+}
+
+.series-rating-btn.is-twirling .series-rating-star {
+  animation: ratingStarTwirl 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes ratingStarTwirl {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(72deg) scale(1.3);
+  }
+  100% {
+    transform: rotate(144deg) scale(1);
+  }
+}
+
+.rating-dialog-panel .nuvio-dialog-title {
+  display: none;
+}
+
+.rating-dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.rating-dialog-label {
+  color: #b3b3b3;
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 500;
+}
+
+.rating-dialog-title {
+  margin-top: 12px;
+  padding: 0 48px;
+  color: #ffffff;
+  font-size: 40px;
+  line-height: 56px;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.rating-dialog-subtitle {
+  max-width: 100%;
+  color: #b3b3b3;
+  font-size: 28px;
+  line-height: 40px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rating-score {
+  display: flex;
+  align-items: flex-end;
+  margin-top: 40px;
+}
+
+.rating-score-value {
+  color: #ffffff;
+  font-size: 128px;
+  line-height: 136px;
+  font-weight: 700;
+  transition: color 200ms ease;
+}
+
+.rating-score.is-empty .rating-score-value {
+  color: #808080;
+  font-weight: 300;
+}
+
+.rating-score-max {
+  padding: 0 0 24px 8px;
+  color: #808080;
+  font-size: 32px;
+  line-height: 48px;
+  font-weight: 600;
+}
+
+.rating-stars {
+  display: flex;
+  margin-top: 32px;
+  padding: 28px 36px;
+  border: 4px solid transparent;
+  border-radius: 32px;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.rating-stars.focused {
+  background: rgba(48, 48, 48, 0.32);
+  border-color: var(--focus-color);
+}
+
+.rating-star {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  --rating-fill: 0%;
+}
+
+.rating-star + .rating-star {
+  margin-left: 16px;
+}
+
+.rating-star-empty,
+.rating-star-filled {
+  display: block;
+  width: 96px;
+  height: 96px;
+}
+
+.rating-star-empty {
+  color: rgba(255, 255, 255, 0.12);
+}
+
+.rating-star-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--rating-fill);
+  height: 100%;
+  overflow: hidden;
+  transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rating-stars.is-rtl .rating-star-fill {
+  left: auto;
+  right: 0;
+}
+
+.rating-stars.is-rtl .rating-star-filled {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.rating-star-filled {
+  color: var(--secondary-color);
+}
+
+.rating-star.is-popping {
+  animation: ratingStarPop 260ms ease-out both;
+}
+
+@keyframes ratingStarPop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.rating-syncs {
+  margin-top: 32px;
+  color: #808080;
+  font-size: 24px;
+  line-height: 32px;
+}
+
+.rating-actions {
+  display: flex;
+  width: 100%;
+  margin-top: 48px;
+}
+
+.rating-actions .rating-action {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rating-actions .rating-action + .rating-action {
+  margin-left: 20px;
+}
+
+.rating-actions .rating-action-primary {
+  background: var(--focus-bg);
+}
+
+.rating-actions .rating-action.focused {
+  background: #ffffff;
+  color: #121212;
+}
+
+.rating-actions .rating-action.is-disabled {
+  opacity: 0.4;
+}
+
+.detail-user-message {
+  position: fixed;
+  top: 48px;
+  left: 50%;
+  z-index: 60;
+  max-width: 70vw;
+  padding: 20px 36px;
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  color: #ffffff;
+  font-size: 28px;
+  line-height: 40px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 200ms ease;
+}
+
+.detail-user-message.is-error {
+  background: #5a1c1c;
+}
+
+.detail-user-message.visible {
+  opacity: 1;
+}

@@ -1,4 +1,6 @@
 import { getPosterListPickerOptions } from "../../components/posterOptionsMenu.js";
+import { TrackingRatings } from "../../../core/tracking/trackingRatings.js";
+import { formatRating } from "../../components/ratingDialog.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 
@@ -30,6 +32,17 @@ export function createMetaDetailsScreenMethods12() {
         options.push({
           action: "markPreviousWatched",
           label: t("episodes_mark_previous_watched", {}, "Mark previous episodes as watched")
+        });
+      }
+      // Android EpisodeOptionsOverlay: Rate episode / Rated N/10, before Play.
+      const ratingState = TrackingRatings.current(this.episodeRatingMedia(episode));
+      if (ratingState.provider) {
+        options.push({
+          action: "rateEpisode",
+          label:
+            ratingState.rating != null
+              ? t("rating_rated", [formatRating(ratingState.rating)], `Rated ${formatRating(ratingState.rating)}/10`)
+              : t("rating_rate_episode", {}, "Rate episode")
         });
       }
       const progress = this.getEpisodeMenuProgress(episode);
@@ -147,7 +160,8 @@ export function createMetaDetailsScreenMethods12() {
         preserveVerticalScroll: Boolean(descriptor.preserveVerticalScroll)
       });
     },
-    mountEpisodeHoldDialog() {
+    // reopened: back from the rating panel, where OK is not held down, so no Enter to swallow.
+    mountEpisodeHoldDialog({ focusIndex = 0, reopened = false } = {}) {
       const episode = this.getEpisodeHoldMenuEpisode();
       if (!episode) {
         return false;
@@ -159,7 +173,8 @@ export function createMetaDetailsScreenMethods12() {
         title: this.meta?.name || this.params?.fallbackTitle || this.params?.itemId || "Untitled",
         subtitle: [`S${Number(episode.season || 0)}E${Number(episode.episode || 0)}`, episode.title || ""].filter(Boolean).join(" - "),
         widthVw: 37.5,
-        suppressEnterUntilKeyUp: true,
+        suppressEnterUntilKeyUp: !reopened,
+        initialFocusIndex: focusIndex,
         buttons: options.map((option, index) => ({
           label: option.label,
           key: option.action,

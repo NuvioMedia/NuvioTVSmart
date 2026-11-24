@@ -1192,6 +1192,7 @@
     <string name="trakt_library_source_nuvio_selected">Nuvio লাইব্রেরি নির্বাচিত</string>
     <string name="trakt_setting_on">চালু</string>
     <string name="trakt_setting_off">বন্ধ</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">ওয়াচ প্রগ্রেস সোর্স Trakt-এ সেট করা হয়েছে</string>
     <string name="trakt_watch_progress_nuvio_selected">ওয়াচ প্রগ্রেস সোর্স Nuvio Sync-এ সেট করা হয়েছে</string>
     <string name="trakt_continue_watching_window">\'Continue Watching\' উইন্ডো</string>

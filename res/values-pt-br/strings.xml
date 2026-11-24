@@ -1094,6 +1094,7 @@
     <string name="trakt_library_source_nuvio_selected">Biblioteca Nuvio selecionada</string>
     <string name="trakt_setting_on">Ativado</string>
     <string name="trakt_setting_off">Desativado</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">Fonte de progresso definida para Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Fonte de progresso definida para Nuvio Sync</string>
     <string name="trakt_continue_watching_window">Janela Continuar assistindo</string>

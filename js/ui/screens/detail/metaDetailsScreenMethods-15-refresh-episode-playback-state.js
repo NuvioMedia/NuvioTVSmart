@@ -142,6 +142,9 @@ export function createMetaDetailsScreenMethods15() {
         this.closeEpisodeHoldMenu({ restoreFocus: false });
         return this.startEpisodeFromHoldMenu(episode, { manualSelection: true });
       }
+      if (option.action === "rateEpisode") {
+        return this.openEpisodeRatingDialog(episode);
+      }
       if (option.action === "toggleWatched") {
         this.closeEpisodeHoldMenu({ restoreFocus: false });
         return this.setEpisodeWatchedState(episode, !this.isEpisodeMarkedWatched(episode));

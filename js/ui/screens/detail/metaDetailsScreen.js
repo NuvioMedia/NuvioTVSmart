@@ -25,6 +25,7 @@ import { createMetaDetailsScreenMethods24 } from "./metaDetailsScreenMethods-24-
 import { createMetaDetailsScreenMethods25 } from "./metaDetailsScreenMethods-25-handle-movie-dpad.js";
 import { createMetaDetailsScreenMethods26 } from "./metaDetailsScreenMethods-26-on-key-down.js";
 import { createMetaDetailsScreenMethods27 } from "./metaDetailsScreenMethods-27-on-pointer-move.js";
+import { createMetaDetailsScreenMethods28 } from "./metaDetailsScreenMethods-28-ratings.js";
 
 export * from "./metaDetailsScreenContext.js";
 export const MetaDetailsScreen = {
@@ -54,5 +55,6 @@ export const MetaDetailsScreen = {
   ...createMetaDetailsScreenMethods24(),
   ...createMetaDetailsScreenMethods25(),
   ...createMetaDetailsScreenMethods26(),
-  ...createMetaDetailsScreenMethods27()
+  ...createMetaDetailsScreenMethods27(),
+  ...createMetaDetailsScreenMethods28()
 };

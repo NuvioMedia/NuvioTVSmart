@@ -20,7 +20,7 @@ import { TmdbSettingsStore } from "../../data/local/tmdbSettingsStore.js";
 
 import { MdbListSettingsStore } from "../../data/local/mdbListSettingsStore.js";
 
-import { TraktSettingsStore, normalizeTraktContinueWatchingDaysCap } from "../../data/local/traktSettingsStore.js";
+import { TraktSettingsStore, normalizeRatingSource, normalizeTraktContinueWatchingDaysCap } from "../../data/local/traktSettingsStore.js";
 
 import { AnimeSkipSettingsStore } from "../../data/local/animeSkipSettingsStore.js";
 
@@ -102,7 +102,9 @@ export const trakt_settings = {
       watch_progress_source: normalizeTraktWatchProgressSourceForAndroid(settings.watchProgressSource),
       library_source_mode: normalizeTraktLibrarySourceForAndroid(settings.librarySourceMode),
       simkl_anime_id_preference: String(settings.simklAnimeIdPreference || "imdb").toUpperCase(),
-      more_like_this_source: String(settings.moreLikeThisSource || "trakt").toUpperCase()
+      more_like_this_source: String(settings.moreLikeThisSource || "trakt").toUpperCase(),
+      // Android stores rating_source only while a source is chosen.
+      ...(settings.ratingSource ? { rating_source: settings.ratingSource } : {})
     };
   },
   project(rawFeature = {}) {
@@ -129,6 +131,9 @@ export const trakt_settings = {
     if (stringOrNull(raw.more_like_this_source)) {
       projected.more_like_this_source = String(raw.more_like_this_source).toUpperCase();
     }
+    if (normalizeRatingSource(raw.rating_source)) {
+      projected.rating_source = normalizeRatingSource(raw.rating_source);
+    }
     return projected;
   },
   import(profileId, rawFeature = {}) {
@@ -154,6 +159,10 @@ export const trakt_settings = {
     }
     if (stringOrNull(raw.more_like_this_source)) {
       partial.moreLikeThisSource = String(raw.more_like_this_source).toLowerCase();
+    }
+    // Android writes the whole feature: no rating_source means the rate button is off.
+    if (Object.keys(raw).length) {
+      partial.ratingSource = normalizeRatingSource(raw.rating_source);
     }
     if (!Object.keys(partial).length) {
       return false;

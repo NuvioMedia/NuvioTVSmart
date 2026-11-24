@@ -1961,6 +1961,7 @@
     <string name="trakt_library_source_nuvio_selected">Pasirinkta Nuvio biblioteka</string>
     <string name="trakt_setting_on">Įjungta</string>
     <string name="trakt_setting_off">Išjungta</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_comments_title">Komentarai</string>
     <string name="trakt_comments_subtitle">Rodyti Trakt apžvalgas metaduomenų puslapiuose</string>
     <string name="trakt_comments_dialog_title">Komentarai</string>

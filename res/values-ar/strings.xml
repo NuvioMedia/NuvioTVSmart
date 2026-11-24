@@ -651,6 +651,7 @@
     <string name="trakt_watch_progress_source_nuvio">مزامنة Nuvio</string>
     <string name="trakt_setting_on">مفعّل</string>
     <string name="trakt_setting_off">معطّل</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">تم تعيين مصدر تقدّم المشاهدة إلى Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">تم تعيين مصدر تقدّم المشاهدة إلى مزامنة Nuvio</string>
     <string name="trakt_continue_watching_window">الفترة الزمنية لمتابعة المشاهدة</string>

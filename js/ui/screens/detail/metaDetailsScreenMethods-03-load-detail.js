@@ -193,6 +193,7 @@ export function createMetaDetailsScreenMethods03() {
       this.render(meta);
       this.isLoadingDetail = false;
       void this.refreshLibraryMembership(token);
+      this.refreshRatingSource();
       this.maybeAutoOpenContinueWatchingStream();
       this.maybePlayOnLoad(token);
       void this.refreshTrailerSource(meta, token);
