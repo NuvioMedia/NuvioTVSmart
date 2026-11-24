@@ -2217,6 +2217,10 @@
     <string name="plugin_repo_added_with_providers">تمت إضافة %1$s مع %2$d مزوّد</string>
     <string name="plugin_repo_refreshed">تم تحديث المستودع</string>
     <string name="plugin_repo_removed">تمت إزالة المستودع</string>
+    <string name="plugin_repo_delete_confirm_title">حذف المستودع؟</string>
+    <string name="plugin_repo_delete_confirm_message">هل أنت متأكد من حذفه؟</string>
+    <string name="plugin_repo_delete_no">لا</string>
+    <string name="plugin_repo_delete_yes">نعم</string>
     <string name="plugin_refresh_complete">تم تحديث المستودعات ووقت التشغيل.</string>
     <string name="plugin_clear_cache">مسح ذاكرة التخزين المؤقت لوقت التشغيل</string>
     <string name="plugin_cache_cleared">تم مسح ذاكرة التخزين المؤقت لوقت التشغيل.</string>

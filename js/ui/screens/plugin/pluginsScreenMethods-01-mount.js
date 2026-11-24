@@ -22,6 +22,7 @@ export function createPluginsScreenMethods01() {
       this.diagnosticsProviderId = null;
       this.testAbortController = null;
       this.pendingScraperEnable = null;
+      this.pendingRepositoryRemoval = null;
       this.keyboardVisible = false;
       this.ensureStartupSyncSubscription();
       this.runtimeProbeGeneration = Number(this.runtimeProbeGeneration || 0) + 1;

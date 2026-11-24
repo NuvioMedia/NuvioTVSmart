@@ -1821,6 +1821,10 @@
     <string name="error_server_ports_unavailable">Não foi possível iniciar o servidor. Todas as portas estão em utilização.</string>
     <string name="plugin_repo_added_with_providers">Adicionado %1$s com %2$d fornecedores</string>
     <string name="plugin_repo_removed">Repositório removido</string>
+    <string name="plugin_repo_delete_confirm_title">Eliminar repositório?</string>
+    <string name="plugin_repo_delete_confirm_message">Tens a certeza de que pretendes eliminá-lo?</string>
+    <string name="plugin_repo_delete_no">Não</string>
+    <string name="plugin_repo_delete_yes">Sim</string>
     <string name="plugin_repo_refreshed">Repositório atualizado</string>
     <string name="trakt_error_code_expired">O código do dispositivo expirou. Tenta novamente.</string>
     <string name="trakt_error_code_used">O código do dispositivo já foi utilizado. Começa de novo.</string>

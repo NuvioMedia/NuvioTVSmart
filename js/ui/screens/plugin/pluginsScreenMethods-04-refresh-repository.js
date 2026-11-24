@@ -67,9 +67,13 @@ export function createPluginsScreenMethods04() {
       }
     },
     async onKeyDown(event) {
-      if (this.pendingScraperEnable) {
+      if (this.pendingScraperEnable || this.pendingRepositoryRemoval) {
         if (Platform.isBackEvent(event)) {
           event?.preventDefault?.();
+          if (this.pendingRepositoryRemoval) {
+            this.dismissRepositoryRemoval();
+            return;
+          }
           this.pendingScraperEnable = null;
           this.render();
           return;
@@ -142,6 +146,10 @@ export function createPluginsScreenMethods04() {
       }
     },
     consumeBackRequest() {
+      if (this.pendingRepositoryRemoval) {
+        this.dismissRepositoryRemoval();
+        return true;
+      }
       if (this.pendingScraperEnable) {
         this.pendingScraperEnable = null;
         this.render();
@@ -166,6 +174,7 @@ export function createPluginsScreenMethods04() {
       this.testResult = null;
       this.diagnosticsProviderId = null;
       this.pendingScraperEnable = null;
+      this.pendingRepositoryRemoval = null;
       if (this.keyboardStateChangeHandler) {
         document.removeEventListener("keyboardStateChange", this.keyboardStateChangeHandler, false);
         this.keyboardStateChangeBound = false;
