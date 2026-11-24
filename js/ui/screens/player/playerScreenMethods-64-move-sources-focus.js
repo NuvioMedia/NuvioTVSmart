@@ -50,18 +50,13 @@ export function createPlayerScreenMethods64() {
       }
 
       if (zone === "filter") {
-        if (direction === "left") {
-          this.sourcesFocus = {
-            zone: "filter",
-            index: clamp(index - 1, 0, Math.max(0, filters.length - 1))
-          };
-          return;
-        }
-        if (direction === "right") {
-          this.sourcesFocus = {
-            zone: "filter",
-            index: clamp(index + 1, 0, Math.max(0, filters.length - 1))
-          };
+        if (direction === "left" || direction === "right") {
+          // Android: focusing an addon chip selects its filter.
+          const next = filters[index + (direction === "right" ? 1 : -1)];
+          if (next) {
+            this.setSourceFilter(next);
+            this.renderSourcesPanel();
+          }
           return;
         }
         if (direction === "up") {
@@ -69,7 +64,8 @@ export function createPlayerScreenMethods64() {
           return;
         }
         if (direction === "down" && list.length) {
-          this.sourcesFocus = { zone: "list", index: clamp(index, 0, list.length - 1) };
+          // The list restarts from the top on every filter change, so Down lands on its first result.
+          this.sourcesFocus = { zone: "list", index: 0 };
         }
         return;
       }

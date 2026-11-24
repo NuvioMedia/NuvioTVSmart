@@ -57,6 +57,23 @@ sources.moveSourcesFocus("left");
 assert.equal(sources.sourceFilter, "all", "All is a boundary");
 assert.deepEqual(sources.sourcesFocus, { zone: "list", index: 0 });
 
+// Sources chips: Left/Right select the filter right away, Down enters the list from its first result.
+sources.sourcesFocus = { zone: "filter", index: 0 };
+sources.moveSourcesFocus("right");
+assert.equal(sources.sourceFilter, "A", "moving onto a chip selects its addon");
+assert.deepEqual(sources.sourcesFocus, { zone: "filter", index: 1 });
+sources.moveSourcesFocus("right");
+assert.equal(sources.sourceFilter, "B");
+sources.moveSourcesFocus("right");
+assert.equal(sources.sourceFilter, "B", "the last chip is a boundary");
+sources.streamCandidates.push({ url: "b2", addonName: "B" });
+sources.moveSourcesFocus("down");
+assert.deepEqual(
+  sources.sourcesFocus,
+  { zone: "list", index: 0 },
+  "Down from the third chip starts at the first result"
+);
+
 // Episode panel: Left/Right on an episode switch season and focus the playing episode.
 const episodes = [
   { id: "s1e1", season: 1, episode: 1 },
@@ -106,5 +123,12 @@ Object.assign(panel, {
 panel.handleEpisodePanelKey(key(39));
 assert.equal(panel.episodePanelStreamFilter, "A");
 assert.deepEqual(panel.episodePanelStreamFocus, { zone: "filters", index: 1 });
+panel.handleEpisodePanelKey(key(39));
+assert.equal(panel.episodePanelStreamFilter, "B", "Right on a chip selects the next addon");
+assert.deepEqual(panel.episodePanelStreamFocus, { zone: "filters", index: 2 });
+panel.handleEpisodePanelKey(key(39));
+assert.equal(panel.episodePanelStreamFilter, "B", "the last chip is a boundary");
+panel.handleEpisodePanelKey(key(37));
+assert.equal(panel.episodePanelStreamFilter, "A");
 
 console.log("player panel horizontal navigation ok");

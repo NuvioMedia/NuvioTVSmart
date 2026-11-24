@@ -299,6 +299,18 @@ export function createPlayerScreenMethods63() {
       if (focusedCard) {
         this.scrollSourcesCardIntoView(focusedCard);
       }
+      // A full render resets the chip row to its start; keep the selected addon chip in view, like Android.
+      const chipRow = panel.querySelector(".player-sources-filters");
+      const selectedChip = chipRow?.querySelector(".player-sources-filter.selected");
+      if (selectedChip && chipRow.scrollWidth > chipRow.clientWidth) {
+        const rowRect = chipRow.getBoundingClientRect();
+        const chipRect = selectedChip.getBoundingClientRect();
+        if (chipRect.left < rowRect.left) {
+          chipRow.scrollLeft -= rowRect.left - chipRect.left;
+        } else if (chipRect.right > rowRect.right) {
+          chipRow.scrollLeft += chipRect.right - rowRect.right;
+        }
+      }
     },
     syncSourcesFocusDom() {
       const panel = this.uiRefs?.sourcesPanel;
