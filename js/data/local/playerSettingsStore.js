@@ -22,7 +22,10 @@ import {
   SUBTITLE_APPEARANCE_DEFAULTS,
   normalizeSubtitleAppearance
 } from "../../core/player/subtitleAppearance.js";
-import { AUTO_SYNC_TOLERANCE_OPTIONS_MS } from "../../core/player/subtitleAutoSyncEngine.js";
+import {
+  AUTO_SYNC_DEFAULT_TOLERANCE_MS,
+  AUTO_SYNC_TOLERANCE_OPTIONS_MS
+} from "../../core/player/subtitleAutoSyncEngine.js";
 import {
   HDR_BRIGHTNESS_DEFAULT,
   normalizeHdrBrightness,
@@ -81,7 +84,7 @@ const DEFAULTS = {
     useForcedSubtitles: true,
     showOnlyPreferredLanguages: false,
     autoSyncEnabled: true,
-    autoSyncToleranceMs: 0,
+    autoSyncToleranceMs: AUTO_SYNC_DEFAULT_TOLERANCE_MS,
     autoSyncThorough: true,
     hdrStyleEnabled: false,
     hdrTextColor: "#FFFFFF",
@@ -108,6 +111,19 @@ const DEFAULTS = {
   streamAutoPlayFallbackMaxSources: SOURCE_FALLBACK_MAX_SOURCES_DEFAULT,
   streamAutoPlayFallbackStartupTimeoutSeconds: SOURCE_STARTUP_TIMEOUT_SECONDS_DEFAULT
 };
+
+// Android keeps the tolerance only once the viewer picks one and otherwise uses its 300 ms
+// default. Smart stored the old 0 ms default with every settings write, so a 0 nobody chose
+// moves to the new default; a value picked in Settings is kept as is.
+function normalizeAutoSyncToleranceMs(subtitleStyle = {}) {
+  const tolerance = Math.trunc(Number(subtitleStyle.autoSyncToleranceMs));
+  if (!AUTO_SYNC_TOLERANCE_OPTIONS_MS.includes(tolerance)) {
+    return AUTO_SYNC_DEFAULT_TOLERANCE_MS;
+  }
+  return tolerance === 0 && subtitleStyle.autoSyncToleranceChosen !== true
+    ? AUTO_SYNC_DEFAULT_TOLERANCE_MS
+    : tolerance;
+}
 
 function normalizeIntInRange(value, min, max, fallback, step = 1) {
   const number = Math.trunc(Number(value));
@@ -446,11 +462,8 @@ export function normalizePlayerSettings(settings = {}) {
       useForcedSubtitles,
       showOnlyPreferredLanguages: Boolean(subtitleStyle.showOnlyPreferredLanguages),
       autoSyncEnabled: subtitleStyle.autoSyncEnabled === true,
-      autoSyncToleranceMs: AUTO_SYNC_TOLERANCE_OPTIONS_MS.includes(
-        Math.trunc(Number(subtitleStyle.autoSyncToleranceMs))
-      )
-        ? Math.trunc(Number(subtitleStyle.autoSyncToleranceMs))
-        : 0,
+      autoSyncToleranceMs: normalizeAutoSyncToleranceMs(subtitleStyle),
+      autoSyncToleranceChosen: subtitleStyle.autoSyncToleranceChosen === true,
       autoSyncThorough: subtitleStyle.autoSyncThorough !== false,
       hdrStyleEnabled: subtitleStyle.hdrStyleEnabled === true,
       hdrTextColor: normalizeHdrTextColor(subtitleStyle.hdrTextColor),

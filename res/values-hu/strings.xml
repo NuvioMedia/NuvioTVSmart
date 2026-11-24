@@ -3260,7 +3260,6 @@ Próbálj meg egy másik forrást. [%1$s]</string>
     <string name="autosync_label_synced">Automatikusan időzítve</string>
     <string name="layout_always_show_landscape_clearlogo">Fekvő poszter helyett háttérkép logóval</string>
     <string name="layout_always_show_landscape_clearlogo_sub">A bővítmény fekvő posztere helyett a háttérkép jelenik meg a tartalom logójával.</string>
-    <string name="autosync_toast_no_fit">Sikertelen szinkronizálás: ezek a feliratok nem illeszkednek a videó ezen változatához.</string>
     <string name="common.cantonese">Kantoni</string>
     <string name="layout_trailer_play_in_background">Lejátszás a háttérben</string>
     <string name="layout_trailer_play_in_background_sub">Az előzetes a háttérkép helyén indul el, miközben az oldal látható marad.</string>

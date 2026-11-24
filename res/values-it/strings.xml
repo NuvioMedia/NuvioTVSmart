@@ -3346,9 +3346,15 @@
     <string name="autosync_toast_failed_no_reference">Sincronizzazione non riuscita: questo video non contiene sottotitoli incorporati da confrontare.</string>
     <string name="autosync_toast_failed_unsupported">Sincronizzazione non riuscita: Auto Sync non supporta questo formato di sottotitoli.</string>
     <string name="autosync_label_synced">Sincronizzato automaticamente</string>
+    <string name="autosync_status_title">Stato sincronizzazione automatica</string>
+    <string name="autosync_status_synced">Sincronizzati</string>
+    <string name="autosync_status_not_needed">Non necessaria</string>
+    <string name="autosync_status_in_progress">In corso</string>
+    <string name="autosync_status_no_fit">Potrebbero non corrispondere</string>
+    <string name="autosync_status_no_reference">Nessun sottotitolo integrato</string>
+    <string name="autosync_status_failed">Non riuscita</string>
     <string name="layout_always_show_landscape_clearlogo">Mostra sempre lo sfondo con il logo per le locandine orizzontali</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Ignora la locandina orizzontale dell\'addon e usa invece lo sfondo con il logo trasparente sovrapposto.</string>
-    <string name="autosync_toast_no_fit">Sincronizzazione non riuscita: questi sottotitoli non corrispondono a questa versione del video.</string>
     <string name="common.cantonese">Cantonese</string>
     <string name="layout_trailer_play_in_background">Riproduci in background</string>
     <string name="layout_trailer_play_in_background_sub">Riproduci il trailer al posto dello sfondo mantenendo la pagina visibile.</string>

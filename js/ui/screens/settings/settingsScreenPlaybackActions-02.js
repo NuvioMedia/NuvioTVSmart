@@ -105,7 +105,7 @@ export function registerPlaybackActionsPart02(model) {
       selectedId: String(current),
       returnFocusKey: "playback:subtitleAutoSyncTolerance",
       onSelect: (option) => {
-        updateSubtitleStyle({ autoSyncToleranceMs: Math.trunc(Number(option.id)) || 0 });
+        updateSubtitleStyle({ autoSyncToleranceMs: Math.trunc(Number(option.id)) || 0, autoSyncToleranceChosen: true });
       }
     });
   });

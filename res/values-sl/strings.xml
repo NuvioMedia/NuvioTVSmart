@@ -2661,7 +2661,6 @@
     <string name="party_invite_scan">Skenirajte s telefonom, da se pridružite</string>
     <string name="party_invite_share">Ali delite kodo. Prijatelji jo lahko vnesejo v Watch party v kateri koli aplikaciji Nuvio.</string>
     <string name="party_invite_qr">QR-koda povabila na watch party</string>
-    <string name="autosync_toast_no_fit">Sinhronizacija ni uspela: ti podnapisi ne ustrezajo tej različici videoposnetka.</string>
     <string name="common.cantonese">Kantonski</string>
     <string name="layout_trailer_play_in_background">Predvajanje v ozadju</string>
     <string name="layout_trailer_play_in_background_sub">Predvajajte napovednik namesto ozadja, medtem ko stran ostane vidna.</string>

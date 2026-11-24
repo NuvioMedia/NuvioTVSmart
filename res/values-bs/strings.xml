@@ -1848,7 +1848,6 @@
     <string name="party_invite_scan">Skenirajte telefonom da biste se pridružili</string>
     <string name="party_invite_share">Ili podijelite kod. Prijatelji ga mogu unijeti u Watch party u bilo kojoj Nuvio aplikaciji.</string>
     <string name="party_invite_qr">QR kod pozivnice za watch party</string>
-    <string name="autosync_toast_no_fit">Sinhronizacija nije uspjela: ovi titlovi ne odgovaraju ovoj verziji videa.</string>
     <string name="common.cantonese">Kantonski</string>
     <string name="layout_trailer_play_in_background">Reprodukcija u pozadini</string>
     <string name="layout_trailer_play_in_background_sub">Pusti trailer umjesto pozadine dok stranica ostaje vidljiva.</string>

@@ -3075,7 +3075,6 @@
     <string name="autosync_label_synced">Otomatik eşitlendi</string>
     <string name="layout_always_show_landscape_clearlogo">Yatay Posterlerde Her Zaman Logolu Arka Plan</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Eklentiden gelen yatay posteri yoksayar ve bunun yerine logo katmanlı arka plan kullanır.</string>
-    <string name="autosync_toast_no_fit">Eşitleme başarısız: Bu altyazı videonun bu sürümüyle uyuşmuyor.</string>
     <string name="common.cantonese">Kantonca</string>
     <string name="layout_trailer_play_in_background">Arka Planda Oynat</string>
     <string name="layout_trailer_play_in_background_sub">Sayfa görünür kalırken fragmanı arka plan görseli yerine oynatın.</string>

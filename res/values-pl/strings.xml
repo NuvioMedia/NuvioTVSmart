@@ -3101,9 +3101,15 @@
     <string name="autosync_toast_failed_no_reference">Synchronizacja nie powiodła się: wideo nie zawiera osadzonych napisów do porównania.</string>
     <string name="autosync_toast_failed_unsupported">Synchronizacja nie powiodła się: ten format napisów nie jest obsługiwany.</string>
     <string name="autosync_label_synced">Zsynchronizowane automatycznie</string>
+    <string name="autosync_status_title">Status synchronizacji</string>
+    <string name="autosync_status_synced">Zsynchronizowano</string>
+    <string name="autosync_status_not_needed">Niepotrzebna</string>
+    <string name="autosync_status_in_progress">W toku</string>
+    <string name="autosync_status_no_fit">Mogą nie pasować</string>
+    <string name="autosync_status_no_reference">Brak napisów w wideo</string>
+    <string name="autosync_status_failed">Nieudana</string>
     <string name="layout_always_show_landscape_clearlogo">Zawsze tło z logo dla poziomych plakatów</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Ignoruj poziomy plakat z dodatku i użyj tła z nakładką logo.</string>
-    <string name="autosync_toast_no_fit">Synchronizacja nie powiodła się: te napisy nie pasują do tej wersji wideo.</string>
     <string name="common.cantonese">Kantoński</string>
     <string name="layout_trailer_play_in_background">Odtwarzaj w tle</string>
     <string name="layout_trailer_play_in_background_sub">Odtwarzaj zwiastun w miejscu tła, gdy strona jest widoczna.</string>

@@ -1520,7 +1520,6 @@
     <string name="party_invite_scan">Skann med en telefon for å bli med</string>
     <string name="party_invite_share">Eller del koden. Venner kan skrive den inn under Watch party i hvilken som helst Nuvio-app.</string>
     <string name="party_invite_qr">QR-kode for invitasjon til watch party</string>
-    <string name="autosync_toast_no_fit">Synkronisering mislyktes: disse undertekstene stemmer ikke overens med denne versjonen av videoen.</string>
     <string name="common.cantonese">Kantonesisk</string>
     <string name="layout_trailer_play_in_background">Spill av i bakgrunnen</string>
     <string name="layout_trailer_play_in_background_sub">Spill av traileren i stedet for bakgrunnen mens siden forblir synlig.</string>

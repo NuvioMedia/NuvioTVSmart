@@ -2995,7 +2995,6 @@
     <string name="autosync_label_synced">Sincronizado automaticamente</string>
     <string name="layout_always_show_landscape_clearlogo">Sempre usar plano de fundo com logotipo em pôsteres horizontais</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Ignore o pôster horizontal do addon e use o plano de fundo com logotipo sobreposto.</string>
-    <string name="autosync_toast_no_fit">Falha na sincronização: essas legendas não correspondem a esta versão do vídeo.</string>
     <string name="common.cantonese">Cantonês</string>
     <string name="layout_trailer_play_in_background">Reproduzir em segundo plano</string>
     <string name="layout_trailer_play_in_background_sub">Reproduza o trailer no lugar do plano de fundo enquanto a página continua visível.</string>

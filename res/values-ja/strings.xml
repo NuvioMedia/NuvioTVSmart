@@ -2000,7 +2000,6 @@
     <string name="party_invite_scan">スマートフォンでスキャンして参加</string>
     <string name="party_invite_share">またはコードを共有してください。友だちはどの Nuvio アプリでもウォッチパーティーに入力できます。</string>
     <string name="party_invite_qr">ウォッチパーティー招待用 QR コード</string>
-    <string name="autosync_toast_no_fit">同期失敗: これらの字幕はこのバージョンのビデオと一致しません。</string>
     <string name="common.cantonese">広東語</string>
     <string name="layout_trailer_play_in_background">バックグラウンドで再生</string>
     <string name="layout_trailer_play_in_background_sub">ページが表示されたまま、バックドロップの代わりに予告編を再生します。</string>

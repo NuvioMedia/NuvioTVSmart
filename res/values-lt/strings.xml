@@ -1405,7 +1405,6 @@
     <string name="party_invite_scan">Nuskaitykite telefonu, kad prisijungtumėte</string>
     <string name="party_invite_share">Arba pasidalykite kodu. Draugai gali jį įvesti skiltyje „Bendra peržiūra“ bet kurioje Nuvio programėlėje.</string>
     <string name="party_invite_qr">Bendros peržiūros kvietimo QR kodas</string>
-    <string name="autosync_toast_no_fit">Nepavyko sinchronizuoti: šie subtitrai neatitinka šios vaizdo įrašo versijos.</string>
     <string name="common.cantonese">Kantonų kalba</string>
     <string name="layout_trailer_play_in_background">Leisti fone</string>
     <string name="layout_trailer_play_in_background_sub">Leisti anonsą vietoj fono, paliekant matomą puslapį.</string>

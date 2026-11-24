@@ -3085,7 +3085,6 @@
     <string name="party_invite_scan">Skano me telefon për t\'u bashkuar</string>
     <string name="party_invite_share">Ose ndaj kodin. Miqtë mund ta fusin te Watch party në çdo aplikacion Nuvio.</string>
     <string name="party_invite_qr">Kodi QR i ftesës për watch party</string>
-    <string name="autosync_toast_no_fit">Sinkronizimi dështoi: këto titra nuk përputhen me këtë version të videos.</string>
     <string name="common.cantonese">Kantonese</string>
     <string name="layout_trailer_play_in_background">Lojë në sfond</string>
     <string name="layout_trailer_play_in_background_sub">Luaj trailerin në vend të sfondit ndërsa faqja mbetet e dukshme.</string>

@@ -2548,7 +2548,6 @@
     <string name="party_invite_scan">சேர தொலைபேசியில் ஸ்கேன் செய்யவும்</string>
     <string name="party_invite_share">அல்லது குறியீட்டைப் பகிரவும். நண்பர்கள் எந்த Nuvio பயன்பாட்டிலும் வாட்ச் பார்ட்டியில் அதை உள்ளிடலாம்.</string>
     <string name="party_invite_qr">வாட்ச் பார்ட்டி அழைப்பு QR குறியீடு</string>
-    <string name="autosync_toast_no_fit">ஒத்திசைவு தோல்வியடைந்தது: இந்தத் தலைப்புகள் இந்த வீடியோவின் பதிப்புடன் பொருந்தவில்லை.</string>
     <string name="common.cantonese">கான்டோனீஸ்</string>
     <string name="layout_trailer_play_in_background">பின்னணியில் இயக்கு</string>
     <string name="layout_trailer_play_in_background_sub">பக்கம் தெரியும் நிலையிலேயே, பின்னணியின் இடத்தில் டிரெய்லரை இயக்கவும்.</string>

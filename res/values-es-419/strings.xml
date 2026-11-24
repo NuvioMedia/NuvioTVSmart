@@ -2800,7 +2800,6 @@
     <string name="autosync_label_synced">Sincronizado automáticamente</string>
     <string name="layout_always_show_landscape_clearlogo">Mostrar siempre fondo con logotipo para pósters horizontales</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Ignorar el póster horizontal del addon y usar el fondo con el logotipo superpuesto en su lugar.</string>
-    <string name="autosync_toast_no_fit">Error de sincronización: estos subtítulos no coinciden con esta versión del video.</string>
     <string name="common.cantonese">Cantonés</string>
     <string name="layout_trailer_play_in_background">Reproducir como fondo</string>
     <string name="layout_trailer_play_in_background_sub">Reproduce el tráiler en lugar de la imagen de fondo mientras la página permanece visible.</string>

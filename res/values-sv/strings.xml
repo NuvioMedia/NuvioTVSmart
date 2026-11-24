@@ -1897,7 +1897,6 @@
     <string name="party_invite_scan">Skanna med telefonen för att ansluta</string>
     <string name="party_invite_share">Eller dela koden. Dina vänner kan ange den under Watch party i valfri Nuvio-app.</string>
     <string name="party_invite_qr">Watch party inbjudan QR kod</string>
-    <string name="autosync_toast_no_fit">Synkroniseringen misslyckades: dessa undertexter stämmer inte överens med den här versionen av videon.</string>
     <string name="common.cantonese">Kantonesiska</string>
     <string name="layout_trailer_play_in_background">Spela upp i bakgrunden</string>
     <string name="layout_trailer_play_in_background_sub">Spela upp trailern istället för bakgrundsbilden medan sidan förblir synlig.</string>

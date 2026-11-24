@@ -1481,7 +1481,6 @@
     <string name="party_invite_qr">QR-code voor uitnodiging tot de watch party</string>
     <string name="sub_strip_sdh">SDH-ondertiteling verwijderen</string>
     <string name="sub_strip_sdh_desc">Verberg geluidsbeschrijvingen en sprekerlabels in tekstondertiteling</string>
-    <string name="autosync_toast_no_fit">Synchroniseren mislukt: deze ondertitels passen niet bij deze versie van de video.</string>
     <string name="common.cantonese">Kantonees</string>
     <string name="layout_trailer_play_in_background">Afspelen als achtergrond</string>
     <string name="layout_trailer_play_in_background_sub">Speel de trailer af in plaats van de achtergrond terwijl de pagina zichtbaar blijft.</string>

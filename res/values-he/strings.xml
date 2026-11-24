@@ -3294,7 +3294,6 @@
     <string name="sub_strip_sdh_desc">הסתרת תיאורי קול ותוויות דוברים מכתוביות טקסט</string>
     <string name="layout_always_show_landscape_clearlogo">תמיד רקע עם לוגו עבור פוסטרים לרוחב</string>
     <string name="layout_always_show_landscape_clearlogo_sub">התעלמות מפוסטר לרוחב מהתוסף, ושימוש ברקע עם שכבת לוגו שקוף במקום.</string>
-    <string name="autosync_toast_no_fit">הסנכרון נכשל: הכתוביות האלה אינן תואמות לגרסה הזו של הסרטון.</string>
     <string name="common.cantonese">קנטונזית</string>
     <string name="layout_trailer_play_in_background">הפעלה ברקע</string>
     <string name="layout_trailer_play_in_background_sub">הפעלת הטריילר במקום תמונת הרקע בזמן שהעמוד נשאר גלוי.</string>

@@ -1684,9 +1684,15 @@
     <string name="autosync_toast_failed_no_reference">Đồng bộ thất bại: video này không có phụ đề nhúng sẵn để so sánh.</string>
     <string name="autosync_toast_failed_unsupported">Đồng bộ thất bại: Tự động đồng bộ không hỗ trợ đồng bộ định dạng phụ đề này.</string>
     <string name="autosync_label_synced">Đã tự động đồng bộ</string>
+    <string name="autosync_status_title">Trạng thái tự động đồng bộ</string>
+    <string name="autosync_status_synced">Đã đồng bộ</string>
+    <string name="autosync_status_not_needed">Không cần thiết</string>
+    <string name="autosync_status_in_progress">Đang tiến hành</string>
+    <string name="autosync_status_no_fit">Có thể không khớp</string>
+    <string name="autosync_status_no_reference">Không có phụ đề nhúng</string>
+    <string name="autosync_status_failed">Không thành công</string>
     <string name="layout_always_show_landscape_clearlogo">Luôn dùng phông nền kèm logo cho poster ngang</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Bỏ qua poster ngang từ tiện ích và thay thế bằng phông nền có chèn lớp phủ logo trong suốt.</string>
-    <string name="autosync_toast_no_fit">Đồng bộ thất bại: Phụ đề không khớp với bản video này.</string>
     <string name="common.cantonese">Tiếng Quảng Đông</string>
     <string name="layout_trailer_play_in_background">Phát ở phông nền</string>
     <string name="layout_trailer_play_in_background_sub">Phát trailer thay cho phông nền trong khi trang vẫn hiển thị.</string>

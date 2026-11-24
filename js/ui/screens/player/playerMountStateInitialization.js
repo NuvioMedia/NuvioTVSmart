@@ -42,7 +42,7 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.automaticSubtitleSyncRunToken = 0;
   this.automaticSubtitleSyncTimer = null;
   this.automaticSubtitleSyncStartupKey = "";
-  this.autoSyncedSubtitleUrl = "";
+  this.autoSyncStatus = null;
   this.currentAddonSubtitleSource = null;
   this.subtitleDialogTab = "builtIn";
   this.subtitleDialogIndex = 0;

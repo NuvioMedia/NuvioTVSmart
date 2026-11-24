@@ -2864,7 +2864,6 @@
     <string name="party_invite_scan">Leia com um telemóvel para se juntar</string>
     <string name="party_invite_share">Ou partilhe o código. Os amigos podem introduzi-lo em Watch Party em qualquer app Nuvio.</string>
     <string name="party_invite_qr">Código QR de convite para a Watch Party</string>
-    <string name="autosync_toast_no_fit">Falha na sincronização: estas legendas não correspondem a esta versão do vídeo.</string>
     <string name="common.cantonese">Cantonês</string>
     <string name="layout_trailer_play_in_background">Reproduzir em segundo plano</string>
     <string name="layout_trailer_play_in_background_sub">Reproduzir o trailer em vez do fundo enquanto a página permanece visível.</string>
@@ -2966,6 +2965,13 @@
     <string name="autosync_thorough_title">Pesquisa exaustiva com sincronização automática</string>
     <string name="autosync_thorough_description">Continue a comparar outras legendas e faixas incorporadas para encontrar uma correspondência mais precisa antes de sincronizar. Quando esta opção está desativada, a primeira correspondência forte é utilizada mais cedo. Apenas as correspondências seguras são aplicadas.</string>
     <string name="autosync_label_synced">Sincronização automática</string>
+    <string name="autosync_status_title">Estado da sincronização automática</string>
+    <string name="autosync_status_synced">Sincronizadas</string>
+    <string name="autosync_status_not_needed">Não necessária</string>
+    <string name="autosync_status_in_progress">Em curso</string>
+    <string name="autosync_status_no_fit">Pode não corresponder</string>
+    <string name="autosync_status_no_reference">Sem legendas incorporadas</string>
+    <string name="autosync_status_failed">Falhou</string>
     <string name="player_live_watched">AO VIVO  %1$s</string>
     <string name="subtitle_delay_reset">Atraso de reinicialização</string>
     <string name="audio_mix_persist_help">Lembrar-se do «boost» para reprodução futura</string>

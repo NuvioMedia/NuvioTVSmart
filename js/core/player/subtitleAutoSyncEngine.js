@@ -12,6 +12,8 @@
 
 export const AUTO_SYNC_MIN_CUES = 4;
 export const AUTO_SYNC_TOLERANCE_OPTIONS_MS = [0, 100, 200, 300, 400, 500];
+// Android AutoSyncPreferences.DEFAULT_SYNC_TOLERANCE_MS.
+export const AUTO_SYNC_DEFAULT_TOLERANCE_MS = 300;
 const MIN_SCALE = 0.94;
 const MAX_SCALE = 1.06;
 const SCALE_DEDUP = 0.00035;

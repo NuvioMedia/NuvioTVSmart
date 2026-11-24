@@ -2995,7 +2995,6 @@
     <string name="autosync_label_synced">Automaticky synchronizované</string>
     <string name="layout_always_show_landscape_clearlogo">Vždy pozadie s logom pre plagáty na šírku</string>
     <string name="layout_always_show_landscape_clearlogo_sub">Ignorovať plagát na šírku z doplnku a namiesto neho použiť pozadie s prekrytím priesvitného loga.</string>
-    <string name="autosync_toast_no_fit">Synchronizácia zlyhala: tieto titulky sa nezhodujú s touto verziou videa.</string>
     <string name="common.cantonese">Kantónčina</string>
     <string name="layout_trailer_play_in_background">Prehrať na pozadí</string>
     <string name="layout_trailer_play_in_background_sub">Prehrať Trailer namiesto pozadia, zatiaľ čo stránka zostáva viditeľná.</string>
