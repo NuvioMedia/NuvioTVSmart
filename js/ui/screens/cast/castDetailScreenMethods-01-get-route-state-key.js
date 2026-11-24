@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./castDetailScreen.js";
+import { isTalkShowGuestAppearance } from "../../../core/tmdb/talkShowCredits.js";
 
 export function createCastDetailScreenMethods01() {
   const {
@@ -198,6 +199,7 @@ export function createCastDetailScreenMethods01() {
         };
         const credits = Array.isArray(person?.combined_credits?.cast) ? person.combined_credits.cast : [];
         this.credits = credits
+          .filter((item) => !isTalkShowGuestAppearance(item))
           .map((item) => ({
             id: item?.id ? String(item.id) : "",
             // TMDB credits expose a numeric TMDB id. Keep the same canonical
