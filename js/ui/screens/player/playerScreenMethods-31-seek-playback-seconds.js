@@ -72,6 +72,14 @@ export function createPlayerScreenMethods31() {
       if (!restore) {
         return;
       }
+      // A torrent can only answer for the pieces it already has: asking the
+      // player to jump to the saved position before the first frame leaves it
+      // waiting in READY until the swarm catches up (minutes on a cold start),
+      // so the picture never starts. Play the source first and jump once it is
+      // running, as Android TV does.
+      if (this.currentEngineFsStream && !this.hasPresentedPlaybackFrame) {
+        return;
+      }
 
       const durationSeconds = this.getPlaybackDurationSeconds();
       let requestedSeconds = Number(restore.timeSeconds || 0);
