@@ -935,6 +935,9 @@
     <string name="settings_stream_badges_section">Stile Fusion</string>
     <string name="settings_stream_badges_description">Mostra chip qualità, HDR, codec, audio e dimensione nei risultati delle sorgenti.</string>
     <string name="stream_finding_source">Recupero Sorgente Video</string>
+    <string name="player_finding_next_stream">Ricerca del prossimo stream…</string>
+    <string name="player_trying_next_stream">Provo il prossimo stream (tentativo %1$d)…</string>
+    <string name="player_stream_fallback_exhausted">Nessuno stream funzionante. Scegli un\'altra sorgente o riprova.</string>
     <string name="stream_type_torrent">Torrent</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="p2p_consent_title">Streaming P2P</string>

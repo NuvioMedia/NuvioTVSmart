@@ -492,8 +492,10 @@ export function createPlayerScreenMethods35() {
       };
       this.sourceFallbackInFlight = true;
       this.loadingVisible = true;
+      this.loadingTorrentStatus = t("player_finding_next_stream", {}, "Finding the next stream…");
       this.updateLoadingVisibility?.();
       this.refreshLoadingOverlayPresentation?.();
+      this.syncLoadingOverlayStatus?.();
       void (async () => {
         try {
           // Joins the source search, so results already found are reused.
@@ -528,6 +530,9 @@ export function createPlayerScreenMethods35() {
             }
             triedKeys.add(sourceFallbackKey(next));
             this.sourceFallbackAttempts += 1;
+            this.loadingTorrentStatus = t("player_trying_next_stream", [this.sourceFallbackAttempts], `Trying next stream (attempt %1$d)…`);
+            this.refreshLoadingOverlayPresentation?.();
+            this.syncLoadingOverlayStatus?.();
             let playable = { ...next };
             if (!streamDirectPlaybackUrl(playable)) {
               if (!DirectDebridResolver.canResolveStream(playable, resolveContext)) {
@@ -555,6 +560,7 @@ export function createPlayerScreenMethods35() {
             this.sourceFallbackInFlight = false;
             this.autoSelectedSourceKey = sourceFallbackKey(playable);
             triedKeys.add(`url:${url}`);
+            this.loadingTorrentStatus = "";
             await this.playStreamCandidate(playable, { preservePlaybackState: true, mountToken });
             return;
           }
@@ -562,13 +568,16 @@ export function createPlayerScreenMethods35() {
           StreamLinkCacheStore.remove(linkCacheParams);
         } catch (error) {
           console.warn("Source fallback failed", error);
+          this.loadingTorrentStatus = "";
         }
         if (!this.isActiveMountToken(mountToken)) {
           return;
         }
         this.sourceFallbackInFlight = false;
         this.sourceFallbackExhausted = true;
-        this.showStartupError(message, errorOptions);
+        this.loadingTorrentStatus = "";
+        const exhausted = t("player_stream_fallback_exhausted", {}, "No more working streams. Choose another source or retry.");
+        this.showStartupError(String(message || "").trim() ? `${exhausted}\n${message}` : exhausted, errorOptions);
       })();
       return true;
     },
