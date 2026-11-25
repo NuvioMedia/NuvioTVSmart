@@ -1418,6 +1418,9 @@
     <string name="stream_no_streams">No streams found</string>
     <string name="stream_no_streams_hint">Try installing more addons to find streams</string>
     <string name="stream_finding_source">Finding stream source</string>
+    <string name="player_finding_next_stream">Finding the next stream…</string>
+    <string name="player_trying_next_stream">Trying next stream (attempt %1$d)…</string>
+    <string name="player_stream_fallback_exhausted">No more working streams. Choose another source or retry.</string>
     <string name="debrid_resolving_stream">Resolving debrid stream</string>
     <string name="p2p_resolving_stream">Resolving P2P stream</string>
     <string name="debrid_stale_stream">This Debrid result expired. Refreshing streams.</string>

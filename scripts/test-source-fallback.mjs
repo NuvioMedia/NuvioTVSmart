@@ -464,3 +464,28 @@ test("cleanup always clears sourceStartupTimeoutTimer even when aspectToastTimer
     PlayerController.stop = originalPlayerStop;
   }
 });
+
+test("fallback reports the search status and the exhausted message", async () => {
+  const originalSettingsGet = PlayerSettingsStore.get;
+  const originalGetInstalledAddons = addonRepository.getInstalledAddons;
+  PlayerSettingsStore.get = () => ({ ...settings, streamAutoPlayFallbackMaxSources: 1 });
+  addonRepository.getInstalledAddons = async () => [{ displayName: "Addon" }];
+  const screen = createTestPlayerScreen({
+    streamCandidates: [stream({ name: "Source 1", url: "https://example.com/only.mkv" })],
+    autoPlayNav: true
+  });
+
+  try {
+    assert.equal(screen.tryFallbackToNextSourceAfterError("boom"), true);
+    assert.equal(screen.loadingTorrentStatus, "Finding the next stream…");
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.equal(screen.sourceFallbackExhausted, true);
+    assert.equal(screen.loadingTorrentStatus, "");
+    assert.match(screen.startupErrors.at(-1), /No more working streams/);
+  } finally {
+    PlayerSettingsStore.get = originalSettingsGet;
+    addonRepository.getInstalledAddons = originalGetInstalledAddons;
+  }
+});
