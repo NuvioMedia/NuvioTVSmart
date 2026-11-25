@@ -21,7 +21,29 @@ export function createTmdbMetadataServiceMethods02() {
     resolveRecommendationReleaseInfo
   } = internals;
 
+  const seasonPosters = new Map();
+  const SEASON_POSTERS_CACHE_LIMIT = 400;
+
+  const rememberSeasonPoster = (tmdbId, season, path) => {
+    const url = toImageUrl(path, "entityPoster");
+    if (!url) {
+      return;
+    }
+    seasonPosters.set(`${tmdbId}:${season}`, url);
+    while (seasonPosters.size > SEASON_POSTERS_CACHE_LIMIT) {
+      seasonPosters.delete(seasonPosters.keys().next().value);
+    }
+  };
+
   return {
+    seasonPoster(tmdbId, season) {
+      const id = String(tmdbId || "").trim();
+      const number = Number(season);
+      if (!id || !Number.isInteger(number) || number < 0) {
+        return "";
+      }
+      return seasonPosters.get(`${id}:${number}`) || "";
+    },
     async fetchEpisodeEnrichment({ tmdbId, seasonNumbers = [], language = null } = {}) {
       const settings = TmdbSettingsStore.get();
       const apiKey = String(TMDB_API_KEY || "").trim();
@@ -47,6 +69,9 @@ export function createTmdbMetadataServiceMethods02() {
           const data = await fetchTmdbJson(url);
           if (!data) {
             return [];
+          }
+          if (settings.useSeasonPosters) {
+            rememberSeasonPoster(tmdbId, seasonNumber, data?.poster_path || "");
           }
           return (Array.isArray(data?.episodes) ? data.episodes : [])
             .map((episode) => ({

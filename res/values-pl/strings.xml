@@ -3007,6 +3007,10 @@
     <string name="mdblist_library_lists_description">Wybierz, które listy MDBList mają się pojawiać w Bibliotece i w Zarządzaj listami. Lista \"Do obejrzenia\" jest zawsze widoczna.</string>
     <string name="mdblist_library_lists_empty">Nie znaleziono jeszcze list na Twoim koncie MDBList. Zsynchronizuj, aby je załadować.</string>
     <string name="random_episode_title">Losowanie</string>
+    <string name="layout_season_posters">Plakaty sezonów</string>
+    <string name="layout_season_posters_sub">Pokazuj sezony jako plakaty zamiast zakładek tekstowych, jeśli są dostępne.</string>
+    <string name="tmdb_season_posters_title">Plakaty sezonów</string>
+    <string name="tmdb_season_posters_subtitle">Plakaty sezonów z TMDB w zakładkach sezonów na stronie szczegółów</string>
     <string name="layout_random_episode_sub">Losuj odcinki z dowolnego serialu. Wyłączenie wstrzymuje losowanie.</string>
     <string name="random_episode_unwatched">Nieobejrzane odcinki</string>
     <string name="random_episode_include_watched">Wszystkie odcinki</string>

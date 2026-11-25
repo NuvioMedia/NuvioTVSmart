@@ -34,6 +34,7 @@ export function createMetaDetailsScreenMethods06() {
         if (!tmdbId) {
           return meta;
         }
+        this.detailTmdbId = tmdbId;
         const isSeries = isSeriesDetailMeta(meta, meta?.videos || this.episodes);
         const [enrichment, episodeMap] = await Promise.all([
           TmdbMetadataService.fetchEnrichment({

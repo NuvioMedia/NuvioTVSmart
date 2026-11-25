@@ -141,6 +141,7 @@ export const layout_settings = {
       prefer_external_meta_addon_detail: layout.preferExternalMetaAddonDetail !== false,
       show_full_release_date: layout.showFullReleaseDate !== false,
       blur_unwatched_episodes: Boolean(layout.blurUnwatchedEpisodes),
+      detail_season_posters_enabled: layout.detailSeasonPostersEnabled === true,
       random_episode_enabled: Boolean(layout.randomEpisodeEnabled),
       hide_unreleased_content: Boolean(layout.hideUnreleasedContent),
       use_episode_thumbnails_in_cw: layout.useEpisodeThumbnailsInCw !== false,
@@ -181,6 +182,7 @@ export const layout_settings = {
       "focused_poster_trailer_continue_in_details",
       "detail_page_trailer_button_enabled",
       "blur_unwatched_episodes",
+      "detail_season_posters_enabled",
       "random_episode_enabled",
       "hide_unreleased_content",
       "use_episode_thumbnails_in_cw",
@@ -310,6 +312,9 @@ export const layout_settings = {
     }
     if (booleanOrNull(raw.focused_poster_trailer_continue_in_details) != null) {
       partial.focusedPosterTrailerContinueInDetails = Boolean(raw.focused_poster_trailer_continue_in_details);
+    }
+    if (booleanOrNull(raw.detail_season_posters_enabled) != null) {
+      partial.detailSeasonPostersEnabled = Boolean(raw.detail_season_posters_enabled);
     }
     if (stringOrNull(raw.focused_poster_backdrop_trailer_playback_target)) {
       partial.focusedPosterBackdropTrailerPlaybackTarget = normalizeTrailerTargetForWeb(

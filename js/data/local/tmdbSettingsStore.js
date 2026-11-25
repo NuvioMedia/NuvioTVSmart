@@ -14,6 +14,7 @@ const DEFAULTS = {
   useProductions: true,
   useNetworks: true,
   useEpisodes: true,
+  useSeasonPosters: false,
   useTrailers: true,
   useMoreLikeThis: true,
   useCollections: true
@@ -47,6 +48,7 @@ function normalizeTmdbSettings(value = {}) {
     useProductions: source.useProductions !== false,
     useNetworks: source.useNetworks !== false,
     useEpisodes: source.useEpisodes !== false,
+    useSeasonPosters: source.useSeasonPosters === true,
     useTrailers: source.useTrailers !== false,
     useMoreLikeThis: source.useMoreLikeThis !== false,
     useCollections: source.useCollections !== false

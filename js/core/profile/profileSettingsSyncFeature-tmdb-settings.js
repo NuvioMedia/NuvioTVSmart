@@ -107,6 +107,7 @@ export const tmdb_settings = {
       tmdb_use_productions: settings.useProductions !== false,
       tmdb_use_networks: settings.useNetworks !== false,
       tmdb_use_episodes: settings.useEpisodes !== false,
+      tmdb_use_season_posters: settings.useSeasonPosters === true,
       tmdb_use_trailers: settings.useTrailers !== false,
       tmdb_use_more_like_this: settings.useMoreLikeThis !== false,
       tmdb_use_collections: settings.useCollections !== false
@@ -127,6 +128,7 @@ export const tmdb_settings = {
       "tmdb_use_productions",
       "tmdb_use_networks",
       "tmdb_use_episodes",
+      "tmdb_use_season_posters",
       "tmdb_use_trailers",
       "tmdb_use_more_like_this",
       "tmdb_use_collections"
@@ -175,6 +177,9 @@ export const tmdb_settings = {
     }
     if (booleanOrNull(raw.tmdb_use_episodes) != null) {
       partial.useEpisodes = Boolean(raw.tmdb_use_episodes);
+    }
+    if (booleanOrNull(raw.tmdb_use_season_posters) != null) {
+      partial.useSeasonPosters = Boolean(raw.tmdb_use_season_posters);
     }
     if (booleanOrNull(raw.tmdb_use_trailers) != null) {
       partial.useTrailers = Boolean(raw.tmdb_use_trailers);

@@ -3244,6 +3244,10 @@
     <string name="mdblist_library_lists_description">Scegli quali liste MDBList mostrare nella Libreria e in Gestisci liste. La watchlist viene sempre visualizzata.</string>
     <string name="mdblist_library_lists_empty">Nessuna lista trovata nel tuo account MDBList. Sincronizza per caricarle.</string>
     <string name="random_episode_title">Riproduzione casuale</string>
+    <string name="layout_season_posters">Poster delle stagioni</string>
+    <string name="layout_season_posters_sub">Mostra le stagioni come poster invece che come schede di testo, quando disponibili.</string>
+    <string name="tmdb_season_posters_title">Poster delle stagioni</string>
+    <string name="tmdb_season_posters_subtitle">Poster delle stagioni da TMDB per le schede stagione nella pagina dei dettagli</string>
     <string name="layout_random_episode_sub">Riproduci episodi casuali da qualsiasi serie. Disattivando questa opzione, la riproduzione casuale viene sospesa.</string>
     <string name="random_episode_unwatched">Episodi non visti</string>
     <string name="random_episode_include_watched">Tutti gli episodi</string>
