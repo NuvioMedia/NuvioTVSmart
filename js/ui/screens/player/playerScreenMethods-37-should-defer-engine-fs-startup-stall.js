@@ -2,10 +2,6 @@
 import * as internals from "./playerScreenContext.js";
 
 const TIZEN_AVPLAY_DIRECT_STARTUP_STALL_TIMEOUT_MS = 20000;
-// A live HLS link that AVPlay has not opened by now is stuck on its URL (the
-// add-on live links observed in #1614); the local proxy retry starts it, so the
-// direct attempt must not spend the full VOD budget before that retry.
-const TIZEN_LIVE_HLS_DIRECT_STARTUP_STALL_TIMEOUT_MS = 8000;
 // Less than this between two stall checks (12 s apart) while the swarm is paused
 // is trickle traffic, not a reader consuming data.
 const STALLED_READER_MIN_DOWNLOAD_BYTES = 1024 * 1024;
@@ -150,10 +146,7 @@ export function createPlayerScreenMethods37() {
         if (this.canRetryTizenAvPlayThroughLocalProxy?.()) {
           // A healthy direct AVPlay start prepares in a few seconds; a stuck
           // one falls back to the local proxy instead of waiting a minute.
-          const liveHls =
-            PlayerController.isLivePlaybackItemType?.() &&
-            PlayerController.isLikelyHlsMimeType?.(PlayerController.currentPlaybackMediaSourceType);
-          return liveHls ? TIZEN_LIVE_HLS_DIRECT_STARTUP_STALL_TIMEOUT_MS : TIZEN_AVPLAY_DIRECT_STARTUP_STALL_TIMEOUT_MS;
+          return TIZEN_AVPLAY_DIRECT_STARTUP_STALL_TIMEOUT_MS;
         }
         if (Environment.isTizen() || Environment.isWebOS()) {
           return playbackEngine.endsWith("avplay") ? 60000 : 45000;
