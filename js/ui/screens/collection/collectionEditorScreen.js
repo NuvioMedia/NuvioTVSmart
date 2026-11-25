@@ -3,6 +3,14 @@ import { ScreenUtils } from "../../navigation/screen.js";
 import { CollectionsStore, CollectionPosterShape } from "../../../data/local/collectionsStore.js";
 import { addonRepository } from "../../../data/repository/addonRepository.js";
 import { NuvioDialog } from "../../components/nuvioDialog.js";
+import {
+  beginReorder,
+  cancelReorder,
+  confirmReorder,
+  createReorderSession,
+  isReordering,
+  moveReorderBy
+} from "../../components/reorderSession.js";
 import { I18n } from "../../../i18n/index.js";
 import {
   COLLECTION_TILE_SHAPES,
@@ -484,6 +492,19 @@ function actionRow(key, label, action, extra = "", attrs = "") {
   `;
 }
 
+function stableSnapshot(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableSnapshot).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableSnapshot(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 export const CollectionEditorScreen = {
   async mount(params = {}) {
     this.params = params || {};
@@ -511,8 +532,12 @@ export const CollectionEditorScreen = {
       ? JSON.parse(JSON.stringify(existing))
       : createEmptyCollectionDraft(CollectionsStore.generateId());
     this.draft = this.collection;
+    this.initialDraftSignature = stableSnapshot(this.draft);
+    this.initialFolderSignature = "";
     this.editingFolderIndex = -1;
     this.editingFolder = null;
+    this.reorderSession = null;
+    this.reorderTarget = "";
     this.focusKey = "title";
     this.render();
     void this.refreshCatalogEntries();
@@ -541,6 +566,10 @@ export const CollectionEditorScreen = {
   renderMainEditor() {
     const draft = this.draft;
     const canSave = canSaveCollectionDraft(draft);
+    const folderReorder = {
+      movingId: this.reorderTarget === "folder" ? this.reorderSession?.movingKey || "" : "",
+      locked: Boolean(this.reorderTarget === "folder" && this.reorderSession?.movingKey)
+    };
     const folders = (draft.folders || [])
       .map(
         (folder, index) => `
@@ -555,23 +584,29 @@ export const CollectionEditorScreen = {
               )}</p>
             </div>
             <div class="collections-source-actions">
-              <button type="button" class="collections-action collections-focusable"
-                      data-focus-key="folder:${escapeHtml(folder.id)}:up" data-action="folderUp" data-index="${index}">
-                <span class="material-icons" aria-hidden="true">arrow_upward</span>
-              </button>
-              <button type="button" class="collections-action collections-focusable"
-                      data-focus-key="folder:${escapeHtml(folder.id)}:down" data-action="folderDown" data-index="${index}">
-                <span class="material-icons" aria-hidden="true">arrow_downward</span>
-              </button>
-              <button type="button" class="collections-action collections-focusable"
+              ${
+                folderReorder.movingId === folder.id
+                  ? `<button type="button" class="collections-action collections-focusable"
+                      data-focus-key="folder:${escapeHtml(folder.id)}:reorder" data-action="folderDone" data-index="${index}">
+                      <span class="material-icons" aria-hidden="true">check</span>
+                      <span class="reorder-done-label">${escapeHtml(t("collections_done", "Done"))}</span>
+                    </button>`
+                  : folderReorder.locked
+                    ? ""
+                    : `<button type="button" class="collections-action collections-focusable"
+                      data-focus-key="folder:${escapeHtml(folder.id)}:reorder" data-action="folderReorder" data-index="${index}">
+                      <span class="material-icons" aria-hidden="true">reorder</span>
+                    </button>
+                    <button type="button" class="collections-action collections-focusable"
                       data-focus-key="folder:${escapeHtml(folder.id)}" data-action="editFolder" data-index="${index}">
-                <span class="material-icons" aria-hidden="true">edit</span>
-              </button>
-              <button type="button" class="collections-action collections-focusable collections-action-danger"
+                      <span class="material-icons" aria-hidden="true">edit</span>
+                    </button>
+                    <button type="button" class="collections-action collections-focusable collections-action-danger"
                       data-focus-key="folder:${escapeHtml(folder.id)}:delete"
                       data-action="deleteFolderRow" data-index="${index}">
-                <span class="material-icons" aria-hidden="true">delete</span>
-              </button>
+                      <span class="material-icons" aria-hidden="true">delete</span>
+                    </button>`
+              }
             </div>
           </article>
         `
@@ -664,6 +699,9 @@ export const CollectionEditorScreen = {
       return this.renderMainEditor();
     }
     const coverMode = coverModeOf(folder);
+    const sourceReorderLocked =
+      this.reorderTarget === "source" && Boolean(this.reorderSession?.movingKey);
+    const sourceMovingKey = sourceReorderLocked ? String(this.reorderSession.movingKey) : "";
     const sources = (folder.sources || [])
       .map((source, index) => {
         const isAddon = String(source.provider || "addon") === "addon";
@@ -690,25 +728,31 @@ export const CollectionEditorScreen = {
             </div>
             <div class="collections-source-actions">
               ${
-                canEdit
+                this.reorderSourceKeys?.get(source) === sourceMovingKey
                   ? `<button type="button" class="collections-action collections-focusable"
-                      data-focus-key="source:${index}:edit" data-action="sourceEdit" data-index="${index}">
-                      <span class="material-icons" aria-hidden="true">edit</span>
+                      data-focus-key="source:${index}:reorder" data-action="sourceDone" data-index="${index}">
+                      <span class="material-icons" aria-hidden="true">check</span>
+                      <span class="reorder-done-label">${escapeHtml(t("collections_done", "Done"))}</span>
                     </button>`
-                  : ""
+                  : sourceReorderLocked
+                    ? ""
+                    : `${
+                        canEdit
+                          ? `<button type="button" class="collections-action collections-focusable"
+                              data-focus-key="source:${index}:edit" data-action="sourceEdit" data-index="${index}">
+                              <span class="material-icons" aria-hidden="true">edit</span>
+                            </button>`
+                          : ""
+                      }
+                      <button type="button" class="collections-action collections-focusable"
+                              data-focus-key="source:${index}:reorder" data-action="sourceReorder" data-index="${index}">
+                        <span class="material-icons" aria-hidden="true">reorder</span>
+                      </button>
+                      <button type="button" class="collections-action collections-focusable collections-action-danger"
+                              data-focus-key="source:${index}:remove" data-action="sourceRemove" data-index="${index}">
+                        <span class="material-icons" aria-hidden="true">close</span>
+                      </button>`
               }
-              <button type="button" class="collections-action collections-focusable"
-                      data-focus-key="source:${index}:up" data-action="sourceUp" data-index="${index}">
-                <span class="material-icons" aria-hidden="true">arrow_upward</span>
-              </button>
-              <button type="button" class="collections-action collections-focusable"
-                      data-focus-key="source:${index}:down" data-action="sourceDown" data-index="${index}">
-                <span class="material-icons" aria-hidden="true">arrow_downward</span>
-              </button>
-              <button type="button" class="collections-action collections-focusable collections-action-danger"
-                      data-focus-key="source:${index}:remove" data-action="sourceRemove" data-index="${index}">
-                <span class="material-icons" aria-hidden="true">close</span>
-              </button>
             </div>
           </article>
         `;
@@ -1897,22 +1941,138 @@ export const CollectionEditorScreen = {
       this.editingFolderIndex = -1;
       this.editingFolder = createEmptyFolderDraft(CollectionsStore.generateId());
     }
+    this.initialFolderSignature = stableSnapshot(this.editingFolder);
     this.view = "folder";
     this.focusKey = "folderTitle";
     this.render();
   },
 
-  moveFolder(index, direction) {
-    const folders = [...(this.draft.folders || [])];
-    const target = index + direction;
-    if (index < 0 || index >= folders.length || target < 0 || target >= folders.length) {
+  startFolderReorder(index) {
+    const folders = this.draft.folders || [];
+    const folder = folders[index];
+    if (!folder) {
       return;
     }
-    const [moved] = folders.splice(index, 1);
-    folders.splice(target, 0, moved);
-    this.draft = { ...this.draft, folders };
-    this.focusKey = `folder:${folders[target].id}`;
+    this.reorderOriginalFolders = JSON.parse(JSON.stringify(folders));
+    this.reorderTarget = "folder";
+    this.reorderSession = createReorderSession({ keys: folders.map((entry) => entry.id) });
+    if (!beginReorder(this.reorderSession, folder.id)) {
+      this.reorderSession = null;
+      return;
+    }
+    this.focusKey = `folder:${folder.id}:reorder`;
     this.render();
+  },
+  applyFolderReorderOrder() {
+    const byId = new Map((this.draft.folders || []).map((folder) => [folder.id, folder]));
+    this.draft = {
+      ...this.draft,
+      folders: (this.reorderSession?.keys || []).map((key) => byId.get(key)).filter(Boolean)
+    };
+  },
+  moveFolderReorder(delta) {
+    if (!moveReorderBy(this.reorderSession, delta)) {
+      return;
+    }
+    this.applyFolderReorderOrder();
+    this.focusKey = `folder:${this.reorderSession.movingKey}:reorder`;
+    this.render();
+  },
+  finishFolderReorder() {
+    if (!this.reorderSession) {
+      return;
+    }
+    const movingKey = this.reorderSession.movingKey;
+    confirmReorder(this.reorderSession);
+    this.focusKey = `folder:${movingKey || ""}:reorder`;
+    this.reorderSession = null;
+    this.reorderTarget = "";
+    this.reorderOriginalFolders = null;
+    this.render();
+  },
+  cancelFolderReorder() {
+    if (!isReordering(this.reorderSession)) {
+      return false;
+    }
+    cancelReorder(this.reorderSession);
+    if (Array.isArray(this.reorderOriginalFolders)) {
+      this.draft = {
+        ...this.draft,
+        folders: JSON.parse(JSON.stringify(this.reorderOriginalFolders))
+      };
+    }
+    this.reorderSession = null;
+    this.reorderTarget = "";
+    this.reorderOriginalFolders = null;
+    this.focusKey = "addFolder";
+    this.render();
+    return true;
+  },
+  startSourceReorder(index) {
+    const sources = this.editingFolder?.sources || [];
+    if (!sources[index]) {
+      return;
+    }
+    this.reorderOriginalSources = JSON.parse(JSON.stringify(sources));
+    this.reorderSourceKeys = new Map(sources.map((source, position) => [source, String(position)]));
+    this.reorderTarget = "source";
+    this.reorderSession = createReorderSession({
+      keys: sources.map((_source, position) => String(position))
+    });
+    if (!beginReorder(this.reorderSession, String(index))) {
+      this.reorderSession = null;
+      return;
+    }
+    this.focusKey = `source:${index}:reorder`;
+    this.render();
+  },
+  applySourceReorderOrder() {
+    const sources = this.editingFolder?.sources || [];
+    const byKey = new Map(sources.map((source, position) => [String(position), source]));
+    this.editingFolder = {
+      ...this.editingFolder,
+      sources: (this.reorderSession?.keys || []).map((key) => byKey.get(key)).filter(Boolean)
+    };
+  },
+  moveSourceReorder(delta) {
+    if (!moveReorderBy(this.reorderSession, delta)) {
+      return;
+    }
+    this.applySourceReorderOrder();
+    this.focusKey = `source:${this.reorderSession.movingKey}:reorder`;
+    this.render();
+  },
+  finishSourceReorder() {
+    if (!this.reorderSession) {
+      return;
+    }
+    const movingKey = this.reorderSession.movingKey;
+    confirmReorder(this.reorderSession);
+    this.focusKey = `source:${movingKey || ""}:reorder`;
+    this.reorderSession = null;
+    this.reorderTarget = "";
+    this.reorderOriginalSources = null;
+    this.reorderSourceKeys = null;
+    this.render();
+  },
+  cancelSourceReorder() {
+    if (!isReordering(this.reorderSession)) {
+      return false;
+    }
+    cancelReorder(this.reorderSession);
+    if (Array.isArray(this.reorderOriginalSources)) {
+      this.editingFolder = {
+        ...this.editingFolder,
+        sources: JSON.parse(JSON.stringify(this.reorderOriginalSources))
+      };
+    }
+    this.reorderSession = null;
+    this.reorderTarget = "";
+    this.reorderOriginalSources = null;
+    this.reorderSourceKeys = null;
+    this.focusKey = "addSource";
+    this.render();
+    return true;
   },
 
   saveFolder() {
@@ -2040,8 +2200,12 @@ export const CollectionEditorScreen = {
       this.openFolderEditor(index);
       return;
     }
-    if (action === "folderUp" || action === "folderDown") {
-      this.moveFolder(index, action === "folderUp" ? -1 : 1);
+    if (action === "folderReorder") {
+      this.startFolderReorder(index);
+      return;
+    }
+    if (action === "folderDone") {
+      this.finishFolderReorder();
       return;
     }
     if (action === "deleteFolderRow") {
@@ -2055,15 +2219,11 @@ export const CollectionEditorScreen = {
       return;
     }
     if (action === "back") {
-      await Router.back();
+      await this.requestCollectionExit();
       return;
     }
     if (action === "folderBack") {
-      this.view = "main";
-      this.editingFolder = null;
-      this.editingFolderIndex = -1;
-      this.focusKey = "addFolder";
-      this.render();
+      this.requestFolderExit();
       return;
     }
     if (action === "saveFolder") {
@@ -2154,16 +2314,16 @@ export const CollectionEditorScreen = {
       }
       return;
     }
-    if (action === "sourceUp" || action === "sourceDown" || action === "sourceRemove") {
-      if (action === "sourceRemove") {
-        this.editingFolder = removeSourceFromFolder(this.editingFolder, index);
-      } else {
-        this.editingFolder = moveSourceInFolder(
-          this.editingFolder,
-          index,
-          action === "sourceUp" ? -1 : 1
-        );
-      }
+    if (action === "sourceReorder") {
+      this.startSourceReorder(index);
+      return;
+    }
+    if (action === "sourceDone") {
+      this.finishSourceReorder();
+      return;
+    }
+    if (action === "sourceRemove") {
+      this.editingFolder = removeSourceFromFolder(this.editingFolder, index);
       this.render();
       return;
     }
@@ -2342,6 +2502,7 @@ export const CollectionEditorScreen = {
       next.push(saved);
     }
     CollectionsStore.replace(next);
+    this.initialDraftSignature = stableSnapshot(this.draft);
     void Router.back();
   },
 
@@ -2399,9 +2560,135 @@ export const CollectionEditorScreen = {
     dialog?.destroy?.();
   },
 
+  hasUnsavedCollectionChanges() {
+    return stableSnapshot(this.draft) !== this.initialDraftSignature;
+  },
+  hasUnsavedFolderChanges() {
+    return Boolean(
+      this.view === "folder" &&
+      this.editingFolder &&
+      stableSnapshot(this.editingFolder) !== this.initialFolderSignature
+    );
+  },
+  openUnsavedDialog(kind) {
+    if (this.unsavedDialog) {
+      return;
+    }
+    const isFolder = kind === "folder";
+    const draft = isFolder ? this.editingFolder : this.draft;
+    const canSave = isFolder ? Boolean(draft?.sources?.length) : canSaveCollectionDraft(this.draft);
+    const missingTitle = !String(draft?.title || "").trim();
+    const missingFolder = !isFolder && !(this.draft?.folders || []).length;
+    let title = t(
+      isFolder ? "collections_editor_folder_unsaved_title" : "collections_editor_unsaved_title",
+      isFolder ? "Save folder changes?" : "Save changes?"
+    );
+    let subtitle = t(
+      isFolder
+        ? "collections_editor_folder_unsaved_subtitle"
+        : "collections_editor_unsaved_subtitle",
+      isFolder
+        ? "You have unsaved changes to this folder."
+        : "You have unsaved changes to this collection."
+    );
+    if (!canSave) {
+      title = t(
+        isFolder
+          ? "collections_editor_folder_unsaved_incomplete_title"
+          : "collections_editor_unsaved_incomplete_title",
+        isFolder ? "Unsaved folder changes" : "Unsaved changes"
+      );
+      subtitle = isFolder
+        ? t(
+            "collections_editor_folder_unsaved_missing_source",
+            "Add at least one source to save this folder."
+          )
+        : missingTitle && missingFolder
+          ? t(
+              "collections_editor_unsaved_missing_title_and_folder",
+              "Enter a title and add at least one folder to save this collection."
+            )
+          : missingTitle
+            ? t(
+                "collections_editor_unsaved_missing_title",
+                "Enter a collection title to save your changes."
+              )
+            : t(
+                "collections_editor_unsaved_missing_folder",
+                "Add at least one folder to save this collection."
+              );
+    }
+    const discard = () => {
+      this.closeUnsavedDialog();
+      if (isFolder) {
+        this.leaveFolderEditor();
+      } else {
+        void Router.back();
+      }
+    };
+    const buttons = canSave
+      ? [
+          {
+            label: t("collections_editor_save", "Save"),
+            key: "save",
+            onAction: () => {
+              this.closeUnsavedDialog();
+              if (isFolder) {
+                this.saveFolder();
+              } else {
+                this.saveCollection();
+              }
+            }
+          },
+          { label: t("collections_cancel", "Cancel"), key: "discard", onAction: discard }
+        ]
+      : [{ label: t("collections_cancel", "Cancel"), key: "discard", onAction: discard }];
+    this.unsavedDialog = new NuvioDialog({
+      title,
+      subtitle,
+      widthVw: 46,
+      buttons,
+      onDismiss: () => this.closeUnsavedDialog()
+    }).mount(document.body);
+  },
+  closeUnsavedDialog() {
+    const dialog = this.unsavedDialog;
+    this.unsavedDialog = null;
+    dialog?.destroy?.();
+  },
+  leaveFolderEditor() {
+    this.view = "main";
+    this.editingFolder = null;
+    this.editingFolderIndex = -1;
+    this.focusKey = "addFolder";
+    this.render();
+  },
+  async requestCollectionExit() {
+    if (this.hasUnsavedCollectionChanges()) {
+      this.openUnsavedDialog("collection");
+      return;
+    }
+    await Router.back();
+  },
+  requestFolderExit() {
+    if (this.hasUnsavedFolderChanges()) {
+      this.openUnsavedDialog("folder");
+      return;
+    }
+    this.leaveFolderEditor();
+  },
   consumeBackRequest() {
+    if (this.unsavedDialog) {
+      this.closeUnsavedDialog();
+      return true;
+    }
     if (this.deleteDialog) {
       this.closeDeleteDialog();
+      return true;
+    }
+    if (isReordering(this.reorderSession)) {
+      if (this.reorderTarget === "source") this.cancelSourceReorder();
+      else this.cancelFolderReorder();
       return true;
     }
     if (this.textDialog) {
@@ -2426,11 +2713,15 @@ export const CollectionEditorScreen = {
       return true;
     }
     if (this.view === "folder") {
-      this.view = "main";
-      this.editingFolder = null;
-      this.editingFolderIndex = -1;
-      this.focusKey = "addFolder";
-      this.render();
+      if (this.hasUnsavedFolderChanges()) {
+        this.openUnsavedDialog("folder");
+        return true;
+      }
+      this.leaveFolderEditor();
+      return true;
+    }
+    if (this.hasUnsavedCollectionChanges()) {
+      this.openUnsavedDialog("collection");
       return true;
     }
     return false;
@@ -2438,7 +2729,27 @@ export const CollectionEditorScreen = {
 
   async onKeyDown(event) {
     const code = Number(event?.keyCode || 0);
-    if (this.deleteDialog) {
+    if (this.deleteDialog || this.unsavedDialog) {
+      return;
+    }
+    if (isReordering(this.reorderSession)) {
+      if (code === 38 || code === 40) {
+        event?.preventDefault?.();
+        if (this.reorderTarget === "source") this.moveSourceReorder(code === 38 ? -1 : 1);
+        else this.moveFolderReorder(code === 38 ? -1 : 1);
+        return;
+      }
+      if (code === 37 || code === 39) {
+        event?.preventDefault?.();
+        return;
+      }
+      if (SELECT_KEY_CODES.has(code)) {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        if (this.reorderTarget === "source") this.finishSourceReorder();
+        else this.finishFolderReorder();
+        return;
+      }
       return;
     }
     if (this.textDialog) {
@@ -2466,6 +2777,12 @@ export const CollectionEditorScreen = {
   },
 
   cleanup() {
+    this.closeUnsavedDialog();
+    this.reorderSession = null;
+    this.reorderTarget = "";
+    this.reorderOriginalFolders = null;
+    this.reorderOriginalSources = null;
+    this.reorderSourceKeys = null;
     this.pickerRequestToken = Number(this.pickerRequestToken || 0) + 1;
     this.tmdbRequestToken = Number(this.tmdbRequestToken || 0) + 1;
     this.traktRequestToken = Number(this.traktRequestToken || 0) + 1;

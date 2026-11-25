@@ -1,6 +1,14 @@
 import { MdbListAccount } from "../../../data/repository/mdbListAccount.js";
 import { registerMdbListAccountActions } from "./settingsMdbListAccount.js";
 import { MDBLIST_PROVIDER_SETTINGS } from "../../../data/local/mdbListSettingsStore.js";
+import {
+  beginReorder,
+  cancelReorder,
+  confirmReorder,
+  createReorderSession,
+  isReordering,
+  moveReorderBy
+} from "../../components/reorderSession.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./settingsScreenContext.js";
 
@@ -62,21 +70,32 @@ export function renderMdblistIntegrationDetail(model) {
 
   this.actionMap.set("integration:mdblist:hero", () => toggleMdbListSetting("showOnHero"));
   const ratingOrder = model.mdbList.ratingOrder;
-  const moveRating = (provider, delta) => {
-    const order = [...MdbListSettingsStore.get().ratingOrder];
-    const from = order.indexOf(provider);
-    const to = from + delta;
-    if (from < 0 || to < 0 || to >= order.length || !MdbListSettingsStore.get().enabled) return;
-    [order[from], order[to]] = [order[to], order[from]];
-    MdbListSettingsStore.set({ ratingOrder: order });
-    if ((delta < 0 && to === 0) || (delta > 0 && to === order.length - 1)) {
-      this.contentFocusKey = `integration:mdblist:${provider}`;
-    }
-  };
-  const arrow = (provider, direction, disabled) => {
-    const key = `integration:mdblist:${direction}:${provider}`;
-    this.actionMap.set(key, () => moveRating(provider, direction === "up" ? -1 : 1));
-    return `<button class="settings-action-row settings-mdb-order-arrow${disabled ? " is-disabled" : " settings-content-focusable focusable"}" data-zone="content" ${this.registerAction(key, this.actionMap.get(key))} ${disabled ? 'disabled aria-disabled="true"' : ""} aria-label="${internals.escapeAttribute(t(direction === "up" ? "cd_move_up" : "cd_move_down"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${direction === "up" ? "M7 14l5-5 5 5z" : "M7 10l5 5 5-5z"}" fill="currentColor"/></svg></button>`;
+  const movingProvider = this.mdbReorderSession?.movingKey || "";
+  ratingOrder.forEach((provider) => {
+    const startKey = `integration:mdblist:reorder:${provider}`;
+    this.actionMap.set(startKey, () => {
+      if (!MdbListSettingsStore.get().enabled) return;
+      this.mdbReorderSession = createReorderSession({ keys: [...MdbListSettingsStore.get().ratingOrder] });
+      if (!beginReorder(this.mdbReorderSession, provider)) {
+        this.mdbReorderSession = null;
+        return;
+      }
+      this.contentFocusKey = `integration:mdblist:reorder:${provider}`;
+      void this.render();
+    });
+    const doneKey = `integration:mdblist:done:${provider}`;
+    this.actionMap.set(doneKey, () => {
+      if (!this.mdbReorderSession) return;
+      confirmReorder(this.mdbReorderSession);
+      this.mdbReorderSession = null;
+      this.contentFocusKey = `integration:mdblist:reorder:${provider}`;
+      void this.render();
+    });
+  });
+  const reorderButton = (provider, disabled) => {
+    const isMoving = movingProvider === provider;
+    const key = isMoving ? `integration:mdblist:done:${provider}` : `integration:mdblist:reorder:${provider}`;
+    return `<button class="settings-action-row settings-mdb-order-reorder${disabled && !isMoving ? " is-disabled" : " settings-content-focusable focusable"}${isMoving ? " is-moving" : ""}" data-zone="content" ${this.registerAction(key, this.actionMap.get(key))} ${disabled && !isMoving ? 'disabled aria-disabled="true"' : ""} aria-label="${internals.escapeAttribute(isMoving ? t("collections_done", "Done") : t("cd_reorder", "Reorder"))}"><span class="material-icons" aria-hidden="true">${isMoving ? "check" : "reorder"}</span>${isMoving ? `<span class="reorder-done-label">${internals.escapeHtml(t("collections_done", "Done"))}</span>` : ""}</button>`;
   };
 
   return `
@@ -120,9 +139,8 @@ export function renderMdblistIntegrationDetail(model) {
             ${ratingOrder
               .map(
                 (provider, index) => `<div class="settings-mdb-order-row">
-              ${this.renderToggleRow({ focusKey: `integration:mdblist:${provider}`, title: t(`settings.integration.mdblist.${provider}.title`), checked: model.mdbList[MDBLIST_PROVIDER_SETTINGS[provider]] !== false, disabled: !model.mdbList.enabled })}
-              ${arrow(provider, "up", !model.mdbList.enabled || index === 0)}
-              ${arrow(provider, "down", !model.mdbList.enabled || index === ratingOrder.length - 1)}
+              ${this.renderToggleRow({ focusKey: `integration:mdblist:${provider}`, title: t(`settings.integration.mdblist.${provider}.title`), checked: model.mdbList[MDBLIST_PROVIDER_SETTINGS[provider]] !== false, disabled: !model.mdbList.enabled || Boolean(movingProvider) })}
+              ${reorderButton(provider, !model.mdbList.enabled || movingProvider !== "" || ratingOrder.length < 2)}
             </div>`
               )
               .join("")}

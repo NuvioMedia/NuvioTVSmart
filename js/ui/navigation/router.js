@@ -20,6 +20,7 @@ import { LicensesAttributionsScreen } from "../screens/settings/licensesAttribut
 import { PluginScreen } from "../screens/plugin/pluginScreen.js";
 import { PluginsScreen } from "../screens/plugin/pluginsScreen.js";
 import { CatalogOrderScreen } from "../screens/plugin/catalogOrderScreen.js";
+import { AddonOrderScreen } from "../screens/plugin/addonOrderScreen.js";
 import { StreamScreen } from "../screens/stream/streamScreen.js";
 import { CastDetailScreen } from "../screens/cast/castDetailScreen.js";
 import { CatalogSeeAllScreen } from "../screens/catalog/catalogSeeAllScreen.js";
@@ -64,6 +65,7 @@ export {
   PluginScreen,
   PluginsScreen,
   CatalogOrderScreen,
+  AddonOrderScreen,
   StreamScreen,
   CastDetailScreen,
   CatalogSeeAllScreen,
@@ -125,6 +127,7 @@ const WEBOS_NON_RESTORABLE_ROUTES = new Set([
   "plugin",
   "plugins",
   "catalogOrder",
+  "addonOrder",
   "collections",
   "collectionEditor",
   "detail",
@@ -195,6 +198,7 @@ Object.assign(Router, {
     plugin: PluginScreen,
     plugins: PluginsScreen,
     catalogOrder: CatalogOrderScreen,
+    addonOrder: AddonOrderScreen,
     stream: StreamScreen,
     castDetail: CastDetailScreen,
     catalogSeeAll: CatalogSeeAllScreen,

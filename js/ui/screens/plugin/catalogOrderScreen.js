@@ -11,6 +11,19 @@ import { Platform } from "../../../platform/index.js";
 import { isMediaServerResumeRow } from "../home/homeUtils.js";
 import { ExperienceModeStore } from "../../../data/local/experienceModeStore.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
+import { I18n } from "../../../i18n/index.js";
+import {
+  beginReorder,
+  cancelReorder,
+  confirmReorder,
+  createReorderSession,
+  isReordering,
+  moveReorderBy
+} from "../../components/reorderSession.js";
+
+function t(key, fallback) {
+  return I18n.t(key, {}, { fallback });
+}
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -36,6 +49,7 @@ export const CatalogOrderScreen = {
     this.mountToken = (this.mountToken || 0) + 1;
     this.focusRow = Number.isFinite(this.focusRow) ? this.focusRow : 0;
     this.focusCol = Number.isFinite(this.focusCol) ? this.focusCol : 0;
+    this.reorderSession = null;
     this.renderLoading();
 
     // Android exposes the Catalog Order surface immediately and observes the
@@ -134,19 +148,61 @@ export const CatalogOrderScreen = {
     target.focus();
   },
 
-  async moveItem(key, direction) {
-    const current = this.model.items.map((item) => item.key);
-    const index = current.indexOf(key);
-    const nextIndex = index + direction;
-    if (index === -1 || nextIndex < 0 || nextIndex >= current.length) {
+  startReorder(key) {
+    const item = this.model?.items?.find((entry) => entry.key === key);
+    if (!item) {
       return;
     }
-    const reordered = [...current];
-    const moved = reordered.splice(index, 1)[0];
-    reordered.splice(nextIndex, 0, moved);
-    HomeCatalogStore.setOrder(reordered);
-    this.focusRow = nextIndex;
+    if (item.isPinnedToTop) {
+      this.showPinnedNotice();
+      return;
+    }
+    if (isReordering(this.reorderSession)) {
+      return;
+    }
+    this.reorderSession = createReorderSession({
+      keys: this.model.items.map((entry) => entry.key),
+      lockedKeys: this.model.items.filter((entry) => entry.isPinnedToTop).map((entry) => entry.key)
+    });
+    this.focusRow = this.model.items.findIndex((entry) => entry.key === key);
+    void this.render();
+  },
+  async moveReorder(delta) {
+    if (!moveReorderBy(this.reorderSession, delta)) {
+      return;
+    }
+    HomeCatalogStore.setOrder(this.reorderSession.keys);
+    this.focusRow = this.reorderSession.keys.indexOf(this.reorderSession.movingKey);
     await this.render();
+  },
+  async finishReorder() {
+    confirmReorder(this.reorderSession);
+    this.reorderSession = null;
+    await this.render();
+  },
+  async cancelReorderState() {
+    if (!isReordering(this.reorderSession)) {
+      return false;
+    }
+    cancelReorder(this.reorderSession);
+    HomeCatalogStore.setOrder(this.reorderSession.keys);
+    this.reorderSession = null;
+    await this.render();
+    return true;
+  },
+  showPinnedNotice() {
+    const notice = this.container?.querySelector(".catalog-order-pinned-notice");
+    if (!notice) {
+      return;
+    }
+    notice.classList.remove("hidden");
+    if (this.pinnedNoticeTimer) {
+      clearTimeout(this.pinnedNoticeTimer);
+    }
+    this.pinnedNoticeTimer = setTimeout(() => {
+      this.pinnedNoticeTimer = null;
+      notice.classList.add("hidden");
+    }, 3000);
   },
 
   async toggleItem(disableKey) {
@@ -161,40 +217,43 @@ export const CatalogOrderScreen = {
       return;
     }
     this.rowColumns = new Map();
+    const movingKey = this.reorderSession?.movingKey || "";
     const itemsHtml = this.model.items
       .map((item, index) => {
+        const isMoving = movingKey === item.key;
+        const reorderLocked = Boolean(movingKey) && !isMoving;
         const cols = [];
-        if (item.canMoveUp) {
+        if (!item.isPinnedToTop && !reorderLocked) {
           cols.push(0);
         }
-        if (item.canMoveDown) {
-          cols.push(1);
-        }
-        cols.push(2);
+        cols.push(1);
         this.setRowColumns(index, cols);
 
+        const reorderControl = item.isPinnedToTop
+          ? `<span class="catalog-order-action catalog-order-pinned-mark" aria-hidden="true"><span class="material-icons">lock</span></span>`
+          : `<button type="button"
+                    class="catalog-order-action catalog-order-reorder ${reorderLocked ? "is-disabled" : "catalog-order-focusable"}"
+                    ${reorderLocked ? 'tabindex="-1" aria-disabled="true"' : `data-row="${index}" data-col="0" data-action="${isMoving ? "done" : "reorder"}" data-key="${escapeHtml(item.key)}" tabindex="-1"`}>
+              <span class="material-icons" aria-hidden="true">${isMoving ? "check" : "reorder"}</span>
+              ${isMoving ? `<span class="catalog-order-done-label">Done</span>` : ""}
+            </button>`;
+
         return `
-        <article class="catalog-order-card">
+        <article class="catalog-order-card${item.isPinnedToTop ? " is-pinned" : ""}${isMoving ? " is-moving" : ""}">
           <div class="catalog-order-card-copy">
             <h2>${escapeHtml(isMediaServerResumeRow(item) ? item.catalogName : `${item.catalogName} - ${toDisplayTypeLabel(item.type)}`)}</h2>
-            <p class="catalog-order-card-subtitle">${escapeHtml(item.addonName)}</p>
+            <p class="catalog-order-card-subtitle">${escapeHtml(
+              item.isPinnedToTop
+                ? `${item.addonName} • ${t("catalog_order_pinned_to_top", "Pinned to top")}`
+                : item.addonName
+            )}</p>
             ${item.isDisabled ? '<p class="catalog-order-card-disabled">Disabled on Home</p>' : ""}
           </div>
           <div class="catalog-order-card-actions">
+            ${reorderControl}
             <button type="button"
-                    class="catalog-order-action ${item.canMoveUp ? "catalog-order-focusable" : "is-disabled"}"
-                    ${item.canMoveUp ? `data-row="${index}" data-col="0" data-action="up" data-key="${escapeHtml(item.key)}" tabindex="-1"` : 'tabindex="-1" aria-disabled="true"'}>
-              <span class="material-icons" aria-hidden="true">arrow_upward</span>
-            </button>
-            <button type="button"
-                    class="catalog-order-action ${item.canMoveDown ? "catalog-order-focusable" : "is-disabled"}"
-                    ${item.canMoveDown ? `data-row="${index}" data-col="1" data-action="down" data-key="${escapeHtml(item.key)}" tabindex="-1"` : 'tabindex="-1" aria-disabled="true"'}>
-              <span class="material-icons" aria-hidden="true">arrow_downward</span>
-            </button>
-            <button type="button"
-                    class="catalog-order-action catalog-order-focusable catalog-order-toggle${item.isDisabled ? " is-disabled-state" : ""}"
-                    data-row="${index}"
-                    data-col="2"
+                    class="catalog-order-action ${reorderLocked ? "is-disabled" : "catalog-order-focusable"} catalog-order-toggle${item.isDisabled ? " is-disabled-state" : ""}"
+                    ${reorderLocked ? 'tabindex="-1" aria-disabled="true"' : `data-row="${index}" data-col="1"`}
                     data-action="toggle"
                     data-disable-key="${escapeHtml(item.disableKey)}"
                     tabindex="-1">${item.isDisabled ? "Enable" : "Disable"}</button>
@@ -213,6 +272,10 @@ export const CatalogOrderScreen = {
             ${this.model.items.length ? itemsHtml : '<p class="catalog-order-empty">No home catalogs available yet.</p>'}
           </section>
         </main>
+        <div class="catalog-order-pinned-notice hidden" role="status">
+          <span class="material-icons" aria-hidden="true">lock</span>
+          <span>${escapeHtml(t("catalog_order_pin_to_move_toast", "Remove pin to top from collection to move"))}</span>
+        </div>
       </div>
     `;
 
@@ -236,10 +299,10 @@ export const CatalogOrderScreen = {
     }
 
     const action = String(current.dataset.action || "");
-    if (action === "up") {
-      await this.moveItem(String(current.dataset.key || ""), -1);
-    } else if (action === "down") {
-      await this.moveItem(String(current.dataset.key || ""), 1);
+    if (action === "reorder") {
+      this.startReorder(String(current.dataset.key || ""));
+    } else if (action === "done") {
+      await this.finishReorder();
     } else if (action === "toggle") {
       await this.toggleItem(String(current.dataset.disableKey || ""));
     }
@@ -263,6 +326,24 @@ export const CatalogOrderScreen = {
   },
 
   async onKeyDown(event) {
+    if (isReordering(this.reorderSession)) {
+      const reorderCode = Number(event?.keyCode || 0);
+      if (reorderCode === 38 || reorderCode === 40) {
+        event?.preventDefault?.();
+        await this.moveReorder(reorderCode === 38 ? -1 : 1);
+        return;
+      }
+      if (reorderCode === 37 || reorderCode === 39) {
+        event?.preventDefault?.();
+        return;
+      }
+      if (reorderCode === 13) {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        await this.finishReorder();
+        return;
+      }
+    }
     if (Platform.isBackEvent(event)) {
       event?.preventDefault?.();
       await Router.back();
@@ -288,8 +369,21 @@ export const CatalogOrderScreen = {
     }
   },
 
+  async consumeBackRequest() {
+    if (isReordering(this.reorderSession)) {
+      await this.cancelReorderState();
+      return true;
+    }
+    return false;
+  },
+
   cleanup() {
     this.mountToken = (this.mountToken || 0) + 1;
+    if (this.pinnedNoticeTimer) {
+      clearTimeout(this.pinnedNoticeTimer);
+      this.pinnedNoticeTimer = null;
+    }
+    this.reorderSession = null;
     ScreenUtils.hide(this.container);
   },
 
