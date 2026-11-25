@@ -25,7 +25,10 @@ function normalizedCatalogType(value) {
     .trim()
     .toLowerCase()
     .replace(/[\s_-]+/g, "");
-  if (normalized === "tv" || normalized === "show" || normalized === "shows") {
+  if (normalized === "tv") {
+    return "tv";
+  }
+  if (normalized === "show" || normalized === "shows") {
     return "series";
   }
   if (normalized === "movies") {
@@ -45,6 +48,9 @@ export function formatContentTypeLabel(type, fallback = "") {
   }
   if (normalized === "series") {
     return I18n.t("type_series", {}, { fallback: "Series" });
+  }
+  if (normalized === "tv") {
+    return "TV";
   }
   if (normalized === "channel") {
     return I18n.t("stream_info_channels", {}, { fallback: "Channels" });

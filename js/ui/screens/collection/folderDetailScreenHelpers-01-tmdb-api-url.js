@@ -140,10 +140,10 @@ export function buildPlaceholderPosterDataUrl() {
 
 export function normalizeItem(item = {}, fallbackType = "movie") {
   const source = item && typeof item === "object" ? item : {};
-  const type =
-    String(source.type || source.apiType || fallbackType).toLowerCase() === "tv"
-      ? "series"
-      : String(source.type || source.apiType || fallbackType || "movie").toLowerCase();
+  const rawType = String(source.type || source.apiType || fallbackType || "movie")
+    .trim()
+    .toLowerCase();
+  const type = rawType || "movie";
   const runtimeValue = source.runtimeMinutes ?? source.runtime ?? source.durationMinutes ?? source.duration_minutes ?? 0;
   return {
     ...source,
@@ -177,7 +177,7 @@ export function buildHeroDisplay(item = null) {
   if (!normalized?.id) {
     return null;
   }
-  const typeLabel = normalized.type === "series" ? "Series" : "Movie";
+  const typeLabel = normalized.type === "series" ? "Series" : normalized.type === "tv" ? "TV" : "Movie";
   const year = firstNonEmpty(normalized.releaseInfo);
   return {
     title: normalized.name || "Untitled",
@@ -205,12 +205,18 @@ export function buildFolderHeroSeed(folder = null) {
 }
 
 export function sourceType(source = {}) {
-  const mediaType = String(source.mediaType || "").toUpperCase();
+  const mediaType = String(source.mediaType || "")
+    .trim()
+    .toUpperCase();
+  // TMDB/Trakt sources use mediaType TV for shows, while an add-on source's
+  // own type is already the content type ("tv" is its live channel type).
   if (mediaType === "TV" || mediaType === "SERIES") {
     return "series";
   }
-  const rawType = String(source.type || source.apiType || "movie").toLowerCase();
-  return rawType === "tv" ? "series" : rawType;
+  const rawType = String(source.type || source.apiType || "movie")
+    .trim()
+    .toLowerCase();
+  return rawType || "movie";
 }
 
 export function buildFolderSourceRows(tabs = []) {

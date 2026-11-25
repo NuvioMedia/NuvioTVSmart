@@ -80,7 +80,8 @@ export function createFolderDetailScreenMethods03() {
 
       const rowsMarkup = sourceRows
         .map((tab, index) => {
-          const mediaTypeLabel = sourceType(tab.source || {}) === "series" ? "Series" : "Movie";
+          const resolvedSourceType = sourceType(tab.source || {});
+          const mediaTypeLabel = resolvedSourceType === "series" ? "Series" : resolvedSourceType === "tv" ? "TV" : "Movie";
           const rowTitle = tab.label !== mediaTypeLabel ? `${tab.label} - ${mediaTypeLabel}` : tab.label;
           const rowCards = (tab.items || [])
             .map((item) => customPosterForItem(item, "collections"))
