@@ -574,6 +574,7 @@
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_setting_on">オン</string>
     <string name="trakt_setting_off">オフ</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">視聴進行状況ソースをTraktに設定しました</string>
     <string name="trakt_watch_progress_nuvio_selected">視聴進行状況ソースをNuvio Syncに設定しました</string>
     <string name="trakt_continue_watching_window">視聴継続ウィンドウ</string>

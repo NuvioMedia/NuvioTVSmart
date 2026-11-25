@@ -1046,6 +1046,7 @@
     <string name="trakt_library_source_nuvio_selected">Biblioteca de Nuvio seleccionada</string>
     <string name="trakt_setting_on">Activado</string>
     <string name="trakt_setting_off">Desactivado</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">Fuente de progreso de reproducción establecida en Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Fuente de progreso de reproducción establecida en Nuvio Sync</string>
     <string name="trakt_continue_watching_window">Ventana de continuar viendo</string>

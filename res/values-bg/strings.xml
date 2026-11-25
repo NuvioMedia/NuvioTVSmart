@@ -1338,6 +1338,7 @@
     <string name="trakt_library_source_nuvio_selected">Избрана е библиотека Nuvio</string>
     <string name="trakt_setting_on">Включено</string>
     <string name="trakt_setting_off">Изключено</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">Източникът на напредъка при гледане е зададен на Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Източникът на напредъка на гледане е зададен на Nuvio Sync</string>
     <string name="trakt_unaired_next_up">Неизлъчени следващи епизоди</string>

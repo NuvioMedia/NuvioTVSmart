@@ -994,6 +994,7 @@
     <string name="trakt_library_source_nuvio_selected">已选择 Nuvio 媒体库</string>
     <string name="trakt_setting_on">开启</string>
     <string name="trakt_setting_off">关闭</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">观看进度来源设为 Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">观看进度来源设为 Nuvio Sync</string>
     <string name="trakt_continue_watching_window">继续观看范围</string>

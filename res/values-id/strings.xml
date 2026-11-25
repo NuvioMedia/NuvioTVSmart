@@ -1043,6 +1043,7 @@
     <string name="trakt_library_source_nuvio_selected">Pustaka Nuvio dipilih</string>
     <string name="trakt_setting_on">Aktif</string>
     <string name="trakt_setting_off">Nonaktif</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">Sumber progres tonton diatur ke Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Sumber progres tonton diatur ke Nuvio Sync</string>
     <string name="trakt_continue_watching_window">Jendela Lanjutkan Menonton</string>

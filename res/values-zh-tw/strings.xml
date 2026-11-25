@@ -1417,6 +1417,7 @@
     <string name="trakt_library_source_nuvio_selected">已選擇 Nuvio 媒體庫</string>
     <string name="trakt_setting_on">開啟</string>
     <string name="trakt_setting_off">關閉</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">觀看進度來源設為 Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">觀看進度來源設為 Nuvio Sync</string>
     <string name="trakt_unaired_next_up">未播出的下一集</string>

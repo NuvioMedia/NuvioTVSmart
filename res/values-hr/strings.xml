@@ -1192,6 +1192,7 @@
     <string name="trakt_library_source_nuvio_selected">Odabrana Nuvio biblioteka</string>
     <string name="trakt_setting_on">Uključeno</string>
     <string name="trakt_setting_off">Isključeno</string>
+    <string name="mdblist_name">MDBList</string>
     <string name="trakt_watch_progress_trakt_selected">Izvor napretka gledanja postavljen na Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Izvor napretka gledanja postavljen na Nuvio Sync</string>
     <string name="trakt_continue_watching_window">Razdoblje za Nastavi gledati</string>

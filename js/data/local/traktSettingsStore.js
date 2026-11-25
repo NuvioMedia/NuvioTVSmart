@@ -72,6 +72,16 @@ export function normalizeTraktContinueWatchingDaysCap(days) {
   return Math.max(7, Math.min(365, Math.trunc(value)));
 }
 
+// Android TraktSettingsDataStore.ratingSource: the service ratings are saved to and read from,
+// or null when the rate button is hidden. Trakt is not a rating provider on Android TV.
+export const RATING_SOURCES = ["simkl", "mdblist"];
+export function normalizeRatingSource(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return RATING_SOURCES.includes(normalized) ? normalized : null;
+}
+
 function normalize(settings = {}) {
   return {
     continueWatchingDaysCap: normalizeTraktContinueWatchingDaysCap(
@@ -81,7 +91,8 @@ function normalize(settings = {}) {
     watchProgressSource: normalizeWatchProgressSource(settings.watchProgressSource),
     librarySourceMode: normalizeLibrarySourceMode(settings.librarySourceMode),
     simklAnimeIdPreference: normalizeSimklAnimeIdPreference(settings.simklAnimeIdPreference),
-    moreLikeThisSource: normalizeMoreLikeThisSource(settings.moreLikeThisSource)
+    moreLikeThisSource: normalizeMoreLikeThisSource(settings.moreLikeThisSource),
+    ratingSource: normalizeRatingSource(settings.ratingSource)
   };
 }
 
@@ -196,5 +207,9 @@ export const TraktSettingsStore = {
 
   setMoreLikeThisSource(source) {
     return this.set({ moreLikeThisSource: normalizeMoreLikeThisSource(source) });
+  },
+
+  setRatingSource(source) {
+    return this.set({ ratingSource: normalizeRatingSource(source) });
   }
 };

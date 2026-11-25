@@ -784,6 +784,55 @@ function reconciledPlaybackProgress(snapshot, watchedItems) {
     });
 }
 
+// Android SimklSyncSnapshot.ratingEntry: the library entry of the same kind (movie or show).
+function ratingEntry(snapshot, item = {}) {
+  const movie = ["movie", "film"].includes(String(item.itemType || item.type || "").toLowerCase());
+  const candidates = [item.itemId, item.id, item.contentId, item.imdbId && String(item.imdbId)]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase());
+  return (snapshot.entries || []).find((entry) => {
+    if ((entryMediaType(entry) === "movie") !== movie) return false;
+    const media = mediaForEntry(entry);
+    return (
+      Boolean(media) &&
+      candidates.some((candidate) => aliasesForMedia(media, entry.mediaType).has(candidate))
+    );
+  });
+}
+
+// Android buildSimklRatingBody.
+export function simklRatingBody(item, entry, rating) {
+  const movie = ["movie", "film"].includes(String(item.itemType || item.type || "").toLowerCase());
+  const bucket =
+    entry?.mediaType === "anime"
+      ? rating == null
+        ? "shows"
+        : "anime"
+      : entry?.mediaType === "movies" || (!entry && movie)
+        ? "movies"
+        : "shows";
+  const media = mutationMedia(item, entry);
+  const row = {
+    ...(rating == null ? {} : { rating }),
+    ...(String(media.title || "").trim() ? { title: media.title } : {}),
+    ...(media.year != null && Number.isFinite(Number(media.year))
+      ? { year: Number(media.year) }
+      : {}),
+    ...(Object.keys(media.ids || {}).length ? { ids: media.ids } : {})
+  };
+  return { [bucket]: [row] };
+}
+
+// Android simklNotFoundCount.
+export function simklNotFoundCount(payload) {
+  const notFound = payload?.not_found;
+  if (!notFound || typeof notFound !== "object") return 0;
+  return Object.values(notFound).reduce(
+    (sum, value) => sum + (Array.isArray(value) ? value.length : 0),
+    0
+  );
+}
+
 export const SimklSyncService = {
   statusDefinitions: STATUS_DEFINITIONS,
 
@@ -989,6 +1038,45 @@ export const SimklSyncService = {
   async getWatchedItems() {
     await this.refresh().catch(() => false);
     return watchedProjection(getSnapshot()).items;
+  },
+
+  /** Android SimklRatings.supports: a whole title (not an episode) with an id Simkl can match. */
+  supportsRating(item = {}) {
+    return item.episode == null && Object.keys(externalIds(item)).length > 0;
+  },
+
+  /** Android SimklRatings.rating. */
+  userRating(item = {}) {
+    const value = ratingEntry(getSnapshot(), item)?.user_rating;
+    return value == null || !Number.isFinite(Number(value)) ? null : Number(value);
+  },
+
+  /** Android SimklRatings.rate: true when Simkl found the title and took the rating. */
+  async rate(item = {}, rating = null) {
+    const profileId = activeProfileId();
+    const snapshot = getSnapshot(profileId);
+    const entry = ratingEntry(snapshot, item);
+    const { payload } = await simklRequest(
+      rating == null ? "/sync/ratings/remove" : "/sync/ratings",
+      {
+        method: "POST",
+        body: simklRatingBody(item, entry, rating),
+        profileId
+      }
+    );
+    if (simklNotFoundCount(payload) > 0) return false;
+    if (activeProfileId() !== profileId) return true;
+    const current = getSnapshot(profileId);
+    const target = ratingEntry(current, item);
+    if (target) {
+      target.user_rating = rating;
+      target.user_rated_at = rating == null ? null : new Date().toISOString();
+      saveSnapshot(current, profileId);
+    } else {
+      // Android commitRating: no entry yet (a new title joins the lists), so refresh.
+      void this.refresh({ force: true }).catch(() => false);
+    }
+    return true;
   },
 
   findEntry,

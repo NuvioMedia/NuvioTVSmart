@@ -8,6 +8,7 @@ import { Platform } from "../../../platform/index.js";
 import { TraktAuthService } from "../../../data/repository/traktAuthService.js";
 import { SimklAuthService } from "../../../data/repository/simklAuthService.js";
 import { SimklSyncService } from "../../../data/repository/simklSyncService.js";
+import { TrackingRatings } from "../../../core/tracking/trackingRatings.js";
 import {
   SimklAnimeIdPreference,
   MoreLikeThisSourcePreference,
@@ -123,11 +124,21 @@ export function createTrackingSettingsMethods() {
       }
     },
 
-    openTrackingChoice({ title, options, selectedId, returnFocusKey, onSelect }) {
+    openTrackingChoice({
+      title,
+      message = "",
+      optionRenderer,
+      options,
+      selectedId,
+      returnFocusKey,
+      onSelect
+    }) {
       const profileId = ProfileManager.getActiveProfileId();
       const generation = this.trackingWorkGeneration || 0;
       this.openOptionDialog({
         title,
+        message,
+        ...(optionRenderer ? { optionRenderer } : {}),
         options: options.map((option) => ({ ...option, label: option.label || option.id })),
         selectedId,
         returnFocusKey,
@@ -386,6 +397,43 @@ export function createTrackingSettingsMethods() {
           onSelect: (option) => TraktSettingsStore.setMoreLikeThisSource(option.id)
         })
       );
+      // Android TrackingSettingsScreen ratings source picker.
+      setAction("tracking:ratings", () =>
+        this.openTrackingChoice({
+          title: t("tracking_ratings_title", {}, "Ratings"),
+          message: t(
+            "tracking_ratings_dialog_subtitle",
+            {},
+            "Rate titles from their details page. Your ratings are saved to and shown from the service you pick."
+          ),
+          optionRenderer: "single-choice",
+          options: [
+            {
+              id: "off",
+              label: t("trakt_setting_off", {}, "Off"),
+              description: t("tracking_ratings_off_description", {}, "Hide the rate button.")
+            },
+            ...TrackingRatings.availableSources().map((source) => ({
+              id: source,
+              label:
+                source === "simkl"
+                  ? t("simkl_name", {}, "Simkl")
+                  : t("mdblist_name", {}, "MDBList"),
+              description:
+                source === "simkl"
+                  ? t("tracking_ratings_simkl_description", {}, "Rate movies and shows.")
+                  : t(
+                      "tracking_ratings_mdblist_description",
+                      {},
+                      "Rate movies, shows and episodes."
+                    )
+            }))
+          ],
+          selectedId: TrackingRatings.source() || "off",
+          returnFocusKey: "tracking:ratings",
+          onSelect: (option) => TrackingRatings.setSource(option.id === "off" ? null : option.id)
+        })
+      );
       setAction("tracking:animeId", () =>
         this.openTrackingChoice({
           title: t("tracking_simkl_anime_id_title", {}, "Simkl anime ID"),
@@ -454,6 +502,8 @@ export function createTrackingSettingsMethods() {
             <div class="settings-trakt-options-stack">
               ${this.renderActionRow({ focusKey: "tracking:librarySource", title: t("trakt_library_source_title", {}, "Library source"), subtitle: t("tracking_library_source_dialog_subtitle", {}, "Choose the service Nuvio reads for your Library."), value: connectedLibrarySources.find((item) => item.id === settings.librarySourceMode)?.label || "Nuvio" })}
               ${this.renderActionRow({ focusKey: "tracking:progressSource", title: t("trakt_watch_progress_title", {}, "Watch progress source"), subtitle: t("tracking_watch_progress_dialog_subtitle", {}, "Choose the service Nuvio reads for resume and Continue Watching."), value: connectedWatchSources.find((item) => item.id === settings.watchProgressSource)?.label || "Nuvio Sync" })}
+              ${traktConnected || simklConnected ? this.renderActionRow({ focusKey: "tracking:moreLikeThis", title: t("trakt_more_like_this_source_title", {}, "More Like This source"), subtitle: t("trakt_more_like_this_source_subtitle", {}, "Choose related titles from Trakt or TMDB"), value: settings.moreLikeThisSource === MoreLikeThisSourcePreference.TMDB ? "TMDB" : "Trakt" }) : ""}
+              ${TrackingRatings.availableSources().length ? this.renderActionRow({ focusKey: "tracking:ratings", title: t("tracking_ratings_title", {}, "Ratings"), subtitle: t("tracking_ratings_subtitle", {}, "Where your ratings are saved and shown from"), value: TrackingRatings.source() === "simkl" ? t("simkl_name", {}, "Simkl") : TrackingRatings.source() === "mdblist" ? t("mdblist_name", {}, "MDBList") : t("trakt_setting_off", {}, "Off") }) : ""}
             </div>
           </div>
           ${
@@ -465,7 +515,6 @@ export function createTrackingSettingsMethods() {
               <div class="settings-trakt-options-stack">
                 ${this.renderActionRow({ focusKey: "tracking:cwWindow", title: t("trakt_continue_watching_window", {}, "Continue Watching window"), subtitle: t("trakt_continue_watching_subtitle", {}, "Trakt history considered for Continue Watching"), value: settings.continueWatchingDaysCap === 0 ? t("trakt_all_history", {}, "All history") : t("trakt_days_format", [settings.continueWatchingDaysCap], `${settings.continueWatchingDaysCap} days`) })}
                 ${this.renderToggleRow({ focusKey: "tracking:comments", title: t("trakt_comments_title", {}, "Trakt comments"), subtitle: t("trakt_comments_subtitle", {}, "Show Trakt reviews on metadata pages"), checked: Boolean(settings.showMetaComments) })}
-                ${this.renderActionRow({ focusKey: "tracking:moreLikeThis", title: t("trakt_more_like_this_source_title", {}, "More Like This source"), subtitle: t("trakt_more_like_this_source_subtitle", {}, "Choose related titles from Trakt or TMDB"), value: settings.moreLikeThisSource === MoreLikeThisSourcePreference.TMDB ? "TMDB" : "Trakt" })}
               </div>
             </div>
           `
