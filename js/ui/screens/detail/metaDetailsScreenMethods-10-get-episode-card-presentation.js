@@ -166,8 +166,18 @@ export function createMetaDetailsScreenMethods10() {
         if (Number(button?.dataset?.season || 0) !== Number(season)) {
           return false;
         }
+        // The first render runs before TMDB enrichment, so a later pass must be
+        // able to swap text tabs for the season posters that just arrived.
+        if (Boolean(this.getSeasonPoster(season)) !== button.classList.contains("series-season-btn-poster")) {
+          return false;
+        }
         const label = seasonLabel(season);
-        if (button.textContent.trim() !== label) {
+        const labelNode = button.querySelector(".series-season-poster-label");
+        if (labelNode) {
+          if (labelNode.textContent.trim() !== label) {
+            labelNode.textContent = label;
+          }
+        } else if (button.textContent.trim() !== label) {
           button.textContent = label;
         }
         button.classList.toggle("selected", season === this.selectedSeason);

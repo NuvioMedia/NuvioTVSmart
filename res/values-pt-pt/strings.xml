@@ -3325,6 +3325,10 @@
     <string name="mdblist_rate_limited">O limite de pedidos do MDBList foi atingido. A sincronização será retomada após a reposição do limite.</string>
     <string name="mdblist_revoke_failed">Desligado neste dispositivo. Remove esta aplicação nas definições da tua conta MDBList para revogar o acesso.</string>
     <string name="random_episode_title">Aleatório</string>
+    <string name="layout_season_posters">Cartazes de temporadas</string>
+    <string name="layout_season_posters_sub">Mostrar temporadas como cartazes em vez de separadores de texto, quando disponíveis.</string>
+    <string name="tmdb_season_posters_title">Cartazes de temporadas</string>
+    <string name="tmdb_season_posters_subtitle">Cartazes de temporadas do TMDB para os separadores de temporadas na página de detalhes</string>
     <string name="layout_random_episode_sub">Reproduzir episódios aleatórios de qualquer série. Desativar isto pausa a reprodução aleatória.</string>
     <string name="random_episode_unwatched">Episódios por ver</string>
     <string name="random_episode_include_watched">Todos os episódios</string>

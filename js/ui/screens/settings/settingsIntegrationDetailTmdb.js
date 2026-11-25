@@ -37,6 +37,9 @@ export function renderTmdbIntegrationDetail(model) {
   this.actionMap.set("integration:tmdb:episodes", () => {
     toggleTmdbSetting("useEpisodes");
   });
+  this.actionMap.set("integration:tmdb:seasonPosters", () => {
+    toggleTmdbSetting("useSeasonPosters");
+  });
   this.actionMap.set("integration:tmdb:trailers", () => {
     toggleTmdbSetting("useTrailers");
   });
@@ -141,6 +144,13 @@ export function renderTmdbIntegrationDetail(model) {
               title: t("tmdb_episodes_title", {}, "Episodes"),
               subtitle: t("tmdb_episodes_subtitle", {}, "Episode titles, overviews, thumbnails, and runtime from TMDB"),
               checked: model.tmdb.useEpisodes !== false,
+              disabled: !model.tmdb.enabled
+            })}
+            ${this.renderToggleRow({
+              focusKey: "integration:tmdb:seasonPosters",
+              title: t("tmdb_season_posters_title", {}, "Season Posters"),
+              subtitle: t("tmdb_season_posters_subtitle", {}, "Season posters from TMDB for the season tabs on the details page"),
+              checked: model.tmdb.useSeasonPosters === true,
               disabled: !model.tmdb.enabled
             })}
             ${this.renderToggleRow({

@@ -4,6 +4,7 @@ import * as internals from "./metaDetailsScreenContext.js";
 export function createMetaDetailsScreenMethods09() {
   const {
     LayoutPreferences,
+    TmdbMetadataService,
     contentTextDirection,
     EPISODE_VIRTUALIZATION_THRESHOLD,
     EPISODE_VIRTUALIZATION_MIN_WINDOW,
@@ -156,21 +157,42 @@ export function createMetaDetailsScreenMethods09() {
           <div class="series-episode-ratings-grid" data-scroll-key="rating-chips:${this.selectedRatingSeason}">${chips}</div>
         `;
     },
+    getSeasonPoster(season) {
+      if (LayoutPreferences.get().detailSeasonPostersEnabled !== true) {
+        return "";
+      }
+      return TmdbMetadataService?.seasonPoster?.(this.detailTmdbId || this.meta?.tmdbId, season) || "";
+    },
     renderSeasonButtons() {
       if (!this.episodes?.length) {
         return `<p>${escapeHtml(t("detail.noEpisodesFound", {}, "No episodes found."))}</p>`;
       }
       const seasons = this.getAvailableSeasons();
       return seasons
-        .map(
-          (season) => `
+        .map((season) => {
+          const label = escapeHtml(
+            season === 0 ? t("episodes_specials", {}, "Specials") : t("detail.seasonLabel", { season }, "Season {{season}}")
+          );
+          const poster = this.getSeasonPoster(season);
+          if (poster) {
+            return `
+          <button class="series-season-btn series-season-btn-poster focusable${season === this.selectedSeason ? " selected" : ""}"
+                  data-action="selectSeason"
+                  data-season="${season}"
+                  aria-label="${label}">
+            <img class="series-season-poster" src="${escapeAttribute(poster)}" alt="" loading="lazy" />
+            <span class="series-season-poster-label">${label}</span>
+          </button>
+          `;
+          }
+          return `
           <button class="series-season-btn focusable${season === this.selectedSeason ? " selected" : ""}"
                   data-action="selectSeason"
                   data-season="${season}">
-            ${escapeHtml(season === 0 ? t("episodes_specials", {}, "Specials") : t("detail.seasonLabel", { season }, "Season {{season}}"))}
+            ${label}
           </button>
-          `
-        )
+          `;
+        })
         .join("");
     },
     selectSeason(season) {

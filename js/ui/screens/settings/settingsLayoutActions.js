@@ -323,6 +323,11 @@ export function registerLayoutActions(model) {
       trailerSubtitles: !PlayerSettingsStore.get().trailerSubtitles
     });
   });
+  this.actionMap.set("layout:detail:seasonPosters", () => {
+    LayoutPreferences.set({
+      detailSeasonPostersEnabled: !LayoutPreferences.get().detailSeasonPostersEnabled
+    });
+  });
   this.actionMap.set("layout:focusedPosterTrailerContinueInDetails", () => {
     LayoutPreferences.set({
       focusedPosterTrailerContinueInDetails: !LayoutPreferences.get().focusedPosterTrailerContinueInDetails

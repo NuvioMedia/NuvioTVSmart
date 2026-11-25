@@ -293,6 +293,12 @@ export function renderLayoutMarkup(model) {
           <div class="settings-stack">
             ${this.renderToggleRow({ focusKey: "layout:detail:shuffle", title: t("random_episode_title"), subtitle: t("layout_random_episode_sub"), checked: Boolean(model.layout.randomEpisodeEnabled) })}
             ${this.renderToggleRow({
+              focusKey: "layout:detail:seasonPosters",
+              title: t("layout_season_posters", {}, "Season Posters"),
+              subtitle: t("layout_season_posters_sub", {}, "Show seasons as posters instead of text tabs when available."),
+              checked: model.layout.detailSeasonPostersEnabled === true
+            })}
+            ${this.renderToggleRow({
               focusKey: "layout:detail:blurUnwatched",
               title: t("settings.layout.blurUnwatched.title"),
               subtitle: t("settings.layout.blurUnwatched.subtitle"),

@@ -3177,6 +3177,10 @@
     <string name="mdblist_library_lists_description">Choisissez les listes MDBList qui apparaissent dans la bibliothèque et dans Gérer les listes. La liste de suivi est toujours affichée.</string>
     <string name="mdblist_library_lists_empty">Aucune liste trouvée dans votre compte MDBList pour le moment. Lancez une synchronisation pour les charger.</string>
     <string name="random_episode_title">Lecture aléatoire</string>
+    <string name="layout_season_posters">Affiches de saison</string>
+    <string name="layout_season_posters_sub">Afficher les saisons sous forme d’affiches plutôt que d’onglets de texte lorsqu’elles sont disponibles.</string>
+    <string name="tmdb_season_posters_title">Affiches de saison</string>
+    <string name="tmdb_season_posters_subtitle">Affiches de saison issues de TMDB pour les onglets de saison de la page de détail</string>
     <string name="layout_random_episode_sub">Lire des épisodes aléatoires de n’importe quelle série. Désactiver cette option met la lecture aléatoire en pause.</string>
     <string name="random_episode_unwatched">Épisodes non vus</string>
     <string name="random_episode_include_watched">Tous les épisodes</string>
