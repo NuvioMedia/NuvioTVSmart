@@ -25,6 +25,7 @@ const APP_SHELL = `
     <div id="plugin" class="screen"></div>
     <div id="plugins" class="screen"></div>
     <div id="catalogOrder" class="screen"></div>
+    <div id="addonOrder" class="screen"></div>
     <div id="player" class="screen">
       <object id="avPlayerObject" class="tizen-avplay-object" type="application/avplayer"></object>
       <video id="videoPlayer" autoplay playsinline webkit-playsinline preload="auto"></video>

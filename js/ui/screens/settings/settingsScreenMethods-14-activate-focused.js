@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./settingsScreenContext.js";
+import { cancelReorder, confirmReorder, isReordering, moveReorderBy } from "../../components/reorderSession.js";
 
 export function createSettingsScreenMethods14() {
   const {
@@ -124,6 +125,46 @@ export function createSettingsScreenMethods14() {
       }
     },
     async onKeyDown(event) {
+      if (isReordering(this.mdbReorderSession)) {
+        const reorderCode = Number(event?.keyCode || 0);
+        const session = this.mdbReorderSession;
+        const persist = () => {
+          const { MdbListSettingsStore } = internals;
+          MdbListSettingsStore.set({ ratingOrder: [...session.keys] });
+        };
+        if (reorderCode === 38 || reorderCode === 40) {
+          event?.preventDefault?.();
+          if (moveReorderBy(session, reorderCode === 38 ? -1 : 1)) {
+            persist();
+            this.contentFocusKey = `integration:mdblist:reorder:${session.movingKey}`;
+            await this.render();
+          }
+          return;
+        }
+        if (reorderCode === 37 || reorderCode === 39) {
+          event?.preventDefault?.();
+          return;
+        }
+        if (reorderCode === 13) {
+          event?.preventDefault?.();
+          event?.stopPropagation?.();
+          const movingKey = session.movingKey;
+          confirmReorder(session);
+          this.mdbReorderSession = null;
+          this.contentFocusKey = `integration:mdblist:reorder:${movingKey}`;
+          await this.render();
+          return;
+        }
+        if (Platform.isBackEvent(event)) {
+          event?.preventDefault?.();
+          cancelReorder(session);
+          persist();
+          this.mdbReorderSession = null;
+          this.contentFocusKey = `integration:mdblist:reorder:${session.keys[0] || ""}`;
+          await this.render();
+          return;
+        }
+      }
       if (Platform.isBackEvent(event)) {
         event?.preventDefault?.();
         if (this.textDialog) {

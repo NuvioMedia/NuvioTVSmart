@@ -216,6 +216,7 @@ export const PluginScreen = {
     if (!this.model.isEssential) {
       this.setRowColumns(2, [0]);
       this.setRowColumns(3, [0]);
+      this.setRowColumns(4, [0]);
     }
 
     this.actionMap.set("manage_from_phone", async () => {
@@ -223,6 +224,9 @@ export const PluginScreen = {
     });
     this.actionMap.set("reorder_home_catalogs", async () => {
       Router.navigate("catalogOrder");
+    });
+    this.actionMap.set("open_addon_order", async () => {
+      Router.navigate("addonOrder");
     });
     this.actionMap.set("open_collections", async () => {
       Router.navigate("collections");
@@ -307,6 +311,22 @@ export const PluginScreen = {
                      data-zone="content"
                      data-row="2"
                      data-col="0"
+                     data-action-id="open_addon_order"
+                     tabindex="-1">
+                  <span class="addons-large-row-icon material-icons" aria-hidden="true">swap_vert</span>
+                  <span class="addons-large-row-copy">
+                    <strong>${escapeHtml(t("addon_order_title", "Add-on order"))}</strong>
+                    <small>${escapeHtml(t("addon_order_subtitle", "Controls which add-on is asked for sources first."))}</small>
+                  </span>
+                  <span class="addons-large-row-tail-group">
+                    <span class="addons-large-row-tail material-icons" aria-hidden="true">chevron_right</span>
+                  </span>
+                </div>
+                <div role="button"
+                     class="addons-large-row addons-large-row-centered addons-focusable"
+                     data-zone="content"
+                     data-row="3"
+                     data-col="0"
                      data-action-id="open_collections"
                      tabindex="-1">
                   <span class="addons-large-row-icon material-icons" aria-hidden="true">folder_open</span>
@@ -327,7 +347,7 @@ export const PluginScreen = {
                 <div role="button"
                      class="addons-large-row addons-large-row-centered addons-focusable"
                      data-zone="content"
-                     data-row="${this.model.isEssential ? 1 : 3}"
+                     data-row="${this.model.isEssential ? 1 : 4}"
                      data-col="0"
                      data-action-id="refresh_addons"
                      tabindex="-1"

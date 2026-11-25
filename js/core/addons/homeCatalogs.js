@@ -199,6 +199,7 @@ export function buildOrderedHomeCatalogItems(
           catalogName: customTitleForKey(customTitles, key) || catalog.name,
           originalCatalogName: catalog.name,
           type: catalog.apiType,
+          isPinnedToTop: false,
           isDisabled: false
         });
       });
@@ -223,33 +224,37 @@ export function buildOrderedHomeCatalogItems(
       type: "collection",
       isCollection: true,
       collectionId: collection.id,
+      isPinnedToTop: Boolean(collection?.pinToTop),
       isDisabled: false
     });
   });
 
-  const entryByKey = new Map(defaultEntries.map((entry) => [entry.key, entry]));
-  const defaultOrderKeys = defaultEntries.map((entry) => entry.key);
+  // Pinned collections always sit above the rest and cannot be moved, matching
+  // Android and the Home row builder.
+  const pinnedEntries = defaultEntries.filter((entry) => entry.isPinnedToTop);
+  const unpinnedEntries = defaultEntries.filter((entry) => !entry.isPinnedToTop);
+  const entryByKey = new Map(unpinnedEntries.map((entry) => [entry.key, entry]));
+  const defaultOrderKeys = unpinnedEntries.map((entry) => entry.key);
   const savedValid = (savedOrderKeys || []).filter(
     (key, index, array) => array.indexOf(key) === index && entryByKey.has(key)
   );
   const savedSet = new Set(savedValid);
-  const effectiveOrder = [...savedValid, ...defaultOrderKeys.filter((key) => !savedSet.has(key))];
+  const unpinnedOrder = [...savedValid, ...defaultOrderKeys.filter((key) => !savedSet.has(key))];
+  const effectiveOrder = [...pinnedEntries, ...unpinnedOrder.map((key) => entryByKey.get(key))];
+  const firstUnpinnedIndex = pinnedEntries.length;
 
   function isEntryDisabled(entry) {
     return disabledSet.has(entry.disableKey) || disabledSet.has(entry.key);
   }
 
-  return effectiveOrder
-    .map((key) => entryByKey.get(key))
-    .filter(Boolean)
-    .map((entry, index, array) => ({
-      ...entry,
-      disableKey:
-        disabledSet.has(entry.key) && !disabledSet.has(entry.disableKey)
-          ? entry.key
-          : entry.disableKey,
-      isDisabled: isEntryDisabled(entry),
-      canMoveUp: index > 0,
-      canMoveDown: index < array.length - 1
-    }));
+  return effectiveOrder.filter(Boolean).map((entry, index, array) => ({
+    ...entry,
+    disableKey:
+      disabledSet.has(entry.key) && !disabledSet.has(entry.disableKey)
+        ? entry.key
+        : entry.disableKey,
+    isDisabled: isEntryDisabled(entry),
+    canMoveUp: entry.isPinnedToTop ? false : index > firstUnpinnedIndex,
+    canMoveDown: entry.isPinnedToTop ? false : index < array.length - 1
+  }));
 }
