@@ -1,94 +1,78 @@
 ﻿import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 
-function loadHelper(file, fnNames, extraDeps = {}) {
-  const shadowedKeys = Object.keys(extraDeps);
-  let source = readFileSync(
-    new URL(`../js/ui/screens/collection/${file}.js`, import.meta.url),
-    "utf8"
-  )
-    .replace(/^import\b[\s\S]*?from\s+["'][^"']+["'];?\s*$/gm, "")
-    .replace(/^import\s+["'][^"']+["'];?\s*$/gm, "")
-    .replace(/^export (async )?function /gm, "$1function ")
-    .replace(/^export const /gm, "const ");
+// The collection helpers build their storage-backed dependencies on import.
+globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 
-  for (const key of shadowedKeys) {
-    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    source = source.replace(
-      new RegExp(`^(?:const|let|var)\\s+${escaped}\\s*=[^;\\n]+;?\\s*$`, "gm"),
-      ""
-    );
-  }
+const { normalizeItem, buildHeroDisplay, sourceType, buildFolderSourceRows } =
+  await import("../js/ui/screens/collection/folderDetailScreenHelpers-01-tmdb-api-url.js");
+const { mapTmdbListItem } =
+  await import("../js/ui/screens/collection/folderDetailScreenHelpers-03-set-tmdb-discover-param.js");
+const { mapTraktEntity } =
+  await import("../js/ui/screens/collection/folderDetailScreenHelpers-04-map-trakt-entity.js");
+const { formatContentTypeLabel } = await import("../js/ui/screens/home/homeUtils.js");
+const { PlayerController } = await import("../js/core/player/playerController.js");
 
-  const returns = fnNames
-    .map((name) => `${name}: typeof ${name} !== "undefined" ? ${name} : undefined`)
-    .join(", ");
-  const factory = new Function(...shadowedKeys, `${source}\nreturn { ${returns} };`);
-  return factory(...Object.values(extraDeps));
-}
-
-test("normalizeItem and sourceType preserve tv instead of mapping to series", () => {
-  const h01 = loadHelper("folderDetailScreenHelpers-01-tmdb-api-url", [
-    "normalizeItem",
-    "sourceType",
-    "buildHeroDisplay"
-  ]);
-
-  const item = h01.normalizeItem({ id: "tv-1", type: "tv", name: "Live TV Channel" }, "movie");
+test("add-on collection items keep their tv type instead of becoming series", () => {
+  const item = normalizeItem({ id: "tv-1", type: "tv", name: "Live TV Channel" });
   assert.equal(item.type, "tv");
   assert.equal(item.apiType, "tv");
 
-  const hero = h01.buildHeroDisplay(item);
-  assert.ok(hero.meta.includes("TV"));
-  assert.ok(!hero.meta.includes("Series"));
-
-  assert.equal(h01.sourceType({ type: "tv" }), "tv");
-  assert.equal(h01.sourceType({ mediaType: "TV" }), "tv");
-  assert.equal(h01.sourceType({ type: "series" }), "series");
+  assert.equal(normalizeItem({ id: "s-1", type: "series", name: "Show" }).type, "series");
+  assert.equal(normalizeItem({ id: "m-1", name: "Movie" }, "movie").type, "movie");
+  assert.equal(normalizeItem({ id: "c-1", type: "channel", name: "Channel" }).type, "channel");
 });
 
-test("mapTmdbListItem preserves tv mediaType", () => {
-  const h01 = loadHelper(
-    "folderDetailScreenHelpers-01-tmdb-api-url",
-    ["firstNonEmpty", "toImageUrl", "buildPlaceholderPosterDataUrl"],
-    {
-      TMDB_POSTER_IMAGE_BASE_URL: "https://image.tmdb.org/t/p/w342",
-      TMDB_BACKDROP_IMAGE_BASE_URL: "https://image.tmdb.org/t/p/w1280"
-    }
-  );
-  const h03 = loadHelper(
-    "folderDetailScreenHelpers-03-set-tmdb-discover-param",
-    ["mapTmdbListItem"],
-    {
-      ...h01,
-      normalizeItem: (obj, fallbackType) => ({
-        ...obj,
-        type: String(obj.type || fallbackType || "movie").toLowerCase()
-      })
-    }
-  );
+test("collection source type keeps an add-on's tv catalog while TMDB/Trakt shows stay series", () => {
+  assert.equal(sourceType({ type: "tv" }), "tv");
+  assert.equal(sourceType({ type: "TV" }), "tv");
+  assert.equal(sourceType({ type: "series" }), "series");
+  assert.equal(sourceType({ mediaType: "TV" }), "series");
+  assert.equal(sourceType({ mediaType: "SERIES" }), "series");
+  assert.equal(sourceType({}), "movie");
 
-  const mapped = h03.mapTmdbListItem({ id: 42, name: "TMDB TV Item", poster_path: "/a.jpg" }, "tv");
-  assert.equal(mapped.type, "tv");
+  const rows = buildFolderSourceRows([
+    { key: "addon-tv", source: { type: "tv" }, items: [] },
+    { key: "tmdb-tv", source: { provider: "tmdb", mediaType: "TV" }, items: [] }
+  ]);
+  assert.deepEqual(
+    rows.map((row) => row.type),
+    ["tv", "series"]
+  );
 });
 
-test("mapTraktEntity preserves tv type", () => {
-  const h01 = loadHelper(
-    "folderDetailScreenHelpers-01-tmdb-api-url",
-    ["firstNonEmpty", "bestTraktImage"],
-    {
-      TRAKT_PAGE_SIZE: 50
-    }
-  );
-  const h04 = loadHelper("folderDetailScreenHelpers-04-map-trakt-entity", ["mapTraktEntity"], {
-    ...h01,
-    normalizeItem: (obj, fallbackType) => ({
-      ...obj,
-      type: String(obj.type || fallbackType || "movie").toLowerCase()
-    })
-  });
+test("collection hero and row labels show TV for tv items and Series for shows", () => {
+  const tvHero = buildHeroDisplay({ id: "tv-1", type: "tv", name: "Live TV Channel" });
+  assert.ok(tvHero.meta.includes("TV"));
+  assert.ok(!tvHero.meta.includes("Series"));
 
-  const mapped = h04.mapTraktEntity({ title: "Trakt TV Item", ids: { trakt: 99 } }, "tv");
-  assert.equal(mapped.type, "tv");
+  assert.ok(buildHeroDisplay({ id: "s-1", type: "series", name: "Show" }).meta.includes("Series"));
+  assert.ok(buildHeroDisplay({ id: "m-1", type: "movie", name: "Movie" }).meta.includes("Movie"));
+});
+
+test("TMDB and Trakt collection mappers keep mapping their TV media to series", () => {
+  assert.equal(mapTmdbListItem({ id: 42, name: "TMDB Show" }, "tv").type, "series");
+  assert.equal(mapTraktEntity({ title: "Trakt Show", ids: { trakt: 99 } }, "show").type, "series");
+});
+
+test("content type labels expose TV without changing the series label", () => {
+  assert.equal(formatContentTypeLabel("tv"), "TV");
+  assert.equal(formatContentTypeLabel("show"), "Series");
+  assert.equal(formatContentTypeLabel("series"), "Series");
+  assert.equal(formatContentTypeLabel("movie"), "Movie");
+});
+
+test("a preserved tv item takes the live playback pipeline, a series item does not", () => {
+  PlayerController.currentSeason = null;
+  PlayerController.currentEpisode = null;
+  assert.equal(PlayerController.isLivePlaybackItemType("tv"), true);
+  assert.equal(PlayerController.isLivePlaybackItemType("series"), false);
+
+  PlayerController.currentSeason = 1;
+  PlayerController.currentEpisode = 2;
+  assert.equal(
+    PlayerController.isLivePlaybackItemType("tv"),
+    false,
+    "an episodic tv item is not a live channel"
+  );
 });

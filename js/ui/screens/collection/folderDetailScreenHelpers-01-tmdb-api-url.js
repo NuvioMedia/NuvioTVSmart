@@ -208,10 +208,9 @@ export function sourceType(source = {}) {
   const mediaType = String(source.mediaType || "")
     .trim()
     .toUpperCase();
-  if (mediaType === "TV") {
-    return "tv";
-  }
-  if (mediaType === "SERIES") {
+  // TMDB/Trakt sources use mediaType TV for shows, while an add-on source's
+  // own type is already the content type ("tv" is its live channel type).
+  if (mediaType === "TV" || mediaType === "SERIES") {
     return "series";
   }
   const rawType = String(source.type || source.apiType || "movie")

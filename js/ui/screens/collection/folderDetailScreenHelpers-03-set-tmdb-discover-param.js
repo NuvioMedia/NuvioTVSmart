@@ -97,10 +97,7 @@ export function applyTmdbDiscoverFilters(params, filters = {}, mediaType = "movi
 }
 
 export function mapTmdbListItem(item = {}, mediaType = "movie") {
-  const normalizedMediaType = String(mediaType || "movie")
-    .trim()
-    .toLowerCase();
-  const type = normalizedMediaType === "tv" ? "tv" : normalizedMediaType === "series" ? "series" : "movie";
+  const type = mediaType === "tv" ? "series" : "movie";
   const title = firstNonEmpty(item.title, item.name, item.original_title, item.original_name);
   if (!item?.id || !title) {
     return null;
