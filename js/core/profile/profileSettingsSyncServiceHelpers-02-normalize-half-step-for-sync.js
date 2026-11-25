@@ -227,19 +227,21 @@ export function normalizeDiscoverLocationForWeb(value) {
 }
 
 export function normalizeTrailerTargetForAndroid(value) {
-  return String(value || "")
+  const target = String(value || "")
     .trim()
-    .toLowerCase() === "expanded_card"
-    ? "EXPANDED_CARD"
-    : "HERO_MEDIA";
+    .toUpperCase();
+  if (target === "EXPANDED_CARD") return "EXPANDED_CARD";
+  if (target === "HERO_MEDIA_NO_EXPAND") return "HERO_MEDIA_NO_EXPAND";
+  return "HERO_MEDIA";
 }
 
 export function normalizeTrailerTargetForWeb(value) {
-  return String(value || "")
+  const target = String(value || "")
     .trim()
-    .toUpperCase() === "EXPANDED_CARD"
-    ? "expanded_card"
-    : "hero_media";
+    .toUpperCase();
+  if (target === "EXPANDED_CARD") return "expanded_card";
+  if (target === "HERO_MEDIA_NO_EXPAND") return "hero_media_no_expand";
+  return "hero_media";
 }
 
 export function normalizeTraktWatchProgressSourceForAndroid(value) {

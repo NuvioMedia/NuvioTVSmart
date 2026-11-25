@@ -281,6 +281,7 @@ const KEY_ALIASES = {
   "settings.layout.trailerTarget.title": "layout_trailer_location",
   "settings.layout.trailerTargets.expandedCard": "layout_trailer_expanded_card",
   "settings.layout.trailerTargets.heroMedia": "layout_trailer_hero_media",
+  "settings.layout.trailerTargets.heroMediaNoExpand": "layout_trailer_hero_media_no_expand",
   "settings.layout.useEpisodeThumbnailsInCw.subtitle": "layout_use_episode_thumbnails_cw_sub",
   "settings.layout.useEpisodeThumbnailsInCw.title": "layout_use_episode_thumbnails_cw",
   "settings.playback.nextEpisodeThresholdMinutes.subtitle": "autoplay_threshold_min_sub",

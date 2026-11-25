@@ -131,6 +131,10 @@ export function createMetaDetailsScreenMethods01() {
             enabled: Boolean(this.trailerSubtitlesEnabled)
           });
           this.postTrailerProxyCommand("play");
+          if (Number(this.trailerPendingSeekSeconds || 0) > 0) {
+            this.postTrailerProxyCommand("seekTo", { seconds: Number(this.trailerPendingSeekSeconds) });
+            this.trailerPendingSeekSeconds = 0;
+          }
           this.postTrailerProxyCommand("getState");
           this.startTrailerFirstFramePolling();
           if (this.trailerPlaybackMode === "manual") {

@@ -70,6 +70,9 @@ export function createMetaDetailsScreenMethods02() {
       this.trailerHasAutoplayed = false;
       this.trailerMuted = false;
       this.trailerSubtitlesEnabled = false;
+      this.trailerHandoff =
+        !this.isBackNavigation && params?.trailerHandoff && typeof params.trailerHandoff === "object" ? { ...params.trailerHandoff } : null;
+      this.trailerPendingSeekSeconds = 0;
       this.trailerMediaListeners = [];
       this.trailerUiRefs = null;
       this.trailerProgressTimer = null;

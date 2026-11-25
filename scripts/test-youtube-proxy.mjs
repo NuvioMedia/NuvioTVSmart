@@ -56,6 +56,7 @@ const apiReadyContext = vm.createContext({
   videoId: "m8vcBN8uza8",
   autoplay: true,
   captionsEnabled: false,
+  captionsLanguage: "it",
   loop: false,
   pageOriginIsHttp: true,
   pageOrigin: "https://nuviomedia.github.io",
@@ -84,6 +85,7 @@ const apiReadyContext = vm.createContext({
 });
 vm.runInContext(apiReadySource, apiReadyContext);
 apiReadyContext.window.onYouTubeIframeAPIReady();
+assert.equal(playerConfig?.playerVars?.cc_lang_pref, "it", "trailer captions must keep the preferred language");
 assert.ok(playerConfig?.events?.onError, "YT.Player config must define onError");
 playerConfig.events.onError({ data: 150 });
 assert.equal(

@@ -273,16 +273,19 @@ export function createHomeScreenMethods27() {
         return;
       }
       this.rememberReturnFocusForNode(node);
+      const itemType = node.dataset.itemType || node.dataset.catalogType || "movie";
+      const trailerHandoff = this.getTrailerHandoffForNode(node, { itemId, itemType });
       Router.navigate("detail", {
         itemId,
-        itemType: node.dataset.itemType || node.dataset.catalogType || "movie",
+        itemType,
         fallbackTitle: node.dataset.itemTitle || "Untitled",
         fallbackPoster: node.dataset.posterSrc || "",
         fallbackBackground: node.dataset.backdropSrc || "",
         addonBaseUrl: node.dataset.addonBaseUrl || "",
         addonId: node.dataset.addonId || "",
         addonName: node.dataset.addonName || "",
-        catalogType: node.dataset.catalogType || node.dataset.itemType || "movie"
+        catalogType: node.dataset.catalogType || node.dataset.itemType || "movie",
+        ...(trailerHandoff ? { trailerHandoff } : {})
       });
     },
     openCollectionFolderFromNode(node) {

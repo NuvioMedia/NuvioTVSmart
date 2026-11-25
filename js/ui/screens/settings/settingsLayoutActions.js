@@ -3,7 +3,7 @@ import * as internals from "./settingsScreenContext.js";
 import { HomeCatalogSettingsSyncService } from "../../../core/profile/homeCatalogSettingsSyncService.js";
 
 export function registerLayoutActions(model) {
-  const { HomeCatalogStore, LayoutPreferences, HOME_LAYOUT_OPTIONS, t } = internals;
+  const { HomeCatalogStore, LayoutPreferences, PlayerSettingsStore, HOME_LAYOUT_OPTIONS, t } = internals;
   this.actionMap.set("layout:toggle:homeLayout", () => {
     this.toggleExpandedSection("layout", "homeLayout");
   });
@@ -293,6 +293,7 @@ export function registerLayoutActions(model) {
   this.actionMap.set("layout:focusedPosterTrailerTarget", () => {
     const options = [
       { id: "hero_media", labelKey: "settings.layout.trailerTargets.heroMedia" },
+      { id: "hero_media_no_expand", labelKey: "settings.layout.trailerTargets.heroMediaNoExpand" },
       { id: "expanded_card", labelKey: "settings.layout.trailerTargets.expandedCard" }
     ];
     this.openOptionDialog({
@@ -315,6 +316,16 @@ export function registerLayoutActions(model) {
   this.actionMap.set("layout:detail:trailerBackground", () => {
     LayoutPreferences.set({
       trailerPlayInBackground: !LayoutPreferences.get().trailerPlayInBackground
+    });
+  });
+  this.actionMap.set("layout:detail:trailerSubtitles", () => {
+    PlayerSettingsStore.set({
+      trailerSubtitles: !PlayerSettingsStore.get().trailerSubtitles
+    });
+  });
+  this.actionMap.set("layout:focusedPosterTrailerContinueInDetails", () => {
+    LayoutPreferences.set({
+      focusedPosterTrailerContinueInDetails: !LayoutPreferences.get().focusedPosterTrailerContinueInDetails
     });
   });
   this.actionMap.set("layout:detail:shuffle", () =>

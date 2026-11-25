@@ -1,3 +1,5 @@
+import { applyTrailerCaptionParams, trailerCaptionOptions } from "../../../core/detail/trailerCaptions.js";
+
 import { Router } from "../../navigation/routerState.js";
 
 import { ScreenUtils } from "../../navigation/screen.js";
@@ -92,13 +94,17 @@ import {
 } from "./metaDetailsScreenHelpers-05-get-addon-badge-label.js";
 import { withTimeout } from "./metaDetailsScreenHelpers-03-meta-with-route-external-ids.js";
 
-export function buildYoutubeEmbedUrl(ytId = "", { muted = false } = {}) {
+export function detailTrailerCaptionOptions() {
+  return trailerCaptionOptions(PlayerSettingsStore.get() || {});
+}
+
+export function buildYoutubeEmbedUrl(ytId = "", { muted = false, captionsEnabled = false, captionsLanguage = "" } = {}) {
   const cleanId = String(ytId || "").trim();
   if (!cleanId) {
     return "";
   }
   if (shouldUseDirectYoutubeEmbedOnTv()) {
-    return buildDirectYoutubeEmbedUrl(cleanId, { muted });
+    return buildDirectYoutubeEmbedUrl(cleanId, { muted, captionsEnabled, captionsLanguage });
   }
   const proxyBase = getYoutubeProxyBaseUrl();
   if (proxyBase) {
@@ -112,7 +118,7 @@ export function buildYoutubeEmbedUrl(ytId = "", { muted = false } = {}) {
       proxyUrl.searchParams.set("playlist", cleanId);
       proxyUrl.searchParams.set("playsinline", "1");
       proxyUrl.searchParams.set("rel", "0");
-      proxyUrl.searchParams.set("cc_load_policy", "0");
+      applyTrailerCaptionParams(proxyUrl.searchParams, { captionsEnabled, captionsLanguage });
       proxyUrl.searchParams.set("_cb", `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
       return proxyUrl.toString();
     } catch (_) {
@@ -131,9 +137,9 @@ export function buildYoutubeEmbedUrl(ytId = "", { muted = false } = {}) {
     playsinline: "1",
     rel: "0",
     modestbranding: "1",
-    cc_load_policy: "0",
     enablejsapi: "1"
   });
+  applyTrailerCaptionParams(params, { captionsEnabled, captionsLanguage });
   const origin = String(globalThis?.location?.origin || "").trim();
   if (/^https?:\/\//i.test(origin)) {
     params.set("origin", origin);
@@ -141,13 +147,16 @@ export function buildYoutubeEmbedUrl(ytId = "", { muted = false } = {}) {
   return `https://www.youtube-nocookie.com/embed/${cleanId}?${params.toString()}`;
 }
 
-export function buildInlineYoutubePlayerUrl(ytId = "", { muted = false, loop = false, statePollMs = 250 } = {}) {
+export function buildInlineYoutubePlayerUrl(
+  ytId = "",
+  { muted = false, loop = false, statePollMs = 250, captionsEnabled = false, captionsLanguage = "" } = {}
+) {
   const cleanId = String(ytId || "").trim();
   if (!cleanId) {
     return "";
   }
   if (shouldUseDirectYoutubeEmbedOnTv()) {
-    return buildDirectYoutubeEmbedUrl(cleanId, { muted, loop });
+    return buildDirectYoutubeEmbedUrl(cleanId, { muted, loop, captionsEnabled, captionsLanguage });
   }
   const proxyBase = getYoutubeProxyBaseUrl();
   if (proxyBase) {
@@ -165,7 +174,7 @@ export function buildInlineYoutubePlayerUrl(ytId = "", { muted = false, loop = f
       }
       proxyUrl.searchParams.set("playsinline", "1");
       proxyUrl.searchParams.set("rel", "0");
-      proxyUrl.searchParams.set("cc_load_policy", "0");
+      applyTrailerCaptionParams(proxyUrl.searchParams, { captionsEnabled, captionsLanguage });
       proxyUrl.searchParams.set("state_poll_ms", String(Math.max(0, Number(statePollMs || 0))));
       proxyUrl.searchParams.set("_cb", `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
       return proxyUrl.toString();
@@ -183,6 +192,7 @@ export function buildInlineYoutubePlayerUrl(ytId = "", { muted = false, loop = f
     modestbranding: "1",
     enablejsapi: "1"
   });
+  applyTrailerCaptionParams(params, { captionsEnabled, captionsLanguage });
   if (loop) {
     params.set("playlist", cleanId);
   }
@@ -198,7 +208,7 @@ export function resolveTrailerSource(meta = {}) {
   for (const entry of trailerCandidates) {
     const ytId = resolveYoutubeId(entry?.ytId || entry?.youtubeId || entry?.source || entry?.url || entry?.link || "");
     if (ytId) {
-      const embedUrl = buildYoutubeEmbedUrl(ytId);
+      const embedUrl = buildYoutubeEmbedUrl(ytId, detailTrailerCaptionOptions());
       if (!embedUrl) {
         continue;
       }
@@ -213,7 +223,7 @@ export function resolveTrailerSource(meta = {}) {
   if (!ytId) {
     return null;
   }
-  const embedUrl = buildYoutubeEmbedUrl(ytId);
+  const embedUrl = buildYoutubeEmbedUrl(ytId, detailTrailerCaptionOptions());
   if (!embedUrl) {
     return null;
   }

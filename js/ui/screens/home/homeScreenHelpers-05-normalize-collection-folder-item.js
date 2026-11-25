@@ -31,6 +31,10 @@ import { filterReleasedItems } from "../../../core/util/releaseInfoUtils.js";
 
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 
+import { PlayerSettingsStore } from "../../../data/local/playerSettingsStore.js";
+
+import { applyTrailerCaptionParams, trailerCaptionOptions } from "../../../core/detail/trailerCaptions.js";
+
 import { showHomeRatings } from "../../../core/util/imdbRatingVisibility.js";
 
 import { continueWatchingUsesEpisodeThumbnails, continueWatchingImageSources } from "../../../core/util/continueWatchingImage.js";
@@ -326,7 +330,11 @@ export function resolveYoutubeId(value) {
   return "";
 }
 
-export function buildYoutubeEmbedUrl(videoId, { muted = true } = {}) {
+export function homeTrailerCaptionOptions() {
+  return trailerCaptionOptions(PlayerSettingsStore.get() || {});
+}
+
+export function buildYoutubeEmbedUrl(videoId, { muted = true, captionsEnabled = false, captionsLanguage = "" } = {}) {
   const cleanId = resolveYoutubeId(videoId);
   if (!cleanId) {
     return "";
@@ -343,7 +351,7 @@ export function buildYoutubeEmbedUrl(videoId, { muted = true } = {}) {
       proxyUrl.searchParams.set("playlist", cleanId);
       proxyUrl.searchParams.set("playsinline", "1");
       proxyUrl.searchParams.set("rel", "0");
-      proxyUrl.searchParams.set("cc_load_policy", "0");
+      applyTrailerCaptionParams(proxyUrl.searchParams, { captionsEnabled, captionsLanguage });
       return proxyUrl.toString();
     } catch (_) {
       return "";
@@ -362,9 +370,9 @@ export function buildYoutubeEmbedUrl(videoId, { muted = true } = {}) {
     rel: "0",
     modestbranding: "1",
     enablejsapi: "1",
-    cc_load_policy: "0",
     iv_load_policy: "3"
   });
+  applyTrailerCaptionParams(params, { captionsEnabled, captionsLanguage });
   const origin = String(globalThis?.location?.origin || "").trim();
   if (/^https?:\/\//i.test(origin)) {
     params.set("origin", origin);

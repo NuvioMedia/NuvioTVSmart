@@ -913,6 +913,11 @@
     <string name="layout_trailer_location_sub">Choose where trailer preview plays in Modern Home.</string>
     <string name="layout_trailer_expanded_card">Expanded Card</string>
     <string name="layout_trailer_hero_media">Hero Media</string>
+    <string name="layout_trailer_subtitles">Trailer Subtitles</string>
+    <string name="layout_trailer_subtitles_sub">Show captions on trailers in your preferred subtitle language, when available.</string>
+    <string name="layout_trailer_continue_in_details">Continue Trailer in Details</string>
+    <string name="layout_trailer_continue_in_details_sub">Keep the trailer playing when you open the details page.</string>
+    <string name="layout_trailer_hero_media_no_expand">Hero Media (No Expand)</string>
     <string name="layout_preset_compact">Compact</string>
     <string name="layout_preset_dense">Dense</string>
     <string name="layout_preset_standard">Standard</string>

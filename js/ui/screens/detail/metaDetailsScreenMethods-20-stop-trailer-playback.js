@@ -61,6 +61,7 @@ export function createMetaDetailsScreenMethods20() {
       this.trailerPlaybackMode = null;
       this.trailerVisualReady = false;
       this.trailerSubtitlesEnabled = false;
+      this.trailerPendingSeekSeconds = 0;
       this.trailerFocusRestore = null;
       const clearLayer = () => {
         if (!layer || Number(this.trailerDomGeneration || 0) !== cleanupGeneration || this.isTrailerPlaying) {

@@ -51,6 +51,7 @@ const DEFAULTS = {
   secondaryPreferredAudioLanguage: "none",
   trailerAutoplay: true,
   trailerDelaySeconds: 7,
+  trailerSubtitles: false,
   skipIntroEnabled: true,
   loadingOverlayEnabled: true,
   showPlayerLoadingStatus: true,
@@ -358,6 +359,7 @@ export function normalizePlayerSettings(settings = {}) {
       15,
       Math.max(0, Math.trunc(Number(persistentSettings.trailerDelaySeconds ?? 7)) || 0)
     ),
+    trailerSubtitles: persistentSettings.trailerSubtitles === true,
     loadingOverlayEnabled: persistentSettings.loadingOverlayEnabled !== false,
     showPlayerLoadingStatus: persistentSettings.showPlayerLoadingStatus !== false,
     pauseOverlayEnabled: persistentSettings.pauseOverlayEnabled !== false,

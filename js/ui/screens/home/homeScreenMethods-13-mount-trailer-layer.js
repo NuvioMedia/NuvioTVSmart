@@ -1,7 +1,14 @@
 import * as internals from "./homeScreenContext.js";
 
 export function createHomeScreenMethods13() {
-  const { metaRepository, isCollectionFolderItem, resolveTrailerSource, withTimeout, resolveTrailerMetaWithTmdbFallback } = internals;
+  const {
+    metaRepository,
+    isCollectionFolderItem,
+    resolveTrailerSource,
+    withTimeout,
+    resolveTrailerMetaWithTmdbFallback,
+    LayoutPreferences
+  } = internals;
 
   return {
     mountTrailerLayer(container, source, onReady = null) {
@@ -142,6 +149,7 @@ export function createHomeScreenMethods13() {
             return;
           }
           if (state) {
+            this.trackHomeTrailerHandoff?.(container, source, state);
             // The embed loops; Android plays a trailer once and then lets the
             // idle period start, so only the first pass counts as playing.
             const time = Number(state.currentTime || 0);
@@ -401,6 +409,40 @@ export function createHomeScreenMethods13() {
         this.focusedPosterTrailerSourcePromises.delete(oldestKey);
       }
       return promise;
+    },
+    trackHomeTrailerHandoff(container, source, state) {
+      const card = container?.closest?.(".home-poster-card") || null;
+      const heroState = this.heroTrailerPlaybackState;
+      const itemKey = card ? this.getFocusedPosterFlowKey(card) : String(heroState?.key || "");
+      if (!itemKey || !source?.ytId) {
+        return;
+      }
+      this.homeTrailerHandoff = {
+        itemKey,
+        ytId: String(source.ytId || ""),
+        currentTime: Math.max(0, Number(state?.currentTime || 0)),
+        muted: state?.muted === true,
+        paused: state?.paused !== false,
+        updatedAt: Date.now()
+      };
+    },
+    getTrailerHandoffForNode(node, item = {}) {
+      if (LayoutPreferences.get().focusedPosterTrailerContinueInDetails !== true) {
+        return null;
+      }
+      const handoff = this.homeTrailerHandoff;
+      if (!handoff || handoff.paused || !(handoff.currentTime > 0) || Date.now() - Number(handoff.updatedAt || 0) > 3000) {
+        return null;
+      }
+      const key = item.itemId ? `${String(item.itemType || "movie").toLowerCase()}:${item.itemId}` : this.getFocusedPosterFlowKey(node);
+      if (key && handoff.itemKey && handoff.itemKey !== key) {
+        return null;
+      }
+      return {
+        ytId: handoff.ytId,
+        currentTime: handoff.currentTime,
+        muted: handoff.muted === true
+      };
     }
   };
 }

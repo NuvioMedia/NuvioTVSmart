@@ -616,6 +616,11 @@
     <string name="layout_trailer_location_sub">Scegli dove viene riprodotta l\'anteprima del trailer nella Home Modern.</string>
     <string name="layout_trailer_expanded_card">Scheda Espansa</string>
     <string name="layout_trailer_hero_media">Media Hero</string>
+    <string name="layout_trailer_subtitles">Sottotitoli trailer</string>
+    <string name="layout_trailer_subtitles_sub">Mostra i sottotitoli nei trailer nella lingua dei sottotitoli preferita, quando disponibile.</string>
+    <string name="layout_trailer_continue_in_details">Continua il trailer nei dettagli</string>
+    <string name="layout_trailer_continue_in_details_sub">Mantieni il trailer in riproduzione quando apri la pagina dei dettagli.</string>
+    <string name="layout_trailer_hero_media_no_expand">Media hero (senza espansione)</string>
     <string name="layout_preset_compact">Compatto</string>
     <string name="layout_preset_dense">Denso</string>
     <string name="layout_preset_standard">Standard</string>

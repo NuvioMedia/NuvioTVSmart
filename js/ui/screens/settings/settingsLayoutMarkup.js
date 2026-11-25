@@ -321,6 +321,16 @@ export function renderLayoutMarkup(model) {
               checked: model.layout.trailerPlayInBackground === true
             })}
             ${this.renderToggleRow({
+              focusKey: "layout:detail:trailerSubtitles",
+              title: t("layout_trailer_subtitles", {}, "Trailer Subtitles"),
+              subtitle: t(
+                "layout_trailer_subtitles_sub",
+                {},
+                "Show captions on trailers in your preferred subtitle language, when available."
+              ),
+              checked: model.player?.trailerSubtitles === true
+            })}
+            ${this.renderToggleRow({
               focusKey: "layout:detail:preferExternalMeta",
               title: t("settings.layout.preferExternalMeta.title"),
               subtitle: t("settings.layout.preferExternalMeta.subtitle"),
@@ -380,6 +390,16 @@ export function renderLayoutMarkup(model) {
             }
             ${
               isModernLayout && showAutoplayRow && Boolean(model.layout.focusedPosterBackdropTrailerEnabled)
+                ? this.renderToggleRow({
+                    focusKey: "layout:focusedPosterTrailerContinueInDetails",
+                    title: t("layout_trailer_continue_in_details", {}, "Continue Trailer in Details"),
+                    subtitle: t("layout_trailer_continue_in_details_sub", {}, "Keep the trailer playing when you open the details page."),
+                    checked: model.layout.focusedPosterTrailerContinueInDetails === true
+                  })
+                : ""
+            }
+            ${
+              isModernLayout && showAutoplayRow && Boolean(model.layout.focusedPosterBackdropTrailerEnabled)
                 ? this.renderActionRow({
                     focusKey: "layout:focusedPosterTrailerTarget",
                     title: t("settings.layout.trailerTarget.title"),
@@ -387,7 +407,9 @@ export function renderLayoutMarkup(model) {
                     value:
                       String(model.layout.focusedPosterBackdropTrailerPlaybackTarget || "hero_media") === "expanded_card"
                         ? t("settings.layout.trailerTargets.expandedCard")
-                        : t("settings.layout.trailerTargets.heroMedia")
+                        : String(model.layout.focusedPosterBackdropTrailerPlaybackTarget || "hero_media") === "hero_media_no_expand"
+                          ? t("settings.layout.trailerTargets.heroMediaNoExpand")
+                          : t("settings.layout.trailerTargets.heroMedia")
                   })
                 : ""
             }
