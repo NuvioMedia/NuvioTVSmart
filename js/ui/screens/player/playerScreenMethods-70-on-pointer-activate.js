@@ -208,6 +208,11 @@ export function createPlayerScreenMethods70() {
       );
     },
     consumeBackRequest() {
+      // Back is routed here by the focus engine, never to onKeyDown.
+      if (this.streamInfoVisible) {
+        this.closeStreamInfo();
+        return true;
+      }
       if (this.chaptersPanelVisible) {
         this.closeChaptersPanel();
         return true;
