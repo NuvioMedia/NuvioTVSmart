@@ -187,7 +187,11 @@ import {
   uniqueNonEmptyValues
 } from "./homeUtils.js";
 
-import { resolveYoutubeId, buildYoutubeEmbedUrl } from "./homeScreenHelpers-05-normalize-collection-folder-item.js";
+import {
+  resolveYoutubeId,
+  buildYoutubeEmbedUrl,
+  homeTrailerCaptionOptions
+} from "./homeScreenHelpers-05-normalize-collection-folder-item.js";
 import { parseRuntimeMinutes } from "./homeScreenHelpers-04-animate-hero-logo-swap.js";
 
 export function resolveTrailerSource(meta = {}) {
@@ -195,7 +199,7 @@ export function resolveTrailerSource(meta = {}) {
   for (const entry of trailerCandidates) {
     const ytId = resolveYoutubeId(entry?.ytId || entry?.youtubeId || entry?.source || entry?.url || entry?.link || "");
     if (ytId) {
-      const embedUrl = buildYoutubeEmbedUrl(ytId);
+      const embedUrl = buildYoutubeEmbedUrl(ytId, homeTrailerCaptionOptions());
       if (!embedUrl) {
         continue;
       }
@@ -210,7 +214,7 @@ export function resolveTrailerSource(meta = {}) {
   if (!fallbackId) {
     return null;
   }
-  const fallbackEmbedUrl = buildYoutubeEmbedUrl(fallbackId);
+  const fallbackEmbedUrl = buildYoutubeEmbedUrl(fallbackId, homeTrailerCaptionOptions());
   if (!fallbackEmbedUrl) {
     return null;
   }
@@ -227,7 +231,7 @@ export function applyTrailerAudioPreferences(source, prefs = {}) {
   }
   const muted = Boolean(prefs.focusedPosterBackdropTrailerMuted);
   if (source.kind === "youtube") {
-    const embedUrl = buildYoutubeEmbedUrl(source.ytId, { muted });
+    const embedUrl = buildYoutubeEmbedUrl(source.ytId, { muted, ...homeTrailerCaptionOptions() });
     if (!embedUrl) {
       return null;
     }

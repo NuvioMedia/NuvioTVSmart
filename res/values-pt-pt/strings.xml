@@ -837,6 +837,11 @@
     <string name="layout_trailer_location_sub">Escolhe onde a pré-visualização do trailer é reproduzida no Início moderno.</string>
     <string name="layout_trailer_expanded_card">Cartão expandido</string>
     <string name="layout_trailer_hero_media">Multimédia em destaque</string>
+    <string name="layout_trailer_subtitles">Legendas de trailers</string>
+    <string name="layout_trailer_subtitles_sub">Mostrar legendas nos trailers no teu idioma de legendas preferido, quando disponíveis.</string>
+    <string name="layout_trailer_continue_in_details">Continuar trailer nos detalhes</string>
+    <string name="layout_trailer_continue_in_details_sub">Manter o trailer em reprodução ao abrir a página de detalhes.</string>
+    <string name="layout_trailer_hero_media_no_expand">Multimédia em destaque (sem expandir)</string>
     <string name="layout_preset_compact">Compacto</string>
     <string name="layout_preset_dense">Denso</string>
     <string name="layout_preset_standard">Padrão</string>

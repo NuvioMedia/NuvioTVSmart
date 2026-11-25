@@ -1,3 +1,5 @@
+import { applyTrailerCaptionParams } from "../../../core/detail/trailerCaptions.js";
+
 import { Router } from "../../navigation/routerState.js";
 
 import { ScreenUtils } from "../../navigation/screen.js";
@@ -288,7 +290,10 @@ export function resolveTrailerTrustedProxyOrigin() {
   return "";
 }
 
-export function buildDirectYoutubeEmbedUrl(cleanId = "", { muted = false, loop = true } = {}) {
+export function buildDirectYoutubeEmbedUrl(
+  cleanId = "",
+  { muted = false, loop = true, captionsEnabled = false, captionsLanguage = "" } = {}
+) {
   const videoId = String(cleanId || "").trim();
   if (!videoId || !Environment.isBrowser()) {
     return "";
@@ -302,9 +307,9 @@ export function buildDirectYoutubeEmbedUrl(cleanId = "", { muted = false, loop =
     rel: "0",
     modestbranding: "1",
     enablejsapi: "1",
-    cc_load_policy: "0",
     iv_load_policy: "3"
   });
+  applyTrailerCaptionParams(params, { captionsEnabled, captionsLanguage });
   if (loop) {
     params.set("playlist", videoId);
   }

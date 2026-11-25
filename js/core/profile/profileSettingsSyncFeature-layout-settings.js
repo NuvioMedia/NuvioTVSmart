@@ -122,6 +122,7 @@ export const layout_settings = {
       ),
       focused_poster_backdrop_trailer_enabled: Boolean(layout.focusedPosterBackdropTrailerEnabled),
       focused_poster_backdrop_trailer_muted: layout.focusedPosterBackdropTrailerMuted !== false,
+      focused_poster_trailer_continue_in_details: layout.focusedPosterTrailerContinueInDetails === true,
       focused_poster_backdrop_trailer_playback_target: normalizeTrailerTargetForAndroid(layout.focusedPosterBackdropTrailerPlaybackTarget),
       poster_card_width_dp: Math.max(72, Math.trunc(Number(layout.posterCardWidthDp ?? 126) || 126)),
       poster_card_height_dp: Math.max(108, Math.trunc((Math.trunc(Number(layout.posterCardWidthDp ?? 126) || 126) * 3) / 2)),
@@ -177,6 +178,7 @@ export const layout_settings = {
       "focused_poster_backdrop_expand_enabled",
       "focused_poster_backdrop_trailer_enabled",
       "focused_poster_backdrop_trailer_muted",
+      "focused_poster_trailer_continue_in_details",
       "detail_page_trailer_button_enabled",
       "blur_unwatched_episodes",
       "random_episode_enabled",
@@ -305,6 +307,9 @@ export const layout_settings = {
     }
     if (booleanOrNull(raw.focused_poster_backdrop_trailer_muted) != null) {
       partial.focusedPosterBackdropTrailerMuted = Boolean(raw.focused_poster_backdrop_trailer_muted);
+    }
+    if (booleanOrNull(raw.focused_poster_trailer_continue_in_details) != null) {
+      partial.focusedPosterTrailerContinueInDetails = Boolean(raw.focused_poster_trailer_continue_in_details);
     }
     if (stringOrNull(raw.focused_poster_backdrop_trailer_playback_target)) {
       partial.focusedPosterBackdropTrailerPlaybackTarget = normalizeTrailerTargetForWeb(

@@ -164,6 +164,7 @@ export function createHomeScreenMethods12() {
       if (!container) {
         return;
       }
+      this.homeTrailerHandoff = null;
       const pendingCleanup = this.homeTrailerLayerCleanupTimers?.get?.(container);
       const pendingHide = this.homeTrailerLayerHideTimers?.get?.(container);
       // Home mounts an empty trailer layer for every poster. Leaving Home used
@@ -391,7 +392,7 @@ export function createHomeScreenMethods12() {
       if (shouldExpand) {
         this.expandFocusedPoster(node);
       }
-      if (!shouldPreviewTrailer || trailerTarget !== "hero_media" || !flowKey) {
+      if (!shouldPreviewTrailer || !["hero_media", "hero_media_no_expand"].includes(trailerTarget) || !flowKey) {
         return false;
       }
       const cachedState = this.heroTrailerPlaybackState;
@@ -414,14 +415,14 @@ export function createHomeScreenMethods12() {
     getFocusedPosterFlowConfig(prefs = this.layoutPrefs || {}) {
       const useLandscapePosters = Boolean(prefs.modernLandscapePostersEnabled);
       const expandSettingEnabled = Boolean(prefs.focusedPosterBackdropExpandEnabled);
-      const requestedTrailerTarget =
-        String(prefs.focusedPosterBackdropTrailerPlaybackTarget || "hero_media").toLowerCase() === "expanded_card"
-          ? "expanded_card"
-          : "hero_media";
+      const storedTrailerTarget = String(prefs.focusedPosterBackdropTrailerPlaybackTarget || "hero_media").toLowerCase();
+      const requestedTrailerTarget = ["expanded_card", "hero_media_no_expand"].includes(storedTrailerTarget)
+        ? storedTrailerTarget
+        : "hero_media";
       const trailerEnabled = Boolean(prefs.focusedPosterBackdropTrailerEnabled) && !this.shouldSuppressAutomaticTrailerPlayback();
       const shouldPreviewTrailer = trailerEnabled && (useLandscapePosters || expandSettingEnabled);
       const landscapeExpandedCardMode = useLandscapePosters && shouldPreviewTrailer && requestedTrailerTarget === "expanded_card";
-      const suppressCardExpansionForHeroTrailer = shouldPreviewTrailer && requestedTrailerTarget === "hero_media";
+      const suppressCardExpansionForHeroTrailer = shouldPreviewTrailer && requestedTrailerTarget === "hero_media_no_expand";
       const shouldExpand =
         !suppressCardExpansionForHeroTrailer && ((expandSettingEnabled && !useLandscapePosters) || landscapeExpandedCardMode);
       return {

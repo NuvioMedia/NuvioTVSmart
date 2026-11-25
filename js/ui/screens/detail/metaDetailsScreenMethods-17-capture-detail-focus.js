@@ -307,6 +307,21 @@ export function createMetaDetailsScreenMethods17() {
       ) {
         return;
       }
+      const handoff =
+        this.trailerHandoff && (!this.trailerSource?.ytId || String(this.trailerHandoff.ytId || "") === String(this.trailerSource.ytId))
+          ? this.trailerHandoff
+          : null;
+      if (handoff) {
+        const startAtSeconds = Math.max(0, Number(handoff.currentTime || 0));
+        this.trailerHandoff = null;
+        this.playTrailer({
+          muted: handoff.muted === true,
+          restart: true,
+          initiatedByUser: false,
+          startAtSeconds
+        });
+        return;
+      }
       this.trailerAutoplayTimer = setTimeout(
         () => {
           this.playTrailer({ muted: false, restart: true, initiatedByUser: false });

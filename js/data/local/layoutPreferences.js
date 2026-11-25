@@ -36,6 +36,7 @@ const DEFAULTS = {
   focusedPosterBackdropExpandDelaySeconds: 3,
   focusedPosterBackdropTrailerEnabled: false,
   focusedPosterBackdropTrailerMuted: true,
+  focusedPosterTrailerContinueInDetails: false,
   focusedPosterBackdropTrailerPlaybackTarget: "hero_media",
   posterCardWidthDp: 126,
   posterCardCornerRadiusDp: 12,
@@ -145,11 +146,12 @@ function normalizeLayoutPreferences(value = {}) {
     ),
     focusedPosterBackdropTrailerEnabled: Boolean(merged.focusedPosterBackdropTrailerEnabled),
     focusedPosterBackdropTrailerMuted: merged.focusedPosterBackdropTrailerMuted !== false,
-    focusedPosterBackdropTrailerPlaybackTarget:
-      String(merged.focusedPosterBackdropTrailerPlaybackTarget || "hero_media").toLowerCase() ===
-      "expanded_card"
-        ? "expanded_card"
-        : "hero_media",
+    focusedPosterTrailerContinueInDetails: merged.focusedPosterTrailerContinueInDetails === true,
+    focusedPosterBackdropTrailerPlaybackTarget: ["expanded_card", "hero_media_no_expand"].includes(
+      String(merged.focusedPosterBackdropTrailerPlaybackTarget || "hero_media").toLowerCase()
+    )
+      ? String(merged.focusedPosterBackdropTrailerPlaybackTarget).toLowerCase()
+      : "hero_media",
     posterCardWidthDp: Math.max(72, Number(merged.posterCardWidthDp ?? 126) || 126),
     posterCardCornerRadiusDp: Number.isFinite(Number(merged.posterCardCornerRadiusDp ?? 12))
       ? Math.max(0, Number(merged.posterCardCornerRadiusDp ?? 12))

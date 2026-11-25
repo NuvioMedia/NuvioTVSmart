@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
+import { applyTrailerCaptionParams } from "../../../core/detail/trailerCaptions.js";
 
 // The trailer methods reach the whole app through homeScreenContext, so they
 // are evaluated against stubs the way the other home tests do it. The point is
@@ -179,6 +180,7 @@ test("buildYoutubeEmbedUrl produces deterministic proxy URLs so mounted trailer 
   const helperContext = vm.createContext({
     URL,
     URLSearchParams,
+    applyTrailerCaptionParams,
     YOUTUBE_PROXY_URL: "https://proxy.example.test/embed",
     location: { href: "https://app.example.test/", origin: "https://app.example.test" }
   });
@@ -193,6 +195,22 @@ globalThis.buildYoutubeEmbedUrl = buildYoutubeEmbedUrl;`,
   const secondUrl = helperContext.buildYoutubeEmbedUrl("dQw4w9WgXcQ", { muted: true });
   assert.equal(firstUrl, secondUrl);
   assert.equal(new URL(firstUrl).searchParams.has("_cb"), false);
+
+  const captionedUrl = new URL(
+    helperContext.buildYoutubeEmbedUrl("dQw4w9WgXcQ", {
+      muted: true,
+      captionsEnabled: true,
+      captionsLanguage: "it"
+    })
+  );
+  assert.equal(captionedUrl.searchParams.get("cc_load_policy"), "1");
+  assert.equal(captionedUrl.searchParams.get("cc_lang_pref"), "it");
+  assert.equal(
+    new URL(helperContext.buildYoutubeEmbedUrl("dQw4w9WgXcQ", { muted: true })).searchParams.get(
+      "cc_load_policy"
+    ),
+    "0"
+  );
 
   const context = buildContext();
   const screen = makeScreen(context);

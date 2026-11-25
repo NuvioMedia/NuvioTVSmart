@@ -45,6 +45,7 @@
         var autoplay = params.autoplay !== "0";
         var loop = params.loop !== "0";
         var captionsEnabled = params.cc_load_policy === "1";
+        var captionsLanguage = String(params.cc_lang_pref || "").trim();
         var directEmbedRequested = params.direct === "1";
         var statePollMs = Math.max(
           0,
@@ -348,6 +349,7 @@
               loop: loop ? 1 : 0,
               modestbranding: 1,
               cc_load_policy: captionsEnabled ? 1 : 0,
+              cc_lang_pref: captionsLanguage || undefined,
               origin: pageOriginIsHttp ? pageOrigin : undefined,
               playsinline: 1,
               playlist: loop ? videoId : undefined,

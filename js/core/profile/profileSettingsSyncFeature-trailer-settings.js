@@ -97,7 +97,8 @@ export const trailer_settings = {
     const settings = PlayerSettingsStore.getForProfile(profileId);
     return {
       trailer_enabled: Boolean(settings.trailerAutoplay),
-      trailer_delay_seconds: Math.min(15, Math.max(0, Number(settings.trailerDelaySeconds ?? 7) || 0))
+      trailer_delay_seconds: Math.min(15, Math.max(0, Number(settings.trailerDelaySeconds ?? 7) || 0)),
+      trailer_subtitles_enabled: settings.trailerSubtitles === true
     };
   },
   project(rawFeature = {}) {
@@ -108,18 +109,26 @@ export const trailer_settings = {
     }
     if (numberOrNull(raw.trailer_delay_seconds) != null)
       projected.trailer_delay_seconds = Math.min(15, Math.max(0, Math.trunc(Number(raw.trailer_delay_seconds))));
+    if (booleanOrNull(raw.trailer_subtitles_enabled) != null) {
+      projected.trailer_subtitles_enabled = Boolean(raw.trailer_subtitles_enabled);
+    }
     return projected;
   },
   import(profileId, rawFeature = {}) {
     const raw = normalizeFeaturePayload(rawFeature);
-    if (booleanOrNull(raw.trailer_enabled) == null && numberOrNull(raw.trailer_delay_seconds) == null) {
+    if (
+      booleanOrNull(raw.trailer_enabled) == null &&
+      numberOrNull(raw.trailer_delay_seconds) == null &&
+      booleanOrNull(raw.trailer_subtitles_enabled) == null
+    ) {
       return false;
     }
     PlayerSettingsStore.setForProfile(
       profileId,
       {
         ...(booleanOrNull(raw.trailer_enabled) != null ? { trailerAutoplay: Boolean(raw.trailer_enabled) } : {}),
-        ...(numberOrNull(raw.trailer_delay_seconds) != null ? { trailerDelaySeconds: Number(raw.trailer_delay_seconds) } : {})
+        ...(numberOrNull(raw.trailer_delay_seconds) != null ? { trailerDelaySeconds: Number(raw.trailer_delay_seconds) } : {}),
+        ...(booleanOrNull(raw.trailer_subtitles_enabled) != null ? { trailerSubtitles: Boolean(raw.trailer_subtitles_enabled) } : {})
       },
       { silentSync: true }
     );

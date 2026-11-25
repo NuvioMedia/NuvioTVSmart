@@ -681,6 +681,11 @@
     <string name="layout_trailer_location_sub">Choisir où l’aperçu de la bande-annonce est lu dans l’accueil moderne.</string>
     <string name="layout_trailer_expanded_card">Carte étendue</string>
     <string name="layout_trailer_hero_media">Média du hero</string>
+    <string name="layout_trailer_subtitles">Sous-titres des bandes-annonces</string>
+    <string name="layout_trailer_subtitles_sub">Afficher des sous-titres sur les bandes-annonces dans la langue de sous-titres que vous préférez, lorsqu’ils sont disponibles.</string>
+    <string name="layout_trailer_continue_in_details">Poursuivre la bande-annonce dans la page de détail</string>
+    <string name="layout_trailer_continue_in_details_sub">Garder la bande-annonce en lecture à l’ouverture de la page de détail.</string>
+    <string name="layout_trailer_hero_media_no_expand">Média du hero (sans extension)</string>
     <string name="layout_preset_compact">Compact</string>
     <string name="layout_preset_dense">Dense</string>
     <string name="layout_preset_standard">Standard</string>
