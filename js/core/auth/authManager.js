@@ -306,7 +306,6 @@ class AuthManagerClass {
     this.cachedEffectiveUserId = null;
     this.cachedEffectiveUserSourceUserId = null;
     this.lastRefreshFailureKind = null;
-    resetSyncBackoff();
 
     const teardownListenersSucceeded = await this.notifySessionTeardown({
       serverSwitch,
@@ -318,6 +317,9 @@ class AuthManagerClass {
       waitForInFlight: true
     });
     const sessionRequestsDrained = await waitForPendingSessionRequests();
+    // Reset only after in-flight work drained: a request that fails during
+    // teardown must not restore the previous account's cooldown.
+    resetSyncBackoff();
 
     // Clear local account data after teardown listeners have drained in-flight
     // work, but before notifying AuthState.SIGNED_OUT subscribers so UI and

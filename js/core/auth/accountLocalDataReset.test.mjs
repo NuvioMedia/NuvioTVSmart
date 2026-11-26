@@ -25,6 +25,8 @@ globalThis.sessionStorage = {
 
 const { clearAccountLocalData } = await import("./accountLocalDataReset.js");
 const { AuthManager } = await import("./authManager.js");
+const { registerSessionTeardownHandler, trackSessionRequest } =
+  await import("./sessionLifecycle.js");
 const { isSyncBackoffActive, recordSyncFailure } = await import("../sync/syncBackoffPolicy.js");
 
 test("signOut removes account-scoped caches including non-envelope keys and resets in-memory sync backoff", async () => {
@@ -67,6 +69,11 @@ test("signOut removes account-scoped caches including non-envelope keys and rese
     true,
     "Device torrentSettings must remain preserved"
   );
+  assert.equal(
+    storageMap.has("nuvioSyncBackoffState"),
+    false,
+    "Stored sync backoff must be removed after signOut"
+  );
   assert.equal(isSyncBackoffActive(), false, "In-memory sync backoff must be reset after signOut");
 
   // Also check direct clearAccountLocalData invocation explicitly.
@@ -77,4 +84,32 @@ test("signOut removes account-scoped caches including non-envelope keys and rese
   for (const key of keysToClear) {
     assert.equal(storageMap.has(key), false, `Expected clearAccountLocalData to remove ${key}`);
   }
+});
+
+test("signOut resets sync backoff after in-flight session requests drain", async () => {
+  storageMap.clear();
+  sessionMap.clear();
+
+  recordSyncFailure({ status: 503, message: "Service unavailable" });
+  assert.equal(isSyncBackoffActive(), true);
+
+  const unregister = registerSessionTeardownHandler(() => {
+    trackSessionRequest(
+      new Promise((resolve) => {
+        setTimeout(() => {
+          recordSyncFailure({ status: 503, message: "Service unavailable" });
+          resolve();
+        }, 10);
+      })
+    );
+  });
+
+  try {
+    await AuthManager.signOut();
+  } finally {
+    unregister();
+  }
+
+  assert.equal(storageMap.has("nuvioSyncBackoffState"), false);
+  assert.equal(isSyncBackoffActive(), false);
 });
