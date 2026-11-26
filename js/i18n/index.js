@@ -667,8 +667,11 @@ function warnMissingKey(locale, key) {
   console.warn(`Missing translation for "${key}" in locale "${locale}"`);
 }
 
+let localeInitSeq = 0;
+
 export const I18n = {
   async init(preferred = null) {
+    const seq = ++localeInitSeq;
     const locale = resolvePreferredLocale(preferred);
     if (initialized && locale === currentLocale && Object.keys(activeMessages).length > 0) {
       return currentLocale;
@@ -679,15 +682,21 @@ export const I18n = {
 
     currentLocale = locale;
     initPromise = (async () => {
-      activeMessages = await loadLocaleMessages(locale);
-      initialized = true;
+      const loaded = await loadLocaleMessages(locale);
+      if (seq === localeInitSeq) {
+        activeMessages = loaded;
+        currentLocale = locale;
+        initialized = true;
+      }
       return currentLocale;
     })();
 
     try {
       return await initPromise;
     } finally {
-      initPromise = null;
+      if (seq === localeInitSeq) {
+        initPromise = null;
+      }
     }
   },
 
