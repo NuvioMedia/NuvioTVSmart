@@ -36,7 +36,32 @@ function parseNumber(value, fallback) {
   return isFinite(number) ? number : fallback;
 }
 
+function isLoopbackAddress(value) {
+  var address = String(value || "").trim().toLowerCase();
+  if (!address) return false;
+  address = address.split("%", 1)[0];
+  if (address === "::1" || address === "0:0:0:0:0:0:0:1") return true;
+  address = address.replace(/^::ffff:/, "");
+  return /^127(?:\.\d{1,3}){3}$/.test(address);
+}
+
+function isLoopbackRequest(request) {
+  var socket = request && (request.socket || request.connection);
+  if (!socket) {
+    return true;
+  }
+  return isLoopbackAddress(socket.remoteAddress);
+}
+
 function handleRequest(request, response) {
+  if (!isLoopbackRequest(request)) {
+    sendJson(response, 403, {
+      returnValue: false,
+      errorCode: "FORBIDDEN",
+      errorText: "Subtitle service accepts loopback clients only"
+    });
+    return;
+  }
   var parsed = urlModule.parse(request.url || "/", true);
   if (request.method === "OPTIONS") {
     response.writeHead(204, {

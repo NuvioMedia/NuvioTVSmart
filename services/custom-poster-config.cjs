@@ -172,6 +172,9 @@ function start(payload) {
 module.exports = {
   start: start,
   stop: stop,
+  stopAll: function () {
+    return session ? stop(session.token) : false;
+  },
   read: function (token) {
     if (!session || session.token !== token) return null;
     renew();

@@ -3,6 +3,77 @@
 
 var SERVICE_TAG = "[Nuvio Tizen EngineFS]";
 var started = false;
+var trackedHttpServers = [];
+
+function isLoopbackAddress(value) {
+  var address = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!address) return false;
+  address = address.split("%", 1)[0];
+  if (address === "::1" || address === "0:0:0:0:0:0:0:1") return true;
+  address = address.replace(/^::ffff:/, "");
+  return /^127(?:\.\d{1,3}){3}$/.test(address);
+}
+
+function isLoopbackRequest(request) {
+  var socket = request && (request.socket || request.connection);
+  if (!socket) {
+    return true;
+  }
+  return isLoopbackAddress(socket.remoteAddress);
+}
+
+function wrapTizenLoopbackListener(listener) {
+  if (typeof listener !== "function" || listener.__nuvioLoopbackWrapped) {
+    return listener;
+  }
+  var wrapped = function (request, response) {
+    if (!isLoopbackRequest(request)) {
+      if (response && !response.headersSent) {
+        response.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+      }
+      if (response) {
+        response.end("Loopback clients only");
+      }
+      return;
+    }
+    return listener.apply(this, arguments);
+  };
+  wrapped.__nuvioLoopbackWrapped = true;
+  return wrapped;
+}
+
+function installTizenLoopbackHttpGuard() {
+  var http = require("http");
+  var originalCreateServer = http.createServer;
+  http.createServer = function () {
+    var args = Array.prototype.slice.call(arguments);
+    if (typeof args[0] === "function") {
+      args[0] = wrapTizenLoopbackListener(args[0]);
+    } else if (typeof args[1] === "function") {
+      args[1] = wrapTizenLoopbackListener(args[1]);
+    }
+    var server = originalCreateServer.apply(http, args);
+    trackedHttpServers.push(server);
+    ["on", "addListener", "once", "prependListener"].forEach(function (methodName) {
+      if (typeof server[methodName] !== "function") {
+        return;
+      }
+      var original = server[methodName];
+      server[methodName] = function (eventName, listener) {
+        if (eventName === "request" && typeof listener === "function") {
+          return original.call(this, eventName, wrapTizenLoopbackListener(listener));
+        }
+        return original.apply(this, arguments);
+      };
+    });
+    return server;
+  };
+  return function restore() {
+    http.createServer = originalCreateServer;
+  };
+}
 
 function warn() {
   var args = Array.prototype.slice.call(arguments);
@@ -226,7 +297,12 @@ function startEngineFsRuntime() {
   configureRuntimeEnv();
   started = true;
   require("./runtime/node-runtime-compat.cjs")({ Buffer: Buffer, stream: require("stream") });
-  loadTizenMediaRuntime();
+  var restoreHttpGuard = installTizenLoopbackHttpGuard();
+  try {
+    loadTizenMediaRuntime();
+  } finally {
+    restoreHttpGuard();
+  }
   diagnostic("EngineFS runtime module loaded", { port: process.env.PORT });
   // AVPlay can expose text tracks without rendering them. Keep the fallback
   // extractors beside the existing runtime so Tizen 4+ devices with the
@@ -268,6 +344,13 @@ function stopEngineFsRuntime() {
     require("./runtime/tx3g-subtitle-service.cjs").stop();
   } catch (_) {}
   requestRemoveAll();
+  trackedHttpServers.splice(0).forEach(function (server) {
+    try {
+      if (server && typeof server.close === "function") {
+        server.close();
+      }
+    } catch (_) {}
+  });
 }
 
 // onExit is the documented Tizen Web Service lifecycle callback. Keep onStop
