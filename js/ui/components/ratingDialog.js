@@ -89,6 +89,7 @@ export function openRatingDialog({
   let confirmArmed = false;
   let previousValue = value;
   let dialog = null;
+  let closed = false;
 
   const content = el("div", "rating-dialog-content");
   content.appendChild(el("div", "rating-dialog-label", t("rating_your_rating", {}, "Your rating")));
@@ -186,12 +187,13 @@ export function openRatingDialog({
   }
 
   function close() {
+    closed = true;
     dialog?.destroy();
     dialog = null;
   }
 
   async function submit(rating) {
-    if (saving) return;
+    if (saving || closed) return;
     saving = true;
     render();
     const saved = await TrackingRatings.rate(media, rating);
@@ -284,18 +286,28 @@ export function openRatingDialog({
     content,
     onKey,
     onKeyUp,
-    onDismiss: () => {
-      if (typeof onBack === "function") onBack();
+    onDismiss: (reason) => {
+      closed = true;
+      dialog = null;
+      if (reason !== "ambient" && typeof onBack === "function") {
+        onBack();
+      }
     }
   });
   dialog.mount(document.body);
   // Android requestFocusAfterFrames on the stars.
-  requestAnimationFrame(() => requestAnimationFrame(render));
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      if (!closed) {
+        render();
+      }
+    })
+  );
   render();
   return {
     close,
     get isOpen() {
-      return Boolean(dialog);
+      return !closed && Boolean(dialog);
     }
   };
 }
