@@ -315,6 +315,8 @@ export const PlayerController = {
   avplayDurationMs: 0,
   avplaySeekRequestToken: 0,
   avplaySeekInFlight: false,
+  avplayPreparedHandled: false,
+  avplayPreparedPollTimer: null,
   avplayDisplayRectDeferred: false,
   avplaySeekTimeoutTimer: null,
   avplayTrackSyncAt: 0,

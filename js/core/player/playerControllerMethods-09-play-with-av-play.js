@@ -219,10 +219,23 @@ export function createPlayerControllerMethods09() {
       // configuring the display and starting prepareAsync.
       this.setAvPlayDisplayRect();
 
+      // Some firmware reaches READY without ever calling prepareAsync's success
+      // callback (Tizen 6 logs show state READY, time 0 and no playback start),
+      // so the state is polled once prepareAsync has been issued and the same
+      // handler runs from whichever arrives first.
+      this.avplayPreparedHandled = false;
+      // AVPlay is a single native session: when the native URL is still the one
+      // being prepared, a superseded play token must not drop the only signal
+      // that the file is ready, or nothing ever starts.
+      const belongsToNativeSession = () => Boolean(this.avplayActive) && String(this.avplayUrl || "") === String(url || "").trim();
       const onPrepared = () => {
-        if (!this.isUsingAvPlay() || !this.isPlaybackRequestActive(playToken, url)) {
+        if (!this.isUsingAvPlay() || (!this.isPlaybackRequestActive(playToken, url) && !belongsToNativeSession())) {
           return;
         }
+        if (this.avplayPreparedHandled) {
+          return;
+        }
+        this.avplayPreparedHandled = true;
         this.avplayReady = true;
         this.avplayEnded = false;
         this.reapplyTizenAvPlayDisplayRect();
@@ -267,9 +280,31 @@ export function createPlayerControllerMethods09() {
         });
       };
 
+      const pollPreparedState = ({ deadline = Date.now() + 20000 } = {}) => {
+        this.clearAvPlayPreparedPoll();
+        const tick = () => {
+          if (this.avplayPreparedHandled || !this.isUsingAvPlay()) {
+            return;
+          }
+          if (!this.isPlaybackRequestActive(playToken, url) && !belongsToNativeSession()) {
+            return;
+          }
+          if (String(this.getAvPlayState?.() || "").toUpperCase() === "READY") {
+            onPrepared();
+            return;
+          }
+          if (Date.now() >= deadline) {
+            return;
+          }
+          this.avplayPreparedPollTimer = setTimeout(tick, 400);
+        };
+        this.avplayPreparedPollTimer = setTimeout(tick, 400);
+      };
+
       try {
         if (typeof avplay.prepareAsync === "function") {
           avplay.prepareAsync(onPrepared, onPrepareError);
+          pollPreparedState();
         } else if (typeof avplay.prepare === "function") {
           avplay.prepare();
           onPrepared();
