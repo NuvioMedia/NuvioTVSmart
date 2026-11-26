@@ -253,14 +253,27 @@ export const CollectionsScreen = {
     if (!this.reorderSession) {
       return;
     }
-    const movingId = this.reorderSession.movingKey;
-    confirmReorder(this.reorderSession);
-    this.applyReorderOrder();
-    const next = Array.isArray(this.reorderCollections) ? this.reorderCollections : [];
+    // Reconcile the session order with the latest store so collections synced in
+    // while the move was open are kept instead of being dropped on confirm.
+    const session = this.reorderSession;
+    const movingId = session.movingKey;
+    confirmReorder(session);
+    const current = CollectionsStore.get();
+    const byId = new Map(current.map((collection) => [collection.id, collection]));
+    const next = session.keys.map((key) => byId.get(key)).filter(Boolean);
+    const seen = new Set(next.map((collection) => collection.id));
+    current.forEach((collection) => {
+      if (!seen.has(collection.id)) {
+        next.push(collection);
+      }
+    });
+    const unchanged =
+      next.length === current.length &&
+      next.every((collection, index) => collection.id === current[index].id);
     this.focusKey = `collection:${movingId}:reorder`;
     this.reorderSession = null;
     this.reorderCollections = null;
-    if (next.length) {
+    if (next.length && !unchanged) {
       CollectionsStore.replace(next);
     }
     this.render();

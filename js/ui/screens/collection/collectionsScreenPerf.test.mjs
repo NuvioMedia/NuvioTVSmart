@@ -350,6 +350,35 @@ test("delegated click listener is bound once across renders and removed on clean
   );
 });
 
+test("confirming a move that did not change the order does not persist", async () => {
+  const h = createHarness(SAMPLE_COLLECTIONS);
+  await h.screen.mount();
+  h.storeCalls.replace = 0;
+
+  h.screen.startReorder("c1");
+  h.screen.finishReorder();
+
+  assert.equal(h.storeCalls.replace, 0, "an unchanged order must not trigger a store write");
+  h.screen.cleanup();
+});
+
+test("confirming keeps collections added to the store while the move was open", async () => {
+  const h = createHarness(SAMPLE_COLLECTIONS);
+  await h.screen.mount();
+
+  h.screen.startReorder("c1");
+  h.screen.moveCollection(1);
+  h.getStored().push({ id: "c4", title: "Synced", pinToTop: false, folders: [] });
+  h.screen.finishReorder();
+
+  assert.deepEqual(
+    h.getStored().map((c) => c.id),
+    ["c2", "c1", "c3", "c4"],
+    "the session order is applied without dropping collections synced in meanwhile"
+  );
+  h.screen.cleanup();
+});
+
 test("focusing the topmost control or reordering a collection to index 0 snaps .collections-main scrollTop to 0", async () => {
   const h = createHarness(SAMPLE_COLLECTIONS);
   await h.screen.mount();
