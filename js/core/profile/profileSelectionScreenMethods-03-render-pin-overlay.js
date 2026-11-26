@@ -278,6 +278,7 @@ export function createProfileSelectionScreenMethods03() {
         overlayRoot,
         submitButton: overlayRoot.querySelector("[data-focus-key='editor:submit']"),
         nameInput: overlayRoot.querySelector("[data-focus-key='editor:name']"),
+        copySourceButton: overlayRoot.querySelector("[data-focus-key='editor:copy-source']"),
         cancelButton: overlayRoot.querySelector("[data-focus-key='editor:cancel']"),
         tabButtons: Array.from(overlayRoot.querySelectorAll("[data-action='select-editor-tab']")),
         categoryButtons: Array.from(overlayRoot.querySelectorAll("[data-action='select-avatar-category']")),
