@@ -20,7 +20,12 @@ let bridgeStartCalls = 0;
 let applicationLaunchCalls = 0;
 let applicationControlCalls = 0;
 
-function installTizen({ webService = false, launchAvailable = true, launchStarts = true } = {}) {
+function installTizen({
+  webService = false,
+  launchAvailable = true,
+  launchStarts = true,
+  platformVersion = "9.0"
+} = {}) {
   globalThis.tizen = {
     ApplicationControl: class ApplicationControl {
       constructor(operation) {
@@ -29,7 +34,7 @@ function installTizen({ webService = false, launchAvailable = true, launchStarts
     },
     systeminfo: {
       getCapability(name) {
-        if (name.includes("platform.version")) return "9.0";
+        if (name.includes("platform.version")) return platformVersion;
         if (name.includes("web.service")) return webService;
         return false;
       }
@@ -72,13 +77,18 @@ globalThis.fetch = async () => {
   };
 };
 
-function resetState({ webService = false, launchAvailable = true, launchStarts = true } = {}) {
+function resetState({
+  webService = false,
+  launchAvailable = true,
+  launchStarts = true,
+  platformVersion = "9.0"
+} = {}) {
   serviceStarted = false;
   bridgeStartCalls = 0;
   applicationLaunchCalls = 0;
   applicationControlCalls = 0;
   globalThis.__NUVIO_TIZEN_WRT_SERVICE__ = undefined;
-  installTizen({ webService, launchAvailable, launchStarts });
+  installTizen({ webService, launchAvailable, launchStarts, platformVersion });
   Platform.current = null;
   resetTizenCapabilitiesCache();
 }
@@ -187,6 +197,17 @@ try {
     assert.equal(applicationLaunchCalls, 0);
     assert.equal(applicationControlCalls, 0);
   }
+
+  // Tizen 6 (QN95A, #1610) exports only the Service class. 1.4.1 found no
+  // startService() there and launched the service as its own application; a
+  // Service-class start is tied to the app and left the exit black for ~20 s.
+  resetState({ webService: false, platformVersion: "6.0" });
+  globalThis.__NUVIO_TIZEN_WRT_SERVICE__ = { Service: TizenTenService };
+  const tizenSix = await TizenEngineFsService.ensureStarted({ purpose: "p2p" });
+  assert.equal(tizenSix.status, "success");
+  assert.equal(tizenSix.startMethod, "tizen-application-launch");
+  assert.equal(bridgeStartCalls, 0);
+  assert.equal(applicationLaunchCalls, 1);
 
   console.log("tizen subtitle service start tests passed");
 } finally {
