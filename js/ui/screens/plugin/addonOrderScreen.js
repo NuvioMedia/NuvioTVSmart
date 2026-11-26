@@ -188,24 +188,21 @@ export const AddonOrderScreen = {
     }
     const token = this.mountToken;
     const keys = confirmReorder(this.reorderSession);
-    const normalizeKey = (url) =>
-      typeof addonRepository.normalizeUrl === "function"
-        ? addonRepository.normalizeUrl(url)
-        : String(url || "")
-            .trim()
-            .toLowerCase();
-    const visibleKeySet = new Set(keys.map((url) => normalizeKey(url)));
-    const allInstalledUrls =
-      typeof addonRepository.getInstalledAddonUrls === "function"
-        ? addonRepository.getInstalledAddonUrls()
-        : [];
-    const preservedHiddenUrls = (Array.isArray(allInstalledUrls) ? allInstalledUrls : []).filter(
-      (url) => {
-        const normalized = normalizeKey(url);
-        return Boolean(normalized) && !visibleKeySet.has(normalized);
+    // Rows missing from this screen (disabled or unreachable add-ons) keep their slot:
+    // setAddonOrder replaces the installed list with whatever it receives.
+    const visibleKeys = new Set(keys.map((url) => addonRepository.normalizeUrl(url)));
+    const mergedKeys = [...addonRepository.getInstalledAddonUrls()];
+    let next = 0;
+    mergedKeys.forEach((url, index) => {
+      if (!visibleKeys.has(addonRepository.normalizeUrl(url))) {
+        return;
       }
-    );
-    const mergedKeys = [...keys, ...preservedHiddenUrls];
+      mergedKeys[index] = keys[next];
+      next += 1;
+    });
+    for (; next < keys.length; next += 1) {
+      mergedKeys.push(keys[next]);
+    }
     this.reorderSession = null;
     this.isSavingOrder = true;
     try {
