@@ -393,6 +393,7 @@ export function createPlayerControllerMethods13() {
         console.warn("DASH source attach failed", error);
         try {
           player?.reset?.();
+          player?.destroy?.();
         } catch (_) {
           // Ignore reset failures on partial init.
         }

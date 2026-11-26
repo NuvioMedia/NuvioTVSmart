@@ -215,6 +215,7 @@ export function createPlayerControllerMethods03() {
         logTizenAvPlayDebug("Tizen AVPlay seek in flight; delaying playback start until it settles");
         return true;
       }
+      const playToken = this.playRequestToken;
       this.selectPendingAvPlayAudioTrackBeforeStart(avplay);
       try {
         avplay.play?.();
@@ -230,7 +231,7 @@ export function createPlayerControllerMethods03() {
         this.emitVideoEvent("playing", { playbackEngine: this.playbackEngine });
         [0, 250, 750, 1500].forEach((delayMs) => {
           setTimeout(() => {
-            if (!this.isUsingAvPlay()) {
+            if (!this.isUsingAvPlay() || this.playRequestToken !== playToken) {
               return;
             }
             this.reapplyAvPlayPlaybackRate();
@@ -240,7 +241,7 @@ export function createPlayerControllerMethods03() {
         });
         setTimeout(
           () => {
-            if (!this.isUsingAvPlay()) {
+            if (!this.isUsingAvPlay() || this.playRequestToken !== playToken) {
               return;
             }
             this.reapplyAvPlayPlaybackRate();

@@ -87,8 +87,9 @@ export function createPlayerControllerMethods08() {
       if (!Platform.isTizen()) {
         return;
       }
+      const playToken = this.playRequestToken;
       const apply = () => {
-        if (this.isUsingAvPlay()) {
+        if (this.isUsingAvPlay() && this.playRequestToken === playToken) {
           this.setAvPlayDisplayRect();
         }
       };
