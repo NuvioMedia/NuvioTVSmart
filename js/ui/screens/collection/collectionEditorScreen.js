@@ -528,6 +528,7 @@ export const CollectionEditorScreen = {
     const existing = collectionId
       ? CollectionsStore.get().find((collection) => collection.id === collectionId)
       : null;
+    this.isNew = !existing;
     this.collection = existing
       ? JSON.parse(JSON.stringify(existing))
       : createEmptyCollectionDraft(CollectionsStore.generateId());
@@ -538,12 +539,20 @@ export const CollectionEditorScreen = {
     this.editingFolder = null;
     this.reorderSession = null;
     this.reorderTarget = "";
+    this._renderedView = "";
     this.focusKey = "title";
     this.render();
     void this.refreshCatalogEntries();
   },
 
   render() {
+    if (!this.container) {
+      return;
+    }
+    const sameView = this._renderedView === this.view;
+    const prevScrollTop = sameView
+      ? Number(this.container?.querySelector(".collections-main")?.scrollTop || 0)
+      : 0;
     if (this.view === "folder") {
       this.renderFolderEditor();
     } else if (this.view === "picker") {
@@ -558,6 +567,11 @@ export const CollectionEditorScreen = {
       this.renderEmojiPicker();
     } else {
       this.renderMainEditor();
+    }
+    this._renderedView = this.view;
+    const main = this.container?.querySelector(".collections-main");
+    if (main && prevScrollTop > 0) {
+      main.scrollTop = prevScrollTop;
     }
     this.bindEvents();
     this.applyFocus();
@@ -784,7 +798,7 @@ export const CollectionEditorScreen = {
             ${coverMode === "IMAGE" ? textRow("coverImageUrl", t("collections_editor_cover_image_url", "Image URL"), folder.coverImageUrl || "", t("collections_editor_placeholder_cover_image", "Cover image URL")) : ""}
             ${
               coverMode === "IMAGE" && folder.coverImageUrl
-                ? `<img class="collections-preview collections-preview-cover" src="${escapeHtml(folder.coverImageUrl)}" alt="" />`
+                ? `<img class="collections-preview collections-preview-cover" src="${escapeHtml(folder.coverImageUrl)}" alt="" decoding="async" />`
                 : ""
             }
             ${textRow(
@@ -807,7 +821,7 @@ export const CollectionEditorScreen = {
             )}
             ${
               folder.heroBackdropUrl
-                ? `<img class="collections-preview collections-preview-backdrop" src="${escapeHtml(folder.heroBackdropUrl)}" alt="" />`
+                ? `<img class="collections-preview collections-preview-backdrop" src="${escapeHtml(folder.heroBackdropUrl)}" alt="" decoding="async" />`
                 : ""
             }
             ${textRow(
@@ -824,7 +838,7 @@ export const CollectionEditorScreen = {
             )}
             ${
               folder.titleLogoUrl
-                ? `<img class="collections-preview collections-preview-logo" src="${escapeHtml(folder.titleLogoUrl)}" alt="" />`
+                ? `<img class="collections-preview collections-preview-logo" src="${escapeHtml(folder.titleLogoUrl)}" alt="" decoding="async" />`
                 : ""
             }
             ${cycleRow("tileShape", t("collections_editor_tile_shape", "Tile Shape"), tileShapeLabel(folder.tileShape), "cycleTileShape")}
@@ -873,11 +887,10 @@ export const CollectionEditorScreen = {
   renderCatalogPicker() {
     const folder = this.editingFolder;
     const entries = this.pickerEntries || [];
+    const selectedIds = new Set((folder?.sources || []).map((source) => sourceIdentity(source)));
     const cards = entries
       .map((entry) => {
-        const selected = (folder?.sources || []).some(
-          (source) => sourceIdentity(source) === sourceIdentity(entry.source)
-        );
+        const selected = selectedIds.has(sourceIdentity(entry.source));
         return `
           <button type="button" class="collections-picker-row collections-focusable${selected ? " is-selected" : ""}"
                   data-focus-key="catalog:${escapeHtml(entry.key)}"
@@ -1332,10 +1345,27 @@ export const CollectionEditorScreen = {
     if (!this.textDialog) {
       target.focus?.({ preventScroll: true });
     }
+    this.scrollFocusedIntoView(target, nodes);
+  },
+
+  scrollFocusedIntoView(target, nodes = null) {
+    if (!target) {
+      return;
+    }
+    const main = this.container?.querySelector(".collections-main");
+    const focusables =
+      nodes || Array.from(this.container?.querySelectorAll(".collections-focusable") || []);
+    if (main && focusables.length && target === focusables[0]) {
+      main.scrollTop = 0;
+      return;
+    }
     target.scrollIntoView?.({ block: "nearest" });
   },
 
   isNewCollection() {
+    if (typeof this.isNew === "boolean") {
+      return this.isNew;
+    }
     return !CollectionsStore.get().some((collection) => collection.id === this.draft?.id);
   },
 
@@ -2769,14 +2799,10 @@ export const CollectionEditorScreen = {
       }
       return;
     }
-    if (code === 37 || code === 38 || code === 39 || code === 40) {
-      const direction = code === 38 ? "up" : code === 40 ? "down" : code === 37 ? "left" : "right";
-      if (ScreenUtils.moveFocusDirectional(this.container, direction, ".collections-focusable")) {
-        event?.preventDefault?.();
-        const focused = this.container?.querySelector(".collections-focusable.focused");
-        this.focusKey = String(focused?.dataset?.focusKey || this.focusKey);
-        focused?.scrollIntoView?.({ block: "nearest" });
-      }
+    if (ScreenUtils.handleDpadNavigation(event, this.container, ".collections-focusable")) {
+      const focused = this.container?.querySelector(".collections-focusable.focused");
+      this.focusKey = String(focused?.dataset?.focusKey || this.focusKey);
+      this.scrollFocusedIntoView(focused);
       return;
     }
     if (SELECT_KEY_CODES.has(code)) {
@@ -2793,6 +2819,8 @@ export const CollectionEditorScreen = {
     this.reorderOriginalFolders = null;
     this.reorderOriginalSources = null;
     this.reorderSourceKeys = null;
+    this._renderedView = "";
+    this.isNew = undefined;
     this.pickerRequestToken = Number(this.pickerRequestToken || 0) + 1;
     this.tmdbRequestToken = Number(this.tmdbRequestToken || 0) + 1;
     this.traktRequestToken = Number(this.traktRequestToken || 0) + 1;
