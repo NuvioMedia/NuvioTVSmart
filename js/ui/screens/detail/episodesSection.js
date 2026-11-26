@@ -1,3 +1,12 @@
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function renderEpisodesSection(meta) {
   const videos = Array.isArray(meta?.videos) ? meta.videos : [];
   if (!videos.length) {
@@ -9,8 +18,8 @@ export function renderEpisodesSection(meta) {
     .map(
       (video) => `
     <div class="card">
-      <div style="font-weight:700;">${video.title || video.id || "Episode"}</div>
-      <div style="opacity:0.8;">${video.released || ""}</div>
+      <div style="font-weight:700;">${escapeHtml(video.title || video.id || "Episode")}</div>
+      <div style="opacity:0.8;">${escapeHtml(video.released || "")}</div>
     </div>
   `
     )
