@@ -55,12 +55,25 @@ function getLanUrls() {
 }
 
 function resolveRequestPath(urlPathname) {
-  let pathname = decodeURIComponent(String(urlPathname || "/"));
+  let pathname;
+  try {
+    pathname = decodeURIComponent(String(urlPathname || "/"));
+  } catch (_) {
+    return null;
+  }
   if (pathname === "/") {
     pathname = "/index.html";
   }
   const normalized = path.normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  return path.join(rootDir, normalized);
+  const segments = normalized.split(/[\\/]+/).filter(Boolean);
+  if (segments.some((segment) => segment.startsWith("."))) {
+    return null;
+  }
+  const resolved = path.resolve(rootDir, normalized.replace(/^[\\/]+/, ""));
+  if (resolved !== rootDir && !resolved.startsWith(rootDir + path.sep)) {
+    return null;
+  }
+  return resolved;
 }
 
 function resolveDistPathForRootFile(rootFilePath) {
@@ -73,6 +86,9 @@ function resolveDistPathForRootFile(rootFilePath) {
 
 async function resolveRequestFile(pathname) {
   const rootPath = resolveRequestPath(pathname);
+  if (!rootPath) {
+    return { invalid: true, filePath: "", fileStat: null };
+  }
   const rootStat = await stat(rootPath).catch(() => null);
   const distPath = resolveDistPathForRootFile(rootPath);
   const distStat = distPath ? await stat(distPath).catch(() => null) : null;
@@ -210,7 +226,13 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    let { filePath, fileStat } = await resolveRequestFile(requestUrl.pathname);
+    let { invalid, filePath, fileStat } = await resolveRequestFile(requestUrl.pathname);
+
+    if (invalid) {
+      response.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+      response.end("Bad request");
+      return;
+    }
 
     if (fileStat?.isDirectory()) {
       filePath = path.join(filePath, "index.html");
