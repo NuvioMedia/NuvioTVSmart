@@ -295,10 +295,14 @@
             "playsinline=1",
             "rel=0",
             "modestbranding=1",
-            "cc_load_policy=0",
+            "cc_load_policy=" + (captionsEnabled ? "1" : "0"),
             "iv_load_policy=3",
             "widget_referrer=" + encodeURIComponent(widgetReferrer)
-          ].join("&");
+          ];
+          if (captionsEnabled && captionsLanguage) {
+            directParams.push("cc_lang_pref=" + encodeURIComponent(captionsLanguage));
+          }
+          directParams = directParams.join("&");
           var src =
             "https://www.youtube.com/embed/" + encodeURIComponent(videoId) + "?" + directParams;
           document.body.innerHTML =
