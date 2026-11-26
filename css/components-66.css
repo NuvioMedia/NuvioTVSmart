@@ -111,13 +111,22 @@
 
 .settings-mdb-order-row > .settings-mdb-order-reorder {
   flex: 0 0 auto;
+  width: auto;
   min-width: 80px;
+  min-height: 80px;
   height: 80px;
   padding: 0 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  white-space: nowrap;
+}
+
+[dir="rtl"].no-flex-gap .settings-mdb-order-row > .settings-mdb-order-reorder > * + *,
+[dir="rtl"] .no-flex-gap .settings-mdb-order-row > .settings-mdb-order-reorder > * + * {
+  margin-left: 0;
+  margin-right: 10px;
 }
 
 .settings-mdb-order-reorder .material-icons {
