@@ -36,6 +36,7 @@ import {
 } from "../../components/sidebarNavigation.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
 import { allowDpadRepeat, resetDpadRepeat } from "../../navigation/dpadRepeatThrottle.js";
+import { scrollFocusedIntoContainer } from "../../navigation/scrollFocusedIntoContainer.js";
 
 import { createLibraryScreenMethods01 } from "./libraryScreenMethods-01-clear-closing-picker.js";
 import { createLibraryScreenMethods02 } from "./libraryScreenMethods-02-render-picker-groups.js";
@@ -87,6 +88,7 @@ export {
   isTextField,
   selectorValue,
   scrollIntoNearestView,
+  scrollFocusedIntoContainer,
   findNearestNodeByCenterX,
   groupNodesByRow,
   filterStructureSignature
