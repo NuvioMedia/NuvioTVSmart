@@ -104,7 +104,12 @@ export function createProfileSelectionScreenMethods07() {
         return;
       }
       if (action === "open-edit-profile") {
-        this.openEditEditor(this.getProfileById(profileId));
+        const profile = this.getProfileById(profileId);
+        if (profile && this.isProfilePinEnabled?.(profile.id)) {
+          this.openPinOverlay("verify-action", profile, null, () => this.openEditEditor(this.getProfileById(profile.id)));
+          return;
+        }
+        this.openEditEditor(profile);
         return;
       }
       if (action === "open-profile-pin") {
@@ -122,7 +127,12 @@ export function createProfileSelectionScreenMethods07() {
         return;
       }
       if (action === "confirm-delete-profile") {
-        this.openDeleteDialog(this.getProfileById(profileId));
+        const profile = this.getProfileById(profileId);
+        if (profile && this.isProfilePinEnabled?.(profile.id)) {
+          this.openPinOverlay("verify-action", profile, null, () => this.openDeleteDialog(this.getProfileById(profile.id)));
+          return;
+        }
+        this.openDeleteDialog(profile);
         return;
       }
       if (action === "delete-profile") {
@@ -316,6 +326,7 @@ export function createProfileSelectionScreenMethods07() {
       return false;
     },
     _destroyDialogs() {
+      this.suppressHoldMenuEnterUntilKeyUp = false;
       if (this._optionsDialog) {
         this._optionsDialog.destroy();
         this._optionsDialog = null;
@@ -324,6 +335,7 @@ export function createProfileSelectionScreenMethods07() {
         this._deleteDialog.destroy();
         this._deleteDialog = null;
       }
+      this.closeCopySettingsDialogs?.();
       this.optionsProfileId = null;
       this.deleteProfileId = null;
     }

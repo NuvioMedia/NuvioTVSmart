@@ -102,6 +102,39 @@ export function createProfileSelectionScreenMethods09() {
                   label: t("profile_copy_settings_apply", {}, "Apply"),
                   key: "apply",
                   onAction: () => {
+                    if (sourceProfile && this.isProfilePinEnabled?.(sourceProfile.id)) {
+                      const chosenSource = sourceProfile;
+                      const chosenTarget = targetProfile;
+                      const copyCredentials = Boolean(this._copySettingsCopyCredentials);
+                      const savedEditorState = this.editorState ? { ...this.editorState } : null;
+                      this.closeCopySettingsDialogs();
+                      this.openPinOverlay(
+                        "verify-action",
+                        chosenSource,
+                        null,
+                        () => {
+                          if (chosenTarget) {
+                            this.applyProfileCopy(chosenSource, chosenTarget, copyCredentials);
+                            return;
+                          }
+                          if (savedEditorState) {
+                            savedEditorState.copySourceProfileId = String(chosenSource.id);
+                            savedEditorState.copyProviderCredentials = copyCredentials;
+                            this.editorState = savedEditorState;
+                            this.pendingFocusKey = "editor:copy-source";
+                            this.render();
+                          }
+                        },
+                        savedEditorState
+                          ? () => {
+                              this.editorState = savedEditorState;
+                              this.pendingFocusKey = "editor:copy-source";
+                              this.render();
+                            }
+                          : null
+                      );
+                      return;
+                    }
                     if (targetProfile) {
                       this.applyProfileCopy(sourceProfile, targetProfile, this._copySettingsCopyCredentials);
                     } else if (sourceProfile) {
@@ -161,6 +194,9 @@ export function createProfileSelectionScreenMethods09() {
         console.warn("Failed to copy profile settings", error);
       } finally {
         this.isCopyingProfileSettings = false;
+      }
+      if (!this.isMounted) {
+        return;
       }
       this._copySettingsDialog = new NuvioDialog({
         title: success

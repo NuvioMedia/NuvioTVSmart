@@ -67,6 +67,7 @@ export function createProfileSelectionScreenMethods05() {
       if (!profile) {
         return;
       }
+      this.suppressHoldMenuEnterUntilKeyUp = false;
       this.optionsProfileId = null;
       this.deleteProfileId = null;
       this.editorState = {
@@ -110,20 +111,34 @@ export function createProfileSelectionScreenMethods05() {
       this.optionsProfileId = String(profile.id);
       const pinEnabled = this.isProfilePinEnabled(profile.id);
 
+      const runWithPinGate = (targetProfile, action) => {
+        if (!targetProfile) {
+          return;
+        }
+        if (this.isProfilePinEnabled(targetProfile.id)) {
+          this.openPinOverlay("verify-action", targetProfile, null, action);
+          return;
+        }
+        action();
+      };
+
       const buttons = [
         {
           label: t("profile_edit_label", {}, "Edit"),
           key: "edit",
           onAction: () => {
+            this.suppressHoldMenuEnterUntilKeyUp = false;
             this._optionsDialog?.destroy();
             this._optionsDialog = null;
-            this.openEditEditor(this.getProfileById(profile.id));
+            const p = this.getProfileById(profile.id);
+            runWithPinGate(p, () => this.openEditEditor(this.getProfileById(profile.id)));
           }
         },
         {
           label: pinEnabled ? PROFILE_PIN_TEXT.change : PROFILE_PIN_TEXT.set,
           key: "pin",
           onAction: () => {
+            this.suppressHoldMenuEnterUntilKeyUp = false;
             this._optionsDialog?.destroy();
             this._optionsDialog = null;
             const p = this.getProfileById(profile.id);
@@ -136,6 +151,7 @@ export function createProfileSelectionScreenMethods05() {
                 label: PROFILE_PIN_TEXT.remove,
                 key: "remove-pin",
                 onAction: () => {
+                  this.suppressHoldMenuEnterUntilKeyUp = false;
                   this._optionsDialog?.destroy();
                   this._optionsDialog = null;
                   const p = this.getProfileById(profile.id);
@@ -150,9 +166,11 @@ export function createProfileSelectionScreenMethods05() {
                 label: t("profile_copy_settings_label", {}, "Copy Settings"),
                 key: "copy-settings",
                 onAction: () => {
+                  this.suppressHoldMenuEnterUntilKeyUp = false;
                   this._optionsDialog?.destroy();
                   this._optionsDialog = null;
-                  this.openProfileCopySourceDialog(this.getProfileById(profile.id));
+                  const p = this.getProfileById(profile.id);
+                  runWithPinGate(p, () => this.openProfileCopySourceDialog(this.getProfileById(profile.id)));
                 }
               }
             ]
@@ -164,9 +182,11 @@ export function createProfileSelectionScreenMethods05() {
                 key: "delete",
                 danger: true,
                 onAction: () => {
+                  this.suppressHoldMenuEnterUntilKeyUp = false;
                   this._optionsDialog?.destroy();
                   this._optionsDialog = null;
-                  this.openDeleteDialog(this.getProfileById(profile.id));
+                  const p = this.getProfileById(profile.id);
+                  runWithPinGate(p, () => this.openDeleteDialog(this.getProfileById(profile.id)));
                 }
               }
             ]
@@ -179,6 +199,7 @@ export function createProfileSelectionScreenMethods05() {
         suppressEnterUntilKeyUp: true,
         buttons,
         onDismiss: () => {
+          this.suppressHoldMenuEnterUntilKeyUp = false;
           this._optionsDialog = null;
           this.optionsProfileId = null;
           this.pendingFocusKey = `profile:${profile.id}`;
@@ -261,6 +282,7 @@ export function createProfileSelectionScreenMethods05() {
     },
     closeOptionsDialog() {
       const profileId = this.optionsProfileId;
+      this.suppressHoldMenuEnterUntilKeyUp = false;
       this.optionsProfileId = null;
       if (this._optionsDialog) {
         this._optionsDialog.destroy();
@@ -269,10 +291,11 @@ export function createProfileSelectionScreenMethods05() {
       this.pendingFocusKey = profileId ? `profile:${profileId}` : this.lastProfileFocusKey || "profile:1";
       this.restoreFocus();
     },
-    openPinOverlay(type, profile, currentPin = null) {
+    openPinOverlay(type, profile, currentPin = null, onVerified = null, onCancel = null) {
       if (!profile) {
         return;
       }
+      this.suppressHoldMenuEnterUntilKeyUp = false;
       if (this.pinTransitionTimer) {
         clearTimeout(this.pinTransitionTimer);
         this.pinTransitionTimer = null;
@@ -284,7 +307,9 @@ export function createProfileSelectionScreenMethods05() {
       this.pinOverlayState = {
         type,
         profileId: String(profile.id),
-        currentPin: currentPin ? String(currentPin) : null
+        currentPin: currentPin ? String(currentPin) : null,
+        onVerified: typeof onVerified === "function" ? onVerified : null,
+        onCancel: typeof onCancel === "function" ? onCancel : null
       };
       this.pinOverlayRenderState = this.pinOverlayState;
       this.pinOverlayPhase = "opening";
@@ -304,7 +329,7 @@ export function createProfileSelectionScreenMethods05() {
         this.render();
       }, PROFILE_PIN_OPEN_MS);
     },
-    closePinOverlay({ focusKey = "", afterClose = null } = {}) {
+    closePinOverlay({ focusKey = "", afterClose = null, verified = false } = {}) {
       if (this.pinOverlayPhase === "closing") {
         return;
       }
@@ -317,7 +342,12 @@ export function createProfileSelectionScreenMethods05() {
         clearTimeout(this.pinTransitionTimer);
         this.pinTransitionTimer = null;
       }
-      this.pinTransitionCallback = typeof afterClose === "function" ? afterClose : null;
+      this.pinTransitionCallback =
+        typeof afterClose === "function"
+          ? afterClose
+          : !verified && typeof renderState?.onCancel === "function"
+            ? renderState.onCancel
+            : null;
       this.pinOverlayState = null;
       this.pinOverlayRenderState = renderState;
       this.pinOverlayPhase = "closing";

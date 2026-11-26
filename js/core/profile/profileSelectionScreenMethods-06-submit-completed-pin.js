@@ -94,6 +94,16 @@ export function createProfileSelectionScreenMethods06() {
           this.openPinOverlay("set", profile, pin);
           return;
         }
+        if (state.type === "verify-action") {
+          const onVerified = typeof state.onVerified === "function" ? state.onVerified : null;
+          this.pinOverlayError = "";
+          this.closePinOverlay({
+            focusKey: `profile:${profile.id}`,
+            afterClose: onVerified,
+            verified: true
+          });
+          return;
+        }
       }
 
       this.pinOverlayError =
