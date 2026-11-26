@@ -22,6 +22,9 @@ export function createMetaDetailsScreenMethods20() {
         const activeFrame = layer.querySelector("iframe");
         if (activeFrame) {
           try {
+            activeFrame.remove?.();
+          } catch (_) {}
+          try {
             activeFrame.src = "about:blank";
           } catch (_) {}
           try {

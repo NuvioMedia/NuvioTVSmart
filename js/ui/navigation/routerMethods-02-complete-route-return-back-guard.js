@@ -129,11 +129,12 @@ export function createRouterMethods02() {
       }
       const navigationStart = ROUTER_PERF_DEBUG ? routerPerfNow() : 0;
 
+      this.cancelPendingHistoryBackFallback?.();
+
       const fromHistory = Boolean(options?.fromHistory);
       const skipStackPush = Boolean(options?.skipStackPush);
       const replaceHistory = Boolean(options?.replaceHistory);
       const targetParams = params || {};
-      const routeReturnBackGuardNavigationId = this.beginRouteReturnBackGuard(options?.isBackNavigation);
 
       const Screen = this.routes[routeName];
 
@@ -141,6 +142,8 @@ export function createRouterMethods02() {
         console.error("Route not found:", routeName);
         return;
       }
+
+      const routeReturnBackGuardNavigationId = this.beginRouteReturnBackGuard(options?.isBackNavigation);
 
       const bootGuard = globalThis.NuvioBootGuard;
       if (bootGuard && typeof bootGuard.stage === "function") {
@@ -150,39 +153,39 @@ export function createRouterMethods02() {
       // Cleanup current
       const previousRoute = this.current;
       const shouldSkipPush = skipStackPush || NON_BACKSTACK_ROUTES.has(previousRoute);
-      if (this.current && this.current !== routeName) {
-        this.captureCurrentRouteState();
-        this.routes[this.current].cleanup?.();
-        if (!shouldSkipPush) {
-          this.stack.push({
-            route: this.current,
-            params: this.currentParams || {}
-          });
-        }
-      } else if (this.current === routeName) {
-        this.captureCurrentRouteState();
-        this.routes[this.current].cleanup?.();
-      }
-
-      // Android recreates Search when entering profile selection; keep only same-session snapshots.
-      if (routeName === "profileSelection" && String(targetParams.mode || "selection").toLowerCase() !== "management") {
-        RouteStateStore.clear("route:search");
-      }
-
-      this.current = routeName;
-      this.currentParams = targetParams;
-      const navigationContext = this.resolveNavigationContext(routeName, this.currentParams, {
-        ...options,
-        previousRoute
-      });
-
-      this.pendingMountParams = targetParams;
       try {
+        if (this.current && this.current !== routeName) {
+          this.captureCurrentRouteState();
+          this.routes[this.current].cleanup?.();
+          if (!shouldSkipPush) {
+            this.stack.push({
+              route: this.current,
+              params: this.currentParams || {}
+            });
+          }
+        } else if (this.current === routeName) {
+          this.captureCurrentRouteState();
+          this.routes[this.current].cleanup?.();
+        }
+
+        // Android recreates Search when entering profile selection; keep only same-session snapshots.
+        if (routeName === "profileSelection" && String(targetParams.mode || "selection").toLowerCase() !== "management") {
+          RouteStateStore.clear("route:search");
+        }
+
+        this.current = routeName;
+        this.currentParams = targetParams;
+        const navigationContext = this.resolveNavigationContext(routeName, this.currentParams, {
+          ...options,
+          previousRoute
+        });
+
+        this.pendingMountParams = targetParams;
         await Screen.mount(this.currentParams, navigationContext);
       } finally {
         if (this.pendingMountParams === targetParams) this.pendingMountParams = null;
+        this.completeRouteReturnBackGuard(routeReturnBackGuardNavigationId);
       }
-      this.completeRouteReturnBackGuard(routeReturnBackGuardNavigationId);
       logRouterPerf("navigate", {
         ms: Number((routerPerfNow() - navigationStart).toFixed(2)),
         route: routeName,
