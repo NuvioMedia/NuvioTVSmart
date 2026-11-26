@@ -14,6 +14,7 @@ export function createCatalogSeeAllScreenMethods02() {
     renderLoadingIndicator,
     POSTER_HOLD_DELAY_MS,
     escapeHtml,
+    escapeSelectorValue,
     t,
     extractReleaseYear,
     setContainerScrollTop,
@@ -66,7 +67,9 @@ export function createCatalogSeeAllScreenMethods02() {
     restoreFocusedCard({ scrollMode = "center" } = {}) {
       const shell = this.container?.querySelector(".seeall-shell");
       const target =
-        (this.lastFocusedKey ? this.container?.querySelector(`.seeall-card[data-focus-key="${this.lastFocusedKey}"]`) : null) ||
+        (this.lastFocusedKey
+          ? this.container?.querySelector(`.seeall-card[data-focus-key="${escapeSelectorValue(this.lastFocusedKey)}"]`)
+          : null) ||
         this.container?.querySelector(".seeall-card.focusable") ||
         null;
 
@@ -180,6 +183,9 @@ export function createCatalogSeeAllScreenMethods02() {
           },
           onChanged: () => {
             void this.refreshWatchedTitleIds(this.items).then(() => {
+              if (!this.container || Router.getCurrentScreen?.() !== this) {
+                return;
+              }
               this.updateRenderedWatchedBadges();
             });
           }
@@ -234,8 +240,8 @@ export function createCatalogSeeAllScreenMethods02() {
               (item, index) => `
               <article class="seeall-card focusable"
                        data-action="openDetail"
-                       data-item-id="${item.id || ""}"
-                        data-item-type="${item.type || item.catalogType || descriptor.type || "movie"}"
+                       data-item-id="${escapeHtml(item.id || "")}"
+                        data-item-type="${escapeHtml(item.type || item.catalogType || descriptor.type || "movie")}"
                        data-item-title="${escapeHtml(item.name || "Untitled")}"
                         data-poster-src="${escapeHtml(item.poster || "")}"
                         data-backdrop-src="${escapeHtml(item.background || item.backdrop || "")}"
@@ -243,7 +249,7 @@ export function createCatalogSeeAllScreenMethods02() {
                         data-addon-id="${escapeHtml(descriptor.addonId || item.addonId || "")}"
                         data-addon-name="${escapeHtml(descriptor.addonName || item.addonName || "")}"
                         data-catalog-type="${escapeHtml(descriptor.type || item.catalogType || "")}"
-                        data-focus-key="item:${item.id || index}"
+                        data-focus-key="${escapeHtml(`item:${item.id || index}`)}"
                         data-item-index="${index}">
                 <div class="seeall-card-poster-wrap">
                   ${
