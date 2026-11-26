@@ -181,10 +181,7 @@ export function createTizenStreamingServerResolverMethods01() {
             detail: "Tizen streaming server did not return a playable file index"
           };
         }
-        // Android announces to its default trackers on every torrent; a stream
-        // that already carries its file index skips the create call, so the
-        // playback URL must carry them or the engine searches DHT only.
-        const sources = buildPeerSearchSources(infoHash, trackerSources);
+        const sources = needsCreate && trackerSources.length ? buildPeerSearchSources(infoHash, trackerSources) : [];
         const playbackUrl = buildPlaybackUrl(baseUrl, infoHash, fileIdx, sources);
         const filename = getFilename(createJson, fileIdx);
         logTizenP2pDebug("TizenStreamingServerResolver: P2P stream resolved", {
