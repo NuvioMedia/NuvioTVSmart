@@ -55,6 +55,9 @@ export function createFolderDetailScreenMethods02() {
           loading: false,
           error: ""
         };
+        if (this.tabs[tabIndex]?.key) {
+          this._trackPaginationFailed?.delete?.(String(this.tabs[tabIndex].key));
+        }
         if (!this.heroItem) {
           this.heroItem = this.tabs[tabIndex].items[0] || null;
         }
@@ -92,6 +95,9 @@ export function createFolderDetailScreenMethods02() {
     getSelectedTab() {
       return this.tabs[this.selectedTabIndex] || null;
     },
+    invalidateNavRowCache() {
+      this._folderNavRowCache = null;
+    },
     buildNavigationModel() {
       if (this.useHomeFollowLayout) {
         return HomeScreen.buildNavigationModel.call(this);
@@ -102,12 +108,29 @@ export function createFolderDetailScreenMethods02() {
         if (tabNodes.length) {
           rows.push(tabNodes);
         }
+        const grid = this.container?.querySelector?.(".seeall-grid") || null;
         const cardNodes = Array.from(this.container?.querySelectorAll(".seeall-card.focusable") || []);
-        groupNodesByOffsetTop(cardNodes).forEach((rowNodes) => {
+        const cache = this._folderNavRowCache || (this._folderNavRowCache = {});
+        const previousCardRows = cache.rows;
+        const cardRows = groupNodesByOffsetTop(cardNodes, {
+          cache,
+          containerClientWidth: Number(grid?.clientWidth || this.container?.clientWidth || 0)
+        });
+        if (
+          cardRows === previousCardRows &&
+          Array.isArray(cache.fullRows) &&
+          this.navModel?.rows === cache.fullRows &&
+          cache.tabCount === tabNodes.length
+        ) {
+          return;
+        }
+        cardRows.forEach((rowNodes) => {
           if (rowNodes.length) {
             rows.push(rowNodes);
           }
         });
+        cache.tabCount = tabNodes.length;
+        cache.fullRows = rows;
       } else {
         const rowTracks = Array.from(this.container?.querySelectorAll(".folder-row-track") || []);
         rowTracks.forEach((track) => {
@@ -119,8 +142,14 @@ export function createFolderDetailScreenMethods02() {
       }
       rows.forEach((rowNodes, rowIndex) => {
         rowNodes.forEach((node, colIndex) => {
-          node.dataset.navRow = String(rowIndex);
-          node.dataset.navCol = String(colIndex);
+          const r = String(rowIndex);
+          const c = String(colIndex);
+          if (node.dataset.navRow !== r) {
+            node.dataset.navRow = r;
+          }
+          if (node.dataset.navCol !== c) {
+            node.dataset.navCol = c;
+          }
         });
       });
       this.navModel = { rows };
@@ -154,7 +183,9 @@ export function createFolderDetailScreenMethods02() {
         });
         if (item?.id) {
           this.heroItem = item;
-          this.applyHeroToDom();
+          if (this.viewMode !== "TABBED_GRID") {
+            this.applyHeroToDom();
+          }
         }
       }
       const shell = this.container?.querySelector(".seeall-shell");
@@ -168,15 +199,30 @@ export function createFolderDetailScreenMethods02() {
           rowTrack.scrollLeft = right - rowTrack.clientWidth + 40;
         }
       }
-      if (shell && (target.closest(".seeall-grid") || target.closest(".folder-detail-rows"))) {
-        const top = target.offsetTop;
-        const bottom = top + target.offsetHeight;
-        if (top < shell.scrollTop + 100) {
-          shell.scrollTop = Math.max(0, top - 100);
-        } else if (bottom > shell.scrollTop + shell.clientHeight - 100) {
-          shell.scrollTop = bottom - shell.clientHeight + 100;
+      if (
+        shell &&
+        (target.closest(".folder-detail-tab") ||
+          target.closest(".seeall-grid") ||
+          target.closest(".folder-detail-rows"))
+      ) {
+        const isTopRow =
+          Boolean(target.closest(".folder-detail-tab")) ||
+          (Number(target.dataset?.navRow ?? -1) === 0 &&
+            (Boolean(target.closest(".folder-detail-rows")) ||
+              !this.container?.querySelector(".folder-detail-tab.focusable")));
+        if (isTopRow) {
+          shell.scrollTop = 0;
+          this.savedScrollTop = 0;
+        } else {
+          const top = target.offsetTop;
+          const bottom = top + target.offsetHeight;
+          if (top < shell.scrollTop + 100) {
+            shell.scrollTop = Math.max(0, top - 100);
+          } else if (bottom > shell.scrollTop + shell.clientHeight - 100) {
+            shell.scrollTop = bottom - shell.clientHeight + 100;
+          }
+          this.savedScrollTop = shell.scrollTop;
         }
-        this.savedScrollTop = shell.scrollTop;
       }
       this.lastFocusedKey = String(target.dataset.focusKey || this.lastFocusedKey || "");
       return true;
