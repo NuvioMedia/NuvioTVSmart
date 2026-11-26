@@ -496,12 +496,12 @@ test("finishReorder preserves disabled or hidden installed addon URLs not shown 
       savedOrders[0],
       [
         "https://b.example",
+        "https://disabled.example",
         "https://a.example",
         "https://c.example",
-        "https://disabled.example",
         "https://unreachable.example"
       ],
-      "reordering visible addons must merge and preserve hidden/disabled/unreachable installed URLs"
+      "reordering visible addons must preserve the other installed URLs in their slot"
     );
   } finally {
     AddonOrderScreen.cleanup();
