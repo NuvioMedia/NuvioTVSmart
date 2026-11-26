@@ -123,10 +123,14 @@ export class BitmapSubtitleDecoder {
   constructor() {
     this.parser = null;
     this.format = null;
+    this.loadToken = 0;
+    this.disposed = false;
   }
 
   async load(options, legacyData) {
     this.dispose();
+    this.disposed = false;
+    const token = ++this.loadToken;
     const request =
       options && typeof options === "object" && !(options instanceof Uint8Array)
         ? options
@@ -137,12 +141,20 @@ export class BitmapSubtitleDecoder {
       throw new Error("Invalid bitmap subtitle decoder input");
     }
     const module = await loadDecoderModule();
+    if (this.disposed || token !== this.loadToken) {
+      return 0;
+    }
     const parser = format === "pgs" ? new module.PgsParser() : new module.VobSubParser();
     try {
       if (format === "pgs") {
         parser.parse(data);
       } else {
         parser.loadFromData(String(request.idxContent || ""), data);
+      }
+      if (this.disposed || token !== this.loadToken) {
+        parser.dispose?.();
+        parser.free?.();
+        return 0;
       }
       this.parser = parser;
       this.format = format;
@@ -235,6 +247,8 @@ export class BitmapSubtitleDecoder {
   }
 
   dispose() {
+    this.loadToken += 1;
+    this.disposed = true;
     if (!this.parser) {
       return;
     }
