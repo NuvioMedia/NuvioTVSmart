@@ -186,6 +186,9 @@ export function createHomeScreenMethods12() {
         this.homeTrailerFrameCleanup?.get(activeFrame)?.();
         this.homeTrailerFrameCleanup?.delete(activeFrame);
         try {
+          activeFrame.remove?.();
+        } catch (_) {}
+        try {
           activeFrame.src = "about:blank";
         } catch (_) {}
         try {
