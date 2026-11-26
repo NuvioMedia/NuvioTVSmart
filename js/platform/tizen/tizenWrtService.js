@@ -1,9 +1,12 @@
+import { TizenCapabilities } from "./tizenCapabilities.js";
+
 // Tizen 9/10 runtimes export the Service class from wrt:service instead of the
 // startService() function documented for older firmware. Service#start() can
 // stay pending while the service is already running, so a call still pending
 // after the grace window counts as accepted and the caller's health probe
 // decides whether the service is reachable.
 const SERVICE_START_GRACE_MS = 1500;
+const SERVICE_CLASS_MIN_TIZEN_MAJOR = 9;
 
 // Samsung documents wrt:service.startService() as the Web Service API, but
 // its TV guidance warns that launchAppControl() can disturb the foreground
@@ -30,9 +33,7 @@ export function getTizenServiceStartMethods({
   return ["wrt-service", "tizen-application-launch"];
 }
 
-// EngineFS on Tizen 6-8 (startService() runtimes) keeps the 1.4.1 order: a
-// service started through wrt:service is tied to the app, and on Tizen 6 its
-// teardown after playback left the screen black for seconds on exit (#1408).
+// EngineFS on Tizen 6-8 keeps the start order 1.4.1 used there.
 export function getTizenEngineFsStartMethods(options = {}) {
   const { webServiceSupported = null, tizenMajorVersion = 0, hasServiceClass = false } = options;
   if (tizenMajorVersion >= 6 && !hasServiceClass && webServiceSupported !== false) {
@@ -42,6 +43,10 @@ export function getTizenEngineFsStartMethods(options = {}) {
 }
 
 export function getWrtServiceClass(bridge = globalThis.__NUVIO_TIZEN_WRT_SERVICE__) {
+  // Tizen 6 also exports the class, but a service it starts is tied to the app:
+  // after playback the exit stayed black for ~20 s (#1610). 1.4.1 launched it there.
+  const major = TizenCapabilities.get().tizenMajorVersion || 0;
+  if (major > 0 && major < SERVICE_CLASS_MIN_TIZEN_MAJOR) return null;
   const Service = bridge?.Service || bridge?.default?.Service;
   return typeof Service === "function" ? Service : null;
 }
