@@ -1,5 +1,6 @@
 import { LocalStore } from "../../core/storage/localStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 export function normalizeMediaServerAddress(value, provider) {
   try {
     const url = new URL(String(value).trim());
@@ -51,41 +52,37 @@ export async function mediaServerRequest(
   path,
   { method = "GET", query = {}, body, signal, publicInfo = false } = {}
 ) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
-  const abort = () => controller.abort();
-  signal?.addEventListener("abort", abort, { once: true });
-  if (signal?.aborted) controller.abort();
-  try {
-    const response = await fetch(mediaServerUrl(connection, path, query), {
-      method,
-      headers: {
-        Accept: "application/json",
-        ...mediaServerHeaders(connection),
-        ...(body ? { "Content-Type": "application/json" } : {})
-      },
-      body: body == null ? undefined : JSON.stringify(body),
-      signal: controller.signal,
-      redirect: publicInfo ? "follow" : "error"
-    });
-    if (!response.ok) {
-      const error = new Error(
-        response.status === 401
-          ? "servers_error_auth"
-          : response.status === 403
-            ? "servers_error_forbidden"
-            : "servers_error_failed"
-      );
-      error.status = response.status;
-      throw error;
-    }
-    if (response.status === 204) return null;
-    const raw = await response.text();
-    return raw ? JSON.parse(raw) : null;
-  } finally {
-    clearTimeout(timer);
-    signal?.removeEventListener("abort", abort);
-  }
+  return withRequestTimeout(
+    async (requestSignal) => {
+      const response = await fetch(mediaServerUrl(connection, path, query), {
+        method,
+        headers: {
+          Accept: "application/json",
+          ...mediaServerHeaders(connection),
+          ...(body ? { "Content-Type": "application/json" } : {})
+        },
+        body: body == null ? undefined : JSON.stringify(body),
+        ...(requestSignal ? { signal: requestSignal } : {}),
+        redirect: publicInfo ? "follow" : "error"
+      });
+      if (!response.ok) {
+        const error = new Error(
+          response.status === 401
+            ? "servers_error_auth"
+            : response.status === 403
+              ? "servers_error_forbidden"
+              : "servers_error_failed"
+        );
+        error.status = response.status;
+        throw error;
+      }
+      if (response.status === 204) return null;
+      const raw = await response.text();
+      return raw ? JSON.parse(raw) : null;
+    },
+    15000,
+    signal
+  );
 }
 export function serverEndpoint(connection, kind, itemId = "") {
   const user = encodeURIComponent(connection.remoteUserId);

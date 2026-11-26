@@ -104,11 +104,10 @@ export function createTmdbMetadataServiceMethods02() {
 
       const lang = normalizeTmdbLanguageCode(language || settings.language);
       const url = `${TMDB_BASE_URL}/collection/${encodeURIComponent(String(collectionId))}?api_key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(lang)}`;
-      const response = await fetch(url);
-      if (!response.ok) {
+      const data = await fetchTmdbJson(url);
+      if (!data) {
         return [];
       }
-      const data = await response.json();
       return sortCollectionPartsByReleaseDate(data?.parts)
         .map((item) => ({
           id: item?.id ? `tmdb:${String(item.id)}` : "",
@@ -144,11 +143,10 @@ export function createTmdbMetadataServiceMethods02() {
       const url = `${TMDB_BASE_URL}/${type}/${encodeURIComponent(numericId)}/recommendations?api_key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(normalizedLanguage)}&page=1`;
 
       try {
-        const response = await fetch(url);
-        if (!response.ok) {
+        const data = await fetchTmdbJson(url);
+        if (!data) {
           return [];
         }
-        const data = await response.json();
         const rawResults = (Array.isArray(data?.results) ? data.results : []).filter((item) => Number(item?.id) > 0);
         const preferredLanguage = languageBase(normalizedLanguage);
         const isLocalized = (item) =>
@@ -246,11 +244,10 @@ export function createTmdbMetadataServiceMethods02() {
       const type = resolveType(contentType);
       const lang = normalizeTmdbLanguageCode(language || settings.language);
       const url = `${TMDB_BASE_URL}/${type}/${encodeURIComponent(String(tmdbId))}/recommendations?api_key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(lang)}&page=1`;
-      const response = await fetch(url);
-      if (!response.ok) {
+      const data = await fetchTmdbJson(url);
+      if (!data) {
         return [];
       }
-      const data = await response.json();
       const recommendationResults = (Array.isArray(data?.results) ? data.results : [])
         .filter((item) => Number(item?.id) > 0)
         .slice(0, TMDB_RECOMMENDATION_MAX_ITEMS);

@@ -10,6 +10,7 @@ import {
   UNIQUE_CONTRIBUTIONS_BASE_URL
 } from "../../../config.js";
 import { QrCodeGenerator } from "../../../core/qr/qrCodeGenerator.js";
+import { withRequestTimeout } from "../../../core/network/requestTimeout.js";
 import { MembershipOverviewRepository } from "../../../data/remote/supabase/membershipOverviewRepository.js";
 import {
   normalizeContributors,
@@ -67,6 +68,8 @@ export {
   loadContributors
 };
 const TABS = ["supporters", "sponsors", "contributors"];
+// Matches the Android TV shared OkHttp read timeout.
+const REQUEST_TIMEOUT_MS = 60000;
 const DEFAULT_TAB = "contributors";
 const PATREON_MEMBERSHIP_URL = "https://www.patreon.com/settings/memberships";
 const CONTRIBUTOR_SUPPORT_LINKS = {
@@ -101,13 +104,16 @@ function uniqueContributionsUrl(value) {
 }
 
 async function requestJson(url, errorMessage) {
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" }
-  });
-  if (!response.ok) {
-    throw new Error(`${errorMessage}: ${response.status}`);
-  }
-  return await response.json();
+  return withRequestTimeout(async (signal) => {
+    const response = await fetch(url, {
+      headers: { Accept: "application/json" },
+      ...(signal ? { signal } : {})
+    });
+    if (!response.ok) {
+      throw new Error(`${errorMessage}: ${response.status}`);
+    }
+    return await response.json();
+  }, REQUEST_TIMEOUT_MS);
 }
 
 function formatSupporterDate(rawDate) {

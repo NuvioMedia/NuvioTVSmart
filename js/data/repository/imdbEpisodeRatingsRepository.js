@@ -1,4 +1,5 @@
 import { IMDB_RATINGS_API_BASE_URL, IMDB_TAPFRAME_API_BASE_URL } from "../../config.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 import { alignEpisodeRatings } from "./episodeRatingsAlignment.js";
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -14,23 +15,19 @@ function normalizeBaseUrl(value = "") {
 }
 
 async function fetchJson(url, timeoutMs = 4500) {
-  const controller = typeof AbortController === "function" ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   try {
-    const response = await fetch(url, {
-      method: "GET",
-      signal: controller?.signal
-    });
-    if (!response.ok) {
-      return null;
-    }
-    return await response.json();
+    return await withRequestTimeout(async (signal) => {
+      const response = await fetch(url, {
+        method: "GET",
+        ...(signal ? { signal } : {})
+      });
+      if (!response.ok) {
+        return null;
+      }
+      return await response.json();
+    }, timeoutMs);
   } catch (_) {
     return null;
-  } finally {
-    if (timer) {
-      clearTimeout(timer);
-    }
   }
 }
 
