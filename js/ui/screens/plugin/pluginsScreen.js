@@ -1,5 +1,6 @@
 import { ScreenUtils } from "../../navigation/screen.js";
 import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
+import { scrollFocusedIntoContainer } from "../../navigation/scrollFocusedIntoContainer.js";
 import { Router } from "../../navigation/routerState.js";
 import { Platform } from "../../../platform/index.js";
 import { I18n } from "../../../i18n/index.js";
@@ -362,23 +363,15 @@ export const PluginsScreen = {
         ".plugins-provider-row, .plugins-test-result, .plugins-repository-card, .plugins-settings-card, .plugins-section-label"
       ) ||
       target;
-    const pad = 56;
-    const containerRect = container.getBoundingClientRect();
-    const anchorRect = anchor.getBoundingClientRect();
-    const anchorTop = anchorRect.top - containerRect.top + container.scrollTop;
-    const anchorBottom = anchorRect.bottom - containerRect.top + container.scrollTop;
-    const viewTop = container.scrollTop;
-    const viewBottom = viewTop + container.clientHeight;
-    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
-
-    if (anchorBottom > viewBottom - pad) {
-      container.scrollTop = Math.min(
-        maxScrollTop,
-        Math.max(0, anchorBottom - container.clientHeight + pad)
-      );
-    } else if (anchorTop < viewTop + pad) {
-      container.scrollTop = Math.max(0, anchorTop - pad);
-    }
+    const firstFocusable = Array.from(
+      container.querySelectorAll?.(".plugins-focusable") || []
+    ).find((node) => !node.disabled);
+    const firstAnchor =
+      firstFocusable?.closest?.(
+        ".plugins-provider-row, .plugins-repository-card, .plugins-settings-card"
+      ) || firstFocusable;
+    const isTopRow = Boolean(firstAnchor && (anchor === firstAnchor || target === firstFocusable));
+    scrollFocusedIntoContainer(container, target, { anchor, pad: 56, isTopRow });
   },
   applyFocus() {
     const focusables = Array.from(this.container?.querySelectorAll?.(".plugins-focusable") || []);

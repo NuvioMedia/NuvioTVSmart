@@ -3,6 +3,7 @@
 // party overview with members, host settings and actions.
 import { ScreenUtils } from "../../navigation/screen.js";
 import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
+import { scrollFocusedIntoContainer } from "../../navigation/scrollFocusedIntoContainer.js";
 import { Router } from "../../navigation/routerState.js";
 import { PartyRepository } from "../../../core/party/partyRepository.js";
 import {
@@ -282,6 +283,20 @@ export const PartyScreen = {
     target.classList.add("focused");
     this.focusKey = target.dataset.focusKey || "";
     focusWithoutScroll(target);
+    this.scrollFocusedTarget(target);
+  },
+
+  scrollFocusedTarget(target) {
+    if (!target) return;
+    const scroller = this.container?.querySelector(".party-overview-right");
+    if (scroller && scroller.contains(target)) {
+      const firstFocusable = scroller.querySelector(".focusable");
+      scrollFocusedIntoContainer(scroller, target, {
+        pad: 32,
+        isTopRow: Boolean(firstFocusable && target === firstFocusable)
+      });
+      return;
+    }
     target.scrollIntoView?.({ block: "nearest" });
   },
 
@@ -435,14 +450,17 @@ export const PartyScreen = {
     if (this.mode() === "party" && (keyCode === 38 || keyCode === 40)) {
       event.preventDefault?.();
       const focused = moveListFocus(this.container, keyCode === 40 ? 1 : -1);
-      if (focused) this.focusKey = focused.dataset.focusKey || "";
+      if (focused) {
+        this.focusKey = focused.dataset.focusKey || "";
+        this.scrollFocusedTarget(focused);
+      }
       return;
     }
     if (ScreenUtils.handleDpadNavigation(event, this.container)) {
       const focused = this.container.querySelector(".focusable.focused");
       if (focused) {
         this.focusKey = focused.dataset.focusKey || "";
-        focused.scrollIntoView?.({ block: "nearest" });
+        this.scrollFocusedTarget(focused);
       }
       return;
     }
