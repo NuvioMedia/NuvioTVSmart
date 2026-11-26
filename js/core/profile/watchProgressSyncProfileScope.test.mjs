@@ -17,15 +17,21 @@ const { AuthManager } = await import("../auth/authManager.js");
 const { SessionStore } = await import("../storage/sessionStore.js");
 const { ProfileManager } = await import("./profileManager.js");
 const { TraktAuthStore } = await import("../../data/local/traktAuthStore.js");
+const { SupabaseApi } = await import("../../data/remote/supabase/supabaseApi.js");
+const { watchProgressRepository } =
+  await import("../../data/repository/watchProgressRepository.js");
+const { watchedItemsRepository } = await import("../../data/repository/watchedItemsRepository.js");
 const { WatchProgressSyncService } = await import("./watchProgressSyncService.js");
 const { WatchedItemsSyncService } = await import("./watchedItemsSyncService.js");
 
-test("WatchProgressSyncService and WatchedItemsSyncService evaluate gating and push locks per profileId", async () => {
-  const originalFetch = globalThis.fetch;
+test("sync gating, push locks, and watched-items pushes use the synced profileId", async () => {
+  const originalRpc = SupabaseApi.rpc;
+  const originalProgressGetAll = watchProgressRepository.getAll;
+  const originalWatchedGetAll = watchedItemsRepository.getAll;
   const originalState = AuthManager.state;
   const rpcCalls = [];
   try {
-    AuthManager.state = AuthState.AUTHENTICATED;
+    AuthManager.setState(AuthState.AUTHENTICATED);
     SessionStore.accessToken = "jwt-test-token";
     await ProfileManager.replaceProfiles([
       { id: "1", name: "Profile 1" },
@@ -33,7 +39,7 @@ test("WatchProgressSyncService and WatchedItemsSyncService evaluate gating and p
     ]);
     await ProfileManager.setActiveProfile("1");
 
-    // Profile 1 uses Trakt; Profile 2 has no Trakt/Simkl/MDBList connected and must sync via Supabase.
+    // Profile 1 uses Trakt; profile 2 has no provider connected and must sync via Supabase.
     TraktAuthStore.saveToken(
       {
         access_token: "t1",
@@ -45,54 +51,82 @@ test("WatchProgressSyncService and WatchedItemsSyncService evaluate gating and p
     );
     TraktAuthStore.clearAuth("2");
 
-    globalThis.fetch = async (url, init = {}) => {
-      const target = String(url);
-      if (target.includes("/rest/v1/rpc/")) {
-        const rpcName = target.split("/rest/v1/rpc/")[1];
-        const body = init.body ? JSON.parse(init.body) : {};
-        rpcCalls.push({ rpcName, body });
-        if (rpcName.includes("push") && body.p_profile_id === 1) {
-          await new Promise((r) => setTimeout(r, 30));
-        }
-        return {
-          ok: true,
-          status: 200,
-          headers: new Headers({ "content-type": "application/json" }),
-          text: async () => "[]"
-        };
-      }
-      return {
-        ok: true,
-        status: 200,
-        headers: new Headers({ "content-type": "application/json" }),
-        text: async () => "[]"
-      };
+    SupabaseApi.rpc = async (fn, body) => {
+      rpcCalls.push({ fn, body });
+      return [];
     };
 
     const pulled2 = await WatchProgressSyncService.pull(2);
     assert.deepEqual(pulled2, []);
     assert.equal(WatchProgressSyncService.getLastPullStatus(), "ok");
     assert.equal(
-      rpcCalls.some((c) => c.rpcName === "sync_pull_watch_progress" && c.body.p_profile_id === 2),
+      rpcCalls.some(
+        (call) => call.fn === "sync_pull_watch_progress" && Number(call.body.p_profile_id) === 2
+      ),
       true
     );
-
-    rpcCalls.length = 0;
-    const watchedPulled2 = await WatchedItemsSyncService.pull(2);
-    assert.equal(
-      rpcCalls.some((c) => c.rpcName === "sync_pull_watched_items" && c.body.p_profile_id === 2),
-      true
-    );
-    assert.ok(Array.isArray(watchedPulled2));
 
     // Profile 1 still skips Supabase pull because Trakt is connected for profile 1.
     rpcCalls.length = 0;
     await WatchProgressSyncService.pull(1);
     assert.equal(WatchProgressSyncService.getLastPullStatus(), "skipped");
-    assert.equal(rpcCalls.length, 0);
+    assert.deepEqual(rpcCalls, []);
+
+    watchedItemsRepository.getAll = async (limit, profileId) => [
+      { contentId: `watched-${profileId}`, contentType: "movie", watchedAt: Date.now() }
+    ];
+    rpcCalls.length = 0;
+    await WatchedItemsSyncService.pull(2);
+    assert.equal(WatchedItemsSyncService.getLastPullStatus(), "ok");
+    assert.equal(
+      rpcCalls.some(
+        (call) => call.fn === "sync_pull_watched_items" && Number(call.body.p_profile_id) === 2
+      ),
+      true
+    );
+
+    // In-flight pushes are tracked per profile: push(2) must run its own push
+    // instead of joining the push already in flight for profile 1.
+    watchProgressRepository.getAll = async (profileId) => [
+      {
+        contentId: `progress-${profileId}`,
+        contentType: "movie",
+        positionMs: 120000,
+        durationMs: 600000,
+        updatedAt: Date.now()
+      }
+    ];
+    rpcCalls.length = 0;
+    const [pushed1, pushed2] = await Promise.all([
+      WatchProgressSyncService.push(1),
+      WatchProgressSyncService.push(2)
+    ]);
+    assert.equal(pushed1, true);
+    assert.equal(pushed2, true);
+    assert.deepEqual(
+      rpcCalls
+        .filter((call) => call.fn === "sync_push_watch_progress")
+        .map((call) => Number(call.body.p_profile_id))
+        .sort(),
+      [1, 2]
+    );
+
+    // Watched-items pushes follow the synced profile's provider, not the active one.
+    rpcCalls.length = 0;
+    assert.equal(await WatchedItemsSyncService.push(1), true);
+    assert.equal(await WatchedItemsSyncService.push(2), true);
+    assert.deepEqual(
+      rpcCalls
+        .filter((call) => call.fn === "sync_push_watched_items")
+        .map((call) => Number(call.body.p_profile_id)),
+      [2]
+    );
   } finally {
-    globalThis.fetch = originalFetch;
-    AuthManager.state = originalState;
+    SupabaseApi.rpc = originalRpc;
+    watchProgressRepository.getAll = originalProgressGetAll;
+    watchedItemsRepository.getAll = originalWatchedGetAll;
+    AuthManager.setState(originalState);
     TraktAuthStore.clearAuth("1");
+    TraktAuthStore.clearAuth("2");
   }
 });

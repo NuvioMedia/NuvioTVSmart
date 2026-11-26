@@ -371,10 +371,8 @@ function resolveProfileId(profileId = null) {
 function shouldUseSupabaseWatchProgressSync(profileId = null) {
   const resolvedProfileId = resolveProfileId(profileId);
   const source =
-    (typeof TraktSettingsStore.getForProfile === "function"
-      ? TraktSettingsStore.getForProfile(resolvedProfileId)
-      : TraktSettingsStore.get()
-    ).watchProgressSource || WatchProgressSource.TRAKT;
+    TraktSettingsStore.getForProfile(resolvedProfileId).watchProgressSource ||
+    WatchProgressSource.TRAKT;
   const providerSelected =
     (TraktAuthStore.isAuthenticated(resolvedProfileId) && source === WatchProgressSource.TRAKT) ||
     (SimklAuthStore.isAuthenticated(resolvedProfileId) && source === WatchProgressSource.SIMKL) ||
@@ -584,9 +582,6 @@ async function pushOnce(profileId = null) {
   try {
     if (!AuthManager.isAuthenticated) {
       return false;
-    }
-    if (!shouldUseSupabaseWatchProgressSync(resolvedProfileId)) {
-      return true;
     }
     const localItems = coalesceSyncItems(await watchProgressRepository.getAll(resolvedProfileId));
     const localKeys = new Set(localItems.map((item) => progressKey(item)));
