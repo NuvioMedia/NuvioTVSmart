@@ -1,5 +1,6 @@
 import { SIMKL_API_URL, SIMKL_APP_NAME, SIMKL_CLIENT_ID } from "../../config.js";
 import { Platform } from "../../platform/index.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 
 // Resolves the anime-specific IDs (MAL / AniList / Kitsu) and the anime episode number for a
 // show, using the same Simkl lookup Android's SimklIdResolver performs. Everything is best-effort
@@ -38,27 +39,23 @@ function timeoutMs() {
 }
 
 async function fetchJson(url, options = {}) {
-  const controller = typeof AbortController === "function" ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs()) : null;
   try {
-    const response = await fetch(url, {
-      method: options.method || "GET",
-      headers: options.headers || undefined,
-      body: options.body || undefined,
-      mode: "cors",
-      cache: "no-store",
-      signal: controller?.signal
-    });
-    if (!response.ok) {
-      return null;
-    }
-    return await response.json();
+    return await withRequestTimeout(async (signal) => {
+      const response = await fetch(url, {
+        method: options.method || "GET",
+        headers: options.headers || undefined,
+        body: options.body || undefined,
+        mode: "cors",
+        cache: "no-store",
+        ...(signal ? { signal } : {})
+      });
+      if (!response.ok) {
+        return null;
+      }
+      return await response.json();
+    }, timeoutMs());
   } catch (_) {
     return null;
-  } finally {
-    if (timer) {
-      clearTimeout(timer);
-    }
   }
 }
 

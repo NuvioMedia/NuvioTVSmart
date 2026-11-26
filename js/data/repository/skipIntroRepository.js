@@ -1,5 +1,6 @@
 import { ANIME_SKIP_API_URL, ANISKIP_API_URL, INTRODB_API_URL } from "../../config.js";
 import { segmentCategory } from "../../core/player/skipIntervalRules.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 import { TmdbService } from "../../core/tmdb/tmdbService.js";
 import { Platform } from "../../platform/index.js";
 import { AnimeSkipSettingsStore } from "../local/animeSkipSettingsStore.js";
@@ -239,28 +240,24 @@ export function mergeSkipIntervalsByPriority(providerLists = []) {
 }
 
 async function fetchJson(url, options = {}) {
-  const controller = typeof AbortController === "function" ? new AbortController() : null;
   const timeoutMs = Platform.isTizen() || Platform.isWebOS() ? 8000 : 3500;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   try {
-    const response = await fetch(url, {
-      method: options.method || "GET",
-      headers: options.headers || undefined,
-      body: options.body || undefined,
-      mode: "cors",
-      cache: "no-store",
-      signal: controller?.signal
-    });
-    if (!response.ok) {
-      return null;
-    }
-    return await response.json();
+    return await withRequestTimeout(async (signal) => {
+      const response = await fetch(url, {
+        method: options.method || "GET",
+        headers: options.headers || undefined,
+        body: options.body || undefined,
+        mode: "cors",
+        cache: "no-store",
+        ...(signal ? { signal } : {})
+      });
+      if (!response.ok) {
+        return null;
+      }
+      return await response.json();
+    }, timeoutMs);
   } catch (_) {
     return null;
-  } finally {
-    if (timer) {
-      clearTimeout(timer);
-    }
   }
 }
 

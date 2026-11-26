@@ -6,6 +6,7 @@ import {
   TRAKT_REDIRECT_URI
 } from "../../config.js";
 import { AuthManager } from "../../core/auth/authManager.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 import { trackSessionRequest } from "../../core/auth/sessionLifecycle.js";
 import { TraktAuthStore } from "../local/traktAuthStore.js";
 import { detailWatchedEnrichmentService } from "./detailWatchedEnrichmentService.js";
@@ -46,6 +47,8 @@ export {
 };
 const API_VERSION = "2";
 const DEFAULT_API_URL = "https://api.trakt.tv";
+// Same 60 s read budget as the Android TV Trakt OkHttp client.
+const REQUEST_TIMEOUT_MS = 60000;
 const REFRESH_LEEWAY_SECONDS = 60;
 const WATCHED_MAX_PAGES = 1000;
 const WATCHED_MOVIES_PAGE_LIMIT = 250;
@@ -161,28 +164,32 @@ export function requestJson(
 ) {
   const requestSignal = signal || AuthManager.getSessionSignal?.() || null;
   return trackSessionRequest(
-    (async () => {
-      throwIfAborted(requestSignal);
-      const headers = {
-        "Content-Type": "application/json",
-        "trakt-api-version": API_VERSION,
-        "trakt-api-key": clientId
-      };
-      if (authorization) {
-        headers.Authorization = authorization;
-      }
+    withRequestTimeout(
+      async (signal) => {
+        throwIfAborted(signal);
+        const headers = {
+          "Content-Type": "application/json",
+          "trakt-api-version": API_VERSION,
+          "trakt-api-key": clientId
+        };
+        if (authorization) {
+          headers.Authorization = authorization;
+        }
 
-      const response = await fetch(`${apiBaseUrl()}${path}`, {
-        method,
-        headers,
-        body: body == null ? undefined : JSON.stringify(body),
-        ...(requestSignal ? { signal: requestSignal } : {})
-      });
-      throwIfAborted(requestSignal);
-      const payload = await readResponseBody(response);
-      throwIfAborted(requestSignal);
-      return { response, payload };
-    })()
+        const response = await fetch(`${apiBaseUrl()}${path}`, {
+          method,
+          headers,
+          body: body == null ? undefined : JSON.stringify(body),
+          ...(signal ? { signal } : {})
+        });
+        throwIfAborted(signal);
+        const payload = await readResponseBody(response);
+        throwIfAborted(signal);
+        return { response, payload };
+      },
+      REQUEST_TIMEOUT_MS,
+      requestSignal
+    )
   );
 }
 

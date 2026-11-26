@@ -1,4 +1,5 @@
 import { mediaServerRequest, serverEndpoint } from "./mediaBrowserClient.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 import { TmdbService } from "../../core/tmdb/tmdbService.js";
 
 const indexes = new Map();
@@ -121,10 +122,8 @@ export async function mirrorWatchTargets(connections, item) {
   if (!connections.length) return [];
   const ids = await convertedIds(item);
   if (!Object.keys(ids).length) return [];
-  const targets = new Map();
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
-  try {
+  return withRequestTimeout(async (signal) => {
+    const targets = new Map();
     for (const connection of connections.filter(
       (entry) => entry.enabled && entry.useCatalogMetadata
     )) {
@@ -141,7 +140,7 @@ export async function mirrorWatchTargets(connections, item) {
             for (let startIndex = 0; ; startIndex += 500) {
               const endpoint = serverEndpoint(connection, "items");
               const data = await mediaServerRequest(connection, endpoint.path, {
-                signal: controller.signal,
+                signal,
                 query: {
                   ...endpoint.query,
                   parentId: library.id,
@@ -181,7 +180,7 @@ export async function mirrorWatchTargets(connections, item) {
           if (candidate.IsMissing || !externalIdsMatch(ids, watchedExternalIds(candidate)))
             continue;
           const match = episode
-            ? await findServerEpisode(connection, candidate.Id, item, controller.signal)
+            ? await findServerEpisode(connection, candidate.Id, item, signal)
             : candidate;
           if (match?.Id)
             targets.set(`${connection.id}:${match.Id}`, {
@@ -192,7 +191,5 @@ export async function mirrorWatchTargets(connections, item) {
       }
     }
     return [...targets.values()];
-  } finally {
-    clearTimeout(timeout);
-  }
+  }, 12000);
 }
