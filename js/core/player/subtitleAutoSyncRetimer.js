@@ -226,8 +226,7 @@ export function retimeAutoSyncSubtitleText(body, timeline) {
   if (/<tt[\s>]/i.test(text.slice(0, 512))) {
     return null;
   }
-  const sample = text.slice(0, 4096).toLowerCase();
-  if (sample.includes("[events]") && sample.includes("dialogue:")) {
+  if (/(?:^|\n)\s*\[events\]/i.test(text) && /(?:^|\n)\s*dialogue\s*:/i.test(text)) {
     return retimeAss(text, timeline);
   }
   return retimeTimingLines(text, timeline);
