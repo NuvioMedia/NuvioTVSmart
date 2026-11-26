@@ -1,7 +1,9 @@
 import { ServerConfigurationStore } from "../../data/local/serverConfigurationStore.js";
+import { withRequestTimeout } from "../network/requestTimeout.js";
 import { recordSyncFailure } from "../sync/syncBackoffPolicy.js";
 import { trackSessionRequest } from "./sessionLifecycle.js";
 
+const AUTH_REQUEST_TIMEOUT_MS = 15000;
 const RETRYABLE_AUTH_STATUSES = new Set([
   408, 500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 530
 ]);
@@ -32,6 +34,9 @@ function isNetworkError(error) {
 }
 
 async function isRetryableResponse(response) {
+  if (!response || response.ok) {
+    return false;
+  }
   if (RETRYABLE_AUTH_STATUSES.has(Number(response?.status || 0))) {
     return true;
   }
@@ -55,7 +60,15 @@ async function fetchSupabaseAuthInternal(endpoint, init = {}) {
   const primaryUrl = authUrl(primaryBaseUrl, endpoint);
 
   try {
-    const response = await fetch(primaryUrl, init);
+    const response = await withRequestTimeout(
+      (signal) =>
+        fetch(primaryUrl, {
+          ...init,
+          ...(signal ? { signal } : {})
+        }),
+      AUTH_REQUEST_TIMEOUT_MS,
+      init?.signal || null
+    );
     const shouldRetryPrimary = await isRetryableResponse(response);
     if (!canFallback || !shouldRetryPrimary) {
       return response;
@@ -73,7 +86,15 @@ async function fetchSupabaseAuthInternal(endpoint, init = {}) {
 
   let fallbackResponse;
   try {
-    fallbackResponse = await fetch(authUrl(fallbackBaseUrl, endpoint), init);
+    fallbackResponse = await withRequestTimeout(
+      (signal) =>
+        fetch(authUrl(fallbackBaseUrl, endpoint), {
+          ...init,
+          ...(signal ? { signal } : {})
+        }),
+      AUTH_REQUEST_TIMEOUT_MS,
+      init?.signal || null
+    );
   } catch (error) {
     if (isNetworkError(error)) {
       recordSyncFailure(error);
