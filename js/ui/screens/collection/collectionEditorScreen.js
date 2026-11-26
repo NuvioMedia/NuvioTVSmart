@@ -1994,6 +1994,7 @@ export const CollectionEditorScreen = {
     if (!isReordering(this.reorderSession)) {
       return false;
     }
+    const movingId = this.reorderSession.movingKey;
     cancelReorder(this.reorderSession);
     if (Array.isArray(this.reorderOriginalFolders)) {
       this.draft = {
@@ -2004,7 +2005,7 @@ export const CollectionEditorScreen = {
     this.reorderSession = null;
     this.reorderTarget = "";
     this.reorderOriginalFolders = null;
-    this.focusKey = "addFolder";
+    this.focusKey = movingId ? `folder:${movingId}:reorder` : "addFolder";
     this.render();
     return true;
   },
@@ -2027,8 +2028,10 @@ export const CollectionEditorScreen = {
     this.render();
   },
   applySourceReorderOrder() {
-    const sources = this.editingFolder?.sources || [];
-    const byKey = new Map(sources.map((source, position) => [String(position), source]));
+    const byKey = new Map();
+    this.reorderSourceKeys?.forEach((key, source) => {
+      byKey.set(key, source);
+    });
     this.editingFolder = {
       ...this.editingFolder,
       sources: (this.reorderSession?.keys || []).map((key) => byKey.get(key)).filter(Boolean)
@@ -2039,7 +2042,8 @@ export const CollectionEditorScreen = {
       return;
     }
     this.applySourceReorderOrder();
-    this.focusKey = `source:${this.reorderSession.movingKey}:reorder`;
+    const currentIndex = this.reorderSession.keys.indexOf(this.reorderSession.movingKey);
+    this.focusKey = `source:${Math.max(0, currentIndex)}:reorder`;
     this.render();
   },
   finishSourceReorder() {
@@ -2047,8 +2051,9 @@ export const CollectionEditorScreen = {
       return;
     }
     const movingKey = this.reorderSession.movingKey;
+    const currentIndex = this.reorderSession.keys.indexOf(movingKey);
     confirmReorder(this.reorderSession);
-    this.focusKey = `source:${movingKey || ""}:reorder`;
+    this.focusKey = `source:${Math.max(0, currentIndex)}:reorder`;
     this.reorderSession = null;
     this.reorderTarget = "";
     this.reorderOriginalSources = null;
@@ -2059,6 +2064,7 @@ export const CollectionEditorScreen = {
     if (!isReordering(this.reorderSession)) {
       return false;
     }
+    const movingKey = this.reorderSession.movingKey;
     cancelReorder(this.reorderSession);
     if (Array.isArray(this.reorderOriginalSources)) {
       this.editingFolder = {
@@ -2066,11 +2072,15 @@ export const CollectionEditorScreen = {
         sources: JSON.parse(JSON.stringify(this.reorderOriginalSources))
       };
     }
+    const originalIndex = Number(movingKey);
     this.reorderSession = null;
     this.reorderTarget = "";
     this.reorderOriginalSources = null;
     this.reorderSourceKeys = null;
-    this.focusKey = "addSource";
+    this.focusKey =
+      Number.isInteger(originalIndex) && originalIndex >= 0
+        ? `source:${originalIndex}:reorder`
+        : "addCatalog";
     this.render();
     return true;
   },
