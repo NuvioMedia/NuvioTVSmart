@@ -9,7 +9,6 @@ export function createProfileSelectionScreenMethods08() {
       this.profileBackgroundUnsubscribe = null;
       this._destroyDialogs();
       this.cancelPendingProfileHold();
-      this.suppressHoldMenuEnterUntilKeyUp = false;
       this.focusedNode = null;
       if (this._bgAnimRaf) {
         cancelAnimationFrame(this._bgAnimRaf);

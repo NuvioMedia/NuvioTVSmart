@@ -166,7 +166,10 @@ export function createProfileSelectionScreenMethods05() {
                 onAction: () => {
                   this._optionsDialog?.destroy();
                   this._optionsDialog = null;
-                  this.openDeleteDialog(this.getProfileById(profile.id));
+                  const p = this.getProfileById(profile.id);
+                  if (!p) return;
+                  if (this.isProfilePinEnabled(p.id)) this.openPinOverlay("verify-delete", p);
+                  else this.openDeleteDialog(p);
                 }
               }
             ]
@@ -185,7 +188,6 @@ export function createProfileSelectionScreenMethods05() {
           this.restoreFocus();
         }
       }).mount(document.body);
-      this.suppressHoldMenuEnterUntilKeyUp = true;
     },
     canHoldManageProfile(node) {
       return (
@@ -215,8 +217,7 @@ export function createProfileSelectionScreenMethods05() {
       }
       this.cancelPendingProfileHold();
       this.pendingProfileHoldTarget = {
-        profileId,
-        holdTriggered: false
+        profileId
       };
       this.pendingProfileHoldTimer = setTimeout(() => {
         this.pendingProfileHoldTimer = null;
@@ -232,7 +233,8 @@ export function createProfileSelectionScreenMethods05() {
         if (!profile) {
           return;
         }
-        pending.holdTriggered = true;
+        // The hold already opened the menu: releasing the key must not activate the profile.
+        this.cancelPendingProfileHold();
         this.openOptionsDialog(profile);
       }, PROFILE_HOLD_DELAY_MS);
       return true;
@@ -242,13 +244,12 @@ export function createProfileSelectionScreenMethods05() {
       if (!pending) {
         return false;
       }
-      const holdTriggered = Boolean(pending.holdTriggered);
       const heldLongEnough = Number(event?.keyDownDurationMs || 0) >= PROFILE_HOLD_DELAY_MS;
-      const shouldOpenHoldMenu = !holdTriggered && heldLongEnough && this.hasPendingProfileHold(node);
+      const shouldOpenHoldMenu = heldLongEnough && this.hasPendingProfileHold(node);
       const profile = shouldOpenHoldMenu ? this.getProfileById(pending.profileId) : null;
       this.cancelPendingProfileHold();
-      if (holdTriggered || shouldOpenHoldMenu) {
-        if (shouldOpenHoldMenu && profile) {
+      if (shouldOpenHoldMenu) {
+        if (profile) {
           this.openOptionsDialog(profile);
         }
         return true;
