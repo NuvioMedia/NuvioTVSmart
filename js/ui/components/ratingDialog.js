@@ -197,7 +197,6 @@ export function openRatingDialog({
     saving = true;
     render();
     const saved = await TrackingRatings.rate(media, rating);
-    if (closed) return;
     close();
     onFinished({ saved, removed: rating == null, provider });
   }
