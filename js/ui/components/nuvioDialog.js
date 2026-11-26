@@ -118,7 +118,7 @@ export class NuvioDialog {
   }
 
   mount(container = document.body) {
-    this._ambientHandler = () => this._dismiss();
+    this._ambientHandler = () => this._dismiss("ambient");
     document.addEventListener("nuvio:ambient-shown", this._ambientHandler);
     // Backdrop
     const backdrop = document.createElement("div");
@@ -207,7 +207,12 @@ export class NuvioDialog {
     window.addEventListener("keyup", this._keyUpHandler, { capture: true });
 
     // Focus first button after 2 frames (matches ATV LaunchedEffect repeat(2) { withFrameNanos })
-    this._scheduleFrame(() => this._scheduleFrame(() => this._focusIndex(this.initialFocusIndex)));
+    this._scheduleFrame(() =>
+      this._scheduleFrame(() => {
+        if (this._destroyed) return;
+        this._focusIndex(this.initialFocusIndex);
+      })
+    );
 
     // Trigger enter animation
     this._scheduleFrame(() => {
@@ -349,9 +354,9 @@ export class NuvioDialog {
     }
   }
 
-  _dismiss() {
+  _dismiss(reason = "dismiss") {
     if (this._destroyed) return;
-    if (this.onDismiss) this.onDismiss();
+    if (this.onDismiss) this.onDismiss(reason);
     this.destroy();
   }
 
