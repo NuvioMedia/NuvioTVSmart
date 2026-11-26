@@ -163,6 +163,9 @@ export function createPlayerScreenMethods55() {
         resolvedSubtitleUrl = subtitle.url;
       }
       if (!isCurrentSelection() || !resolvedSubtitleUrl) {
+        if (rawBody || detectedAss) {
+          this.revokeExternalSubtitleObjectUrls();
+        }
         return;
       }
 
