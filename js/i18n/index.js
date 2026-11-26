@@ -667,6 +667,8 @@ function warnMissingKey(locale, key) {
   console.warn(`Missing translation for "${key}" in locale "${locale}"`);
 }
 
+let localeInitSeq = 0;
+
 export const I18n = {
   async init(preferred = null) {
     const locale = resolvePreferredLocale(preferred);
@@ -677,17 +679,26 @@ export const I18n = {
       return await initPromise;
     }
 
+    // The newest request wins: a slower earlier load must not overwrite the
+    // locale that a later init() already switched to.
+    const seq = ++localeInitSeq;
     currentLocale = locale;
     initPromise = (async () => {
-      activeMessages = await loadLocaleMessages(locale);
-      initialized = true;
+      const loaded = await loadLocaleMessages(locale);
+      if (seq === localeInitSeq) {
+        activeMessages = loaded;
+        currentLocale = locale;
+        initialized = true;
+      }
       return currentLocale;
     })();
 
     try {
       return await initPromise;
     } finally {
-      initPromise = null;
+      if (seq === localeInitSeq) {
+        initPromise = null;
+      }
     }
   },
 
