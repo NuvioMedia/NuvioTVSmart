@@ -39,6 +39,8 @@ globalThis.window = {
 
 const { createSearchScreenMethods02 } =
   await import("./searchScreenMethods-02-load-discover-rows.js");
+const { createDiscoverScreenMethods01 } =
+  await import("./discoverScreenMethods-01-clear-closing-picker.js");
 const { createCatalogSeeAllScreenMethods02 } =
   await import("../catalog/catalogSeeAllScreenMethods-02-handle-grid-dpad.js");
 
@@ -74,7 +76,35 @@ test("SearchScreen.renderRows escapes untrusted addon metadata in row headers an
   assert.equal(html.includes('"><img'), false, "renderRows must not allow attribute breakout");
 });
 
-test("CatalogSeeAllScreen.render escapes item id, type, focus-key, and guards onChanged unmount", () => {
+test("DiscoverScreen.renderDiscoverCards escapes untrusted addon metadata", () => {
+  const methods = createDiscoverScreenMethods01();
+  const payload = '"><img src=x onerror=alert(1)>';
+  const ctx = {
+    items: [
+      {
+        id: `tt999${payload}`,
+        type: `movie${payload}`,
+        name: `Bad Title ${payload}`,
+        poster: `https://img.example/p.jpg${payload}`,
+        released: "2024"
+      }
+    ],
+    watchedTitleIds: new Set(),
+    layoutPrefs: { posterLabelsEnabled: true },
+    renderedItemsLimit: 48,
+    hasMore: false
+  };
+
+  const html = methods.renderDiscoverCards.call(ctx, { type: "movie" });
+  assert.equal(
+    html.includes("<img src=x"),
+    false,
+    "Discover cards must escape untrusted HTML tags"
+  );
+  assert.equal(html.includes('"><img'), false, "Discover cards must not allow attribute breakout");
+});
+
+test("CatalogSeeAllScreen.render escapes item id, type, and focus-key attributes", () => {
   const methods = createCatalogSeeAllScreenMethods02();
   const payload = '"><img src=x onerror=alert(1)>';
   const fakeContainer = {
@@ -113,4 +143,24 @@ test("CatalogSeeAllScreen.render escapes item id, type, focus-key, and guards on
     false,
     "CatalogSeeAll render must not allow attribute breakout"
   );
+});
+
+test("CatalogSeeAllScreen.restoreFocusedCard escapes the stored focus key in its selector", () => {
+  const methods = createCatalogSeeAllScreenMethods02();
+  const selectors = [];
+  const ctx = {
+    container: {
+      querySelector: (selector) => {
+        selectors.push(selector);
+        return null;
+      },
+      querySelectorAll: () => []
+    },
+    lastFocusedKey: 'item:tt1"><img src=x onerror=alert(1)>'
+  };
+
+  methods.restoreFocusedCard.call(ctx);
+  const focusSelector = selectors.find((selector) => selector.includes("data-focus-key"));
+  assert.ok(focusSelector, "restoreFocusedCard must query the stored focus key");
+  assert.equal(focusSelector.includes('\\"'), true, "focus key selectors must escape quotes");
 });

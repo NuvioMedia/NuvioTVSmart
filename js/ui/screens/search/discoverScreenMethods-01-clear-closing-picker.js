@@ -334,16 +334,16 @@ export function createDiscoverScreenMethods01() {
               (item, index) => `
                   <article class="discover-card seeall-card focusable"
                             data-action="openDetail"
-                            data-item-id="${item.id || ""}"
-                            data-item-type="${item.type || selectedCatalog?.type || "movie"}"
-                            data-item-title="${item.name || "Untitled"}"
+                            data-item-id="${escapeHtml(item.id || "")}"
+                            data-item-type="${escapeHtml(item.type || selectedCatalog?.type || "movie")}"
+                            data-item-title="${escapeHtml(item.name || "Untitled")}"
                             data-poster-src="${escapeHtml(item.poster || "")}"
                             data-backdrop-src="${escapeHtml(item.background || item.backdrop || "")}"
                             data-addon-base-url="${escapeHtml(selectedCatalog?.addonBaseUrl || item.addonBaseUrl || "")}"
                             data-addon-id="${escapeHtml(selectedCatalog?.addonId || item.addonId || "")}"
                             data-addon-name="${escapeHtml(selectedCatalog?.addonName || item.addonName || "")}"
                             data-catalog-type="${escapeHtml(selectedCatalog?.type || item.catalogType || "")}"
-                            data-focus-key="item:${item.id || index}"
+                            data-focus-key="${escapeHtml(`item:${item.id || index}`)}"
                             data-item-index="${index}">
                      <div class="seeall-card-poster-wrap">
                        ${

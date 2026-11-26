@@ -14,6 +14,7 @@ export function createCatalogSeeAllScreenMethods02() {
     renderLoadingIndicator,
     POSTER_HOLD_DELAY_MS,
     escapeHtml,
+    escapeSelectorValue,
     t,
     extractReleaseYear,
     setContainerScrollTop,
@@ -66,7 +67,9 @@ export function createCatalogSeeAllScreenMethods02() {
     restoreFocusedCard({ scrollMode = "center" } = {}) {
       const shell = this.container?.querySelector(".seeall-shell");
       const target =
-        (this.lastFocusedKey ? this.container?.querySelector(`.seeall-card[data-focus-key="${this.lastFocusedKey}"]`) : null) ||
+        (this.lastFocusedKey
+          ? this.container?.querySelector(`.seeall-card[data-focus-key="${escapeSelectorValue(this.lastFocusedKey)}"]`)
+          : null) ||
         this.container?.querySelector(".seeall-card.focusable") ||
         null;
 
