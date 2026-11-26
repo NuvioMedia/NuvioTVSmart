@@ -26,6 +26,10 @@ export function createTraktAuthServiceMethods01() {
     normalizeWatchedMovieItem
   } = internals;
 
+  // Trakt rotates refresh tokens on every use: concurrent callers for the same
+  // profile must await one request instead of racing with the same token.
+  const refreshInFlightByProfile = new Map();
+
   return {
     getCurrentAuthState() {
       return TraktAuthStore.get();
@@ -145,27 +149,41 @@ export function createTraktAuthServiceMethods01() {
         return true;
       }
 
-      const { response, payload } = await requestJson("/oauth/token", {
-        method: "POST",
-        body: {
-          refresh_token: state.refreshToken,
-          client_id: TRAKT_CLIENT_ID,
-          client_secret: TRAKT_CLIENT_SECRET,
-          redirect_uri: TRAKT_REDIRECT_URI || "urn:ietf:wg:oauth:2.0:oob",
-          grant_type: "refresh_token"
+      const existingRefresh = refreshInFlightByProfile.get(profileId);
+      if (existingRefresh) {
+        return existingRefresh;
+      }
+
+      const refreshPromise = (async () => {
+        const { response, payload } = await requestJson("/oauth/token", {
+          method: "POST",
+          body: {
+            refresh_token: state.refreshToken,
+            client_id: TRAKT_CLIENT_ID,
+            client_secret: TRAKT_CLIENT_SECRET,
+            redirect_uri: TRAKT_REDIRECT_URI || "urn:ietf:wg:oauth:2.0:oob",
+            grant_type: "refresh_token"
+          }
+        });
+
+        if (TraktAuthStore.get(profileId).refreshToken !== state.refreshToken) return false;
+        if (!response.ok || !payload) {
+          if (response.status === 400 || response.status === 401 || response.status === 403) {
+            TraktAuthStore.clearAuth(profileId);
+          }
+          return false;
+        }
+        const saved = TraktAuthStore.saveToken(payload, profileId);
+        await fetchUserSettings(profileId, saved.accessToken);
+        return true;
+      })().finally(() => {
+        if (refreshInFlightByProfile.get(profileId) === refreshPromise) {
+          refreshInFlightByProfile.delete(profileId);
         }
       });
 
-      if (TraktAuthStore.get(profileId).refreshToken !== state.refreshToken) return false;
-      if (!response.ok || !payload) {
-        if (response.status === 400 || response.status === 401 || response.status === 403) {
-          TraktAuthStore.clearAuth(profileId);
-        }
-        return false;
-      }
-      TraktAuthStore.saveToken(payload, profileId);
-      await fetchUserSettings(profileId);
-      return true;
+      refreshInFlightByProfile.set(profileId, refreshPromise);
+      return refreshPromise;
     },
     async getValidAccessToken() {
       const profileId = ProfileManager.getActiveProfileId();
@@ -217,7 +235,14 @@ export function createTraktAuthServiceMethods01() {
         return null;
       }
       const cacheKey = `traktCachedStats:${userId}`;
-      const cached = forceRefresh ? null : JSON.parse(localStorage.getItem(cacheKey) || "null");
+      let cached = null;
+      if (!forceRefresh) {
+        try {
+          cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+        } catch (_) {
+          cached = null;
+        }
+      }
       if (cached && Date.now() - Number(cached.cachedAt || 0) < 60 * 60 * 1000) {
         return cached.stats || null;
       }

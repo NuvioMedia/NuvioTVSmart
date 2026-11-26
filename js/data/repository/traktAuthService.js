@@ -203,9 +203,14 @@ function isTokenExpiredOrExpiring(state) {
   return Date.now() / 1000 >= expiresAt - REFRESH_LEEWAY_SECONDS;
 }
 
-async function fetchUserSettings(profileId = ProfileManager.getActiveProfileId()) {
+async function fetchUserSettings(
+  profileId = ProfileManager.getActiveProfileId(),
+  accessToken = null
+) {
   if (ProfileManager.getActiveProfileId() !== profileId) return null;
-  const token = await TraktAuthService.getValidAccessToken();
+  // The refresh path passes its fresh token so this call cannot re-enter the
+  // refresh it is already waiting on when the token looks expired right away.
+  const token = accessToken || (await TraktAuthService.getValidAccessToken());
   if (!token || ProfileManager.getActiveProfileId() !== profileId) {
     return null;
   }
