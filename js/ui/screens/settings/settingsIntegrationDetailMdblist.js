@@ -80,7 +80,7 @@ export function renderMdblistIntegrationDetail(model) {
         this.mdbReorderSession = null;
         return;
       }
-      this.contentFocusKey = `integration:mdblist:reorder:${provider}`;
+      this.contentFocusKey = `integration:mdblist:done:${provider}`;
       void this.render();
     });
     const doneKey = `integration:mdblist:done:${provider}`;
