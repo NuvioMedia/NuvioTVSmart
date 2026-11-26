@@ -335,11 +335,14 @@ export const ProviderCredentialSyncService = {
             await seedSnapshot(localSnapshot);
           }
           await requireCurrentScope(scope);
+          if (isPending(scope)) {
+            return false;
+          }
           const remoteSnapshot = mergeProviderCredentialRows(localSnapshot, rows);
           const applied = !snapshotsEqual(localSnapshot, remoteSnapshot);
           if (applied) applySnapshot(remoteSnapshot);
           await requireCurrentScope(scope);
-          this.lastForegroundPullAtMs = Date.now();
+          this.lastForegroundPullAtByProfile.set(String(scope.profileId), Date.now());
           return applied;
         } catch (error) {
           console.warn("Provider credential sync failed; keeping local credentials", error);
@@ -349,13 +352,16 @@ export const ProviderCredentialSyncService = {
     );
   },
 
+  lastForegroundPullAtByProfile: new Map(),
+
   requestForegroundPull(force = false) {
     if (!AuthManager.isAuthenticated || isSyncBackoffActive()) return false;
     const now = Date.now();
+    const activeProfileKey = String(resolveProfileId());
     if (!force && (this.foregroundPullTimer || this.foregroundPullInFlight)) return false;
     if (
       !force &&
-      now - Number(this.lastForegroundPullAtMs || 0) <
+      now - Number(this.lastForegroundPullAtByProfile.get(activeProfileKey) || 0) <
         PROVIDER_CREDENTIAL_FOREGROUND_MIN_INTERVAL_MS
     ) {
       return false;
@@ -397,6 +403,7 @@ export const ProviderCredentialSyncService = {
   stop({ waitForInFlight = false } = {}) {
     const pending = waitForInFlight ? [...activeOperations] : [];
     lifecycleGeneration += 1;
+    this.lastForegroundPullAtByProfile?.clear?.();
     pushTimers.forEach((timerId) => clearTimeout(timerId));
     pushTimers.clear();
     this.cancelForegroundPull();
