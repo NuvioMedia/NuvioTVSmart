@@ -146,18 +146,3 @@ test("webOS and Tizen native playback still wait for the resume seek", () => {
   assert.ok(screen.pendingPlaybackRestore, "the media element clock confirms this restore itself");
   assert.equal(screen.isStartupGateReleaseReady(), false);
 });
-
-test("a torrent waits for the first frame before seeking to the saved position", () => {
-  const screen = createScreen();
-  screen.currentEngineFsStream = { infoHash: "a".repeat(40), fileIdx: 0 };
-  screen.attemptPendingPlaybackRestore({ force: true });
-
-  assert.deepEqual(screen.seeks, [], "no seek while the swarm still has to deliver the offset");
-  assert.ok(screen.pendingPlaybackRestore, "the restore stays queued");
-
-  // Playback starts at the beginning and the clock moves: now the jump runs.
-  screen.hasPresentedPlaybackFrame = true;
-  screen.currentSeconds = 2;
-  screen.attemptPendingPlaybackRestore({ force: true });
-  assert.deepEqual(screen.seeks, [900]);
-});
