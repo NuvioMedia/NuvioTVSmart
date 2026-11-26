@@ -26,31 +26,45 @@ export function createSettingsScreenMethods17() {
       if (this.isNetworkSpeedTestRunning()) {
         return;
       }
+      this.networkSpeedTestAbortController?.abort?.();
+      const controller = typeof AbortController === "function" ? new AbortController() : null;
+      this.networkSpeedTestAbortController = controller;
+      const mountToken = this.settingsMountToken;
+      const isCurrent = () =>
+        this.isMounted && this.settingsMountToken === mountToken && this.networkSpeedTestAbortController === controller;
       this.networkSpeedTestState = "latency";
       this.networkLatencyMs = null;
       this.networkDownloadMbps = null;
       this.networkSpeedTestError = "";
       void this.render({ refreshModel: false });
       void runNetworkSpeedTest({
+        signal: controller?.signal || null,
         onPhase: (phase) => {
-          if (this.isNetworkSpeedTestRunning()) {
+          if (isCurrent() && this.isNetworkSpeedTestRunning()) {
             this.networkSpeedTestState = phase;
             void this.render({ refreshModel: false });
           }
         }
       })
         .then((result) => {
+          if (!isCurrent()) return;
           this.networkLatencyMs = Number(result?.latencyMs) || 0;
           this.networkDownloadMbps = Number(result?.downloadMbps) || 0;
           this.networkSpeedTestError = String(result?.error || "");
           this.networkSpeedTestState = this.networkSpeedTestError ? "error" : "done";
         })
         .catch((error) => {
+          if (!isCurrent()) return;
           this.networkSpeedTestError = String(error?.message || error || "Speed test failed");
           this.networkSpeedTestState = "error";
         })
         .finally(() => {
-          void this.render({ refreshModel: false });
+          if (this.networkSpeedTestAbortController === controller) {
+            this.networkSpeedTestAbortController = null;
+          }
+          if (this.isMounted && this.settingsMountToken === mountToken) {
+            void this.render({ refreshModel: false });
+          }
         });
     },
 
@@ -65,20 +79,28 @@ export function createSettingsScreenMethods17() {
         void this.render({ refreshModel: false });
         return;
       }
+      this.streamSpeedTestAbortController?.abort?.();
+      const controller = typeof AbortController === "function" ? new AbortController() : null;
+      this.streamSpeedTestAbortController = controller;
+      const mountToken = this.settingsMountToken;
+      const isCurrent = () =>
+        this.isMounted && this.settingsMountToken === mountToken && this.streamSpeedTestAbortController === controller;
       this.streamSpeedTestState = "BASELINE";
       this.streamSpeedTestBaselineMbps = null;
       this.streamSpeedTestParallel = {};
       this.streamSpeedTestError = "";
       void this.render({ refreshModel: false });
       void runStreamSpeedTest(lastPlayback.url, lastPlayback.headers, {
+        signal: controller?.signal || null,
         onPhase: (phase) => {
-          if (this.isStreamSpeedTestRunning()) {
+          if (isCurrent() && this.isStreamSpeedTestRunning()) {
             this.streamSpeedTestState = phase;
             void this.render({ refreshModel: false });
           }
         }
       })
         .then((result) => {
+          if (!isCurrent()) return;
           if (result?.error) {
             this.streamSpeedTestError = result.error;
             this.streamSpeedTestState = "error";
@@ -88,12 +110,18 @@ export function createSettingsScreenMethods17() {
           this.streamSpeedTestParallel = result?.parallelSpeeds || {};
           this.streamSpeedTestState = "done";
         })
-        .catch((error) => {
+        .catch(() => {
+          if (!isCurrent()) return;
           this.streamSpeedTestError = "connection";
           this.streamSpeedTestState = "error";
         })
         .finally(() => {
-          void this.render({ refreshModel: false });
+          if (this.streamSpeedTestAbortController === controller) {
+            this.streamSpeedTestAbortController = null;
+          }
+          if (this.isMounted && this.settingsMountToken === mountToken) {
+            void this.render({ refreshModel: false });
+          }
         });
     },
 
