@@ -2,6 +2,7 @@ import { AuthState } from "./authState.js";
 import { clearAccountLocalData, hasAccountLocalData } from "./accountLocalDataReset.js";
 import { SessionStore } from "../storage/sessionStore.js";
 import { fetchSupabaseAuth } from "./supabaseAuthFetch.js";
+import { resetSyncBackoff } from "../sync/syncBackoffPolicy.js";
 import { PluginCodeStore } from "../../data/local/pluginCodeStore.js";
 import { HomeCatalogSnapshotStore } from "../../data/local/homeCatalogSnapshotStore.js";
 import { ServerConfigurationStore } from "../../data/local/serverConfigurationStore.js";
@@ -305,6 +306,7 @@ class AuthManagerClass {
     this.cachedEffectiveUserId = null;
     this.cachedEffectiveUserSourceUserId = null;
     this.lastRefreshFailureKind = null;
+    resetSyncBackoff();
 
     const teardownListenersSucceeded = await this.notifySessionTeardown({
       serverSwitch,
