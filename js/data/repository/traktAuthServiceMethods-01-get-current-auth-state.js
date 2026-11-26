@@ -26,6 +26,8 @@ export function createTraktAuthServiceMethods01() {
     normalizeWatchedMovieItem
   } = internals;
 
+  const refreshInFlightByProfile = new Map();
+
   return {
     getCurrentAuthState() {
       return TraktAuthStore.get();
@@ -77,14 +79,20 @@ export function createTraktAuthServiceMethods01() {
     async pollDeviceToken() {
       const profileId = ProfileManager.getActiveProfileId();
       if (!hasRequiredCredentials()) {
+        const refreshInFlightByProfile = new Map();
+
         return { type: "failed", message: "Missing TRAKT credentials" };
       }
       const state = TraktAuthStore.get(profileId);
       if (!state.deviceCode) {
+        const refreshInFlightByProfile = new Map();
+
         return { type: "failed", message: "No active Trakt device code" };
       }
       if (state.expiresAt && Date.now() >= Number(state.expiresAt)) {
         TraktAuthStore.clearDeviceFlow(profileId);
+        const refreshInFlightByProfile = new Map();
+
         return { type: "expired" };
       }
 
@@ -98,35 +106,51 @@ export function createTraktAuthServiceMethods01() {
       });
 
       if (ProfileManager.getActiveProfileId() !== profileId || TraktAuthStore.get(profileId).deviceCode !== state.deviceCode) {
+        const refreshInFlightByProfile = new Map();
+
         return { type: "failed", message: "Trakt authentication session changed" };
       }
 
       if (response.ok && payload) {
         TraktAuthStore.saveToken(payload, profileId);
         const username = await fetchUserSettings(profileId);
+        const refreshInFlightByProfile = new Map();
+
         return { type: "approved", username };
       }
 
       if (response.status === 400) {
+        const refreshInFlightByProfile = new Map();
+
         return { type: "pending" };
       }
       if (response.status === 409) {
         TraktAuthStore.clearDeviceFlow(profileId);
+        const refreshInFlightByProfile = new Map();
+
         return { type: "already_used" };
       }
       if (response.status === 410) {
         TraktAuthStore.clearDeviceFlow(profileId);
+        const refreshInFlightByProfile = new Map();
+
         return { type: "expired" };
       }
       if (response.status === 418) {
         TraktAuthStore.clearDeviceFlow(profileId);
+        const refreshInFlightByProfile = new Map();
+
         return { type: "denied" };
       }
       if (response.status === 429) {
         const interval = Math.min(60, Math.max(5, Number(state.pollInterval || 5) + 5));
         TraktAuthStore.updatePollInterval(interval, profileId);
+        const refreshInFlightByProfile = new Map();
+
         return { type: "slow_down", pollIntervalSeconds: interval };
       }
+      const refreshInFlightByProfile = new Map();
+
       return {
         type: "failed",
         message: normalizeAuthErrorMessage(payload, `Token polling failed (${response.status})`)
@@ -145,27 +169,41 @@ export function createTraktAuthServiceMethods01() {
         return true;
       }
 
-      const { response, payload } = await requestJson("/oauth/token", {
-        method: "POST",
-        body: {
-          refresh_token: state.refreshToken,
-          client_id: TRAKT_CLIENT_ID,
-          client_secret: TRAKT_CLIENT_SECRET,
-          redirect_uri: TRAKT_REDIRECT_URI || "urn:ietf:wg:oauth:2.0:oob",
-          grant_type: "refresh_token"
+      const existingRefresh = refreshInFlightByProfile.get(profileId);
+      if (existingRefresh) {
+        return existingRefresh;
+      }
+
+      const refreshPromise = (async () => {
+        const { response, payload } = await requestJson("/oauth/token", {
+          method: "POST",
+          body: {
+            refresh_token: state.refreshToken,
+            client_id: TRAKT_CLIENT_ID,
+            client_secret: TRAKT_CLIENT_SECRET,
+            redirect_uri: TRAKT_REDIRECT_URI || "urn:ietf:wg:oauth:2.0:oob",
+            grant_type: "refresh_token"
+          }
+        });
+
+        if (TraktAuthStore.get(profileId).refreshToken !== state.refreshToken) return false;
+        if (!response.ok || !payload) {
+          if (response.status === 400 || response.status === 401 || response.status === 403) {
+            TraktAuthStore.clearAuth(profileId);
+          }
+          return false;
+        }
+        TraktAuthStore.saveToken(payload, profileId);
+        await fetchUserSettings(profileId);
+        return true;
+      })().finally(() => {
+        if (refreshInFlightByProfile.get(profileId) === refreshPromise) {
+          refreshInFlightByProfile.delete(profileId);
         }
       });
 
-      if (TraktAuthStore.get(profileId).refreshToken !== state.refreshToken) return false;
-      if (!response.ok || !payload) {
-        if (response.status === 400 || response.status === 401 || response.status === 403) {
-          TraktAuthStore.clearAuth(profileId);
-        }
-        return false;
-      }
-      TraktAuthStore.saveToken(payload, profileId);
-      await fetchUserSettings(profileId);
-      return true;
+      refreshInFlightByProfile.set(profileId, refreshPromise);
+      return refreshPromise;
     },
     async getValidAccessToken() {
       const profileId = ProfileManager.getActiveProfileId();
@@ -217,7 +255,14 @@ export function createTraktAuthServiceMethods01() {
         return null;
       }
       const cacheKey = `traktCachedStats:${userId}`;
-      const cached = forceRefresh ? null : JSON.parse(localStorage.getItem(cacheKey) || "null");
+      let cached = null;
+      if (!forceRefresh) {
+        try {
+          cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+        } catch (_) {
+          cached = null;
+        }
+      }
       if (cached && Date.now() - Number(cached.cachedAt || 0) < 60 * 60 * 1000) {
         return cached.stats || null;
       }
