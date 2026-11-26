@@ -159,9 +159,10 @@ export function createMetaDetailsScreenMethods08() {
       const commentsMarkup = this.renderStandaloneCommentsSection();
       const companyMarkup = this.renderCompanySections(meta);
 
+      const safeBackdrop = backdrop ? escapeAttribute(backdrop.replace(/'/g, "%27")) : "";
       this.container.innerHTML = `
           <div class="series-detail-shell movie-detail-shell${detailDirectionClass}${this.getTrailerShellStateClasses()}">
-            <div class="series-detail-backdrop" data-backdrop-url="${escapeAttribute(backdrop || "")}"${backdrop ? ` style="background-image:url('${backdrop.replace(/'/g, "%27")}')"` : ""}></div>
+            <div class="series-detail-backdrop" data-backdrop-url="${escapeAttribute(backdrop || "")}"${safeBackdrop ? ` style="background-image:url('${safeBackdrop}')"` : ""}></div>
             <div class="detail-trailer-layer"></div>
             <div class="detail-trailer-loading-spinner" aria-hidden="true">${renderLoadingIndicator({ className: "player-loading-spinner-ring" })}</div>
             <div class="series-detail-vignette"></div>
@@ -171,7 +172,7 @@ export function createMetaDetailsScreenMethods08() {
               <div id="detailHeroSection">${heroMarkup}</div>
               <div id="detailInsightSectionMount">${insightMarkup}</div>
               <div id="detailCommentsSectionMount">${commentsMarkup}</div>
-              <div id="detailCompanySectionsMount">${companyMarkup}
+              <div id="detailCompanySectionsMount">${companyMarkup}</div>
             </div>
             <div id="movieStreamChooserMount"></div>
           </div>
