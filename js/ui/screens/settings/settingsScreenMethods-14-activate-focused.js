@@ -136,7 +136,7 @@ export function createSettingsScreenMethods14() {
           event?.preventDefault?.();
           if (moveReorderBy(session, reorderCode === 38 ? -1 : 1)) {
             persist();
-            this.contentFocusKey = `integration:mdblist:reorder:${session.movingKey}`;
+            this.contentFocusKey = `integration:mdblist:done:${session.movingKey}`;
             await this.render();
           }
           return;
@@ -152,15 +152,6 @@ export function createSettingsScreenMethods14() {
           confirmReorder(session);
           this.mdbReorderSession = null;
           this.contentFocusKey = `integration:mdblist:reorder:${movingKey}`;
-          await this.render();
-          return;
-        }
-        if (Platform.isBackEvent(event)) {
-          event?.preventDefault?.();
-          cancelReorder(session);
-          persist();
-          this.mdbReorderSession = null;
-          this.contentFocusKey = `integration:mdblist:reorder:${session.keys[0] || ""}`;
           await this.render();
           return;
         }
@@ -367,6 +358,17 @@ export function createSettingsScreenMethods14() {
       await this.activateFocused();
     },
     consumeBackRequest() {
+      if (isReordering(this.mdbReorderSession)) {
+        const session = this.mdbReorderSession;
+        const movingKey = session.movingKey;
+        cancelReorder(session);
+        const { MdbListSettingsStore } = internals;
+        MdbListSettingsStore.set({ ratingOrder: [...session.keys] });
+        this.mdbReorderSession = null;
+        this.contentFocusKey = `integration:mdblist:reorder:${movingKey || session.keys[0] || ""}`;
+        void this.render();
+        return true;
+      }
       if (this.textDialog) {
         this.closeTextDialog();
         void this.render({ refreshModel: false });

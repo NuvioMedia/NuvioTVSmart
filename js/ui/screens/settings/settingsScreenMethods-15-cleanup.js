@@ -53,6 +53,7 @@ export function createSettingsScreenMethods15() {
       this.expandedSections = {};
       this.optionDialog = null;
       this.textDialog = null;
+      this.mdbReorderSession = null;
       this.dialogFocusIndex = 0;
       this.sidebarExpanded = false;
       this.pillIconOnly = false;
