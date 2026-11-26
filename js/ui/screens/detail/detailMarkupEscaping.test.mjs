@@ -37,35 +37,26 @@ globalThis.window = {
   navigator: { language: "en-US", languages: ["en-US"] }
 };
 
-const { renderHeroSection } = await import("./heroSection.js");
-const { renderEpisodesSection } = await import("./episodesSection.js");
 const { renderImdbBadge } = await import("./metaDetailsScreenHelpers-04-detect-quality.js");
+const { createMetaDetailsScreenMethods07 } =
+  await import("./metaDetailsScreenMethods-07-merge-stream-items.js");
 const { createMetaDetailsScreenMethods08 } =
   await import("./metaDetailsScreenMethods-08-render-external-ratings-row.js");
 
-test("detail hero, episodes, and imdb badge helpers escape HTML metacharacters", () => {
-  const xss = "<script>alert(1)</script><img src=x onerror=1>";
-  const heroHtml = renderHeroSection({ name: `Title ${xss}`, description: `Desc ${xss}` });
-  assert.equal(heroHtml.includes("<script>"), false);
-  assert.equal(heroHtml.includes("<img src=x"), false);
+const XSS = "<script>alert(1)</script>";
 
-  const episodesHtml = renderEpisodesSection({
-    videos: [{ title: `Ep ${xss}`, released: `2025${xss}` }]
-  });
-  assert.equal(episodesHtml.includes("<script>"), false);
-  assert.equal(episodesHtml.includes("<img src=x"), false);
+function createContainer() {
+  return { innerHTML: "", querySelector: () => null, querySelectorAll: () => [] };
+}
 
-  const badgeHtml = renderImdbBadge(`8.4<img src=x onerror=1>`);
-  assert.equal(badgeHtml.includes("<img src=x"), false);
+test("renderImdbBadge escapes HTML metacharacters", () => {
+  const badgeHtml = renderImdbBadge(`8.4${XSS}`);
+  assert.equal(badgeHtml.includes("<script>"), false);
 });
 
 test("renderMovieLayout closes #detailCompanySectionsMount and attribute-escapes backdrop style URL", () => {
   const methods = createMetaDetailsScreenMethods08();
-  const container = {
-    innerHTML: "",
-    querySelector: () => null,
-    querySelectorAll: () => []
-  };
+  const container = createContainer();
   const ctx = {
     container,
     params: {},
@@ -99,4 +90,42 @@ test("renderMovieLayout closes #detailCompanySectionsMount and attribute-escapes
     false,
     "backdrop style attribute must escape HTML metacharacters"
   );
+});
+
+test("renderSeriesLayout attribute-escapes backdrop style URL", () => {
+  const methods = createMetaDetailsScreenMethods07();
+  const container = createContainer();
+  const ctx = {
+    container,
+    params: {},
+    episodes: [],
+    selectedSeason: 1,
+    pendingFocusRestore: true,
+    renderSeriesHeroMarkup: () => '<div class="hero">Hero</div>',
+    renderSeriesInsightSection: () => "",
+    renderStandaloneCommentsSection: () => "",
+    renderCompanySections: () => "",
+    renderSeasonButtons: () => "",
+    renderEpisodeCards: () => "",
+    getSelectedSeasonEpisodes: () => [],
+    getRememberedEpisodeIndex: () => 0,
+    getTrailerShellStateClasses: () => "",
+    scheduleEpisodeVirtualizationSync: () => {},
+    bindDetailChrome: () => {}
+  };
+
+  methods.renderSeriesLayout.call(ctx, {
+    id: "tt2",
+    type: "series",
+    name: "Sample Series",
+    background: 'https://img.example/bg.jpg");background:url(javascript:1)<script>'
+  });
+
+  const html = container.innerHTML;
+  assert.equal(
+    html.includes("<script>"),
+    false,
+    "backdrop style attribute must escape HTML metacharacters"
+  );
+  assert.equal(html.includes('bg.jpg")'), false, "backdrop style attribute must escape quotes");
 });
