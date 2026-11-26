@@ -21,8 +21,8 @@ const MIN_PROGRESS_SYNC_DURATION_MS = 60000;
 const MAX_AMBIGUOUS_SECONDS_PROGRESS_VALUE = 8 * 60 * 60;
 const MAX_REASONABLE_PROGRESS_DURATION_MS = 24 * 60 * 60 * 1000;
 
-let activePushPromise = null;
-let pushAgainRequested = false;
+const activePushByProfile = new Map();
+const pushAgainRequestedByProfile = new Set();
 const pushStateByProfile = new Map();
 let lastPullStatus = "idle";
 let lastPullHadUnsynced = false;
@@ -368,12 +368,15 @@ function resolveProfileId(profileId = null) {
   return 1;
 }
 
-function shouldUseSupabaseWatchProgressSync() {
-  const source = TraktSettingsStore.get().watchProgressSource || WatchProgressSource.TRAKT;
+function shouldUseSupabaseWatchProgressSync(profileId = null) {
+  const resolvedProfileId = resolveProfileId(profileId);
+  const source =
+    TraktSettingsStore.getForProfile(resolvedProfileId).watchProgressSource ||
+    WatchProgressSource.TRAKT;
   const providerSelected =
-    (TraktAuthStore.isAuthenticated() && source === WatchProgressSource.TRAKT) ||
-    (SimklAuthStore.isAuthenticated() && source === WatchProgressSource.SIMKL) ||
-    (MdbListAccount.connected() && source === WatchProgressSource.MDBLIST);
+    (TraktAuthStore.isAuthenticated(resolvedProfileId) && source === WatchProgressSource.TRAKT) ||
+    (SimklAuthStore.isAuthenticated(resolvedProfileId) && source === WatchProgressSource.SIMKL) ||
+    (MdbListAccount.connected(resolvedProfileId) && source === WatchProgressSource.MDBLIST);
   return !providerSelected;
 }
 
@@ -675,11 +678,11 @@ export const WatchProgressSyncService = {
         lastPullStatus = "signed-out";
         return [];
       }
-      if (!shouldUseSupabaseWatchProgressSync()) {
+      const resolvedProfileId = resolveProfileId(profileId);
+      if (!shouldUseSupabaseWatchProgressSync(resolvedProfileId)) {
         lastPullStatus = "skipped";
         return [];
       }
-      const resolvedProfileId = resolveProfileId(profileId);
       localItems = await watchProgressRepository.getAll(resolvedProfileId);
       const pendingDeleteKeys = readPendingDeleteKeys(resolvedProfileId);
       const localKeys = new Set(localItems.map((item) => progressKey(item)));
@@ -775,22 +778,27 @@ export const WatchProgressSyncService = {
     if (isSyncBackoffActive()) {
       return false;
     }
-    if (activePushPromise) {
-      pushAgainRequested = true;
-      return activePushPromise;
-    }
     const resolvedProfileId = resolveProfileId(profileId);
-    activePushPromise = (async () => {
+    const activePromise = activePushByProfile.get(resolvedProfileId);
+    if (activePromise) {
+      pushAgainRequestedByProfile.add(resolvedProfileId);
+      return activePromise;
+    }
+    const nextPromise = (async () => {
       let lastResult = false;
       do {
-        pushAgainRequested = false;
+        pushAgainRequestedByProfile.delete(resolvedProfileId);
         lastResult = await pushOnce(resolvedProfileId);
-      } while (pushAgainRequested);
+      } while (pushAgainRequestedByProfile.has(resolvedProfileId));
       return lastResult;
     })().finally(() => {
-      activePushPromise = null;
+      if (activePushByProfile.get(resolvedProfileId) === nextPromise) {
+        activePushByProfile.delete(resolvedProfileId);
+      }
+      pushAgainRequestedByProfile.delete(resolvedProfileId);
     });
-    return activePushPromise;
+    activePushByProfile.set(resolvedProfileId, nextPromise);
+    return nextPromise;
   },
 
   async deleteItems(items = [], profileId = null) {
@@ -803,7 +811,7 @@ export const WatchProgressSyncService = {
       if (!AuthManager.isAuthenticated) {
         return false;
       }
-      if (!shouldUseSupabaseWatchProgressSync()) {
+      if (!shouldUseSupabaseWatchProgressSync(resolvedProfileId)) {
         return true;
       }
       addPendingDeleteKeys(resolvedProfileId, keys);
