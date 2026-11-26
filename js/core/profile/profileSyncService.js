@@ -339,13 +339,13 @@ export const ProfileSyncService = {
   },
 
   async pullProfileLockStates() {
-    if (isSyncBackoffActive()) {
+    if (!AuthManager.isAuthenticated) {
       return {};
     }
+    if (isSyncBackoffActive()) {
+      return { ...(readCachedProfileLockStates() || {}) };
+    }
     try {
-      if (!AuthManager.isAuthenticated) {
-        return {};
-      }
       const rows = await SupabaseApi.rpc(PULL_LOCKS_RPC, {}, true);
       const lockStates = (Array.isArray(rows) ? rows : []).reduce((accumulator, row) => {
         const profileIndex = Number(row?.profile_index ?? row?.profileIndex ?? row?.id ?? 0);
@@ -356,13 +356,13 @@ export const ProfileSyncService = {
         }
         return accumulator;
       }, {});
-      // Only a server answer updates the cache; the empty results above for
+      // Only a server answer updates the cache; the fallback results above for
       // backoff, signed-out and failures must not erase known PINs.
       LocalStore.set(PROFILE_LOCK_STATE_CACHE_KEY, lockStates);
       return lockStates;
     } catch (error) {
       console.warn("Profile lock state pull failed", error);
-      return {};
+      return { ...(readCachedProfileLockStates() || {}) };
     }
   },
 
