@@ -86,7 +86,7 @@ export const ScreenUtils = {
       return;
     }
     const list = Array.from(container?.querySelectorAll(selector) || []);
-    const current = container?.querySelector(`${selector}.focused`);
+    const current = list.find((node) => node.classList.contains("focused")) || null;
     if (!list.length || !current) {
       return;
     }
@@ -117,7 +117,7 @@ export const ScreenUtils = {
       return;
     }
 
-    const current = container?.querySelector(`${selector}.focused`) || list[0];
+    const current = list.find((node) => node.classList.contains("focused")) || list[0];
     if (!current.classList.contains("focused")) {
       list.forEach((node) => node.classList.remove("focused"));
       current.classList.add("focused");
