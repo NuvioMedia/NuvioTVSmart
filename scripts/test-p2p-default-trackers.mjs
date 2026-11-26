@@ -42,3 +42,38 @@ test("a webOS profile override without addon trackers does not fall back to DHT 
   assert.equal(body.peerSearch.min, 60);
   assert.equal(body.peerSearch.max, 300);
 });
+
+test("a Tizen stream with its own file index still announces the default trackers", async () => {
+  // Same firmware as the #1609 reports: Tizen 6 reports web.service as absent.
+  globalThis.__NUVIO_PLATFORM__ = "tizen";
+  globalThis.tizen = {
+    systeminfo: {
+      getCapability(name) {
+        if (name.includes("platform.version")) return "6.0";
+        return false;
+      }
+    },
+    application: { getCurrentApplication: () => ({ appInfo: { packageId: "NuvioTV001" } }) }
+  };
+  const { TizenStreamingServerResolver } =
+    await import("../js/core/p2p/tizenStreamingServerResolver.js");
+  const { TizenEngineFsService } = await import("../js/platform/tizen/tizenEngineFsService.js");
+  TizenEngineFsService.ensureStarted = async () => ({
+    status: "success",
+    baseUrl: "http://127.0.0.1:2710"
+  });
+  const requests = [];
+  globalThis.fetch = async (url) => {
+    requests.push(String(url));
+    throw new Error("the create call is not expected for an explicit file index");
+  };
+
+  const result = await TizenStreamingServerResolver.resolve({ infoHash, fileIdx: 3 }, {});
+
+  assert.equal(result.status, "success");
+  assert.deepEqual(requests, []);
+  assert.deepEqual(new URL(result.stream.url).searchParams.getAll("tr"), [
+    `dht:${infoHash}`,
+    ...defaults
+  ]);
+});

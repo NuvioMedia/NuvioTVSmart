@@ -98,7 +98,15 @@ export function createPlayerControllerMethods08() {
       }
       apply();
     },
+    clearAvPlayPreparedPoll() {
+      if (this.avplayPreparedPollTimer) {
+        clearTimeout(this.avplayPreparedPollTimer);
+        this.avplayPreparedPollTimer = null;
+      }
+    },
     teardownAvPlay() {
+      this.clearAvPlayPreparedPoll();
+      this.avplayPreparedHandled = false;
       this.clearAvPlaySeekTimeout();
       this.avplaySeekRequestToken = Number(this.avplaySeekRequestToken || 0) + 1;
       this.avplaySeekInFlight = false;
