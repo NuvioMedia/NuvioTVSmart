@@ -8,15 +8,9 @@ export function createFolderDetailScreenMethods05() {
     async onKeyDown(event) {
       if (isBackEvent(event)) {
         event?.preventDefault?.();
-        if (this.useHomeFollowLayout && (this.continueWatchingMenu || this.posterHoldMenu)) {
-          if (this.continueWatchingMenu) {
-            HomeScreen.closeContinueWatchingMenu.call(this);
-          } else {
-            HomeScreen.closePosterHoldMenu.call(this);
-          }
+        if (this.consumeBackRequest()) {
           return;
         }
-        this.prepareHomeReturnAnimation();
         Router.back();
         return;
       }
@@ -122,12 +116,36 @@ export function createFolderDetailScreenMethods05() {
     },
     consumeBackRequest() {
       if (this.useHomeFollowLayout) {
+        if (this._homeHoldDialog) {
+          this._homeHoldDialog.destroy();
+          if (this.continueWatchingMenu) {
+            HomeScreen.dismissContinueWatchingMenu.call(this);
+          } else if (this.posterHoldMenu || this.posterListPicker) {
+            if (this.posterListPicker) {
+              this.posterListPicker = null;
+            }
+            HomeScreen.dismissPosterHoldMenu.call(this);
+          } else {
+            this._homeHoldDialog = null;
+            HomeScreen.unlockHomeHoldFocus.call(this);
+          }
+          this.suppressHoldMenuEnterUntilKeyUp = false;
+          return true;
+        }
         if (this.continueWatchingMenu) {
           HomeScreen.closeContinueWatchingMenu.call(this);
+          this.suppressHoldMenuEnterUntilKeyUp = false;
           return true;
         }
         if (this.posterHoldMenu) {
           HomeScreen.closePosterHoldMenu.call(this);
+          this.suppressHoldMenuEnterUntilKeyUp = false;
+          return true;
+        }
+        if (this.posterListPicker) {
+          this.posterListPicker = null;
+          HomeScreen.unlockHomeHoldFocus.call(this);
+          this.suppressHoldMenuEnterUntilKeyUp = false;
           return true;
         }
       }
@@ -139,17 +157,70 @@ export function createFolderDetailScreenMethods05() {
       this._trackPaginationInFlight?.clear?.();
       this.cancelScheduledRender();
       if (this.useHomeFollowLayout) {
-        HomeScreen.cancelModernCameraFollow.call(this, { stopAnimations: true });
-        HomeScreen.stopHeroRotation.call(this);
-        HomeScreen.cancelPendingHeroFocus.call(this);
-        HomeScreen.cancelFocusedPosterFlow.call(this);
-        HomeScreen.clearFocusedPosterFlowState.call(this);
-        HomeScreen.collapseFocusedPoster.call(this);
-        HomeScreen.teardownModernTrackScrollPagination.call(this);
+        this.homeRowWindow?.destroy?.();
+        this.homeRowWindow = null;
+        this.homeRowWindowRoot = null;
+        HomeScreen.cancelPendingContinueWatchingEnter?.call(this);
+        HomeScreen.cancelPendingContinueWatchingHold?.call(this);
+        this.suppressHoldMenuEnterUntilKeyUp = false;
+        HomeScreen.destroyHomeHoldDialog?.call(this);
+        HomeScreen.unlockHomeHoldFocus?.call(this);
+        this.continueWatchingMenu = null;
+        this.posterHoldMenu = null;
+        this.posterListPicker = null;
+        this.sidebarExpanded = false;
+        HomeScreen.cancelModernCameraFollow?.call(this, { stopAnimations: true });
+        HomeScreen.cancelAllScrollAnimations?.call(this);
+        if (this._mainVertRaf) {
+          globalThis.cancelAnimationFrame?.(this._mainVertRaf);
+          this._mainVertRaf = null;
+        }
+        if (this._mainClassicVertRaf) {
+          globalThis.cancelAnimationFrame?.(this._mainClassicVertRaf);
+          this._mainClassicVertRaf = null;
+        }
+        if (this._trackHorizRaf) {
+          globalThis.cancelAnimationFrame?.(this._trackHorizRaf);
+          this._trackHorizRaf = null;
+        }
+        HomeScreen.endModernVerticalFastScroll?.call(this, { land: false });
+        HomeScreen.stopHeroRotation?.call(this);
+        HomeScreen.cancelPendingHeroFocus?.call(this);
+        HomeScreen.cancelFocusedPosterFlow?.call(this);
+        HomeScreen.clearFocusedPosterFlowState?.call(this);
+        HomeScreen.collapseFocusedPoster?.call(this);
+        HomeScreen.clearHomeTrailerLayers?.call(this);
+        HomeScreen.teardownModernTrackScrollPagination?.call(this);
+        if (this.homeViewportFocusSyncTimer) {
+          clearTimeout(this.homeViewportFocusSyncTimer);
+          this.homeViewportFocusSyncTimer = null;
+        }
+        if (this.homeViewportScrollFrame) {
+          globalThis.cancelAnimationFrame?.(this.homeViewportScrollFrame);
+          this.homeViewportScrollFrame = 0;
+        }
         if (this.boundHomeViewport && this.boundHomeViewportScrollHandler) {
-          this.boundHomeViewport.removeEventListener("scroll", this.boundHomeViewportScrollHandler);
+          this.boundHomeViewport.removeEventListener("scroll", this.boundHomeViewportScrollHandler, true);
         }
         this.boundHomeViewport = null;
+        if (this.boundHomeEventContainer) {
+          if (this.boundHomeFocusInHandler) {
+            this.boundHomeEventContainer.removeEventListener("focusin", this.boundHomeFocusInHandler);
+          }
+          if (this.boundHomeClickHandler) {
+            this.boundHomeEventContainer.removeEventListener("click", this.boundHomeClickHandler);
+          }
+          if (this.boundHomeMouseDownHandler) {
+            this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
+          }
+          if (this.boundHomeMouseOverHandler) {
+            this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
+          }
+          if (this.boundHomeWheelHandler) {
+            this.boundHomeEventContainer.removeEventListener("wheel", this.boundHomeWheelHandler);
+          }
+          this.boundHomeEventContainer = null;
+        }
       }
       ScreenUtils.hide(this.container);
     }

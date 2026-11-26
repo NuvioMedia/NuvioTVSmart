@@ -28,6 +28,9 @@ export function createProfileSelectionScreenMethods03() {
       } else if (state.type === "verify-remove") {
         heading = PROFILE_PIN_TEXT.headingVerifyRemove(profile.name);
         support = PROFILE_PIN_TEXT.supportVerifyRemove;
+      } else if (state.type === "verify-delete") {
+        heading = PROFILE_PIN_TEXT.headingVerifyDelete(profile.name);
+        support = PROFILE_PIN_TEXT.supportVerifyDelete;
       } else if (this.pinEntryStage === "confirm") {
         heading = PROFILE_PIN_TEXT.headingConfirm;
         support = PROFILE_PIN_TEXT.supportConfirm;
@@ -278,6 +281,7 @@ export function createProfileSelectionScreenMethods03() {
         overlayRoot,
         submitButton: overlayRoot.querySelector("[data-focus-key='editor:submit']"),
         nameInput: overlayRoot.querySelector("[data-focus-key='editor:name']"),
+        copySourceButton: overlayRoot.querySelector("[data-focus-key='editor:copy-source']"),
         cancelButton: overlayRoot.querySelector("[data-focus-key='editor:cancel']"),
         tabButtons: Array.from(overlayRoot.querySelectorAll("[data-action='select-editor-tab']")),
         categoryButtons: Array.from(overlayRoot.querySelectorAll("[data-action='select-avatar-category']")),

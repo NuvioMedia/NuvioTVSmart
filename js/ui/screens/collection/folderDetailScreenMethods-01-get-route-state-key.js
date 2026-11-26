@@ -255,7 +255,8 @@ export function createFolderDetailScreenMethods01() {
               ]
             : sourceTabs;
 
-        const restored = this.hydrateFromRouteState(navigationContext?.restoredState, this.params);
+        const restored =
+          Boolean(navigationContext?.isBackNavigation) && this.hydrateFromRouteState(navigationContext?.restoredState, this.params);
         const sourceOffset = this.tabs[0]?.isAllTab ? 1 : 0;
         const tabsToLoad = restored
           ? this.tabs

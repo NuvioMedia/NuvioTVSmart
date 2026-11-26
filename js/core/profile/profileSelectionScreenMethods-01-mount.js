@@ -65,7 +65,6 @@ export function createProfileSelectionScreenMethods01() {
       const mountToken = {};
       this.mountToken = mountToken;
       this.lastKeyboardActivation = null;
-      this.suppressHoldMenuEnterUntilKeyUp = false;
       this.isActivatingProfile = false;
       this.activatingProfileId = "";
       this._bgScreen = null;
@@ -73,7 +72,9 @@ export function createProfileSelectionScreenMethods01() {
       this._bgTargetColor = null;
 
       const skipInitialProfileSync = Boolean(params?.skipInitialProfileSync);
-      this.profilePinEnabled = skipInitialProfileSync ? params?.profilePinEnabled || {} : {};
+      this.profilePinEnabled = skipInitialProfileSync
+        ? params?.profilePinEnabled || {}
+        : { ...(ProfileSyncService.getCachedProfileLockStates() || {}) };
       this.profiles = await ProfileManager.getProfiles();
       if (!this.isMounted || this.mountToken !== mountToken) return;
       this.lastProfileFocusKey = `profile:${this.activeProfileId || "1"}`;

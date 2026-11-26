@@ -77,13 +77,21 @@ export function createProfileSelectionScreenMethods04() {
         if (direction === "up") {
           target = navigationState.submitButton;
         } else if (direction === "down") {
+          target = navigationState.copySourceButton || navigationState.cancelButton || preferredCategoryButton;
+        } else if (direction === "right") {
+          target = preferredTabButton || preferredCategoryButton;
+        }
+      } else if (current === navigationState.copySourceButton) {
+        if (direction === "up" || direction === "left") {
+          target = navigationState.nameInput;
+        } else if (direction === "down") {
           target = navigationState.cancelButton || preferredCategoryButton;
         } else if (direction === "right") {
           target = preferredTabButton || preferredCategoryButton;
         }
       } else if (current === navigationState.cancelButton) {
         if (direction === "up") {
-          target = navigationState.nameInput;
+          target = navigationState.copySourceButton || navigationState.nameInput;
         } else if (direction === "right" || direction === "down") {
           target = preferredTabButton || preferredCategoryButton;
         } else if (direction === "left") {

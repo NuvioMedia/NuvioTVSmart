@@ -209,10 +209,6 @@ export function createProfileSelectionScreenMethods07() {
       }
 
       const code = Number(event?.keyCode || 0);
-      if (this.suppressHoldMenuEnterUntilKeyUp && code === 13) {
-        event?.preventDefault?.();
-        return;
-      }
       const overlayRoot =
         this.container.querySelector("[data-overlay-root='pin']") ||
         this.container.querySelector("[data-overlay-root='delete']") ||
@@ -278,13 +274,6 @@ export function createProfileSelectionScreenMethods07() {
       await this.activateFocusedNode(current);
     },
     async onKeyUp(event) {
-      if (this.suppressHoldMenuEnterUntilKeyUp) {
-        this.suppressHoldMenuEnterUntilKeyUp = false;
-        if (Number(event?.keyCode || 0) === 13) {
-          event?.preventDefault?.();
-          return;
-        }
-      }
       if (Number(event?.keyCode || 0) !== 13 || this.pinOverlayState || this.optionsProfileId || this.deleteProfileId || this.editorState) {
         return;
       }
@@ -324,6 +313,7 @@ export function createProfileSelectionScreenMethods07() {
         this._deleteDialog.destroy();
         this._deleteDialog = null;
       }
+      this.closeCopySettingsDialogs();
       this.optionsProfileId = null;
       this.deleteProfileId = null;
     }
