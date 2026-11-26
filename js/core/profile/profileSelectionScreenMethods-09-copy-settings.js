@@ -162,6 +162,9 @@ export function createProfileSelectionScreenMethods09() {
       } finally {
         this.isCopyingProfileSettings = false;
       }
+      if (!this.isMounted) {
+        return;
+      }
       this._copySettingsDialog = new NuvioDialog({
         title: success
           ? t("profile_copy_settings_success_title", {}, "Settings copied")

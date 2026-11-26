@@ -65,7 +65,6 @@ export function createProfileSelectionScreenMethods01() {
       const mountToken = {};
       this.mountToken = mountToken;
       this.lastKeyboardActivation = null;
-      this.suppressHoldMenuEnterUntilKeyUp = false;
       this.isActivatingProfile = false;
       this.activatingProfileId = "";
       this._bgScreen = null;
