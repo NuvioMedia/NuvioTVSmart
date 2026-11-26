@@ -1,4 +1,5 @@
 import { PARENTAL_GUIDE_API_URL } from "../../config.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 
 const CACHE = new Map();
 
@@ -18,25 +19,21 @@ function normalizeBaseUrl(value = "") {
 }
 
 async function fetchJson(url, timeoutMs = 3500) {
-  const controller = typeof AbortController === "function" ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   try {
-    const response = await fetch(url, {
-      method: "GET",
-      signal: controller?.signal
-    });
-    if (!response.ok) {
-      console.warn("Parental guide request failed", { url, status: response.status });
-      return null;
-    }
-    return await response.json();
+    return await withRequestTimeout(async (signal) => {
+      const response = await fetch(url, {
+        method: "GET",
+        ...(signal ? { signal } : {})
+      });
+      if (!response.ok) {
+        console.warn("Parental guide request failed", { url, status: response.status });
+        return null;
+      }
+      return await response.json();
+    }, timeoutMs);
   } catch (error) {
     console.warn("Parental guide request failed", { url, error: error?.message || String(error) });
     return null;
-  } finally {
-    if (timer) {
-      clearTimeout(timer);
-    }
   }
 }
 

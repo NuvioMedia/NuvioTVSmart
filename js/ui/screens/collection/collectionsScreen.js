@@ -29,12 +29,43 @@ export const CollectionsScreen = {
   async mount() {
     this.container = document.getElementById("collections");
     ScreenUtils.show(this.container);
+    this.ensureClickDelegation();
     this.focusKey = this.focusKey || "new";
     this.render();
   },
 
+  ensureClickDelegation() {
+    if (!this.container) {
+      return;
+    }
+    if (!this._boundClickHandler) {
+      this._boundClickHandler = async (event) => {
+        const node = event?.target?.closest?.(".collections-focusable");
+        if (!node || !this.container?.contains(node)) {
+          return;
+        }
+        this.focusKey = String(node.dataset.focusKey || this.focusKey);
+        this.applyFocus();
+        await this.activateFocused();
+      };
+    }
+    if (this._boundClickContainer === this.container) {
+      return;
+    }
+    if (this._boundClickContainer) {
+      this._boundClickContainer.removeEventListener("click", this._boundClickHandler);
+    }
+    this.container.addEventListener("click", this._boundClickHandler);
+    this._boundClickContainer = this.container;
+  },
+
   render() {
-    const collections = CollectionsStore.get();
+    const prevScrollTop = Number(
+      this.container?.querySelector(".collections-main")?.scrollTop || 0
+    );
+    const collections = Array.isArray(this.reorderCollections)
+      ? this.reorderCollections
+      : CollectionsStore.get();
     this.collections = collections;
     const movingId = this.reorderSession?.movingKey || "";
     const rows = collections
@@ -119,14 +150,11 @@ export const CollectionsScreen = {
       </div>
     `;
 
-    this.container.querySelectorAll(".collections-focusable").forEach((node) => {
-      node.addEventListener("click", async () => {
-        this.focusKey = String(node.dataset.focusKey || this.focusKey);
-        this.applyFocus();
-        await this.activateFocused();
-      });
-    });
-
+    const main = this.container.querySelector(".collections-main");
+    if (main && prevScrollTop > 0) {
+      main.scrollTop = prevScrollTop;
+    }
+    this.ensureClickDelegation();
     this.applyFocus();
   },
 
@@ -143,6 +171,24 @@ export const CollectionsScreen = {
     this.focusKey = String(target.dataset.focusKey || "");
     target.classList.add("focused");
     target.focus?.({ preventScroll: true });
+    this.scrollFocusedIntoView(target, nodes);
+  },
+
+  scrollFocusedIntoView(target, nodes = null) {
+    if (!target) {
+      return;
+    }
+    const main = this.container?.querySelector(".collections-main");
+    const focusables =
+      nodes || Array.from(this.container?.querySelectorAll(".collections-focusable") || []);
+    const isTopControl =
+      (focusables.length > 0 && target === focusables[0]) ||
+      (isReordering(this.reorderSession) &&
+        String(this.collections?.[0]?.id || "") === String(this.reorderSession?.movingKey || ""));
+    if (main && isTopControl) {
+      main.scrollTop = 0;
+      return;
+    }
     target.scrollIntoView?.({ block: "nearest" });
   },
 
@@ -181,14 +227,18 @@ export const CollectionsScreen = {
       this.reorderSession = null;
       return;
     }
+    this.reorderCollections = list;
     this.focusKey = `collection:${id}:reorder`;
     this.render();
   },
   applyReorderOrder() {
-    const byId = new Map(CollectionsStore.get().map((collection) => [collection.id, collection]));
+    const source = Array.isArray(this.reorderCollections)
+      ? this.reorderCollections
+      : CollectionsStore.get();
+    const byId = new Map(source.map((collection) => [collection.id, collection]));
     const next = (this.reorderSession?.keys || []).map((key) => byId.get(key)).filter(Boolean);
     if (next.length) {
-      CollectionsStore.replace(next);
+      this.reorderCollections = next;
     }
   },
   moveCollection(delta) {
@@ -203,10 +253,29 @@ export const CollectionsScreen = {
     if (!this.reorderSession) {
       return;
     }
-    const movingId = this.reorderSession.movingKey;
-    confirmReorder(this.reorderSession);
+    // Reconcile the session order with the latest store so collections synced in
+    // while the move was open are kept instead of being dropped on confirm.
+    const session = this.reorderSession;
+    const movingId = session.movingKey;
+    confirmReorder(session);
+    const current = CollectionsStore.get();
+    const byId = new Map(current.map((collection) => [collection.id, collection]));
+    const next = session.keys.map((key) => byId.get(key)).filter(Boolean);
+    const seen = new Set(next.map((collection) => collection.id));
+    current.forEach((collection) => {
+      if (!seen.has(collection.id)) {
+        next.push(collection);
+      }
+    });
+    const unchanged =
+      next.length === current.length &&
+      next.every((collection, index) => collection.id === current[index].id);
     this.focusKey = `collection:${movingId}:reorder`;
     this.reorderSession = null;
+    this.reorderCollections = null;
+    if (next.length && !unchanged) {
+      CollectionsStore.replace(next);
+    }
     this.render();
   },
   cancelReorderState() {
@@ -215,9 +284,9 @@ export const CollectionsScreen = {
     }
     const movingId = this.reorderSession.movingKey;
     cancelReorder(this.reorderSession);
-    this.applyReorderOrder();
     this.focusKey = `collection:${movingId}:reorder`;
     this.reorderSession = null;
+    this.reorderCollections = null;
     this.render();
     return true;
   },
@@ -300,7 +369,7 @@ export const CollectionsScreen = {
     if (ScreenUtils.handleDpadNavigation(event, this.container, ".collections-focusable")) {
       const focused = this.container?.querySelector(".collections-focusable.focused");
       this.focusKey = String(focused?.dataset?.focusKey || this.focusKey);
-      focused?.scrollIntoView?.({ block: "nearest" });
+      this.scrollFocusedIntoView(focused);
       return;
     }
     const code = Number(event?.keyCode || 0);
@@ -314,6 +383,11 @@ export const CollectionsScreen = {
   cleanup() {
     this.closeDeleteDialog();
     this.reorderSession = null;
+    this.reorderCollections = null;
+    if (this._boundClickContainer && this._boundClickHandler) {
+      this._boundClickContainer.removeEventListener("click", this._boundClickHandler);
+    }
+    this._boundClickContainer = null;
     ScreenUtils.hide(this.container);
     this.container = null;
   }

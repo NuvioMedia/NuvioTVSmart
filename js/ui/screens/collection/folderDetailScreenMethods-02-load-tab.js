@@ -252,9 +252,10 @@ export function createFolderDetailScreenMethods02() {
         }
         return;
       }
+      const escapedKey = this.lastFocusedKey ? String(this.lastFocusedKey).replace(/["\\]/g, "\\$&") : "";
       const target =
         this.findRestoredFocusedItem() ||
-        (this.lastFocusedKey ? this.container?.querySelector(`.focusable[data-focus-key="${this.lastFocusedKey}"]`) : null) ||
+        (escapedKey ? this.container?.querySelector(`.focusable[data-focus-key="${escapedKey}"]`) : null) ||
         this.container?.querySelector(".folder-detail-tab.focusable") ||
         this.container?.querySelector(".seeall-card.focusable") ||
         null;

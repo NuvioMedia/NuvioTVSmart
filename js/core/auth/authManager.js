@@ -2,6 +2,7 @@ import { AuthState } from "./authState.js";
 import { clearAccountLocalData, hasAccountLocalData } from "./accountLocalDataReset.js";
 import { SessionStore } from "../storage/sessionStore.js";
 import { fetchSupabaseAuth } from "./supabaseAuthFetch.js";
+import { resetSyncBackoff } from "../sync/syncBackoffPolicy.js";
 import { PluginCodeStore } from "../../data/local/pluginCodeStore.js";
 import { HomeCatalogSnapshotStore } from "../../data/local/homeCatalogSnapshotStore.js";
 import { ServerConfigurationStore } from "../../data/local/serverConfigurationStore.js";
@@ -316,6 +317,9 @@ class AuthManagerClass {
       waitForInFlight: true
     });
     const sessionRequestsDrained = await waitForPendingSessionRequests();
+    // Reset only after in-flight work drained: a request that fails during
+    // teardown must not restore the previous account's cooldown.
+    resetSyncBackoff();
 
     // Clear local account data after teardown listeners have drained in-flight
     // work, but before notifying AuthState.SIGNED_OUT subscribers so UI and

@@ -94,6 +94,14 @@ export function createProfileSelectionScreenMethods06() {
           this.openPinOverlay("set", profile, pin);
           return;
         }
+        if (state.type === "verify-delete") {
+          this.pinOverlayError = "";
+          this.closePinOverlay({
+            focusKey: `profile:${profile.id}`,
+            afterClose: () => this.openDeleteDialog(this.getProfileById(profile.id))
+          });
+          return;
+        }
       }
 
       this.pinOverlayError =

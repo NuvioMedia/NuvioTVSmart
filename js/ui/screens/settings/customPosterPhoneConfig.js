@@ -5,6 +5,7 @@ import { QrCodeGenerator } from "../../../core/qr/qrCodeGenerator.js";
 import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 import { CUSTOM_POSTER_SCREENS } from "../../../core/poster/customPoster.js";
 import { I18n } from "../../../i18n/index.js";
+import { withRequestTimeout } from "../../../core/network/requestTimeout.js";
 
 function escape(value) {
   return String(value || "").replace(
@@ -28,24 +29,19 @@ export async function openCustomPosterPhoneConfig(screen) {
   if (!current()) return;
   const port = Number(health.port || (Platform.isWebOS() ? 2721 : 2711));
   if (![2711, 2721].includes(port)) throw new Error("web_custom_poster_error_connection");
-  const control = async (action, extra = {}) => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    try {
+  const control = async (action, extra = {}) =>
+    withRequestTimeout(async (signal) => {
       const response = await fetch(`http://127.0.0.1:${port}/poster-config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, token, ...extra }),
-        signal: controller.signal
+        signal
       });
       if (!response.ok) throw new Error("web_custom_poster_error_connection");
       const result = await response.json();
       if (result.returnValue === false) throw new Error("web_custom_poster_error_connection");
       return result;
-    } finally {
-      clearTimeout(timeout);
-    }
-  };
+    }, 10000);
   const keys = {
     title: "title",
     subtitle: "subtitle",

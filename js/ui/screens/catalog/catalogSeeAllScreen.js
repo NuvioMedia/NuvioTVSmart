@@ -45,6 +45,7 @@ export {
   POSTER_HOLD_DELAY_MS,
   isBackEvent,
   escapeHtml,
+  escapeSelectorValue,
   t,
   extractReleaseYear,
   groupNodesByOffsetTop,
@@ -64,6 +65,14 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function escapeSelectorValue(value = "") {
+  const raw = String(value ?? "");
+  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+    return CSS.escape(raw);
+  }
+  return raw.replace(/["\\]/g, "\\$&");
 }
 
 function t(key, params = {}, fallback = key) {

@@ -40,6 +40,14 @@ const ACCOUNT_LOCAL_STORAGE_KEYS = new Set([
   "pluginSources",
   "pluginsEnabled",
   "pluginState:migrationComplete",
+  "addonManifestCacheV2",
+  "streamLinkCache",
+  "lastPlaybackStream",
+  "searchHistory",
+  "subtitleDelayPreferences",
+  "episodeShuffle",
+  "pluginProviderPlays",
+  "profileLockStateCache",
   "nuvioSyncBackoffState",
   "webos_last_resume_route"
 ]);

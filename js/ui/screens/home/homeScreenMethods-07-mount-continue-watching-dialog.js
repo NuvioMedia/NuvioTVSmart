@@ -42,6 +42,7 @@ export function createHomeScreenMethods07() {
           label: option.label,
           key: option.action,
           onAction: () => {
+            this.suppressHoldMenuEnterUntilKeyUp = false;
             this.continueWatchingMenu = {
               ...(this.continueWatchingMenu || {}),
               optionIndex: index
@@ -49,7 +50,10 @@ export function createHomeScreenMethods07() {
             void this.activateContinueWatchingMenuOption();
           }
         })),
-        onDismiss: () => this.dismissContinueWatchingMenu()
+        onDismiss: () => {
+          this.suppressHoldMenuEnterUntilKeyUp = false;
+          this.dismissContinueWatchingMenu();
+        }
       }).mount(document.body);
       this.suppressHoldMenuEnterUntilKeyUp = true;
       this.scheduleHoldMenuScrollRestore();
@@ -72,6 +76,7 @@ export function createHomeScreenMethods07() {
           label: option.label,
           key: option.action,
           onAction: () => {
+            this.suppressHoldMenuEnterUntilKeyUp = false;
             this.posterHoldMenu = {
               ...(this.posterHoldMenu || {}),
               optionIndex: index
@@ -79,7 +84,10 @@ export function createHomeScreenMethods07() {
             void this.activatePosterHoldMenuOption();
           }
         })),
-        onDismiss: () => this.dismissPosterHoldMenu()
+        onDismiss: () => {
+          this.suppressHoldMenuEnterUntilKeyUp = false;
+          this.dismissPosterHoldMenu();
+        }
       }).mount(document.body);
       this.suppressHoldMenuEnterUntilKeyUp = true;
       this.scheduleHoldMenuScrollRestore();
@@ -114,6 +122,7 @@ export function createHomeScreenMethods07() {
         panelClassName: "poster-list-picker-dialog-panel",
         actionsClassName: "poster-list-picker-actions",
         onDismiss: () => {
+          this.suppressHoldMenuEnterUntilKeyUp = false;
           this._homeHoldDialog = null;
           this.posterListPicker = null;
           this.restorePosterHoldMenuFocus();
@@ -282,6 +291,7 @@ export function createHomeScreenMethods07() {
     },
     closePosterHoldMenu() {
       this.homeDialogRequestToken = (this.homeDialogRequestToken || 0) + 1;
+      this.suppressHoldMenuEnterUntilKeyUp = false;
       if (!this.posterHoldMenu) {
         return false;
       }
@@ -317,6 +327,7 @@ export function createHomeScreenMethods07() {
       return this.mountContinueWatchingDialog();
     },
     closeContinueWatchingMenu() {
+      this.suppressHoldMenuEnterUntilKeyUp = false;
       if (!this.continueWatchingMenu) {
         return false;
       }

@@ -356,7 +356,7 @@
 
 .addons-main-centered {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding-bottom: 56px;
 }
@@ -364,6 +364,7 @@
 .addons-panel-centered {
   display: flex;
   justify-content: center;
+  margin: auto;
 }
 
 .addons-hero-card {

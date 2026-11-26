@@ -1,5 +1,6 @@
 import { I18n } from "../../../i18n/index.js";
 import { ScreenUtils } from "../../navigation/screen.js";
+import { scrollFocusedIntoContainer } from "../../navigation/scrollFocusedIntoContainer.js";
 
 const SECTIONS = [
   {
@@ -91,22 +92,14 @@ export const LicensesAttributionsScreen = {
   revealFocused() {
     const scroller = this.container?.querySelector(".licenses-screen");
     const row = this.container?.querySelector(".focusable.focused");
-    if (
-      !scroller ||
-      !row ||
-      typeof scroller.getBoundingClientRect !== "function" ||
-      typeof row.getBoundingClientRect !== "function"
-    ) {
+    if (!scroller || !row) {
       return;
     }
-    const view = scroller.getBoundingClientRect();
-    const rect = row.getBoundingClientRect();
-    const margin = 8;
-    if (rect.top < view.top + margin) {
-      scroller.scrollTop += rect.top - view.top - margin;
-    } else if (rect.bottom > view.bottom - margin) {
-      scroller.scrollTop += rect.bottom - view.bottom + margin;
-    }
+    const firstRow = this.container?.querySelector(".focusable");
+    scrollFocusedIntoContainer(scroller, row, {
+      pad: 8,
+      isTopRow: Boolean(firstRow && row === firstRow)
+    });
   },
 
   cleanup() {

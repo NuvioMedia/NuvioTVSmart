@@ -1,4 +1,5 @@
 import { addonRepository } from "./addonRepository.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 
 // Android AddonEventDispatcher: the stremio-core player and library tracking events.
 export const ADDON_PLAYER_RESOURCE = "player";
@@ -87,14 +88,17 @@ export function buildAddonEventUrl(baseUrl = "", resource = "", type = "", id = 
 const queues = new Map();
 
 async function send(url) {
-  const controller = typeof AbortController === "function" ? new AbortController() : null;
-  const timer = setTimeout(() => controller?.abort(), EVENT_TIMEOUT_MS);
   try {
-    await fetch(url, { method: "GET", signal: controller?.signal });
+    await withRequestTimeout(async (signal) => {
+      const response = await fetch(url, {
+        method: "GET",
+        ...(signal ? { signal } : {})
+      });
+      // Drain the response so the connection is released once the add-on answers.
+      await response.text();
+    }, EVENT_TIMEOUT_MS);
   } catch (error) {
     console.warn("Addon tracking event failed", error?.message || error);
-  } finally {
-    clearTimeout(timer);
   }
 }
 

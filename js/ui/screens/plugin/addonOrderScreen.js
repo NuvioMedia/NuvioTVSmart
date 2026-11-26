@@ -1,7 +1,6 @@
 import { Router } from "../../navigation/routerState.js";
 import { ScreenUtils } from "../../navigation/screen.js";
 import { addonRepository } from "../../../data/repository/addonRepository.js";
-import { Platform } from "../../../platform/index.js";
 import { I18n } from "../../../i18n/index.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
 import {
@@ -32,16 +31,25 @@ export const AddonOrderScreen = {
     this.container = document.getElementById("addonOrder");
     ScreenUtils.show(this.container);
     this.mountToken = (this.mountToken || 0) + 1;
+    const mountToken = this.mountToken;
     this.focusIndex = Number.isFinite(this.focusIndex) ? this.focusIndex : 0;
     this.reorderSession = null;
+    this.isSavingOrder = false;
     this.addons = [];
     this.renderLoading();
     await this.loadAddons();
+    if (mountToken !== this.mountToken) {
+      return;
+    }
     await this.render();
   },
 
   async loadAddons() {
+    const token = this.mountToken;
     const addons = await addonRepository.getInstalledAddons().catch(() => []);
+    if (token !== this.mountToken) {
+      return;
+    }
     this.addons = (Array.isArray(addons) ? addons : []).map((addon) => ({
       url: String(addon?.url || addon?.baseUrl || "").trim(),
       name: String(addon?.displayName || addon?.name || addon?.url || "").trim(),
@@ -133,10 +141,20 @@ export const AddonOrderScreen = {
     this.focusIndex = Number(target.dataset.index || this.focusIndex);
     target.classList.add("focused");
     target.focus?.({ preventScroll: true });
+    if (this.focusIndex === 0) {
+      const scroller = this.container?.querySelector(".catalog-order-main");
+      if (scroller) {
+        scroller.scrollTop = 0;
+        return;
+      }
+    }
     target.scrollIntoView?.({ block: "nearest" });
   },
 
   async startReorder(index) {
+    if (typeof addonRepository.canEdit === "function" && !addonRepository.canEdit()) {
+      return;
+    }
     const addon = this.addons[index];
     if (!addon || isReordering(this.reorderSession)) {
       return;
@@ -165,20 +183,57 @@ export const AddonOrderScreen = {
   },
 
   async finishReorder() {
+    if (!isReordering(this.reorderSession) || this.isSavingOrder) {
+      return;
+    }
+    const token = this.mountToken;
     const keys = confirmReorder(this.reorderSession);
+    // Rows missing from this screen (disabled or unreachable add-ons) keep their slot:
+    // setAddonOrder replaces the installed list with whatever it receives.
+    const visibleKeys = new Set(keys.map((url) => addonRepository.normalizeUrl(url)));
+    const mergedKeys = [...addonRepository.getInstalledAddonUrls()];
+    let next = 0;
+    mergedKeys.forEach((url, index) => {
+      if (!visibleKeys.has(addonRepository.normalizeUrl(url))) {
+        return;
+      }
+      mergedKeys[index] = keys[next];
+      next += 1;
+    });
+    for (; next < keys.length; next += 1) {
+      mergedKeys.push(keys[next]);
+    }
     this.reorderSession = null;
-    await addonRepository.setAddonOrder(keys, { silent: false });
-    await this.loadAddons();
-    await this.render();
+    this.isSavingOrder = true;
+    try {
+      await addonRepository.setAddonOrder(mergedKeys, { silent: false });
+      if (token !== this.mountToken) {
+        return;
+      }
+      await this.loadAddons();
+      if (token !== this.mountToken) {
+        return;
+      }
+      await this.render();
+    } finally {
+      if (token === this.mountToken) {
+        this.isSavingOrder = false;
+      }
+    }
   },
 
   async cancelReorderState() {
     if (!isReordering(this.reorderSession)) {
       return false;
     }
+    const movingKey = this.reorderSession.movingKey;
     cancelReorder(this.reorderSession);
     this.applyReorderOrder();
     this.reorderSession = null;
+    const restoredIndex = this.addons.findIndex((entry) => entry.url === movingKey);
+    if (restoredIndex >= 0) {
+      this.focusIndex = restoredIndex;
+    }
     await this.render();
     return true;
   },
@@ -196,12 +251,14 @@ export const AddonOrderScreen = {
   },
 
   async onKeyDown(event) {
-    if (Platform.isBackEvent(event)) {
-      event?.preventDefault?.();
-      await Router.back();
+    const code = Number(event?.keyCode || 0);
+    if (this.isSavingOrder) {
+      if (code === 13 || code === 37 || code === 38 || code === 39 || code === 40) {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+      }
       return;
     }
-    const code = Number(event?.keyCode || 0);
     if (isReordering(this.reorderSession)) {
       if (code === 38 || code === 40) {
         event?.preventDefault?.();
@@ -215,6 +272,9 @@ export const AddonOrderScreen = {
       if (code === 13) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
+        if (event?.repeat) {
+          return;
+        }
         await this.finishReorder();
         return;
       }
@@ -228,13 +288,16 @@ export const AddonOrderScreen = {
     if (code === 13) {
       event?.preventDefault?.();
       event?.stopPropagation?.();
+      if (event?.repeat) {
+        return;
+      }
       await this.activateFocused();
     }
   },
 
-  async consumeBackRequest() {
+  consumeBackRequest() {
     if (isReordering(this.reorderSession)) {
-      await this.cancelReorderState();
+      void this.cancelReorderState();
       return true;
     }
     return false;
@@ -242,6 +305,7 @@ export const AddonOrderScreen = {
 
   cleanup() {
     this.mountToken = (this.mountToken || 0) + 1;
+    this.isSavingOrder = false;
     this.reorderSession = null;
     ScreenUtils.hide(this.container);
   }

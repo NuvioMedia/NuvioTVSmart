@@ -19,6 +19,7 @@ export function createLibraryScreenMethods01() {
     escapeHtml,
     t,
     scrollIntoNearestView,
+    scrollFocusedIntoContainer,
     filterStructureSignature
   } = internals;
 
@@ -234,7 +235,14 @@ export function createLibraryScreenMethods01() {
       }
       if (!sidebarFocused) {
         this.lastMainFocus = target;
-        scrollIntoNearestView(target);
+        const main = this.container?.querySelector(".library-main");
+        if (main && main.contains(target) && !target.closest?.(".library-picker-menu")) {
+          const topRow = main.querySelector(".library-view-mode-row");
+          const isTopRow = topRow ? topRow.contains(target) : target === main.querySelector(".focusable");
+          scrollFocusedIntoContainer(main, target, { pad: 56, isTopRow });
+        } else {
+          scrollIntoNearestView(target);
+        }
         if (target.closest?.(".library-actions-row") && target.dataset.action) {
           this.lastActionsRowAction = String(target.dataset.action);
         }

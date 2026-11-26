@@ -98,10 +98,16 @@ export function renderImdbBadge(rating) {
     return "";
   }
   const value = formatRatingValue(raw, { digits: 1 });
+  const escapedValue = String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
   return `
     <span class="series-imdb-badge">
       <img src="assets/icons/imdb_logo_2016.svg" alt="IMDb" />
-      <span>${value}</span>
+      <span>${escapedValue}</span>
     </span>
   `;
 }

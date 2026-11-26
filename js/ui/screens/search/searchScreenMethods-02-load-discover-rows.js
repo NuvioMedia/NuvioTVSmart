@@ -270,8 +270,8 @@ export function createSearchScreenMethods02() {
           const hasEnoughForSeeAll = seeAllItems.length >= 15;
           return `
           <section class="search-results-row" data-row-key="${escapeHtml(rowKey)}">
-            <h3 class="search-results-title" dir="${contentTextDirection(row.title)}">${row.title}</h3>
-            ${row.subtitle ? `<div class="search-results-subtitle" dir="${contentTextDirection(row.subtitle)}">${row.subtitle}</div>` : ""}
+            <h3 class="search-results-title" dir="${contentTextDirection(row.title)}">${escapeHtml(row.title || "")}</h3>
+            ${row.subtitle ? `<div class="search-results-subtitle" dir="${contentTextDirection(row.subtitle)}">${escapeHtml(row.subtitle)}</div>` : ""}
             <div class="search-results-track">
               ${(row.items || [])
                 .map((item) => customPosterForItem(item, "search"))
@@ -279,9 +279,9 @@ export function createSearchScreenMethods02() {
                   (item) => `
                 <article class="search-result-card focusable"
                          data-action="openDetail"
-                         data-item-id="${item.id || ""}"
-                         data-item-type="${item.type || row.type || "movie"}"
-                         data-item-title="${item.name || "Untitled"}"
+                         data-item-id="${escapeHtml(item.id || "")}"
+                         data-item-type="${escapeHtml(item.type || row.type || "movie")}"
+                         data-item-title="${escapeHtml(item.name || "Untitled")}"
                          data-poster-src="${escapeHtml(item.poster || "")}"
                          data-backdrop-src="${escapeHtml(item.background || item.backdrop || item.landscapePoster || "")}"
                          data-addon-base-url="${escapeHtml(row.addonBaseUrl || item.addonBaseUrl || "")}"
@@ -290,11 +290,11 @@ export function createSearchScreenMethods02() {
                          data-catalog-type="${escapeHtml(row.type || item.catalogType || "")}"
                          data-row-key="${escapeHtml(rowKey)}">
                   <div class="search-result-poster-wrap">
-                    ${item.poster ? `<img class="search-result-poster" ${posterFallbackAttributes(item)} src="${item.poster}" alt="" loading="lazy" decoding="async" />` : `<div class="search-result-poster placeholder"></div>`}
+                    ${item.poster ? `<img class="search-result-poster" ${posterFallbackAttributes(item)} src="${escapeHtml(item.poster)}" alt="" loading="lazy" decoding="async" />` : `<div class="search-result-poster placeholder"></div>`}
                     ${isTitleItemWatched(item, this.watchedTitleIds) ? renderTitleWatchedBadge() : ""}
                   </div>
-                  <div class="search-result-name" dir="${contentTextDirection(item.name || "Untitled")}">${item.name || "Untitled"}</div>
-                  <div class="search-result-date">${formatReleaseYear(item)}</div>
+                  <div class="search-result-name" dir="${contentTextDirection(item.name || "Untitled")}">${escapeHtml(item.name || "Untitled")}</div>
+                  <div class="search-result-date">${escapeHtml(formatReleaseYear(item))}</div>
                 </article>
               `
                 )
@@ -304,12 +304,12 @@ export function createSearchScreenMethods02() {
                   ? `
                 <article class="search-result-card search-seeall-card focusable"
                          data-action="openCatalogSeeAll"
-                         data-addon-base-url="${row.addonBaseUrl || ""}"
-                         data-addon-id="${row.addonId || ""}"
-                         data-addon-name="${row.addonName || ""}"
-                         data-catalog-id="${row.catalogId || ""}"
-                         data-catalog-name="${row.catalogName || ""}"
-                         data-catalog-type="${row.type || "movie"}"
+                         data-addon-base-url="${escapeHtml(row.addonBaseUrl || "")}"
+                         data-addon-id="${escapeHtml(row.addonId || "")}"
+                         data-addon-name="${escapeHtml(row.addonName || "")}"
+                         data-catalog-id="${escapeHtml(row.catalogId || "")}"
+                         data-catalog-name="${escapeHtml(row.catalogName || "")}"
+                         data-catalog-type="${escapeHtml(row.type || "movie")}"
                          data-row-index="${rowIndex}"
                          data-row-key="${escapeHtml(rowKey)}">
                   <div class="search-seeall-inner">

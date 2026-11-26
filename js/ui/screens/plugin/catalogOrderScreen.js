@@ -7,7 +7,6 @@ import {
   buildOrderedHomeCatalogItems,
   toDisplayTypeLabel
 } from "../../../core/addons/homeCatalogs.js";
-import { Platform } from "../../../platform/index.js";
 import { isMediaServerResumeRow } from "../home/homeUtils.js";
 import { ExperienceModeStore } from "../../../data/local/experienceModeStore.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
@@ -108,6 +107,10 @@ export const CatalogOrderScreen = {
     if (!container || !target) {
       return;
     }
+    if (this.focusRow === 0) {
+      container.scrollTop = 0;
+      return;
+    }
     const anchor = target.closest(".catalog-order-card") || target;
     const pad = 56;
     const containerRect = container.getBoundingClientRect();
@@ -164,7 +167,12 @@ export const CatalogOrderScreen = {
       keys: this.model.items.map((entry) => entry.key),
       lockedKeys: this.model.items.filter((entry) => entry.isPinnedToTop).map((entry) => entry.key)
     });
+    if (!beginReorder(this.reorderSession, key)) {
+      this.reorderSession = null;
+      return;
+    }
     this.focusRow = this.model.items.findIndex((entry) => entry.key === key);
+    this.focusCol = 0;
     void this.render();
   },
   async moveReorder(delta) {
@@ -184,9 +192,15 @@ export const CatalogOrderScreen = {
     if (!isReordering(this.reorderSession)) {
       return false;
     }
-    cancelReorder(this.reorderSession);
-    HomeCatalogStore.setOrder(this.reorderSession.keys);
+    const movingKey = this.reorderSession.movingKey;
+    const restoredKeys = cancelReorder(this.reorderSession);
+    HomeCatalogStore.setOrder(restoredKeys);
     this.reorderSession = null;
+    const restoredRow = restoredKeys.indexOf(movingKey);
+    if (restoredRow >= 0) {
+      this.focusRow = restoredRow;
+      this.focusCol = 0;
+    }
     await this.render();
     return true;
   },
@@ -226,8 +240,12 @@ export const CatalogOrderScreen = {
         if (!item.isPinnedToTop && !reorderLocked) {
           cols.push(0);
         }
-        cols.push(1);
-        this.setRowColumns(index, cols);
+        if (!reorderLocked) {
+          cols.push(1);
+        }
+        if (cols.length) {
+          this.setRowColumns(index, cols);
+        }
 
         const reorderControl = item.isPinnedToTop
           ? `<span class="catalog-order-action catalog-order-pinned-mark" aria-hidden="true"><span class="material-icons">lock</span></span>`
@@ -340,14 +358,12 @@ export const CatalogOrderScreen = {
       if (reorderCode === 13) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
+        if (event?.repeat) {
+          return;
+        }
         await this.finishReorder();
         return;
       }
-    }
-    if (Platform.isBackEvent(event)) {
-      event?.preventDefault?.();
-      await Router.back();
-      return;
     }
 
     const code = Number(event?.keyCode || 0);
@@ -365,13 +381,16 @@ export const CatalogOrderScreen = {
       // the action runs twice and rows jump two slots at a time.
       event?.preventDefault?.();
       event?.stopPropagation?.();
+      if (event?.repeat) {
+        return;
+      }
       await this.activateFocused();
     }
   },
 
-  async consumeBackRequest() {
+  consumeBackRequest() {
     if (isReordering(this.reorderSession)) {
-      await this.cancelReorderState();
+      void this.cancelReorderState();
       return true;
     }
     return false;

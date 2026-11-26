@@ -1,4 +1,6 @@
 import { ScreenUtils } from "../../navigation/screen.js";
+import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
+import { scrollFocusedIntoContainer } from "../../navigation/scrollFocusedIntoContainer.js";
 import { Router } from "../../navigation/routerState.js";
 import { AuthManager } from "../../../core/auth/authManager.js";
 import { LibrarySyncService } from "../../../core/profile/librarySyncService.js";
@@ -144,22 +146,10 @@ export const PluginScreen = {
     }
     const anchor =
       target.closest(".addons-installed-card, .addons-large-row, .addons-install-card") || target;
-    const pad = 56;
-    const containerRect = container.getBoundingClientRect();
-    const anchorRect = anchor.getBoundingClientRect();
-    const anchorTop = anchorRect.top - containerRect.top + container.scrollTop;
-    const anchorBottom = anchorRect.bottom - containerRect.top + container.scrollTop;
-    const viewTop = container.scrollTop;
-    const viewBottom = viewTop + container.clientHeight;
-
-    if (anchorBottom > viewBottom - pad) {
-      container.scrollTop = Math.min(
-        container.scrollHeight - container.clientHeight,
-        Math.max(0, anchorBottom - container.clientHeight + pad)
-      );
-    } else if (anchorTop < viewTop + pad) {
-      container.scrollTop = Math.max(0, anchorTop - pad);
-    }
+    const rows = this.getAvailableRows();
+    const firstRow = rows.length ? rows[0] : 0;
+    const isTopRow = Number(target.dataset?.row ?? -1) === firstRow;
+    scrollFocusedIntoContainer(container, target, { anchor, pad: 56, isTopRow });
   },
 
   renderQrCode() {
@@ -426,8 +416,8 @@ export const PluginScreen = {
 
     if (target) {
       target.classList.add("focused");
+      focusWithoutScroll(target);
       this.ensureMainVisibility(target);
-      target.focus();
     }
   },
 

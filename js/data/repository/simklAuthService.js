@@ -1,6 +1,7 @@
 /* global __NUVIO_APP_VERSION__ */
 import { SIMKL_API_URL, SIMKL_APP_NAME, SIMKL_CLIENT_ID } from "../../config.js";
 import { AuthManager } from "../../core/auth/authManager.js";
+import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 import { trackSessionRequest } from "../../core/auth/sessionLifecycle.js";
 import { SimklAuthStore } from "../local/simklAuthStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
@@ -9,6 +10,8 @@ const DEFAULT_API_URL = "https://api.simkl.com";
 const MAX_ATTEMPTS = 5;
 const GET_INTERVAL_MS = 100;
 const WRITE_INTERVAL_MS = 1000;
+// Same 60 s read budget as the Android TV Simkl OkHttp client.
+const REQUEST_TIMEOUT_MS = 60000;
 let requestQueue = Promise.resolve();
 let nextGetAt = 0;
 let nextWriteAt = 0;
@@ -119,24 +122,32 @@ async function executeSimklRequest(
   const attempts = retry ? MAX_ATTEMPTS : 1;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     let response;
+    let payload;
     try {
-      response = await rateLimitedFetch(
-        url.toString(),
-        {
-          method,
-          headers,
-          body: body == null ? undefined : JSON.stringify(body)
+      ({ response, payload } = await withRequestTimeout(
+        async (signal) => {
+          throwIfAborted(signal);
+          const response = await rateLimitedFetch(
+            url.toString(),
+            {
+              method,
+              headers,
+              body: body == null ? undefined : JSON.stringify(body)
+            },
+            method,
+            signal
+          );
+          return { response, payload: await readPayload(response) };
         },
-        method,
+        REQUEST_TIMEOUT_MS,
         requestSignal
-      );
+      ));
     } catch (error) {
       if (requestSignal?.aborted || error?.name === "AbortError") throw error;
       if (attempt + 1 >= attempts) throw error;
       await sleep(Math.min(60000, 1000 * 2 ** attempt), requestSignal);
       continue;
     }
-    const payload = await readPayload(response);
     if (response.ok || (response.status === 409 && path === "/scrobble/stop")) {
       return { response, payload };
     }
