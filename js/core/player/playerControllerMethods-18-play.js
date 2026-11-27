@@ -1,4 +1,6 @@
 import { observeProxyRedirects } from "./proxyRedirectObserver.js";
+import { attachClearKeyMediaKeys, releaseClearKeyGuard } from "./clearKeyEme.js";
+import { normalizeClearKeys } from "../streams/clearKeys.js";
 import { describeSourceHost, isDirectMediaProbeResponse, resolveTizenDirectRedirect } from "../../platform/tizen/tizenRedirectResolver.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerController.js";
@@ -7,6 +9,34 @@ export function createPlayerControllerMethods18() {
   const { Platform, TizenPlaybackProxy, WebOsPlaybackProxy, logEngineFsDebug, logTizenAvPlayDebug, logWebOsPlaybackDebug } = internals;
 
   return {
+    chooseClearKeyPlaybackEngine(sourceType) {
+      const mimeType = this.normalizeMimeType(sourceType || "");
+      if (this.isLikelyDashMimeType(mimeType)) {
+        return "dash.js";
+      }
+      if (this.isLikelyHlsMimeType(mimeType)) {
+        return "hls.js";
+      }
+      return null;
+    },
+    async prepareClearKeyPlayback() {
+      try {
+        if (this.currentClearKeys && this.currentClearKeys !== this.preparedClearKeySet && (this.dashInstance || this.hlsInstance)) {
+          // A different key set needs the MediaSource gone first: Chromium
+          // before ~90 cannot replace MediaKeys while it is attached.
+          this.teardownDashInstance();
+          this.teardownHlsInstance();
+        }
+        this.preparedClearKeySet = this.currentClearKeys;
+        this.clearKeySession = await attachClearKeyMediaKeys(this.video, this.currentClearKeys);
+        return true;
+      } catch (error) {
+        this.lastPlaybackErrorCode = 4;
+        this.clearKeySession = null;
+        const reason = String(error?.message || error || "ClearKey unavailable");
+        throw new Error(`ClearKey decryption is not available (${reason})`, { cause: error });
+      }
+    },
     async play(
       url,
       {
@@ -24,6 +54,7 @@ export function createPlayerControllerMethods18() {
         episodeTitle = null,
         requestHeaders = {},
         mediaSourceType = null,
+        clearKeys = null,
         forceEngine = null,
         streamIdentity = null,
         cloudSessionToken = null,
@@ -78,6 +109,17 @@ export function createPlayerControllerMethods18() {
       this.currentStreamIdentity = streamIdentity || null;
       this.currentPlaybackUrl = requestedUrl;
       this.currentPlaybackHeaders = { ...(requestHeaders || {}) };
+      this.currentClearKeys = normalizeClearKeys(clearKeys);
+      if (this.currentClearKeys) {
+        this.clearKeyPlaybackUrl = requestedUrl;
+      } else if (!this.clearKeySession || requestedUrl !== this.clearKeyPlaybackUrl) {
+        // Another, non-ClearKey source on the same element (or a ClearKey
+        // attempt that failed before attaching): let its own DRM install key
+        // systems again. The ClearKey MediaKeys stay attached; they do not
+        // affect clear or differently protected media.
+        releaseClearKeyGuard(this.video);
+        this.clearKeySession = null;
+      }
       this.currentPlaybackMediaSourceType = this.resolveRuntimeSourceType(mediaSourceType);
       this.lastPlaybackErrorCode = 0;
       this.lastHlsErrorDiagnostic = null;
@@ -100,9 +142,21 @@ export function createPlayerControllerMethods18() {
         }
       }
       let preferredEngine = forceEngine || this.choosePlaybackEngine(url, sourceType, itemType);
+      if (this.currentClearKeys) {
+        // ClearKey only exists in the MSE path: the native pipelines cannot be
+        // handed any key. DASH and HLS run on their MSE engine whatever the
+        // setting or the caller asked for.
+        preferredEngine = this.chooseClearKeyPlaybackEngine(sourceType) || preferredEngine;
+      }
       await this.ensureAdaptiveLibrariesForSource(sourceType, preferredEngine);
       if (!this.isPlaybackRequestActive(playToken, requestedUrl)) {
         return;
+      }
+      if (this.currentClearKeys || this.clearKeySession) {
+        await this.prepareClearKeyPlayback();
+        if (!this.isPlaybackRequestActive(playToken, requestedUrl)) {
+          return;
+        }
       }
 
       let playbackUrl = requestedUrl;
@@ -361,6 +415,10 @@ export function createPlayerControllerMethods18() {
       } else if (preferredEngine === "hls.js") {
         const hlsStarted = this.playWithHlsJs(playbackUrl, requestHeaders, playToken);
         if (!hlsStarted) {
+          if (this.currentClearKeys) {
+            // The native HLS pipeline has no CDM to decrypt the samples with.
+            throw new Error("ClearKey needs the MSE HLS pipeline, which is not available");
+          }
           this.applyNativeSource(playbackUrl, sourceType || "application/vnd.apple.mpegurl", "native-hls");
           this.attemptVideoPlay({
             warningLabel: "Playback start rejected",
@@ -371,6 +429,10 @@ export function createPlayerControllerMethods18() {
       } else if (preferredEngine === "dash.js") {
         const dashStarted = this.playWithDashJs(playbackUrl, playToken);
         if (!dashStarted) {
+          if (this.currentClearKeys) {
+            // The native DASH pipeline has no CDM to decrypt the samples with.
+            throw new Error("ClearKey needs the MSE DASH pipeline, which is not available");
+          }
           this.applyNativeSource(playbackUrl, sourceType || "application/dash+xml", "native-dash");
         }
         this.attemptVideoPlay({

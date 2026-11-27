@@ -183,6 +183,8 @@ export class NuvioDialog {
         el.addEventListener("click", () => {
           if (btn.onAction) btn.onAction();
         });
+        // Magic Remote pointer: move the highlight with the cursor.
+        el.addEventListener("mouseenter", () => this._focusIndex(i));
         actions.appendChild(el);
         this._buttonEls.push(el);
       });

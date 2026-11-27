@@ -425,8 +425,8 @@ async function fetchJson(url, quota) {
   }
   try {
     return JSON.parse(response.body || "{}");
-  } catch (_) {
-    throw new Error("Plugin manifest is not valid JSON");
+  } catch (error) {
+    throw new Error("Plugin manifest is not valid JSON", { cause: error });
   }
 }
 

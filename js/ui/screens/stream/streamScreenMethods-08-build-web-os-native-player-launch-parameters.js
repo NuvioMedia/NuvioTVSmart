@@ -1,4 +1,5 @@
 import { saveReusableStreamLink } from "../../../core/streams/streamLinkReuse.js";
+import { hasClearKeys } from "../../../core/streams/clearKeys.js";
 import { streamProviderHeader } from "../../../core/streams/streamOrdering.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./streamScreen.js";
@@ -73,6 +74,11 @@ export function createStreamScreenMethods08() {
     },
     async openStreamInNativePlayer(streamId) {
       if (!Environment.isWebOS() || !this.webOsNativePlayerAppId || !WebOsLunaService.isAvailable()) {
+        return;
+      }
+      const selectedStream = this.getFilteredStreams?.().find((stream) => stream.id === streamId) || this.getCurrentStreamCandidate?.();
+      if (hasClearKeys(selectedStream?.behaviorHints?.clearKeys || selectedStream?.raw?.behaviorHints?.clearKeys)) {
+        // The external LG player cannot be handed the ClearKey pairs.
         return;
       }
       if (this.nativePlayerPendingStreamId) {

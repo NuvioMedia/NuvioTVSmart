@@ -560,7 +560,7 @@ export const TizenPluginService = {
           };
         } catch (error) {
           diagnostic("explicit startup failed", { error: diagnosticError(error) });
-          throw new Error(`${serviceId}: ${String(error?.message || error)}`);
+          throw new Error(`${serviceId}: ${String(error?.message || error)}`, { cause: error });
         }
       })().finally(() => {
         startPromise = null;
