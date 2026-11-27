@@ -3,7 +3,7 @@ const STREAMING_LIBS = [
     id: "hls",
     sources: [
       "assets/libs/hls.min.js",
-      "https://cdn.jsdelivr.net/npm/hls.js@1.7.3/dist/hls.min.js"
+      "https://cdn.jsdelivr.net/npm/hls.js@1.7.4/dist/hls.min.js"
     ],
     isLoaded: () => Boolean(globalThis.Hls)
   },
@@ -11,7 +11,7 @@ const STREAMING_LIBS = [
     id: "dash",
     sources: [
       "assets/libs/dash.all.min.js",
-      "https://cdn.jsdelivr.net/npm/dashjs@5.2.1/dist/legacy/umd/dash.all.min.js"
+      "https://cdn.jsdelivr.net/npm/dashjs@5.3.0/dist/legacy/umd/dash.all.min.js"
     ],
     isLoaded: () => Boolean(globalThis.dashjs)
   }
