@@ -22,6 +22,12 @@ export function createMetaDetailsScreenMethods02() {
       this.commentOverlayDialog?.destroy();
       this.commentOverlayDialog = null;
       this.commentOverlay = null;
+      this.activeRatingDialog?.close?.();
+      this.activeRatingDialog = null;
+      if (this.detailMessageTimer) {
+        clearTimeout(this.detailMessageTimer);
+        this.detailMessageTimer = null;
+      }
       this.params = params;
       this.isBackNavigation = Boolean(navigationContext?.isBackNavigation);
       this.pendingEpisodeSelection = null;
