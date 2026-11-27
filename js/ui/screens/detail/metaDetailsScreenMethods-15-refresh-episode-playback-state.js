@@ -39,7 +39,10 @@ export function createMetaDetailsScreenMethods15() {
         watchedItemsRepository.isWatched(this.params?.itemId)
       ]);
       const projectedTitleWatched = await isDetailTitleWatched(this.params?.itemId, this.params?.itemType, this.meta, allWatchedItems);
-      this.resumeProgress = progress && isWatchProgressInProgress(progress) ? progress : null;
+      const latestProgress = isSeriesDetailMeta(this.meta, this.episodes)
+        ? this.getLatestSeriesProgress(progress, allProgressItems)
+        : progress;
+      this.resumeProgress = latestProgress && isWatchProgressInProgress(latestProgress) ? latestProgress : null;
       const detailContentReference = buildDetailContentReference(this.params?.itemId, this.meta, this.params);
       this.isMarkedWatched = Boolean(
         projectedTitleWatched ||
@@ -49,7 +52,7 @@ export function createMetaDetailsScreenMethods15() {
       );
       const progressItemsForDetail = this.resumeProgress ? [this.resumeProgress, ...allProgressItems] : allProgressItems;
       this.buildEpisodeState(progressItemsForDetail, allWatchedItems, this.enrichedWatchedState);
-      this.nextEpisodeToWatch = this.computeNextEpisodeToWatch(this.resumeProgress || progress);
+      this.nextEpisodeToWatch = this.computeNextEpisodeToWatch(latestProgress);
     },
     async setEpisodeWatchedState(episode, watched) {
       const profileId = ProfileManager.getActiveProfileId();
