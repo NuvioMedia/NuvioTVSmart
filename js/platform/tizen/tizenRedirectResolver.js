@@ -82,6 +82,9 @@ export async function resolveTizenDirectRedirect(
       credentials: "omit",
       signal: controller?.signal
     });
+    if (request && typeof request.catch === "function") {
+      request.catch(() => {});
+    }
     const timeout = new Promise((_, reject) => {
       timer = setTimeout(() => {
         controller?.abort?.();
@@ -92,7 +95,10 @@ export async function resolveTizenDirectRedirect(
     clearTimeout(timer);
     // Only the status line and headers are needed; stop the body transfer.
     try {
-      response?.body?.cancel?.();
+      const cancelPromise = response?.body?.cancel?.();
+      if (cancelPromise && typeof cancelPromise.catch === "function") {
+        cancelPromise.catch(() => {});
+      }
     } catch (_) {
       // Ignore body cancellation failures.
     }

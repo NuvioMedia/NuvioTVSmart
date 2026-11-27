@@ -33,12 +33,19 @@ function diagnostic() {
   // Diagnostic console output is intentionally disabled in normal builds.
 }
 
-function withTimeout(promise, timeoutMs, message) {
+function withTimeout(promise, timeoutMs, message, onTimeout = null) {
   let timeoutId = 0;
+  const wrapped = Promise.resolve(promise);
+  wrapped.catch(() => {});
   const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+    timeoutId = setTimeout(() => {
+      try {
+        onTimeout?.();
+      } catch (_) {}
+      reject(new Error(message));
+    }, timeoutMs);
   });
-  return Promise.race([promise, timeoutPromise]).finally(() => {
+  return Promise.race([wrapped, timeoutPromise]).finally(() => {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -216,24 +223,29 @@ async function requestServiceStart(serviceId) {
 }
 
 async function probeBaseUrl(baseUrl, timeoutMs = PROBE_TIMEOUT_MS) {
-  const response = await withTimeout(
-    fetch(`${baseUrl}/settings`, {
-      method: "GET",
-      cache: "no-cache"
-    }),
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  return withTimeout(
+    (async () => {
+      const response = await fetch(`${baseUrl}/settings`, {
+        method: "GET",
+        cache: "no-cache",
+        ...(controller ? { signal: controller.signal } : {})
+      });
+      if (!response.ok) {
+        throw new Error(`Tizen local EngineFS settings failed with HTTP ${response.status}`);
+      }
+      let json = null;
+      try {
+        json = await response.json();
+      } catch (_) {
+        json = null;
+      }
+      return { baseUrl, settings: json };
+    })(),
     timeoutMs,
-    `Tizen local EngineFS settings probe timed out for ${baseUrl}`
+    `Tizen local EngineFS settings probe timed out for ${baseUrl}`,
+    () => controller?.abort?.()
   );
-  if (!response.ok) {
-    throw new Error(`Tizen local EngineFS settings failed with HTTP ${response.status}`);
-  }
-  let json = null;
-  try {
-    json = await response.clone().json();
-  } catch (_) {
-    json = null;
-  }
-  return { baseUrl, settings: json };
 }
 
 async function findReachableLocalBaseUrl(timeoutMs = PROBE_TIMEOUT_MS) {
