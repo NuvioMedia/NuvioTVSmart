@@ -126,6 +126,28 @@ export function createMetaDetailsScreenMethods17() {
     isLegacyTvRuntime() {
       return Boolean(getTvRuntimePerformanceProfile().isLegacyTvRuntime);
     },
+    shouldUseImmediateFocusScroll() {
+      return Boolean(this.isLegacyTvRuntime() || this.isPerformanceConstrained());
+    },
+    cancelScrollAnimation(container, axis = "x") {
+      if (!container) {
+        return;
+      }
+      const key = axis === "y" ? "y" : "x";
+      const tweenMap = this.scrollAnimations || null;
+      const tweenState = tweenMap?.get?.(container);
+      if (tweenState?.[key]) {
+        cancelAnimationFrame(tweenState[key]);
+        tweenState[key] = null;
+      }
+      const springMap = this.springScrollAnimations || null;
+      const springState = springMap?.get?.(container);
+      if (springState?.[key]?.raf) {
+        cancelAnimationFrame(springState[key].raf);
+        springState[key] = null;
+        springMap.set(container, springState);
+      }
+    },
     shouldSuppressTrailerAutoplay() {
       const content = this.getDetailContentScroller();
       const focused = this.container?.querySelector(".focusable.focused") || null;
@@ -147,10 +169,6 @@ export function createMetaDetailsScreenMethods17() {
       if (!container) {
         return;
       }
-      if (!this.isLegacyTvRuntime()) {
-        this.animateSpringScroll(container, axis, targetValue);
-        return;
-      }
       const property = axis === "y" ? "scrollTop" : "scrollLeft";
       const max =
         axis === "y"
@@ -158,8 +176,13 @@ export function createMetaDetailsScreenMethods17() {
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
       const startValue = Number(container[property] || 0);
-      if (Math.abs(startValue - nextValue) <= 1) {
+      if (this.shouldUseImmediateFocusScroll() || Math.abs(startValue - nextValue) <= 1) {
+        this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
+        return;
+      }
+      if (!this.isLegacyTvRuntime()) {
+        this.animateSpringScroll(container, axis, targetValue);
         return;
       }
 
@@ -228,14 +251,15 @@ export function createMetaDetailsScreenMethods17() {
           ? Math.max(0, container.scrollHeight - container.clientHeight)
           : Math.max(0, container.scrollWidth - container.clientWidth);
       const nextValue = Math.max(0, Math.min(max, Math.round(targetValue)));
+      const key = axis === "y" ? "y" : "x";
       const prefersReducedMotion = globalThis?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-      if (prefersReducedMotion) {
+      if (this.shouldUseImmediateFocusScroll() || prefersReducedMotion) {
+        this.cancelScrollAnimation(container, axis);
         container[property] = nextValue;
         return;
       }
 
       const tweenMap = this.scrollAnimations || (this.scrollAnimations = new WeakMap());
-      const key = axis === "y" ? "y" : "x";
       const tweenState = tweenMap.get(container);
       if (tweenState?.[key]) {
         cancelAnimationFrame(tweenState[key]);
@@ -246,6 +270,11 @@ export function createMetaDetailsScreenMethods17() {
       const springMap = this.springScrollAnimations || (this.springScrollAnimations = new WeakMap());
       const existing = springMap.get(container) || {};
       const active = existing[key];
+      if (!active && Math.abs(Number(container[property] || 0) - nextValue) <= 1) {
+        this.cancelScrollAnimation(container, axis);
+        container[property] = nextValue;
+        return;
+      }
       if (active) {
         active.target = nextValue;
         active.stiffness = Number(options?.stiffness ?? active.stiffness ?? DETAIL_SCROLL_STIFFNESS);
