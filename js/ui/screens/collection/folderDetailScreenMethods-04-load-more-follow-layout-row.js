@@ -207,9 +207,9 @@ export function createFolderDetailScreenMethods04() {
         });
       }
     },
-    startPendingContinueWatchingHold(node) {
+    startPendingContinueWatchingHold(node, fromPointer = false) {
       if (!this.useHomeFollowLayout) {
-        return HomeScreen.startPendingContinueWatchingHold.call(this, node);
+        return HomeScreen.startPendingContinueWatchingHold.call(this, node, fromPointer);
       }
       if (!this.isHomeHoldTarget(node)) {
         return false;
@@ -237,12 +237,16 @@ export function createFolderDetailScreenMethods04() {
         if (!pending || Router.getCurrent() !== "folderDetail") {
           return;
         }
-        const current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
+        let current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
+        if (fromPointer && !this.hasPendingContinueWatchingHold(current)) {
+          // Pointer holds are tied to the pressed card, which may not be the focused one.
+          current = node;
+        }
         if (!this.hasPendingContinueWatchingHold(current)) {
           return;
         }
         pending.holdTriggered = true;
-        this.openHoldMenuForNode(current);
+        this.openHoldMenuForNode(current, fromPointer);
       }, 650);
       return true;
     }

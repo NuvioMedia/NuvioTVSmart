@@ -17,12 +17,12 @@ export function createHomeScreenMethods08() {
   } = internals;
 
   return {
-    openHoldMenuForNode(node) {
+    openHoldMenuForNode(node, fromPointer = false) {
       if (this.isContinueWatchingHoldTarget(node)) {
-        return this.openContinueWatchingMenu(node);
+        return this.openContinueWatchingMenu(node, fromPointer);
       }
       if (this.isPosterHoldTarget(node)) {
-        void this.openPosterHoldMenu(node);
+        void this.openPosterHoldMenu(node, fromPointer);
         return true;
       }
       return false;
@@ -63,7 +63,7 @@ export function createHomeScreenMethods08() {
         String(node.dataset.episode || "") === String(pending.episode || "")
       );
     },
-    startPendingContinueWatchingHold(node) {
+    startPendingContinueWatchingHold(node, fromPointer = false) {
       if (!this.isHomeHoldTarget(node)) {
         return false;
       }
@@ -92,12 +92,16 @@ export function createHomeScreenMethods08() {
         if (!pending || Router.getCurrent() !== "home") {
           return;
         }
-        const current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
+        let current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
+        if (fromPointer && !this.hasPendingContinueWatchingHold(current)) {
+          // Pointer holds are tied to the pressed card, which may not be the focused one.
+          current = node;
+        }
         if (!this.hasPendingContinueWatchingHold(current)) {
           return;
         }
         pending.holdTriggered = true;
-        this.openHoldMenuForNode(current);
+        this.openHoldMenuForNode(current, fromPointer);
       }, CW_HOLD_DELAY_MS);
       return true;
     },
