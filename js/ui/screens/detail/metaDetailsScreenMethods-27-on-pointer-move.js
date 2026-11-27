@@ -120,10 +120,8 @@ export function createMetaDetailsScreenMethods27() {
         this.episodeVirtualSyncRaf = null;
       }
       if (this._sectionsUpdateRaf) {
-        if (typeof cancelAnimationFrame === "function") {
-          cancelAnimationFrame(this._sectionsUpdateRaf);
-        }
-        clearTimeout(this._sectionsUpdateRaf);
+        const cancelRaf = typeof cancelAnimationFrame === "function" ? cancelAnimationFrame : clearTimeout;
+        cancelRaf(this._sectionsUpdateRaf);
         this._sectionsUpdateRaf = null;
       }
       this.episodeThumbnailPrefetchCache = new Set();

@@ -25,6 +25,7 @@ test("MetaDetailsScreen closes rating dialog & cancels _sectionsUpdateRaf on cle
   let ratingCloseCount = 0;
   let dialogOpen = false;
   let renderCalls = 0;
+  let focusCalls = 0;
   const bodyClasses = new Set();
 
   const ctx = vm.createContext({
@@ -34,7 +35,20 @@ test("MetaDetailsScreen closes rating dialog & cancels _sectionsUpdateRaf on cle
           contains: (name) => bodyClasses.has(name)
         }
       },
-      createElement: () => ({ innerHTML: "", firstElementChild: null })
+      createElement: () => ({
+        innerHTML: "",
+        firstElementChild: {
+          classList: {
+            _names: new Set(),
+            add(...names) {
+              names.forEach((name) => this._names.add(name));
+            },
+            contains(name) {
+              return this._names.has(name);
+            }
+          }
+        }
+      })
     },
     performance: { now: () => 0 },
     requestAnimationFrame: (cb) => {
@@ -112,7 +126,9 @@ test("MetaDetailsScreen closes rating dialog & cancels _sectionsUpdateRaf on cle
     },
     formatRating: (v) => String(v || ""),
     ratingProviderName: () => "Trakt",
-    focusWithoutScroll: () => {}
+    focusWithoutScroll: () => {
+      focusCalls += 1;
+    }
   });
   ctx.globalThis = ctx;
   vm.runInContext(
@@ -149,18 +165,42 @@ test("MetaDetailsScreen closes rating dialog & cancels _sectionsUpdateRaf on cle
     isPerformanceConstrained: () => false
   });
 
-  // 1. Opening rating dialog blocks syncRatingButton re-render while dialog is open.
+  // 1. Trailer playback must not re-render the hero or pull focus out of the player.
+  screen.isTrailerPlaying = true;
+  screen.syncRatingButton();
+  assert.equal(renderCalls, 0, "syncRatingButton must not re-render while a trailer is playing");
+
+  const ratingNode = {
+    classList: { contains: (name) => name === "focused" },
+    replaceWith() {}
+  };
+  screen.container = {
+    querySelector: (selector) => (selector === '[data-action="rateTitle"]' ? ratingNode : null),
+    querySelectorAll: () => []
+  };
+  screen.syncRatingButton();
+  assert.equal(
+    focusCalls,
+    0,
+    "syncRatingButton must not focus the hero while a trailer is playing"
+  );
+  screen.isTrailerPlaying = false;
+  screen.syncRatingButton();
+  assert.equal(focusCalls, 1, "syncRatingButton keeps focus when no overlay is active");
+  screen.container = { querySelector: () => null, querySelectorAll: () => [] };
+
+  // 2. Opening rating dialog blocks syncRatingButton re-render while dialog is open.
   assert.equal(screen.openTitleRatingDialog(), true);
   screen.syncRatingButton();
   assert.equal(renderCalls, 0, "syncRatingButton must not re-render while rating dialog is open");
 
-  // 2. cleanup() must close activeRatingDialog and cancel _sectionsUpdateRaf.
+  // 3. cleanup() must close activeRatingDialog and cancel _sectionsUpdateRaf.
   screen.cleanup();
   assert.equal(ratingCloseCount, 1, "cleanup must close activeRatingDialog");
   assert.equal(cancelledRafs.includes(42), true, "cleanup must cancel _sectionsUpdateRaf");
   assert.equal(screen._sectionsUpdateRaf, null);
 
-  // 3. Detached scroll container must stop tween scroll rAF instead of continuing forever.
+  // 4. Detached scroll container must stop tween scroll rAF instead of continuing forever.
   const detachedContainer = {
     isConnected: false,
     scrollTop: 0,
