@@ -444,6 +444,9 @@ async function loadScreen(
     buildEpisodeState(...args) {
       this.episodeState = args;
     },
+    getLatestSeriesProgress(progress) {
+      return progress;
+    },
     computeNextEpisodeToWatch() {},
     resolveInitialSelectedSeason() {},
     refreshLibraryMembership() {},

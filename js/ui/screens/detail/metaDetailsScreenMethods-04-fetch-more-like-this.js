@@ -18,6 +18,8 @@ export function createMetaDetailsScreenMethods04() {
     TRAKT_COMMENTS_LIMIT,
     t,
     isDetailProgressCompleted,
+    isWatchProgressInProgress,
+    LayoutPreferences,
     isSeriesDetailMeta,
     buildDetailContentReference,
     resolveMetaImdbId,
@@ -342,7 +344,30 @@ export function createMetaDetailsScreenMethods04() {
         }
         candidates.push(entry);
       });
-      return candidates.sort((left, right) => Number(right?.updatedAt || 0) - Number(left?.updatedAt || 0))[0] || null;
+      if (!candidates.length) {
+        return null;
+      }
+
+      // Match Continue Watching: the newest activity decides whether the show
+      // is resumable, and only then can a partial episode win. Otherwise anchor
+      // on the furthest finished episode (Android's default Up Next mode), so a
+      // stale leftover from an episode already watched cannot hide later ones.
+      const updatedAt = (entry) => Number(entry?.updatedAt || 0);
+      const latestActivity = candidates.sort((left, right) => updatedAt(right) - updatedAt(left))[0] || null;
+      if (!latestActivity || isWatchProgressInProgress(latestActivity)) {
+        return latestActivity;
+      }
+      if (LayoutPreferences.get().nextUpFromFurthestEpisode === false) {
+        return latestActivity;
+      }
+      return (
+        candidates
+          .filter((entry) => isDetailProgressCompleted(entry))
+          .sort(
+            (left, right) =>
+              Number(right?.season || 0) - Number(left?.season || 0) || Number(right?.episode || 0) - Number(left?.episode || 0)
+          )[0] || latestActivity
+      );
     },
     resolvePreferredSeasonFromProgress(progress = null, progressItems = []) {
       const routeSeasonRaw = this.params?.preferredSeason ?? this.params?.resumeSeason ?? this.params?.initialSeason;
@@ -351,7 +376,8 @@ export function createMetaDetailsScreenMethods04() {
         return routeSeason;
       }
 
-      const latestProgress = this.getLatestSeriesProgress(progress, progressItems);
+      // Callers pass the already resolved anchor; only scan when there is none.
+      const latestProgress = progress || this.getLatestSeriesProgress(null, progressItems);
       const progressEpisode = this.findEpisodeFromProgress(latestProgress);
       if (progressEpisode) {
         if (isDetailProgressCompleted(latestProgress)) {
