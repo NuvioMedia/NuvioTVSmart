@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "version": "1.4.9",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0"
+  },
   "scripts": {
     "build": "node ./scripts/build.mjs",
     "test": "node --test scripts/test-legacy-request-timeouts.mjs scripts/test-dash-mime-hints.mjs js/i18n/i18nInitRace.test.mjs scripts/test-profile-scoped-store-cache.mjs scripts/test-plugin-service-lifecycle.mjs js/core/debrid/torboxCacheAliases.test.mjs js/data/remote/api/debridApiTimeout.test.mjs js/core/network/httpClientCooldown.test.mjs js/core/auth/supabaseAuthFetch.test.mjs js/core/p2p/p2pCacheServiceCapabilities.test.mjs js/data/local/storeReadMemoization.test.mjs js/core/profile/mediaServerSyncScope.test.mjs js/core/profile/watchProgressSyncProfileScope.test.mjs js/ui/navigation/focusEngineBlurReset.test.mjs js/core/profile/profileSelectionDeletePinGate.test.mjs js/data/repository/traktAuthServiceRefresh.test.mjs && node --test scripts/test-media-server-sync.mjs scripts/test-media-server-provider-ids.mjs scripts/test-media-server-resume-series.mjs scripts/test-media-server-resume-row-title.mjs scripts/test-catalog-order-media-server-rows.mjs scripts/test-media-server-device-id-profile.mjs && npm run test:plugins && npm run test:perf",
@@ -33,32 +36,32 @@
   },
   "devDependencies": {
     "@csstools/postcss-global-data": "^4.0.0",
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "^10.0.1",
     "@webos-tools/cli": "^3.2.6",
-    "autoprefixer": "^10.6.1",
-    "binaryen": "123.0.0",
-    "core-js": "3.50.0",
-    "core-js-compat": "3.50.0",
-    "cssnano": "^7.1.4",
+    "autoprefixer": "^10.7.0",
+    "binaryen": "132.0.0",
+    "cheerio": "^1.2.0",
+    "core-js": "3.51.0",
+    "core-js-compat": "3.51.0",
+    "cssnano": "^9.9.0",
     "esbuild": "^0.28.2",
-    "eslint": "^9.39.4",
-    "eslint-config-prettier": "^10.1.8",
-    "globals": "^16.5.0",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.9",
+    "globals": "^17.14.0",
     "husky": "^9.1.7",
-    "postcss": "^8.5.28",
-    "prettier": "^3.9.8"
+    "jszip": "^3.10.2",
+    "postcss": "^8.5.34",
+    "prettier": "^3.10.1"
   },
   "overrides": {
     "flatted": "3.4.2"
   },
   "dependencies": {
     "assjs": "0.1.10",
-    "cheerio": "^1.2.0",
     "crypto-js": "^4.2.0",
-    "dashjs": "5.2.1",
-    "hls.js": "1.7.3",
-    "jszip": "^3.10.2",
-    "libbitsub": "^1.12.1",
+    "dashjs": "5.3.0",
+    "hls.js": "1.7.4",
+    "libbitsub": "^1.13.2",
     "quickjs-emscripten": "^0.32.0"
   }
 }

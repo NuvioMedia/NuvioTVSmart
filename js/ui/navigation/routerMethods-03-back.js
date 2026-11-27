@@ -178,10 +178,7 @@ export function createRouterMethods03() {
         window?.history &&
         typeof window.history.replaceState === "function"
       ) {
-        window.history.replaceState(
-          { route: this.current, params: this.currentParams, previousRoute: fromRoute || null },
-          ""
-        );
+        window.history.replaceState({ route: this.current, params: this.currentParams, previousRoute: fromRoute || null }, "");
       }
       this.persistWebOsResumeRoute(this.current, this.currentParams);
     },
