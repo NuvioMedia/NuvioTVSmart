@@ -139,6 +139,7 @@ export function createMetaDetailsScreenMethods17() {
         this.heroPlayMenu ||
         this.libraryListMenu ||
         this.detailHoldDialog ||
+        this.activeRatingDialog?.isOpen ||
         this.posterOptionsController?.dialog
       );
     },
@@ -198,6 +199,11 @@ export function createMetaDetailsScreenMethods17() {
 
       const startTime = performance.now();
       const tick = (now) => {
+        if (!container.isConnected) {
+          existing[key] = null;
+          map.set(container, existing);
+          return;
+        }
         const progress = Math.min(1, (now - startTime) / effectiveDuration);
         container[property] = Math.round(startValue + (nextValue - startValue) * ease(progress));
         if (progress < 1) {
@@ -267,6 +273,11 @@ export function createMetaDetailsScreenMethods17() {
       };
 
       const tick = (now) => {
+        if (!container.isConnected) {
+          existing[key] = null;
+          springMap.set(container, existing);
+          return;
+        }
         const deltaSeconds = Math.min(DETAIL_SCROLL_MAX_FRAME_SECONDS, Math.max(0.001, (now - state.lastTime) / 1000));
         state.lastTime = now;
         const displacement = state.position - Number(state.target || 0);
