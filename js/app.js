@@ -221,6 +221,10 @@ function formatErrorMessage(error) {
 
 function renderFatalError(error) {
   const message = formatErrorMessage(error);
+  const safeMessage = String(message || "").replace(
+    /[&<>"']/g,
+    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]
+  );
   const guard = globalThis.NuvioBootGuard;
   if (guard && typeof guard.fail === "function" && guard.isActive?.()) {
     guard.fail(
@@ -235,7 +239,7 @@ function renderFatalError(error) {
       <div style="max-width:960px;margin:0 auto;">
         <h1 style="margin:0 0 16px;font-size:42px;">Nuvio TV failed to start</h1>
         <p style="margin:0 0 20px;font-size:20px;color:#c7d0dd;">Startup hit an error before the app UI rendered.</p>
-        <pre style="white-space:pre-wrap;word-break:break-word;background:#171b22;border:1px solid #2b3340;border-radius:12px;padding:20px;font-size:18px;line-height:1.5;">${message}</pre>
+        <pre style="white-space:pre-wrap;word-break:break-word;background:#171b22;border:1px solid #2b3340;border-radius:12px;padding:20px;font-size:18px;line-height:1.5;">${safeMessage}</pre>
       </div>
     </div>
   `;
