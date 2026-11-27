@@ -45,8 +45,38 @@ export function createHomeScreenMethods18() {
         deferUntilVerticalSettle: deferHomeArtworkUntilSettle,
         focusedRowOnly: this.isLegacyTvRuntime()
       });
-      if (this.isCollectionFolderNode(target)) {
-        this.hydrateCollectionFocusGif(target, true);
+      if (this.collectionFocusGifTimer) {
+        clearTimeout(this.collectionFocusGifTimer);
+        this.collectionFocusGifTimer = null;
+      }
+      if (this.collectionFocusGifRaf && typeof cancelAnimationFrame === "function") {
+        cancelAnimationFrame(this.collectionFocusGifRaf);
+        this.collectionFocusGifRaf = 0;
+      }
+      const isCollectionTarget = this.isCollectionFolderNode(target);
+      if (isCollectionTarget) {
+        const hydrateFocusedCollection = () => {
+          this.collectionFocusGifTimer = null;
+          this.collectionFocusGifRaf = 0;
+          if (
+            this.homeDomPreserved ||
+            !target.isConnected ||
+            !target.classList?.contains?.("focused") ||
+            (typeof this.getCurrentFocusedNode === "function" && this.getCurrentFocusedNode() !== target)
+          ) {
+            return;
+          }
+          this.hydrateCollectionFocusGif(target, true);
+        };
+        const shouldDeferCollectionGif =
+          deferHomeArtworkUntilSettle && (this.isPerformanceConstrained?.() || this.shouldUseBoundedHomeImageHydration?.());
+        if (shouldDeferCollectionGif) {
+          this.collectionFocusGifTimer = setTimeout(hydrateFocusedCollection, 380);
+        } else if (typeof requestAnimationFrame === "function") {
+          this.collectionFocusGifRaf = requestAnimationFrame(hydrateFocusedCollection);
+        } else {
+          hydrateFocusedCollection();
+        }
       }
       this.setSidebarExpanded(this.isSidebarNode(target));
       if (this.isMainNode(target)) {
@@ -54,13 +84,31 @@ export function createHomeScreenMethods18() {
         this.rememberMainRowFocus(target);
         const shouldDeferFocusEffects = this.shouldDeferContinueWatchingFocusEffects(target, direction, inputMeta);
         const usingDelayedCameraFollow = this.scheduleModernCameraFollow(target, direction, current, scrollAdjustments, inputMeta);
+        const currentMainAnchor =
+          this.layoutMode === "modern" && (direction === "left" || direction === "right") && typeof this.getMainFocusAnchor === "function"
+            ? this.getMainFocusAnchor(current)
+            : null;
+        const targetMainAnchor = currentMainAnchor ? this.getMainFocusAnchor(target) : null;
+        const sameModernRowAnchor = Boolean(currentMainAnchor && targetMainAnchor && currentMainAnchor === targetMainAnchor);
+        const isVerticalMove = direction === "up" || direction === "down";
+        const targetNavCol = Number(target?.dataset?.navCol || 0);
+        const isVerticalAtTrackOrigin =
+          this.layoutMode === "modern" &&
+          isVerticalMove &&
+          !scrollAdjustments.horizontal &&
+          targetNavCol === 0 &&
+          Number(target?.closest?.(".home-track")?.scrollLeft || 0) <= 1;
         if (!usingDelayedCameraFollow) {
-          this.ensureTrackHorizontalVisibility(target, direction, scrollAdjustments.horizontal);
-          if (!shouldDeferFocusEffects) {
+          if (!isVerticalAtTrackOrigin) {
+            this.ensureTrackHorizontalVisibility(target, direction, scrollAdjustments.horizontal);
+          }
+          if (!shouldDeferFocusEffects && !sameModernRowAnchor) {
             this.ensureMainVerticalVisibility(target, direction, current, scrollAdjustments.vertical);
           }
         }
-        this.scheduleModernTrackPaginationForFocus(target);
+        if (!(this.layoutMode === "modern" && isVerticalMove && targetNavCol === 0)) {
+          this.scheduleModernTrackPaginationForFocus(target);
+        }
         this.ensureContinueWatchingRenderAhead(target);
         if (shouldDeferFocusEffects) {
           this.cancelPendingHeroFocus();
@@ -68,11 +116,16 @@ export function createHomeScreenMethods18() {
           this.scheduleDeferredContinueWatchingFocusEffects(target);
         } else {
           this.scheduleModernHeroUpdate(target, {
-            deferUntilVerticalSettle: direction === "up" || direction === "down"
+            deferUntilVerticalSettle: deferHomeArtworkUntilSettle
           });
-          this.scheduleFocusedPosterFlow(target, {
-            deferUntilVerticalSettle: direction === "up" || direction === "down"
-          });
+          if (isCollectionTarget) {
+            this.cancelFocusedPosterFlow?.();
+            this.clearFocusedPosterFlowState?.();
+          } else {
+            this.scheduleFocusedPosterFlow(target, {
+              deferUntilVerticalSettle: deferHomeArtworkUntilSettle
+            });
+          }
         }
       } else {
         this.cancelModernCameraFollow({ stopAnimations: true });
