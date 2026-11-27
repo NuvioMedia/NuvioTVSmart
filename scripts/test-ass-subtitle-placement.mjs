@@ -22,6 +22,14 @@ assert(apply(low, store));
 assert(apply(high, store));
 assert.equal(parseFloat(low.$div.style.top), 240);
 assert.equal(parseFloat(low.$div.style.top) - parseFloat(high.$div.style.top), 30);
+let boxReads = 0;
+const measuredBox = store.box.getBoundingClientRect();
+store.box.getBoundingClientRect = () => ((boxReads += 1), measuredBox);
+apply(low, store, null, measuredBox);
+apply(high, store, null, measuredBox);
+assert.equal(boxReads, 0, "a supplied container rect must be reused for the whole pass");
+apply(low, store);
+assert.equal(boxReads, 1, "a direct call still measures the container");
 for (const flag of ["pos", "move", "org", "clip", "effect"]) {
   const sign = cue();
   sign[flag] = {};
@@ -49,8 +57,14 @@ assert.equal(low.$div.style.top, "330px");
 const runtime = await assSubtitleRuntimeSource(process.cwd());
 assert(runtime.includes("setSubtitlePlacement(placement)"));
 assert(runtime.includes("globalThis.ASS = ASS;"));
+assert.equal(
+  runtime.match(/const placementBox =/g)?.length,
+  2,
+  "each placement pass measures once"
+);
+assert(runtime.includes("store.playerSubtitlePlacement ? store.box?.getBoundingClientRect?.()"));
 console.log(
-  "ASS placement fixtures passed: scaled coordinates, stacking, authored positions/animation/drawings, restoration and pinned runtime hooks."
+  "ASS placement fixtures passed: scaled coordinates, stacking, authored positions/animation/drawings, restoration, single container measurement and pinned runtime hooks."
 );
 
 const supported = resolveSubtitleStyleControlAvailability({
