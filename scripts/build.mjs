@@ -1,4 +1,5 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
@@ -905,8 +906,9 @@ async function runBuild() {
   }
 }
 
+// Resolve the entry path so a build started through a symlinked checkout still runs.
 const isMainModule =
-  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
 
 export { findBalancedMathCall, toLegacyLengthValue };
 

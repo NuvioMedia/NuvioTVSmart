@@ -1,38 +1,32 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import vm from "node:vm";
+import { findBalancedMathCall, toLegacyLengthValue } from "./build.mjs";
 
-test("toLegacyLengthValue resolves 3+ level nested clamp/min/max math expressions via balanced paren matching", async () => {
-  const buildPath = new URL("./build.mjs", import.meta.url);
-  const source = await readFile(buildPath, "utf8");
+test("findBalancedMathCall spans the outermost call including nested arguments", () => {
+  const input = "width: min(1px, clamp(2px, 3px, 4px)) solid";
+  const call = findBalancedMathCall(input);
 
-  let toLegacyLengthValue;
-  if (/\bexport\s*\{[^}]*\btoLegacyLengthValue\b/.test(source)) {
-    ({ toLegacyLengthValue } = await import(buildPath.href));
-  } else {
-    const start = source.indexOf("function splitFunctionArgs");
-    const end = source.indexOf("function legacyDeclarationFallbackPlugin");
-    const legacyViewportMatch = source.match(/const legacyViewport\s*=\s*\{[\s\S]*?\};/);
-    assert.ok(start >= 0 && end > start);
-    const ctx = vm.createContext({ Math, Number, String });
-    ctx.globalThis = ctx;
-    vm.runInContext(
-      `${legacyViewportMatch ? legacyViewportMatch[0] : "const legacyViewport = { width: 1920, height: 1080, remPx: 16 };"}
-      ${source.slice(start, end)}
-      globalThis.toLegacyLengthValue = toLegacyLengthValue;`,
-      ctx
-    );
-    toLegacyLengthValue = ctx.toLegacyLengthValue;
-  }
+  assert.equal(call.fn, "min");
+  assert.equal(call.argsText, "1px, clamp(2px, 3px, 4px)");
+  assert.equal(input.slice(call.start, call.end), "min(1px, clamp(2px, 3px, 4px))");
+  assert.equal(findBalancedMathCall("min(1px"), null);
+  assert.equal(findBalancedMathCall("minmax(1px, 2px)"), null);
+});
 
-  // 3 nested parenthesis levels inside clamp() break the 1-level regex fallback in 63125970.
-  const nestedExpr = "clamp(12px, min(4vw, var(--gap, calc(20px + 4px))), 48px)";
-  const resolved = toLegacyLengthValue(nestedExpr);
+test("toLegacyLengthValue lowers nested math expressions to static fallbacks", () => {
+  // 3+ nesting levels: clamp > min > var > calc.
   assert.equal(
-    /\b(clamp|min|max)\(/.test(resolved),
-    false,
-    `unexpected raw math fn in: ${resolved}`
+    toLegacyLengthValue("clamp(12px, min(4vw, var(--gap, calc(20px + 4px))), 48px)"),
+    "48px"
   );
-  assert.equal(resolved, "48px");
+  // calc() with a var() inside min() ships in the stylesheets.
+  assert.equal(toLegacyLengthValue("min(680px, calc(100% - 2 * var(--gap)))"), "680px");
+  // Shallow expressions and sibling calls keep their previous results.
+  assert.equal(toLegacyLengthValue("calc(min(1rem, 2vw) + 2px)"), "calc(20px + 2px)");
+  assert.equal(toLegacyLengthValue("min(1px, 2px) max(3px, 4px)"), "1px 4px");
+  // minmax() is not a math function.
+  assert.equal(
+    toLegacyLengthValue("repeat(auto-fill, minmax(min(100%, 240px), 1fr))"),
+    "repeat(auto-fill, minmax(240px, 1fr))"
+  );
 });
