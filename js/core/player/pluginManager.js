@@ -1247,7 +1247,12 @@ export const PluginManager = {
           throw error;
         });
     }
-    return runtimeReadyPromise;
+    return Promise.resolve(runtimeReadyPromise).then((ready) => {
+      if (ready && currentState().runtime?.lastStatus !== "ready") {
+        markRuntime("ready", "");
+      }
+      return ready;
+    });
   },
 
   listRepositories() {

@@ -512,6 +512,18 @@ function pluginPolyfill() {
         return this.split(search).join(replacement);
       };
     }
+    if (!String.prototype.trimStart) {
+      String.prototype.trimStart = function() {
+        return String(this).replace(/^\\s+/, '');
+      };
+      String.prototype.trimLeft = String.prototype.trimStart;
+    }
+    if (!String.prototype.trimEnd) {
+      String.prototype.trimEnd = function() {
+        return String(this).replace(/\\s+$/, '');
+      };
+      String.prototype.trimRight = String.prototype.trimEnd;
+    }
     // Keep the standard JavaScript dynamic-code APIs available inside this
     // isolated QuickJS context. Android providers use eval/Function for
     // deobfuscation; isolation is provided by the dedicated context and the
