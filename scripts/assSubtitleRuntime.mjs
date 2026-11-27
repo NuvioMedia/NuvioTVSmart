@@ -17,7 +17,7 @@ export async function assSubtitleRuntimeSource(rootDir) {
   };
   replaceOnce(
     "  return dialogue;\n}",
-    "  const placementBox = store.box?.getBoundingClientRect?.() || null;\n  applyAssSubtitlePlacement(dialogue, store, null, placementBox);\n  store.actives.forEach((active) => applyAssSubtitlePlacement(active, store, dialogue, placementBox));\n  return dialogue;\n}"
+    "  const placementBox = store.playerSubtitlePlacement ? store.box?.getBoundingClientRect?.() : null;\n  applyAssSubtitlePlacement(dialogue, store, null, placementBox);\n  store.actives.forEach((active) => applyAssSubtitlePlacement(active, store, dialogue, placementBox));\n  return dialogue;\n}"
   );
   replaceOnce(
     "  // addDialogue(dialogue) {",
