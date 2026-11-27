@@ -47,9 +47,13 @@ export function createMetaDetailsScreenMethods28() {
       const current = this.container.querySelector('[data-action="rateTitle"]');
       const markup = this.renderRatingButton();
       if (!current && !markup) return;
-      const modalOpen = Boolean(this.activeRatingDialog?.isOpen || globalThis?.document?.body?.classList?.contains("nuvio-modal-open"));
+      // Android keeps the hero behind the open overlay untouched; re-rendering or
+      // focusing it here would pull focus out of the dialog or the trailer.
+      const overlayActive = Boolean(
+        this.activeRatingDialog?.isOpen || this.isTrailerPlaying || globalThis?.document?.body?.classList?.contains("nuvio-modal-open")
+      );
       if (!current || !markup) {
-        if (modalOpen || this.isTrailerPlaying) {
+        if (overlayActive) {
           return;
         }
         // The button appears or disappears: re-render the hero so the action row stays in order.
@@ -63,7 +67,7 @@ export function createMetaDetailsScreenMethods28() {
       if (wasFocused) next.classList.add("focused");
       if (animate && next.classList.contains("is-rated")) next.classList.add("is-twirling");
       current.replaceWith(next);
-      if (wasFocused && !modalOpen) focusWithoutScroll(next);
+      if (wasFocused && !overlayActive) focusWithoutScroll(next);
     },
     /** Android: ratings come from the provider's sync, so refresh it once the page is open. */
     refreshRatingSource() {
