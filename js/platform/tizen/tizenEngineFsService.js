@@ -35,17 +35,17 @@ function diagnostic() {
 
 function withTimeout(promise, timeoutMs, message, onTimeout = null) {
   let timeoutId = 0;
-  const wrapped = Promise.resolve(promise);
-  wrapped.catch(() => {});
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => {
+      // Abort the underlying request so a timed-out probe cannot keep its
+      // connection open while the caller retries.
       try {
         onTimeout?.();
       } catch (_) {}
       reject(new Error(message));
     }, timeoutMs);
   });
-  return Promise.race([wrapped, timeoutPromise]).finally(() => {
+  return Promise.race([promise, timeoutPromise]).finally(() => {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -229,7 +229,7 @@ async function probeBaseUrl(baseUrl, timeoutMs = PROBE_TIMEOUT_MS) {
       const response = await fetch(`${baseUrl}/settings`, {
         method: "GET",
         cache: "no-cache",
-        ...(controller ? { signal: controller.signal } : {})
+        signal: controller?.signal
       });
       if (!response.ok) {
         throw new Error(`Tizen local EngineFS settings failed with HTTP ${response.status}`);

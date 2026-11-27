@@ -82,9 +82,6 @@ export async function resolveTizenDirectRedirect(
       credentials: "omit",
       signal: controller?.signal
     });
-    if (request && typeof request.catch === "function") {
-      request.catch(() => {});
-    }
     const timeout = new Promise((_, reject) => {
       timer = setTimeout(() => {
         controller?.abort?.();
