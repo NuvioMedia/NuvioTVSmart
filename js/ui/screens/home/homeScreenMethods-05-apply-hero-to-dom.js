@@ -34,7 +34,10 @@ export function createHomeScreenMethods05() {
         return;
       }
 
-      const display = this.layoutMode === "modern" ? buildModernHeroPresentation(hero) : buildHeroDisplayModel(hero, this.layoutMode);
+      const display =
+        this.layoutMode === "modern"
+          ? buildModernHeroPresentation(hero, this.layoutPrefs)
+          : buildHeroDisplayModel(hero, this.layoutMode, this.layoutPrefs);
       if (!display) {
         return;
       }
@@ -182,7 +185,14 @@ export function createHomeScreenMethods05() {
       void ensureHeroMdbListRatings.call(this);
       this.applyHeroDescriptionAutoScroll();
     },
+    clearHeroDescriptionAutoScrollTimer() {
+      if (this.heroDescriptionAutoScrollDelayTimer) {
+        clearTimeout(this.heroDescriptionAutoScrollDelayTimer);
+        this.heroDescriptionAutoScrollDelayTimer = null;
+      }
+    },
     applyHeroDescriptionAutoScroll() {
+      this.clearHeroDescriptionAutoScrollTimer();
       if (this.heroDescriptionAutoScrollFrame) {
         cancelAnimationFrame(this.heroDescriptionAutoScrollFrame);
         this.heroDescriptionAutoScrollFrame = 0;
@@ -194,21 +204,39 @@ export function createHomeScreenMethods05() {
       }
       if (!this.heroDescriptionAutoScroller) {
         this.heroDescriptionAutoScroller = createHeroDescriptionAutoScroller({
-          isPaused: () => this.isTrailerPlaying?.() === true || this.pauseOverlayVisible === true,
+          isPaused: () =>
+            this.isTrailerPlaying?.() === true ||
+            this.pauseOverlayVisible === true ||
+            Boolean(this.isModernHydrationScrollActive?.()) ||
+            (Number(this.lastHomeInputAt || 0) > 0 && Date.now() - Number(this.lastHomeInputAt || 0) < 1600),
           onHoldChange: (holding) => {
             this.heroDescriptionScrollHolding = Boolean(holding);
           }
         });
       }
-      // Measuring here would force a synchronous layout inside the hero update.
-      // Android sizes AutoScrollingText during composition, at frame time.
-      this.heroDescriptionAutoScrollFrame = requestAnimationFrame(() => {
-        this.heroDescriptionAutoScrollFrame = 0;
-        if (!node.isConnected) {
+      const scheduleApplyFrame = () => {
+        if (!this.container || !node.isConnected || !this.layoutPrefs?.heroDescriptionAutoScrollEnabled) {
           return;
         }
-        this.heroDescriptionAutoScroller.apply(node, Boolean(this.layoutPrefs?.heroDescriptionAutoScrollEnabled));
-      });
+        // Measuring here would force a synchronous layout inside the hero update.
+        // Android sizes AutoScrollingText during composition, at frame time.
+        this.heroDescriptionAutoScrollFrame = requestAnimationFrame(() => {
+          this.heroDescriptionAutoScrollFrame = 0;
+          if (!this.container || !node.isConnected) {
+            return;
+          }
+          this.heroDescriptionAutoScroller.apply(node, Boolean(this.layoutPrefs?.heroDescriptionAutoScrollEnabled));
+        });
+      };
+      if (Number(this.lastHomeInputAt || 0) > 0 && (this.isLegacyTvRuntime?.() || this.shouldUseBoundedHomeImageHydration?.())) {
+        this.heroDescriptionAutoScroller?.stop();
+        this.heroDescriptionAutoScrollDelayTimer = setTimeout(() => {
+          this.heroDescriptionAutoScrollDelayTimer = null;
+          scheduleApplyFrame();
+        }, 1500);
+        return;
+      }
+      scheduleApplyFrame();
     },
     setSidebarExpanded(expanded) {
       const nextExpanded = Boolean(expanded);
