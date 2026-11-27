@@ -164,7 +164,7 @@ export function createMetaDetailsScreenMethods18() {
           currentTime: Number.isFinite(video.currentTime) ? Number(video.currentTime) : 0,
           duration,
           paused: Boolean(video.paused),
-          muted: Boolean(video.muted),
+          muted: !this.trailerVisualReady ? Boolean(this.trailerMuted) : Boolean(video.muted),
           captionsEnabled: Boolean(this.trailerSubtitlesEnabled),
           loading: Boolean(!video.readyState || video.readyState < 2),
           controllable: true
@@ -193,7 +193,9 @@ export function createMetaDetailsScreenMethods18() {
         return;
       }
       const playback = this.getTrailerPlaybackSnapshot();
-      this.trailerMuted = Boolean(playback.muted);
+      if (this.trailerVisualReady) {
+        this.trailerMuted = Boolean(playback.muted);
+      }
       this.trailerSubtitlesEnabled = Boolean(playback.captionsEnabled);
       if (!this.trailerControlsVisible && !playback.loading && !playback.paused) {
         return;
@@ -226,6 +228,7 @@ export function createMetaDetailsScreenMethods18() {
         return;
       }
       this.detachTrailerMediaListeners();
+      let unmuteFallbackTimer = null;
       const sync = () => {
         this.applyTrailerVideoSubtitleState(video);
         this.updateTrailerOverlay();
@@ -234,8 +237,56 @@ export function createMetaDetailsScreenMethods18() {
         if (!this.isTrailerPlaying || video.paused || !video.isConnected) {
           return;
         }
+        const wasReady = Boolean(this.trailerVisualReady);
         this.markTrailerVisualReady();
+        if (!wasReady && !this.trailerMuted) {
+          let policyReverted = false;
+          const revertToMuted = () => {
+            if (policyReverted) {
+              return;
+            }
+            policyReverted = true;
+            this.trailerMuted = true;
+            video.muted = true;
+            video.setAttribute?.("muted", "");
+            try {
+              video.volume = 0;
+            } catch (_) {}
+            const retryPlay = video.play?.();
+            if (retryPlay?.catch) {
+              retryPlay.catch(() => {});
+            }
+            this.updateTrailerOverlay();
+          };
+          const onPolicyPause = () => {
+            if (!this.isTrailerPlaying || video.isConnected === false) {
+              return;
+            }
+            revertToMuted();
+          };
+          video.addEventListener("pause", onPolicyPause, { once: true });
+          unmuteFallbackTimer = setTimeout(() => {
+            unmuteFallbackTimer = null;
+            video.removeEventListener?.("pause", onPolicyPause);
+          }, 120);
+          video.muted = false;
+          video.removeAttribute?.("muted");
+          try {
+            video.volume = 1;
+          } catch (_) {}
+          if (video.paused) {
+            clearTimeout(unmuteFallbackTimer);
+            unmuteFallbackTimer = null;
+            video.removeEventListener?.("pause", onPolicyPause);
+            revertToMuted();
+          }
+        }
         this.updateTrailerOverlay();
+      };
+      const handleTimeUpdateForReady = () => {
+        if (!this.trailerVisualReady && Number(video.currentTime || 0) > 0 && Number(video.readyState || 0) >= 2 && !video.paused) {
+          markReady();
+        }
       };
       const handleEnded = () => {
         if (this.isTrailerPlaying) {
@@ -255,13 +306,33 @@ export function createMetaDetailsScreenMethods18() {
         video.addEventListener(eventName, sync);
         return { target: video, eventName, handler: sync };
       });
+      if (typeof video.requestVideoFrameCallback === "function") {
+        video.requestVideoFrameCallback(() => {
+          markReady();
+        });
+      } else {
+        video.addEventListener("playing", markReady);
+        this.trailerMediaListeners.push({ target: video, eventName: "playing", handler: markReady });
+      }
       [
-        ["playing", markReady],
+        ["timeupdate", handleTimeUpdateForReady],
         ["ended", handleEnded],
         ["error", handleError]
       ].forEach(([eventName, handler]) => {
         video.addEventListener(eventName, handler);
         this.trailerMediaListeners.push({ target: video, eventName, handler });
+      });
+      this.trailerMediaListeners.push({
+        target: {
+          removeEventListener: () => {
+            if (unmuteFallbackTimer) {
+              clearTimeout(unmuteFallbackTimer);
+              unmuteFallbackTimer = null;
+            }
+          }
+        },
+        eventName: "cleanup",
+        handler: () => {}
       });
     },
     markTrailerVisualReady() {

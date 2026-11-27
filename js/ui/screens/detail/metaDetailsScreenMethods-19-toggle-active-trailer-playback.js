@@ -248,13 +248,21 @@ export function createMetaDetailsScreenMethods19() {
       }
       layer.innerHTML = `
           <div class="detail-trailer-media" data-trailer-media>
-            <video class="detail-trailer-video" autoplay playsinline preload="auto"${this.trailerMuted ? " muted" : ""}>
+            <video class="detail-trailer-video" autoplay playsinline preload="auto" muted>
               <source src="${this.trailerSource.url}" />
             </video>
           </div>
           ${controlsMarkup}
         `;
       this.cacheTrailerRefs();
+      const mountedVideo = this.trailerUiRefs?.video || null;
+      if (mountedVideo) {
+        mountedVideo.defaultMuted = true;
+        mountedVideo.muted = true;
+        try {
+          mountedVideo.volume = 0;
+        } catch (_) {}
+      }
       if (this.trailerPlaybackMode === "manual") {
         focusWithoutScroll(this.trailerUiRefs?.overlay);
       }

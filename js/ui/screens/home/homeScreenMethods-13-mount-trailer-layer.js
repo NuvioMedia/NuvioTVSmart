@@ -140,7 +140,7 @@ export function createHomeScreenMethods13() {
           }
           if (data.type === "firstFrame") {
             frame.dataset.ambientTrailerPlaying = String(frame.dataset.ambientTrailerLooped !== "true");
-            reveal(150);
+            reveal(0);
             return;
           }
           const state = data.type === "state" && data.state && typeof data.state === "object" ? data.state : null;
@@ -162,7 +162,7 @@ export function createHomeScreenMethods13() {
             );
           }
           if (state && Number(state.currentTime || 0) > 0 && state.paused === false) {
-            reveal(150);
+            reveal(0);
           } else if (state && state.controllable === false && state.loading === false) {
             reveal(1200);
           }
@@ -207,20 +207,16 @@ export function createHomeScreenMethods13() {
         video.autoplay = true;
         video.loop = true;
         video.playsInline = true;
-        video.defaultMuted = shouldMute;
-        video.muted = shouldMute;
+        video.defaultMuted = true;
+        video.muted = true;
         video.preload = "auto";
         video.setAttribute("autoplay", "");
         video.setAttribute("loop", "");
         video.setAttribute("playsinline", "");
         video.setAttribute("webkit-playsinline", "");
-        if (shouldMute) {
-          video.setAttribute("muted", "");
-        } else {
-          video.removeAttribute("muted");
-        }
+        video.setAttribute("muted", "");
         try {
-          video.volume = shouldMute ? 0 : 1;
+          video.volume = 0;
         } catch (_) {}
         try {
           video.disableRemotePlayback = true;
@@ -228,22 +224,80 @@ export function createHomeScreenMethods13() {
 
         let didActivate = false;
         const activate = () => {
-          if (didActivate) {
+          if (didActivate || video.isConnected === false || (video.parentElement && video.parentElement !== container)) {
             return;
           }
           didActivate = true;
           container.classList.add("is-active");
+          if (!shouldMute) {
+            let policyReverted = false;
+            const revertToMuted = () => {
+              if (policyReverted) {
+                return;
+              }
+              policyReverted = true;
+              video.muted = true;
+              video.setAttribute?.("muted", "");
+              try {
+                video.volume = 0;
+              } catch (_) {}
+              const retryPlay = video.play?.();
+              if (retryPlay?.catch) {
+                retryPlay.catch(() => {});
+              }
+            };
+            const onPolicyPause = () => {
+              if (video.isConnected === false || !container.classList?.contains?.("is-active")) {
+                return;
+              }
+              revertToMuted();
+            };
+            video.addEventListener("pause", onPolicyPause, { once: true });
+            const policyTimer = setTimeout(() => {
+              video.removeEventListener?.("pause", onPolicyPause);
+            }, 120);
+            video.muted = false;
+            video.removeAttribute?.("muted");
+            try {
+              video.volume = 1;
+            } catch (_) {}
+            if (video.paused) {
+              clearTimeout(policyTimer);
+              video.removeEventListener?.("pause", onPolicyPause);
+              revertToMuted();
+            }
+          }
           onReady?.();
         };
-        ["playing", "canplay", "loadeddata", "loadedmetadata", "timeupdate"].forEach((eventName) => {
-          video.addEventListener(eventName, activate, { once: true });
-        });
+        const tryActivateOnPlaybackFrame = () => {
+          if (didActivate) {
+            return;
+          }
+          if (Number(video.readyState || 0) >= 2 && !video.paused) {
+            activate();
+          }
+        };
+        if (typeof video.requestVideoFrameCallback === "function") {
+          video.requestVideoFrameCallback(() => {
+            activate();
+          });
+        } else {
+          video.addEventListener("playing", tryActivateOnPlaybackFrame);
+        }
         let lastVideoTime = 0;
         video.addEventListener("timeupdate", () => {
+          if (typeof video.requestVideoFrameCallback !== "function" || Number(video.currentTime || 0) > 0) {
+            tryActivateOnPlaybackFrame();
+          }
           if (video.currentTime + 1 < lastVideoTime) {
             video.dataset.ambientTrailerLooped = "true";
           }
           lastVideoTime = video.currentTime;
+          this.trackHomeTrailerHandoff?.(container, source, {
+            currentTime: video.currentTime,
+            muted: shouldMute ? true : video.muted,
+            paused: video.paused
+          });
         });
         video.addEventListener(
           "error",
@@ -263,13 +317,13 @@ export function createHomeScreenMethods13() {
           video.load?.();
         } catch (_) {}
         const playAttempt = video.play?.();
-        if (playAttempt?.then) {
-          playAttempt.then(activate).catch((error) => {
+        if (playAttempt?.catch) {
+          playAttempt.catch((error) => {
             console.warn("Home inline MP4 hero video autoplay failed", error);
           });
         } else {
           setTimeout(() => {
-            if (video.isConnected && !didActivate && Number(video.readyState || 0) >= 2) {
+            if (video.isConnected && !didActivate && Number(video.readyState || 0) >= 2 && !video.paused) {
               activate();
             }
           }, 500);
@@ -442,12 +496,15 @@ export function createHomeScreenMethods13() {
       const card = container?.closest?.(".home-poster-card") || null;
       const heroState = this.heroTrailerPlaybackState;
       const itemKey = card ? this.getFocusedPosterFlowKey(card) : String(heroState?.key || "");
-      if (!itemKey || !source?.ytId) {
+      const ytId = String(source?.ytId || "");
+      const url = String(source?.url || "");
+      if (!itemKey || (!ytId && !url)) {
         return;
       }
       this.homeTrailerHandoff = {
         itemKey,
-        ytId: String(source.ytId || ""),
+        ytId,
+        url,
         currentTime: Math.max(0, Number(state?.currentTime || 0)),
         muted: state?.muted === true,
         paused: state?.paused !== false,
@@ -468,6 +525,7 @@ export function createHomeScreenMethods13() {
       }
       return {
         ytId: handoff.ytId,
+        ...(handoff.url ? { url: handoff.url } : {}),
         currentTime: handoff.currentTime,
         muted: handoff.muted === true
       };

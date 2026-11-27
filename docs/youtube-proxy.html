@@ -42,6 +42,8 @@
           params._cb || String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8);
         var videoId = params.v || "qBg39HCJiTU";
         var startMuted = params.muted === "1";
+        var desiredMuted = startMuted;
+        var unmuteFallbackTimer = null;
         var autoplay = params.autoplay !== "0";
         var loop = params.loop !== "0";
         var captionsEnabled = params.cc_load_policy === "1";
@@ -105,11 +107,13 @@
               }, 0) || 0
             ),
             paused: playerState !== 1,
-            muted: Boolean(
-              safeCall(function isMuted() {
-                return player && player.isMuted();
-              }, startMuted)
-            ),
+            muted: !firstFrameSent
+              ? desiredMuted
+              : Boolean(
+                  safeCall(function isMuted() {
+                    return player && player.isMuted();
+                  }, desiredMuted)
+                ),
             captionsEnabled: captionsEnabled,
             loading: !ready || playerState === -1 || playerState === 3,
             controllable: true
@@ -134,6 +138,55 @@
           window.parent.postMessage(payload, "*");
         }
 
+        function clearUnmuteFallbackTimer() {
+          if (unmuteFallbackTimer) {
+            clearTimeout(unmuteFallbackTimer);
+            unmuteFallbackTimer = null;
+          }
+        }
+
+        function unmuteWithAutoplayFallback() {
+          if (!player || desiredMuted) {
+            return;
+          }
+          clearUnmuteFallbackTimer();
+          safeCall(function unmutePlayer() {
+            player.unMute();
+          }, null);
+          var immediateState = Number(
+            safeCall(function readStateImmediate() {
+              return player && player.getPlayerState();
+            }, -1)
+          );
+          if (immediateState === 2) {
+            desiredMuted = true;
+            safeCall(function remuteAndPlayImmediate() {
+              player.mute();
+              player.playVideo();
+            }, null);
+            return;
+          }
+          unmuteFallbackTimer = setTimeout(function checkUnmutedPlayback() {
+            unmuteFallbackTimer = null;
+            if (!player || desiredMuted) {
+              return;
+            }
+            var deferredState = Number(
+              safeCall(function readStateDeferred() {
+                return player && player.getPlayerState();
+              }, -1)
+            );
+            if (deferredState === 2) {
+              desiredMuted = true;
+              safeCall(function remuteAndPlayDeferred() {
+                player.mute();
+                player.playVideo();
+              }, null);
+              pushState(true);
+            }
+          }, 120);
+        }
+
         function pushState(force) {
           var state = getPlayerStatePayload();
           if (!firstFrameSent && state.playerState === 1 && state.currentTime > 0) {
@@ -142,6 +195,10 @@
               videoId: videoId,
               currentTime: state.currentTime
             });
+            if (!desiredMuted) {
+              unmuteWithAutoplayFallback();
+              state = getPlayerStatePayload();
+            }
           }
           var serialized = JSON.stringify(state);
           if (!force && serialized === lastStatePayload) {
@@ -212,6 +269,7 @@
           if (command === "play") {
             player.playVideo();
           } else if (command === "pause") {
+            clearUnmuteFallbackTimer();
             player.pauseVideo();
           } else if (command === "togglePlayPause") {
             state = Number(
@@ -220,15 +278,28 @@
               }, -1)
             );
             if (state === 1) {
+              clearUnmuteFallbackTimer();
               player.pauseVideo();
             } else {
               player.playVideo();
             }
           } else if (command === "setMuted") {
-            if (payload.muted) {
+            desiredMuted = Boolean(payload && payload.muted);
+            if (desiredMuted) {
+              clearUnmuteFallbackTimer();
               player.mute();
-            } else {
-              player.unMute();
+            } else if (firstFrameSent) {
+              var wasPlaying =
+                Number(
+                  safeCall(function readPlayingState() {
+                    return player.getPlayerState();
+                  }, -1)
+                ) === 1;
+              if (wasPlaying) {
+                unmuteWithAutoplayFallback();
+              } else {
+                player.unMute();
+              }
             }
           } else if (command === "setCaptionsEnabled") {
             setCaptionsEnabled(Boolean(payload.enabled));
@@ -263,6 +334,7 @@
         });
 
         window.addEventListener("beforeunload", function onBeforeUnload() {
+          clearUnmuteFallbackTimer();
           if (stateTimer) {
             clearInterval(stateTimer);
             stateTimer = null;
@@ -274,6 +346,7 @@
             return;
           }
           fallbackUsed = true;
+          clearUnmuteFallbackTimer();
           if (readyWatchdog) {
             clearTimeout(readyWatchdog);
             readyWatchdog = null;
@@ -352,6 +425,7 @@
               fs: 0,
               loop: loop ? 1 : 0,
               modestbranding: 1,
+              mute: 1,
               cc_load_policy: captionsEnabled ? 1 : 0,
               cc_lang_pref: captionsLanguage || undefined,
               origin: pageOriginIsHttp ? pageOrigin : undefined,
@@ -372,11 +446,7 @@
                   clearTimeout(readyWatchdog);
                   readyWatchdog = null;
                 }
-                if (startMuted) {
-                  event.target.mute();
-                } else {
-                  event.target.unMute();
-                }
+                event.target.mute();
                 setCaptionsEnabled(captionsEnabled);
                 if (autoplay) {
                   event.target.playVideo();
@@ -401,6 +471,9 @@
                 var errorCode = Number(event && event.data) || 0;
                 // Fatal playback error: stop polling and make sure the pre-ready
                 // watchdog cannot replace the player with a direct embed afterwards.
+                if (typeof clearUnmuteFallbackTimer === "function") {
+                  clearUnmuteFallbackTimer();
+                }
                 if (readyWatchdog) {
                   clearTimeout(readyWatchdog);
                   readyWatchdog = null;
