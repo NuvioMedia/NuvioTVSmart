@@ -334,7 +334,10 @@ export function createPlayerControllerMethods13() {
               bufferTimeDefault: isWebOs ? 8 : 12
             },
             scheduling: {
-              scheduleWhilePaused: false
+              // The startup audio gate pauses the element before the first frame;
+              // with scheduling off, dash.js stops fetching live segments and
+              // never resumes (seen on webOS live ClearKey channels).
+              scheduleWhilePaused: Boolean(this.currentClearKeys)
             },
             liveCatchup: {
               enabled: false
@@ -346,6 +349,18 @@ export function createPlayerControllerMethods13() {
           player.addRequestInterceptor((request) => applyAdaptiveRequestHeaders(request, forwardedHeaders, url));
         }
         const reportRedirect = createStreamRedirectReporter(this, url, playToken);
+        if (this.currentClearKeys) {
+          // The MPD advertises Widevine/PlayReady for the same CENC samples. Our
+          // ClearKey CDM decrypts them; without this dash.js would create a
+          // session for that key system and request its license (on LG an
+          // invalid endpoint that times out). Treat the stream as plain MSE.
+          player.addResponseInterceptor((response) => {
+            if (typeof response?.data === "string" && response.data.includes("<MPD")) {
+              response.data = response.data.replace(/<ContentProtection\b[^>]*\/>|<ContentProtection\b[\s\S]*?<\/ContentProtection>/g, "");
+            }
+            return Promise.resolve(response);
+          });
+        }
         player.addResponseInterceptor((response) => {
           if (response.request?.url === url && response.status >= 200 && response.status < 300) {
             reportRedirect(response.url);

@@ -1,5 +1,10 @@
 import { observeProxyRedirects } from "./proxyRedirectObserver.js";
-import { attachClearKeyMediaKeys, releaseClearKeyGuard } from "./clearKeyEme.js";
+import {
+  attachClearKeyMediaKeys,
+  releaseClearKeyEncryptedEvent,
+  releaseClearKeyGuard,
+  suppressClearKeyEncryptedEvent
+} from "./clearKeyEme.js";
 import { normalizeClearKeys } from "../streams/clearKeys.js";
 import { describeSourceHost, isDirectMediaProbeResponse, resolveTizenDirectRedirect } from "../../platform/tizen/tizenRedirectResolver.js";
 /* eslint-disable no-unused-vars */
@@ -118,6 +123,7 @@ export function createPlayerControllerMethods18() {
         // install key systems again. The ClearKey MediaKeys stay attached; they
         // do not affect clear or differently protected media.
         releaseClearKeyGuard(this.video);
+        releaseClearKeyEncryptedEvent(this.video);
         this.clearKeySession = null;
       }
       this.currentPlaybackMediaSourceType = this.resolveRuntimeSourceType(mediaSourceType);
@@ -151,6 +157,9 @@ export function createPlayerControllerMethods18() {
       await this.ensureAdaptiveLibrariesForSource(sourceType, preferredEngine);
       if (!this.isPlaybackRequestActive(playToken, requestedUrl)) {
         return;
+      }
+      if (this.currentClearKeys) {
+        suppressClearKeyEncryptedEvent(this.video);
       }
       if (this.currentClearKeys || this.clearKeySession) {
         await this.prepareClearKeyPlayback();
