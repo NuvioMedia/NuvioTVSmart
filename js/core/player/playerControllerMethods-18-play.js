@@ -1,5 +1,5 @@
 import { observeProxyRedirects } from "./proxyRedirectObserver.js";
-import { attachClearKeyMediaKeys } from "./clearKeyEme.js";
+import { attachClearKeyMediaKeys, releaseClearKeyGuard } from "./clearKeyEme.js";
 import { normalizeClearKeys } from "../streams/clearKeys.js";
 import { describeSourceHost, isDirectMediaProbeResponse, resolveTizenDirectRedirect } from "../../platform/tizen/tizenRedirectResolver.js";
 /* eslint-disable no-unused-vars */
@@ -21,6 +21,13 @@ export function createPlayerControllerMethods18() {
     },
     async prepareClearKeyPlayback() {
       try {
+        if (this.currentClearKeys && this.currentClearKeys !== this.preparedClearKeySet && (this.dashInstance || this.hlsInstance)) {
+          // A different key set needs the MediaSource gone first: Chromium
+          // before ~90 cannot replace MediaKeys while it is attached.
+          this.teardownDashInstance();
+          this.teardownHlsInstance();
+        }
+        this.preparedClearKeySet = this.currentClearKeys;
         this.clearKeySession = await attachClearKeyMediaKeys(this.video, this.currentClearKeys);
         this.lastClearKeyError = null;
         return true;
@@ -104,6 +111,15 @@ export function createPlayerControllerMethods18() {
       this.currentPlaybackUrl = requestedUrl;
       this.currentPlaybackHeaders = { ...(requestHeaders || {}) };
       this.currentClearKeys = normalizeClearKeys(clearKeys);
+      if (this.currentClearKeys) {
+        this.clearKeyPlaybackUrl = requestedUrl;
+      } else if (this.clearKeySession && this.clearKeyPlaybackUrl && requestedUrl !== this.clearKeyPlaybackUrl) {
+        // Another, non-ClearKey source on the same element: let its own DRM
+        // install key systems again. The ClearKey MediaKeys stay attached; they
+        // do not affect clear or differently protected media.
+        releaseClearKeyGuard(this.video);
+        this.clearKeySession = null;
+      }
       this.currentPlaybackMediaSourceType = this.resolveRuntimeSourceType(mediaSourceType);
       this.lastPlaybackErrorCode = 0;
       this.lastHlsErrorDiagnostic = null;

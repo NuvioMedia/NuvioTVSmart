@@ -24,35 +24,94 @@ function originalSetMediaKeys(video) {
   return clearKeyGuards.get(video)?.original || video.setMediaKeys.bind(video);
 }
 
-function installMediaKeysGuard(video, mediaKeys) {
+function keyStatuses(session) {
+  const statuses = [];
+  try {
+    session?.keyStatuses?.forEach((status) => statuses.push(status));
+  } catch (_) {
+    // A released session has no statuses.
+  }
+  return statuses;
+}
+
+function watchKeyStatuses(video, session) {
+  const refresh = () => {
+    const current = clearKeyGuards.get(video);
+    if (current) {
+      current.keysUsable = keyStatuses(session).includes("usable");
+    }
+  };
+  try {
+    session?.addEventListener?.("keystatuseschange", refresh);
+  } catch (_) {
+    // Older engines without the event fall back to the initial status.
+  }
+  return refresh;
+}
+
+async function waitForUsableKey(session, timeoutMs = 1500) {
+  if (keyStatuses(session).includes("usable")) {
+    return true;
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      try {
+        session.removeEventListener?.("keystatuseschange", onChange);
+      } catch (_) {
+        // Nothing to remove.
+      }
+      resolve(value);
+    };
+    const onChange = () => {
+      if (keyStatuses(session).includes("usable")) {
+        finish(true);
+      }
+    };
+    try {
+      session.addEventListener?.("keystatuseschange", onChange);
+    } catch (_) {
+      finish(false);
+      return;
+    }
+    const started = Date.now();
+    const poll = () => {
+      if (settled) return;
+      if (keyStatuses(session).includes("usable")) {
+        finish(true);
+        return;
+      }
+      if (Date.now() - started >= timeoutMs) {
+        finish(false);
+        return;
+      }
+      setTimeout(poll, 100);
+    };
+    setTimeout(poll, 100);
+  });
+}
+
+function installMediaKeysGuard(video, mediaKeys, keysUsable) {
   const existing = clearKeyGuards.get(video);
   if (existing) {
     existing.mediaKeys = mediaKeys;
+    existing.keysUsable = keysUsable;
     return;
   }
   const original = video.setMediaKeys.bind(video);
   const guard = (keys) => {
     const state = clearKeyGuards.get(video);
-    if (state && keys && keys !== state.mediaKeys) {
+    // Only hold off key systems installed by the player while our ClearKey
+    // keys are actually usable: when they are not, its DRM attempt must run.
+    if (state && keys && keys !== state.mediaKeys && state.keysUsable) {
       return Promise.resolve();
     }
     return state ? state.original(keys) : original(keys);
   };
-  clearKeyGuards.set(video, { original, mediaKeys, guard });
+  clearKeyGuards.set(video, { original, mediaKeys, keysUsable, guard });
   video.setMediaKeys = guard;
-}
-
-function releaseMediaKeysGuard(video) {
-  const state = clearKeyGuards.get(video);
-  if (!state) {
-    return;
-  }
-  clearKeyGuards.delete(video);
-  try {
-    delete video.setMediaKeys;
-  } catch (_) {
-    video.setMediaKeys = state.original;
-  }
 }
 
 // Chromium only uses these entries to check that the device can play this kind
@@ -84,6 +143,24 @@ export function canUseClearKeyEme() {
  * Returns the session (its key statuses say whether the keys were accepted) or
  * null when there is nothing to attach; throws when the platform cannot do it.
  */
+/**
+ * Stops holding off key systems installed by the player, without touching the
+ * MediaKeys already attached: used when a different, non-ClearKey source is
+ * played on the same video element, so its own DRM can take over.
+ */
+export function releaseClearKeyGuard(video) {
+  const state = clearKeyGuards.get(video);
+  if (!state) {
+    return;
+  }
+  clearKeyGuards.delete(video);
+  try {
+    delete video.setMediaKeys;
+  } catch (_) {
+    video.setMediaKeys = state.original;
+  }
+}
+
 export async function attachClearKeyMediaKeys(video, clearKeys) {
   if (!video || typeof video.setMediaKeys !== "function") {
     throw new Error("ClearKey needs a MediaKeys-capable video element");
@@ -93,19 +170,11 @@ export async function attachClearKeyMediaKeys(video, clearKeys) {
   const previous = clearKeyAttachments.get(video);
 
   if (!pairs.length) {
-    if (previous || video.mediaKeys) {
-      releaseMediaKeysGuard(video);
-      if (!mediaSourceAttached(video)) {
-        try {
-          await video.setMediaKeys(null);
-        } catch (_) {
-          // A browser without detach support keeps the old keys; clear media
-          // is not affected by them.
-        }
-      }
-      clearKeyAttachments.delete(video);
-    }
-    return null;
+    // No detach here: the player re-plays the same source without the pairs in
+    // some flows (post-play key handling), and removing MediaKeys mid-playback
+    // stops the decryption. Clear media ignores MediaKeys, so keeping them is
+    // harmless.
+    return previous?.session || null;
   }
   if (previous && previous.canonical === canonical) {
     return previous.session;
@@ -129,7 +198,9 @@ export async function attachClearKeyMediaKeys(video, clearKeys) {
     }
     await originalSetMediaKeys(video)(mediaKeys);
   }
-  installMediaKeysGuard(video, mediaKeys);
+  const usable = await waitForUsableKey(session);
+  installMediaKeysGuard(video, mediaKeys, usable);
+  watchKeyStatuses(video, session);
   clearKeyAttachments.set(video, { canonical, mediaKeys, session });
   return session;
 }
