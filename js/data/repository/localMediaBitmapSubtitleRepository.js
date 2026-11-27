@@ -178,7 +178,9 @@ export const localMediaBitmapSubtitleRepository = {
         WINDOW_REQUEST_TIMEOUT_MS
       );
     } catch (error) {
-      throw new Error(getRequestErrorMessage(error, "Bitmap subtitle extraction failed"));
+      throw new Error(getRequestErrorMessage(error, "Bitmap subtitle extraction failed"), {
+        cause: error
+      });
     }
     const payload = result?.payload || result || {};
     if (payload.returnValue === false) {

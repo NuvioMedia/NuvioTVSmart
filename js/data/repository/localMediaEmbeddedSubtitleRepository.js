@@ -129,8 +129,8 @@ async function requestTizenSubtitleTimeline({ path, url, trackNumber, trackOrdin
     const parsed = new URL(baseUrl);
     parsed.port = String(TIZEN_TX3G_PORT);
     endpoint = `${parsed.origin}${path}`;
-  } catch (_) {
-    throw new Error("Tizen subtitle service URL unavailable");
+  } catch (error) {
+    throw new Error("Tizen subtitle service URL unavailable", { cause: error });
   }
 
   const query = [`url=${encodeURIComponent(String(url || ""))}`];
