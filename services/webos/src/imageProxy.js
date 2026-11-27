@@ -9,6 +9,8 @@ var URL = require("url").URL;
 var IMAGE_PROXY_PATH = "/image-proxy";
 var CACHE_DIR = path.join(os.tmpdir(), "nuvio-webos-image-proxy");
 var MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+var MAX_CACHE_FILES = 128;
+var MAX_CACHE_TOTAL_BYTES = 64 * 1024 * 1024;
 var CACHE_CONTROL = "public, max-age=604800, immutable";
 var BROWSER_USER_AGENT = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
@@ -154,7 +156,13 @@ function serveCached(entry, fallbackContentType, req, res) {
   }
 
   res.writeHead(200, headers);
-  fs.createReadStream(entry.filePath)
+  var stream = fs.createReadStream(entry.filePath);
+  res.on("close", function () {
+    if (typeof stream.destroy === "function") {
+      stream.destroy();
+    }
+  });
+  stream
     .on("error", function () {
       if (!res.headersSent) {
         send(res, 502, { "Content-Type": "text/plain; charset=utf-8" }, "Image cache read failed");
@@ -171,6 +179,46 @@ function removeFileQuietly(filename) {
   } catch (_) {
     // Ignore cleanup failures.
   }
+}
+
+function pruneCacheDir() {
+  try {
+    var names = fs.readdirSync(CACHE_DIR);
+    var entries = [];
+    var totalBytes = 0;
+    names.forEach(function (name) {
+      if (!name || name.indexOf(".tmp-") >= 0 || /\.json$/i.test(name)) {
+        return;
+      }
+      var filePath = path.join(CACHE_DIR, name);
+      try {
+        var st = fs.statSync(filePath);
+        if (!st.isFile()) return;
+        totalBytes += st.size || 0;
+        entries.push({
+          filePath: filePath,
+          metaPath: path.join(CACHE_DIR, name.replace(/\.[^.]+$/, "") + ".json"),
+          size: st.size || 0,
+          mtimeMs: Number(
+            st.mtimeMs || (st.mtime && st.mtime.getTime ? st.mtime.getTime() : 0) || 0
+          )
+        });
+      } catch (_) {}
+    });
+    if (entries.length <= MAX_CACHE_FILES && totalBytes <= MAX_CACHE_TOTAL_BYTES) {
+      return;
+    }
+    entries.sort(function (a, b) {
+      return a.mtimeMs - b.mtimeMs;
+    });
+    while (entries.length > MAX_CACHE_FILES || totalBytes > MAX_CACHE_TOTAL_BYTES) {
+      var victim = entries.shift();
+      if (!victim) break;
+      totalBytes -= victim.size;
+      removeFileQuietly(victim.filePath);
+      removeFileQuietly(victim.metaPath);
+    }
+  } catch (_) {}
 }
 
 function normalizeResponseContentType(value, fallbackContentType) {
@@ -203,6 +251,20 @@ function downloadImage(validated, entry, redirectsLeft) {
       requestOptions.auth =
         decodeURIComponent(parsed.username || "") + ":" + decodeURIComponent(parsed.password || "");
     }
+    var requestSettled = false;
+    var activeFail = null;
+    function failOuter(error) {
+      if (activeFail) {
+        activeFail(error);
+        return;
+      }
+      if (requestSettled) {
+        return;
+      }
+      requestSettled = true;
+      reject(error);
+    }
+
     var request = transport.get(requestOptions, function (response) {
       var statusCode = Number(response.statusCode || 0);
       var redirectUrl = response.headers && response.headers.location;
@@ -213,28 +275,29 @@ function downloadImage(validated, entry, redirectsLeft) {
         try {
           nextTarget = new URL(redirectUrl, target).toString();
         } catch (_) {
-          reject(new Error("Invalid redirect URL"));
+          failOuter(new Error("Invalid redirect URL"));
           return;
         }
         var nextValidated = validateTargetUrl(nextTarget);
         if (!nextValidated.ok) {
-          reject(new Error(nextValidated.message || "Image redirect is not allowed"));
+          failOuter(new Error(nextValidated.message || "Image redirect is not allowed"));
           return;
         }
+        requestSettled = true;
         downloadImage(nextValidated, entry, redirectsLeft - 1).then(resolve, reject);
         return;
       }
 
       if (statusCode < 200 || statusCode >= 300) {
         response.resume();
-        reject(new Error("Image request failed with HTTP " + statusCode));
+        failOuter(new Error("Image request failed with HTTP " + statusCode));
         return;
       }
 
       var contentLength = Number((response.headers && response.headers["content-length"]) || 0);
       if (contentLength > MAX_IMAGE_BYTES) {
         response.resume();
-        reject(new Error("Image exceeds max size"));
+        failOuter(new Error("Image exceeds max size"));
         return;
       }
 
@@ -244,7 +307,7 @@ function downloadImage(validated, entry, redirectsLeft) {
       );
       if (!contentType) {
         response.resume();
-        reject(new Error("Invalid image content type"));
+        failOuter(new Error("Invalid image content type"));
         return;
       }
 
@@ -259,18 +322,21 @@ function downloadImage(validated, entry, redirectsLeft) {
         Math.random().toString(36).slice(2);
       var stream = fs.createWriteStream(tempPath);
       var receivedBytes = 0;
-      var settled = false;
 
       function fail(error) {
-        if (settled) {
+        if (requestSettled) {
           return;
         }
-        settled = true;
+        requestSettled = true;
         response.removeAllListeners("data");
+        response.unpipe(stream);
+        stream.once("close", function () {
+          removeFileQuietly(tempPath);
+        });
         stream.destroy();
-        removeFileQuietly(tempPath);
         reject(error);
       }
+      activeFail = fail;
 
       response.on("data", function (chunk) {
         receivedBytes += chunk.length;
@@ -283,10 +349,10 @@ function downloadImage(validated, entry, redirectsLeft) {
       response.on("error", fail);
       stream.on("error", fail);
       stream.on("finish", function () {
-        if (settled) {
+        if (requestSettled) {
           return;
         }
-        settled = true;
+        requestSettled = true;
         fs.rename(tempPath, entry.filePath, function (renameError) {
           if (renameError) {
             removeFileQuietly(tempPath);
@@ -301,6 +367,7 @@ function downloadImage(validated, entry, redirectsLeft) {
               updatedAt: Date.now()
             }),
             function () {
+              pruneCacheDir();
               resolve();
             }
           );
@@ -312,9 +379,9 @@ function downloadImage(validated, entry, redirectsLeft) {
 
     request.setTimeout(10000, function () {
       request.abort();
-      reject(new Error("Image request timed out"));
+      failOuter(new Error("Image request timed out"));
     });
-    request.on("error", reject);
+    request.on("error", failOuter);
   });
 }
 
@@ -421,5 +488,6 @@ function createImageProxyHandler() {
 }
 
 module.exports = {
-  createImageProxyHandler: createImageProxyHandler
+  createImageProxyHandler: createImageProxyHandler,
+  _test: { pruneCacheDir: pruneCacheDir }
 };

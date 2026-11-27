@@ -254,14 +254,43 @@ async function handleRequest(req, res) {
       if (!s || s.g !== Number(u.searchParams.get("g"))) throw Error("cancelled");
       let bytes = 0,
         parts = [];
-      req.on("data", (b) => {
-        bytes += b.length;
-        if (bytes > 65536) req.destroy();
-        else parts.push(b);
-      });
-      await new Promise((r, j) => {
-        req.on("end", r);
-        req.on("error", j);
+      let ended = false;
+      await new Promise((resolve, reject) => {
+        const cleanup = () => {
+          req.removeListener("data", onData);
+          req.removeListener("end", onEnd);
+          req.removeListener("error", onError);
+          req.removeListener("close", onClose);
+        };
+        const onData = (b) => {
+          bytes += b.length;
+          if (bytes > 65536) {
+            const limitError = new Error("Payload too large");
+            cleanup();
+            req.destroy();
+            reject(limitError);
+            return;
+          }
+          parts.push(b);
+        };
+        const onEnd = () => {
+          ended = true;
+          cleanup();
+          resolve();
+        };
+        const onError = (error) => {
+          cleanup();
+          reject(error);
+        };
+        const onClose = () => {
+          if (ended) return;
+          cleanup();
+          reject(new Error("cancelled"));
+        };
+        req.on("data", onData);
+        req.on("end", onEnd);
+        req.on("error", onError);
+        req.on("close", onClose);
       });
       while (!s.cancelled && s.frames.length > Math.max(96, s.wanted)) await wait();
       if (s.cancelled) throw Error("cancelled");
@@ -448,8 +477,15 @@ function handle(req, res) {
     );
     const stream = fs.createReadStream(path.join(root, name));
     stream.on("error", () => {
-      res.statusCode = 404;
+      if (!res.headersSent) {
+        res.statusCode = 404;
+      }
       res.end();
+    });
+    res.on("close", () => {
+      if (typeof stream.destroy === "function") {
+        stream.destroy();
+      }
     });
     stream.pipe(res);
     return true;

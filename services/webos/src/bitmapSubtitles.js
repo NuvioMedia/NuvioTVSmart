@@ -220,18 +220,46 @@ function cuedFrameCacheKey(mediaUrl, track, cue) {
   );
 }
 
+function destroyClientRequest(req, error) {
+  if (!req) return;
+  if (typeof req.abort === "function") {
+    try {
+      req.abort();
+      return;
+    } catch (_) {}
+  }
+  if (typeof req.destroy === "function") {
+    try {
+      req.destroy(error);
+    } catch (_) {}
+  }
+}
+
 function requestRange(url, start, end, maxBytes, redirects, requestContext) {
   var redirectCount = Number(redirects || 0);
   return new Promise(function (resolve, reject) {
+    var settled = false;
+    function finishResolve(value) {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    }
+    function finishReject(error) {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    }
     if (requestContext && requestContext.cancelled) {
-      reject(bitmapSubtitleError("REQUEST_SUPERSEDED", "Bitmap subtitle request was superseded"));
+      finishReject(
+        bitmapSubtitleError("REQUEST_SUPERSEDED", "Bitmap subtitle request was superseded")
+      );
       return;
     }
     var parsed;
     try {
       parsed = parseUrl(url);
     } catch (_) {
-      reject(bitmapSubtitleError("INVALID_URL", "Invalid bitmap subtitle range URL"));
+      finishReject(bitmapSubtitleError("INVALID_URL", "Invalid bitmap subtitle range URL"));
       return;
     }
 
@@ -269,7 +297,7 @@ function requestRange(url, start, end, maxBytes, redirects, requestContext) {
         res.resume();
         if (requestContext) requestContext.requests.delete(req);
         if (redirectCount >= MAX_REDIRECTS) {
-          reject(
+          finishReject(
             bitmapSubtitleError(
               "TOO_MANY_REDIRECTS",
               "Bitmap subtitle source redirected too many times"
@@ -281,12 +309,12 @@ function requestRange(url, start, end, maxBytes, redirects, requestContext) {
         try {
           redirected = parseUrl(res.headers.location, parsed).href;
         } catch (_) {
-          reject(bitmapSubtitleError("INVALID_URL", "Invalid bitmap subtitle redirect URL"));
+          finishReject(bitmapSubtitleError("INVALID_URL", "Invalid bitmap subtitle redirect URL"));
           return;
         }
         requestRange(redirected, start, end, maxBytes, redirectCount + 1, requestContext).then(
-          resolve,
-          reject
+          finishResolve,
+          finishReject
         );
         return;
       }
@@ -294,7 +322,7 @@ function requestRange(url, start, end, maxBytes, redirects, requestContext) {
       if (statusCode !== 206 && !(statusCode === 200 && start === 0)) {
         res.resume();
         if (requestContext) requestContext.requests.delete(req);
-        reject(
+        finishReject(
           bitmapSubtitleError(
             "RANGE_UNAVAILABLE",
             "Bitmap subtitle source did not honor HTTP Range",
@@ -307,17 +335,31 @@ function requestRange(url, start, end, maxBytes, redirects, requestContext) {
       var chunks = [];
       var received = 0;
       res.on("data", function (chunk) {
+        if (settled) return;
         received += chunk.length;
         if (received > maxBytes) {
-          req.destroy(
-            bitmapSubtitleError(
-              "RANGE_TOO_LARGE",
-              "Bitmap subtitle range exceeded its safety limit"
-            )
+          var sizeError = bitmapSubtitleError(
+            "RANGE_TOO_LARGE",
+            "Bitmap subtitle range exceeded its safety limit"
           );
+          if (requestContext) requestContext.requests.delete(req);
+          destroyClientRequest(req, sizeError);
+          finishReject(sizeError);
           return;
         }
         chunks.push(chunk);
+      });
+      res.once("aborted", function () {
+        if (requestContext) requestContext.requests.delete(req);
+        finishReject(
+          bitmapSubtitleError("RANGE_ABORTED", "Bitmap subtitle range response aborted")
+        );
+      });
+      res.on("error", function () {
+        if (requestContext) requestContext.requests.delete(req);
+        finishReject(
+          bitmapSubtitleError("RANGE_ABORTED", "Bitmap subtitle range response aborted")
+        );
       });
       res.on("end", function () {
         var totalSize = null;
@@ -329,7 +371,7 @@ function requestRange(url, start, end, maxBytes, redirects, requestContext) {
           totalSize = Number(res.headers["content-length"] || 0) || null;
         }
         if (requestContext) requestContext.requests.delete(req);
-        resolve({
+        finishResolve({
           buffer: Buffer.concat(chunks),
           totalSize: totalSize,
           finalUrl: parsed.href,
@@ -341,11 +383,17 @@ function requestRange(url, start, end, maxBytes, redirects, requestContext) {
     if (requestContext) requestContext.requests.add(req);
 
     req.setTimeout(REQUEST_TIMEOUT_MS, function () {
-      req.destroy(bitmapSubtitleError("RANGE_TIMEOUT", "Bitmap subtitle range request timed out"));
+      var timeoutError = bitmapSubtitleError(
+        "RANGE_TIMEOUT",
+        "Bitmap subtitle range request timed out"
+      );
+      if (requestContext) requestContext.requests.delete(req);
+      destroyClientRequest(req, timeoutError);
+      finishReject(timeoutError);
     });
     req.on("error", function (error) {
       if (requestContext) requestContext.requests.delete(req);
-      reject(error);
+      finishReject(error);
     });
     req.end();
   });
@@ -2281,7 +2329,8 @@ function cancelActiveTextWindowRequest(activeKey) {
 function cancelRequestContext(requestContext) {
   requestContext.cancelled = true;
   requestContext.requests.forEach(function (activeRequest) {
-    activeRequest.destroy(
+    destroyClientRequest(
+      activeRequest,
       bitmapSubtitleError("REQUEST_SUPERSEDED", "Bitmap subtitle request was superseded")
     );
   });
