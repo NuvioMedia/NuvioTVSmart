@@ -1,5 +1,6 @@
 import { Platform } from "../../platform/index.js";
 import { PluginServiceClient } from "../../platform/pluginServiceClient.js";
+import { withRequestTimeout } from "./requestTimeout.js";
 
 const LATENCY_URL = "https://cloudflare.com/cdn-cgi/trace";
 const FAST_HOME_URL = "https://fast.com";
@@ -24,10 +25,19 @@ function isTvPlatform() {
   return Platform.isTizen() || Platform.isWebOS();
 }
 
+function createAbortError() {
+  const error = new Error("Speed test aborted");
+  error.name = "AbortError";
+  return error;
+}
+
 async function nativeText(
   url,
-  { headers = {}, maxBodyBytes = 1024 * 1024, timeoutMs = 15000 } = {}
+  { headers = {}, maxBodyBytes = 1024 * 1024, timeoutMs = 15000, signal = null } = {}
 ) {
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
   if (isTvPlatform()) {
     const result = await PluginServiceClient.fetch({
       url,
@@ -35,18 +45,29 @@ async function nativeText(
       headers,
       maxBodyBytes,
       maxResponseBytes: maxBodyBytes,
-      timeoutMs
+      timeoutMs,
+      signal
     });
     if (!result?.ok) {
       throw new Error(`HTTP ${result?.status || 0}`);
     }
     return String(result.body || "");
   }
-  const response = await fetch(url, { headers, cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-  return response.text();
+  return withRequestTimeout(
+    async (requestSignal) => {
+      const response = await fetch(url, {
+        headers,
+        cache: "no-store",
+        ...(requestSignal ? { signal: requestSignal } : {})
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.text();
+    },
+    timeoutMs,
+    signal
+  );
 }
 
 export function extractFastComScriptPath(html = "") {
@@ -64,27 +85,48 @@ export function extractFastComTargets(payload = {}) {
     .filter((url) => /^https?:\/\//i.test(url));
 }
 
-export async function measureLatencyMs({ url = LATENCY_URL, rounds = LATENCY_ROUNDS } = {}) {
+export async function measureLatencyMs({
+  url = LATENCY_URL,
+  rounds = LATENCY_ROUNDS,
+  signal = null,
+  timeoutMs = 5000
+} = {}) {
   let total = 0;
   let measured = 0;
   for (let index = 0; index < rounds; index += 1) {
+    if (signal?.aborted) {
+      break;
+    }
     const startedAt = now();
     try {
-      const response = await fetch(url, { cache: "no-store" });
-      await response.arrayBuffer();
+      await withRequestTimeout(
+        async (requestSignal) => {
+          const response = await fetch(url, {
+            cache: "no-store",
+            ...(requestSignal ? { signal: requestSignal } : {})
+          });
+          await response.arrayBuffer();
+        },
+        timeoutMs,
+        signal
+      );
       total += now() - startedAt;
       measured += 1;
     } catch (_) {
+      if (signal?.aborted) {
+        break;
+      }
       // A single failed round does not discard the others.
     }
   }
   return measured ? Math.round(total / measured) : 0;
 }
 
-async function fastComTargets() {
+async function fastComTargets({ signal = null } = {}) {
   const html = await nativeText(FAST_HOME_URL, {
     headers: { "User-Agent": "Mozilla/5.0" },
-    maxBodyBytes: 2 * 1024 * 1024
+    maxBodyBytes: 2 * 1024 * 1024,
+    signal
   });
   const scriptPath = extractFastComScriptPath(html);
   if (!scriptPath) {
@@ -93,7 +135,8 @@ async function fastComTargets() {
   const script = await nativeText(`${FAST_HOME_URL}${scriptPath}`, {
     headers: { "User-Agent": "Mozilla/5.0" },
     maxBodyBytes: 4 * 1024 * 1024,
-    timeoutMs: 30000
+    timeoutMs: 30000,
+    signal
   });
   const token = extractFastComToken(script);
   if (!token) {
@@ -102,7 +145,8 @@ async function fastComTargets() {
   const payload = JSON.parse(
     await nativeText(`${FAST_API_URL}?https=true&token=${encodeURIComponent(token)}&urlCount=8`, {
       headers: { "User-Agent": "Mozilla/5.0" },
-      maxBodyBytes: 512 * 1024
+      maxBodyBytes: 512 * 1024,
+      signal
     })
   );
   const targets = extractFastComTargets(payload);
@@ -146,19 +190,28 @@ async function readStreamForWindow(url, { headers = {}, deadline, signal, range 
   return bytes;
 }
 
-async function measureParallelDownload(urls, { connectionsPerTarget = 1, deadline } = {}) {
+async function measureParallelDownload(
+  urls,
+  { connectionsPerTarget = 1, deadline, signal = null } = {}
+) {
   const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const forwardAbort = () => controller?.abort();
+  if (signal?.aborted) {
+    controller?.abort();
+  } else if (signal && controller) {
+    signal.addEventListener?.("abort", forwardAbort, { once: true });
+  }
   const workers = [];
   urls.forEach((url) => {
     for (let index = 0; index < connectionsPerTarget; index += 1) {
       workers.push(
         (async () => {
           let bytes = 0;
-          while (now() < deadline) {
+          while (now() < deadline && !signal?.aborted) {
             const remaining = deadline - now();
             bytes += await readStreamForWindow(url, {
               deadline,
-              signal: controller?.signal
+              signal: controller?.signal || signal
             });
             if (remaining <= 0) {
               break;
@@ -169,22 +222,33 @@ async function measureParallelDownload(urls, { connectionsPerTarget = 1, deadlin
       );
     }
   });
-  const results = await Promise.all(workers);
-  return results.reduce((total, value) => total + value, 0);
+  try {
+    const results = await Promise.all(workers);
+    return results.reduce((total, value) => total + value, 0);
+  } finally {
+    signal?.removeEventListener?.("abort", forwardAbort);
+  }
 }
 
-export async function runNetworkSpeedTest({ onPhase = () => {} } = {}) {
+export async function runNetworkSpeedTest({ onPhase = () => {}, signal = null } = {}) {
+  if (signal?.aborted) {
+    return { latencyMs: 0, downloadMbps: 0, error: "aborted" };
+  }
   onPhase("latency");
-  const latencyMs = await measureLatencyMs();
+  const latencyMs = await measureLatencyMs({ signal });
+  if (signal?.aborted) {
+    return { latencyMs, downloadMbps: 0, error: "aborted" };
+  }
   onPhase("download");
   let bytes = 0;
   let elapsedMs = 1;
   try {
-    const targets = await fastComTargets();
+    const targets = await fastComTargets({ signal });
     const startedAt = now();
     bytes = await measureParallelDownload(targets, {
       connectionsPerTarget: DOWNLOAD_CONNECTIONS_PER_TARGET,
-      deadline: startedAt + DOWNLOAD_WINDOW_MS
+      deadline: startedAt + DOWNLOAD_WINDOW_MS,
+      signal
     });
     elapsedMs = Math.max(1, now() - startedAt);
   } catch (error) {
@@ -208,11 +272,17 @@ function mbpsForBytes(bytes, elapsedMs) {
 async function runStreamPass(
   url,
   headers,
-  { connections, chunkBytes, windowMs = STREAM_WINDOW_MS } = {}
+  { connections, chunkBytes, windowMs = STREAM_WINDOW_MS, signal = null } = {}
 ) {
   const startedAt = now();
   const deadline = startedAt + windowMs;
   const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const forwardAbort = () => controller?.abort();
+  if (signal?.aborted) {
+    controller?.abort();
+  } else if (signal && controller) {
+    signal.addEventListener?.("abort", forwardAbort, { once: true });
+  }
   const workers = [];
   const parallel = Math.max(1, Number(connections) || 1);
   for (let index = 0; index < parallel; index += 1) {
@@ -220,12 +290,12 @@ async function runStreamPass(
       (async () => {
         let bytes = 0;
         let offset = index * chunkBytes;
-        while (now() < deadline) {
+        while (now() < deadline && !signal?.aborted) {
           const range = chunkBytes > 0 ? `bytes=${offset}-${offset + chunkBytes - 1}` : "";
           bytes += await readStreamForWindow(url, {
             headers,
             deadline,
-            signal: controller?.signal,
+            signal: controller?.signal || signal,
             range
           });
           offset += chunkBytes;
@@ -234,27 +304,49 @@ async function runStreamPass(
       })()
     );
   }
-  const results = await Promise.all(workers);
-  const bytes = results.reduce((total, value) => total + value, 0);
-  return mbpsForBytes(bytes, now() - startedAt);
+  try {
+    const results = await Promise.all(workers);
+    const bytes = results.reduce((total, value) => total + value, 0);
+    return mbpsForBytes(bytes, now() - startedAt);
+  } finally {
+    signal?.removeEventListener?.("abort", forwardAbort);
+  }
 }
 
-export async function runStreamSpeedTest(url, headers = {}, { onPhase = () => {} } = {}) {
+export async function runStreamSpeedTest(
+  url,
+  headers = {},
+  { onPhase = () => {}, signal = null } = {}
+) {
   const target = String(url || "").trim();
   if (!target) {
     return { error: "no-stream" };
   }
+  if (signal?.aborted) {
+    return { error: "aborted" };
+  }
   onPhase("BASELINE");
-  const baselineMbps = await runStreamPass(target, headers, { connections: 1, chunkBytes: 0 });
+  const baselineMbps = await runStreamPass(target, headers, {
+    connections: 1,
+    chunkBytes: 0,
+    signal
+  });
+  if (signal?.aborted) {
+    return { error: "aborted" };
+  }
   if (!(baselineMbps > 0)) {
     return { error: "connection" };
   }
   const parallelSpeeds = {};
   for (const connections of [1, 4, 8, 16]) {
+    if (signal?.aborted) {
+      return { error: "aborted" };
+    }
     onPhase(`PARALLEL_${connections}`);
     parallelSpeeds[connections] = await runStreamPass(target, headers, {
       connections,
-      chunkBytes: STREAM_CHUNK_BYTES[connections]
+      chunkBytes: STREAM_CHUNK_BYTES[connections],
+      signal
     });
   }
   return { baselineMbps, parallelSpeeds, error: "" };

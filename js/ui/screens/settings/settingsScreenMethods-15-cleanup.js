@@ -14,6 +14,10 @@ export function createSettingsScreenMethods15() {
       this.mediaServersView = null;
       this.mediaServerError = null;
       this.stopTrackingWork?.();
+      this.networkSpeedTestAbortController?.abort?.();
+      this.networkSpeedTestAbortController = null;
+      this.streamSpeedTestAbortController?.abort?.();
+      this.streamSpeedTestAbortController = null;
       this.isMounted = false;
       this.settingsMountToken = (this.settingsMountToken || 0) + 1;
       this.memberAccessUnsubscribe?.();
