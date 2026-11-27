@@ -21,13 +21,6 @@ export function createPlayerControllerMethods18() {
     },
     async prepareClearKeyPlayback() {
       try {
-        if (this.clearKeySession?.close) {
-          try {
-            this.clearKeySession.close();
-          } catch (_) {
-            // The session of the previous source is already gone.
-          }
-        }
         this.clearKeySession = await attachClearKeyMediaKeys(this.video, this.currentClearKeys);
         this.lastClearKeyError = null;
         return true;

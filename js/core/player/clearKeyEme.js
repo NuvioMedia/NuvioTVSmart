@@ -6,6 +6,55 @@ import {
 
 export const CLEAR_KEY_KEY_SYSTEM = "org.w3.clearkey";
 
+// One ClearKey attachment per video element. Older Chromium (webOS 5, Tizen 5,
+// Chromium 63/68) refuses to replace or remove MediaKeys once a MediaSource is
+// attached, so the same key set is reused instead of set again.
+const clearKeyAttachments = new WeakMap();
+// dash.js tries to install its own MediaKeys for the DRM entries it finds in the
+// manifest (PlayReady on Samsung). Chromium 63/68 refuses to replace a MediaKeys
+// object, and on newer engines that replacement would drop the ClearKey one.
+// While our keys are attached, key-system installs from the player are ignored.
+const clearKeyGuards = new WeakMap();
+
+function mediaSourceAttached(video) {
+  return typeof video?.src === "string" && video.src.startsWith("blob:");
+}
+
+function originalSetMediaKeys(video) {
+  return clearKeyGuards.get(video)?.original || video.setMediaKeys.bind(video);
+}
+
+function installMediaKeysGuard(video, mediaKeys) {
+  const existing = clearKeyGuards.get(video);
+  if (existing) {
+    existing.mediaKeys = mediaKeys;
+    return;
+  }
+  const original = video.setMediaKeys.bind(video);
+  const guard = (keys) => {
+    const state = clearKeyGuards.get(video);
+    if (state && keys && keys !== state.mediaKeys) {
+      return Promise.resolve();
+    }
+    return state ? state.original(keys) : original(keys);
+  };
+  clearKeyGuards.set(video, { original, mediaKeys, guard });
+  video.setMediaKeys = guard;
+}
+
+function releaseMediaKeysGuard(video) {
+  const state = clearKeyGuards.get(video);
+  if (!state) {
+    return;
+  }
+  clearKeyGuards.delete(video);
+  try {
+    delete video.setMediaKeys;
+  } catch (_) {
+    video.setMediaKeys = state.original;
+  }
+}
+
 // Chromium only uses these entries to check that the device can play this kind
 // of media; the real codecs come from the manifest.
 const CLEAR_KEY_CONFIG = [
@@ -40,11 +89,26 @@ export async function attachClearKeyMediaKeys(video, clearKeys) {
     throw new Error("ClearKey needs a MediaKeys-capable video element");
   }
   const pairs = parseClearKeys(clearKeys);
+  const canonical = pairs.map(({ kid, key }) => `${kid}:${key}`).join(",");
+  const previous = clearKeyAttachments.get(video);
+
   if (!pairs.length) {
-    if (video.mediaKeys) {
-      await video.setMediaKeys(null);
+    if (previous || video.mediaKeys) {
+      releaseMediaKeysGuard(video);
+      if (!mediaSourceAttached(video)) {
+        try {
+          await video.setMediaKeys(null);
+        } catch (_) {
+          // A browser without detach support keeps the old keys; clear media
+          // is not affected by them.
+        }
+      }
+      clearKeyAttachments.delete(video);
     }
     return null;
+  }
+  if (previous && previous.canonical === canonical) {
+    return previous.session;
   }
   if (!canUseClearKeyEme()) {
     throw new Error("ClearKey EME is not available");
@@ -58,7 +122,15 @@ export async function attachClearKeyMediaKeys(video, clearKeys) {
   const session = mediaKeys.createSession("temporary");
   await session.generateRequest("keyids", buildClearKeyKeyIdsInitData(pairs));
   await session.update(buildClearKeyLicense(pairs));
-  await video.setMediaKeys(mediaKeys);
+  if (video.mediaKeys !== mediaKeys) {
+    if (video.mediaKeys && mediaSourceAttached(video)) {
+      // Chromium 63/68 cannot replace MediaKeys while a MediaSource is attached.
+      throw new Error("this TV cannot change ClearKey keys during playback");
+    }
+    await originalSetMediaKeys(video)(mediaKeys);
+  }
+  installMediaKeysGuard(video, mediaKeys);
+  clearKeyAttachments.set(video, { canonical, mediaKeys, session });
   return session;
 }
 
