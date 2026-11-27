@@ -168,15 +168,23 @@ export function createFolderDetailScreenMethods02() {
           rowTrack.scrollLeft = right - rowTrack.clientWidth + 40;
         }
       }
-      if (shell && (target.closest(".seeall-grid") || target.closest(".folder-detail-rows"))) {
-        const top = target.offsetTop;
-        const bottom = top + target.offsetHeight;
-        if (top < shell.scrollTop + 100) {
-          shell.scrollTop = Math.max(0, top - 100);
-        } else if (bottom > shell.scrollTop + shell.clientHeight - 100) {
-          shell.scrollTop = bottom - shell.clientHeight + 100;
+      const focusOnTab = target.closest(".folder-detail-tab");
+      if (shell && (focusOnTab || target.closest(".seeall-grid") || target.closest(".folder-detail-rows"))) {
+        // Android TV keeps the folder header and tab bar fully visible: the first
+        // row and the tabs snap to the top instead of using the 100px scroll margin.
+        if (focusOnTab || Number(target.dataset.navRow) === 0) {
+          shell.scrollTop = 0;
+          this.savedScrollTop = 0;
+        } else {
+          const top = target.offsetTop;
+          const bottom = top + target.offsetHeight;
+          if (top < shell.scrollTop + 100) {
+            shell.scrollTop = Math.max(0, top - 100);
+          } else if (bottom > shell.scrollTop + shell.clientHeight - 100) {
+            shell.scrollTop = bottom - shell.clientHeight + 100;
+          }
+          this.savedScrollTop = shell.scrollTop;
         }
-        this.savedScrollTop = shell.scrollTop;
       }
       this.lastFocusedKey = String(target.dataset.focusKey || this.lastFocusedKey || "");
       return true;
