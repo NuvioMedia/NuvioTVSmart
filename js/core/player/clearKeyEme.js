@@ -210,36 +210,6 @@ export async function attachClearKeyMediaKeys(video, clearKeys) {
 }
 
 /**
- * The manifest's init segment can carry a PlayReady/Widevine PSSH even when we
- * removed the ContentProtection entries. The browser then fires `encrypted`,
- * and dash.js reacts to it by creating a session for that key system and
- * requesting its license (on LG an invalid endpoint that hangs and stalls the
- * stream). Our ClearKey keys are already loaded, so the event is swallowed
- * before the players see it.
- */
-export function suppressClearKeyEncryptedEvent(video) {
-  if (!video?.addEventListener) {
-    return;
-  }
-  if (video.__nuvioClearKeyEncrypted) {
-    video.removeEventListener("encrypted", video.__nuvioClearKeyEncrypted);
-  }
-  const handler = (event) => {
-    event?.stopImmediatePropagation?.();
-  };
-  video.__nuvioClearKeyEncrypted = handler;
-  video.addEventListener("encrypted", handler);
-}
-
-export function releaseClearKeyEncryptedEvent(video) {
-  if (!video?.removeEventListener || !video.__nuvioClearKeyEncrypted) {
-    return;
-  }
-  video.removeEventListener("encrypted", video.__nuvioClearKeyEncrypted);
-  delete video.__nuvioClearKeyEncrypted;
-}
-
-/**
  * hls.js would fetch the key URI of every `EXT-X-KEY` tag, but for CENC HLS the
  * keys are already in the CDM and the tag only carries a PSSH. Playlists are
  * therefore stripped of the SAMPLE-AES-CTR tags before hls.js parses them;
