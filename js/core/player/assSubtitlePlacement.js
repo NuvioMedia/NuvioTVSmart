@@ -23,18 +23,18 @@ function eligible(dialogue, store) {
     )
   );
 }
-export function applyAssSubtitlePlacement(dialogue, store, pending = null) {
+export function applyAssSubtitlePlacement(dialogue, store, pending = null, measuredBox = null) {
   if (!eligible(dialogue, store)) return false;
   const div = dialogue.$div;
   const placement = store.playerSubtitlePlacement;
   if (
     !placement ||
     !Number.isFinite(placement.viewportBottom) ||
-    !store.box?.getBoundingClientRect ||
+    (!measuredBox && !store.box?.getBoundingClientRect) ||
     !(store.height > 0)
   )
     return false;
-  const box = store.box.getBoundingClientRect();
+  const box = measuredBox || store.box.getBoundingClientRect();
   const scaleY = box.height / store.height;
   if (!(scaleY > 0) || !Number.isFinite(dialogue.y)) return false;
   const originalBottom = box.top + dialogue.y * scaleY;
