@@ -206,45 +206,6 @@ export function createFolderDetailScreenMethods04() {
           heroMetaEnriching: false
         });
       }
-    },
-    startPendingContinueWatchingHold(node) {
-      if (!this.useHomeFollowLayout) {
-        return HomeScreen.startPendingContinueWatchingHold.call(this, node);
-      }
-      if (!this.isHomeHoldTarget(node)) {
-        return false;
-      }
-      this.cancelPendingContinueWatchingEnter();
-      this.cancelPendingContinueWatchingHold();
-      const isPoster = this.isPosterHoldTarget(node);
-      const item = isPoster ? this.getPosterItemFromNode(node) : this.getContinueWatchingItemFromNode(node);
-      if (isPoster && !item?.id) {
-        return false;
-      }
-      if (!isPoster && !item?.contentId) {
-        return false;
-      }
-      this.pendingContinueWatchingHoldTarget = {
-        kind: isPoster ? "poster" : "continueWatching",
-        itemId: String(isPoster ? item.id : item.contentId || ""),
-        itemType: String(isPoster ? item.type : ""),
-        videoId: String(isPoster ? "" : item.videoId || ""),
-        holdTriggered: false
-      };
-      this.pendingContinueWatchingHoldTimer = setTimeout(() => {
-        this.pendingContinueWatchingHoldTimer = null;
-        const pending = this.pendingContinueWatchingHoldTarget;
-        if (!pending || Router.getCurrent() !== "folderDetail") {
-          return;
-        }
-        const current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
-        if (!this.hasPendingContinueWatchingHold(current)) {
-          return;
-        }
-        pending.holdTriggered = true;
-        this.openHoldMenuForNode(current);
-      }, 650);
-      return true;
     }
   };
 }

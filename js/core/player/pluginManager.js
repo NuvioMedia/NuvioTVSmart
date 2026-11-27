@@ -1247,7 +1247,10 @@ export const PluginManager = {
           throw error;
         });
     }
-    return runtimeReadyPromise;
+    const ready = await runtimeReadyPromise;
+    // Runtime readiness is app-wide, but its persisted status is per profile.
+    if (ready && currentState().runtime?.lastStatus !== "ready") markRuntime("ready", "");
+    return ready;
   },
 
   listRepositories() {

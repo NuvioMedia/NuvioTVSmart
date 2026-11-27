@@ -1,7 +1,30 @@
 import * as internals from "./homeScreenContext.js";
 
+// A hover transition caused by a real pointer move is dispatched in the same
+// turn as its mousemove, so this only has to cover that pair.
+const HOME_POINTER_HOVER_GRACE_MS = 250;
+
 export function createHomeScreenMethods19() {
-  const { getLegacySidebarSelectedNode, getModernSidebarSelectedNode, getDirectionFromKeyCode, MODERN_HOME_CONSTANTS, Router } = internals;
+  const {
+    getLegacySidebarSelectedNode,
+    getModernSidebarSelectedNode,
+    getDirectionFromKeyCode,
+    MODERN_HOME_CONSTANTS,
+    Router,
+    CW_HOLD_DELAY_MS
+  } = internals;
+
+  // Hold time must come from input event timestamps (performance clock), not from when a busy main
+  // thread got to the event; fall back to Date.now() for both ends if either stamp is missing.
+  const eventTime = (event) => {
+    const t = Number(event?.timeStamp);
+    return Number.isFinite(t) && t > 0 ? t : 0;
+  };
+  const pointerHeldMs = (screen, event) => {
+    const down = screen.pointerHoldDownStamp;
+    const up = eventTime(event);
+    return down && up ? up - down : Date.now() - screen.pointerHoldStartedAt;
+  };
 
   return {
     handleHomeDpad(event) {
@@ -164,6 +187,12 @@ export function createHomeScreenMethods19() {
       }
       if (!this.boundHomeClickHandler) {
         this.boundHomeClickHandler = (event) => {
+          if (this.pointerHoldSwallowClick) {
+            this.pointerHoldSwallowClick = false;
+            event.preventDefault?.();
+            event.stopPropagation?.();
+            return;
+          }
           const target = event?.target?.closest?.(".home-main .focusable");
           if (!target || !this.container?.contains(target)) {
             return;
@@ -184,14 +213,59 @@ export function createHomeScreenMethods19() {
         };
       }
       if (!this.boundHomeMouseDownHandler) {
-        this.boundHomeMouseDownHandler = () => {
+        this.boundHomeMouseDownHandler = (event) => {
           this.markUserInteractionSinceHomePaint();
+          // Magic Remote pointer sends no key events, so mirror the Enter hold here.
+          this.pointerHoldSwallowClick = false;
+          this.pointerHoldStartedAt = 0;
+          this.pointerHoldDownStamp = 0;
+          const card = event?.button === 0 ? event.target?.closest?.(".home-main .focusable") : null;
+          if (card && this.container?.contains(card) && this.startPendingContinueWatchingHold(card, true)) {
+            this.pointerHoldStartedAt = Date.now();
+            this.pointerHoldDownStamp = eventTime(event);
+          }
+        };
+      }
+      if (!this.boundHomeMouseUpHandler) {
+        this.boundHomeMouseUpHandler = (event) => {
+          if (!this.pointerHoldStartedAt) {
+            return;
+          }
+          this.pointerHoldSwallowClick = pointerHeldMs(this, event) >= CW_HOLD_DELAY_MS;
+          this.pointerHoldStartedAt = 0;
+          if (!this.pointerHoldSwallowClick) {
+            this.cancelPendingContinueWatchingHold();
+          }
+        };
+      }
+      if (!this.boundHomeMouseOutHandler) {
+        this.boundHomeMouseOutHandler = (event) => {
+          const card = event?.target?.closest?.(".home-main .focusable");
+          if (!this.pointerHoldStartedAt || !card || card.contains(event.relatedTarget)) {
+            return;
+          }
+          if (pointerHeldMs(this, event) < CW_HOLD_DELAY_MS) {
+            this.pointerHoldStartedAt = 0;
+            this.cancelPendingContinueWatchingHold();
+          }
+        };
+      }
+      if (!this.boundHomeMouseMoveHandler) {
+        this.boundHomeMouseMoveHandler = () => {
+          this.lastHomePointerMoveAt = Date.now();
         };
       }
       if (!this.boundHomeMouseOverHandler) {
         this.boundHomeMouseOverHandler = (event) => {
           const target = event?.target?.closest?.(".home-main .home-content-card.focusable");
           if (!target || !this.container?.contains(target) || target.classList.contains("focused")) {
+            return;
+          }
+          // Row scrolling and card expansion shift content under a resting Magic
+          // Remote pointer and fire mouseover with no pointer movement. Taking
+          // focus there would shift the row again and feed the loop, so a hover
+          // only counts when the pointer actually moved.
+          if (Date.now() - Number(this.lastHomePointerMoveAt || 0) > HOME_POINTER_HOVER_GRACE_MS) {
             return;
           }
           // Match Android TV: while the expanded sidebar owns navigation, pointer
@@ -203,6 +277,7 @@ export function createHomeScreenMethods19() {
           this.setFocusedNode(target, { suppressDelegatedFocus: true });
           if (this.isMainNode(target)) {
             this.lastMainFocus = target;
+            this.revealPointerHoveredRow(target);
           }
           this.syncFocusedCollectionCardState();
           this.scheduleModernHeroUpdate(target);
@@ -237,15 +312,37 @@ export function createHomeScreenMethods19() {
         this.boundHomeEventContainer.removeEventListener("focusin", this.boundHomeFocusInHandler);
         this.boundHomeEventContainer.removeEventListener("click", this.boundHomeClickHandler);
         this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
+        this.boundHomeEventContainer.removeEventListener("mouseup", this.boundHomeMouseUpHandler);
+        this.boundHomeEventContainer.removeEventListener("mouseout", this.boundHomeMouseOutHandler);
+        this.boundHomeEventContainer.removeEventListener("mousemove", this.boundHomeMouseMoveHandler);
+        this.boundHomeEventContainer.removeEventListener("pointermove", this.boundHomeMouseMoveHandler);
         this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
         this.boundHomeEventContainer.removeEventListener("wheel", this.boundHomeWheelHandler);
       }
       this.container.addEventListener("focusin", this.boundHomeFocusInHandler);
       this.container.addEventListener("click", this.boundHomeClickHandler);
       this.container.addEventListener("mousedown", this.boundHomeMouseDownHandler);
+      this.container.addEventListener("mouseup", this.boundHomeMouseUpHandler);
+      this.container.addEventListener("mouseout", this.boundHomeMouseOutHandler);
+      this.container.addEventListener("mousemove", this.boundHomeMouseMoveHandler, { passive: true });
+      this.container.addEventListener("pointermove", this.boundHomeMouseMoveHandler, { passive: true });
       this.container.addEventListener("mouseover", this.boundHomeMouseOverHandler);
       this.container.addEventListener("wheel", this.boundHomeWheelHandler, { passive: false });
       this.boundHomeEventContainer = this.container;
+    },
+    revealPointerHoveredRow(target) {
+      const viewport = this.getHomeViewport();
+      const anchor = viewport ? this.getMainFocusAnchor(target) : null;
+      if (!anchor) {
+        return;
+      }
+      // Android brings the focused row into view whatever moved the focus.
+      // Reveal only the clipped part of the row, never re-center it.
+      const overflow = anchor.getBoundingClientRect().bottom - (viewport.getBoundingClientRect().bottom - 24);
+      if (overflow <= 0) {
+        return;
+      }
+      this.animateScroll(viewport, "y", Number(viewport.scrollTop || 0) + overflow, this.getScrollDuration(150));
     },
     bindHomeViewportEvents() {
       const viewport = this.getHomeViewport();

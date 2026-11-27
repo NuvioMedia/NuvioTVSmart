@@ -160,7 +160,6 @@ export function createMetaDetailsScreenMethods03() {
           return;
         }
       }
-      this.resumeProgress = progress && isWatchProgressInProgress(progress) ? progress : null;
       this.isSavedInLibrary = isSaved;
       const detailContentReference = buildDetailContentReference(itemId, meta, this.params);
       this.isMarkedWatched = Boolean(
@@ -174,10 +173,12 @@ export function createMetaDetailsScreenMethods03() {
       this.meta = meta;
       this.episodes = normalizeEpisodes(meta?.videos || [], meta?.type || itemType);
       this.castItems = extractCast(meta);
+      const latestProgress = isSeriesDetailMeta(meta, this.episodes) ? this.getLatestSeriesProgress(progress, allProgressItems) : progress;
+      this.resumeProgress = latestProgress && isWatchProgressInProgress(latestProgress) ? latestProgress : null;
       const progressItemsForDetail = this.resumeProgress ? [this.resumeProgress, ...allProgressItems] : allProgressItems;
       this.buildEpisodeState(progressItemsForDetail, allWatchedItems);
-      this.nextEpisodeToWatch = this.computeNextEpisodeToWatch(this.resumeProgress || progress);
-      this.selectedSeason = this.resolveInitialSelectedSeason(this.resumeProgress || progress, progressItemsForDetail);
+      this.nextEpisodeToWatch = this.computeNextEpisodeToWatch(latestProgress);
+      this.selectedSeason = this.resolveInitialSelectedSeason(latestProgress, progressItemsForDetail);
       this.selectedRatingSeason = this.selectedRatingSeason || this.selectedSeason || 1;
       this.moreLikeThisItems = [];
       this.moreLikeThisSource = null;
@@ -234,10 +235,14 @@ export function createMetaDetailsScreenMethods03() {
         if (token !== this.detailLoadToken) {
           return;
         }
-        const currentProgressItemsForDetail = this.resumeProgress ? [this.resumeProgress, ...currentProgressItems] : currentProgressItems;
         this.meta = enrichedMeta || meta;
         this.episodes = normalizeEpisodes(this.meta?.videos || [], this.meta?.type || this.params?.itemType);
         this.castItems = extractCast(this.meta);
+        const latestProgress = isSeriesDetailMeta(this.meta, this.episodes)
+          ? this.getLatestSeriesProgress(this.resumeProgress, currentProgressItems)
+          : this.resumeProgress;
+        this.resumeProgress = latestProgress && isWatchProgressInProgress(latestProgress) ? latestProgress : null;
+        const currentProgressItemsForDetail = this.resumeProgress ? [this.resumeProgress, ...currentProgressItems] : currentProgressItems;
         this.buildEpisodeState(currentProgressItemsForDetail, currentWatchedItems, this.enrichedWatchedState);
         this.trailerSource = resolveTrailerSource(this.meta);
         if (!this.castItems.length) {
@@ -250,9 +255,9 @@ export function createMetaDetailsScreenMethods03() {
           }
         }
         if (!this.isBackNavigation)
-          this.selectedSeason = this.resolveInitialSelectedSeason(this.resumeProgress, currentProgressItemsForDetail);
+          this.selectedSeason = this.resolveInitialSelectedSeason(latestProgress, currentProgressItemsForDetail);
         this.selectedRatingSeason = this.selectedRatingSeason || this.selectedSeason || 1;
-        this.nextEpisodeToWatch = this.computeNextEpisodeToWatch(this.resumeProgress);
+        this.nextEpisodeToWatch = this.computeNextEpisodeToWatch(latestProgress);
         this.updateRenderedDetailSections(this.meta);
         void this.loadMdbListRatings(this.meta, token, ratingsPromise);
         void this.refreshTrailerSource(this.meta, token);

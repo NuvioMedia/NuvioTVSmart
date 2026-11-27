@@ -47,7 +47,15 @@ export function createMetaDetailsScreenMethods28() {
       const current = this.container.querySelector('[data-action="rateTitle"]');
       const markup = this.renderRatingButton();
       if (!current && !markup) return;
+      // Android keeps the hero behind the open overlay untouched; re-rendering or
+      // focusing it here would pull focus out of the dialog or the trailer.
+      const overlayActive = Boolean(
+        this.activeRatingDialog?.isOpen || this.isTrailerPlaying || globalThis?.document?.body?.classList?.contains("nuvio-modal-open")
+      );
       if (!current || !markup) {
+        if (overlayActive) {
+          return;
+        }
         // The button appears or disappears: re-render the hero so the action row stays in order.
         this.render(this.meta, this.captureDetailFocus());
         return;
@@ -59,7 +67,7 @@ export function createMetaDetailsScreenMethods28() {
       if (wasFocused) next.classList.add("focused");
       if (animate && next.classList.contains("is-rated")) next.classList.add("is-twirling");
       current.replaceWith(next);
-      if (wasFocused) focusWithoutScroll(next);
+      if (wasFocused && !overlayActive) focusWithoutScroll(next);
     },
     /** Android: ratings come from the provider's sync, so refresh it once the page is open. */
     refreshRatingSource() {
@@ -103,20 +111,28 @@ export function createMetaDetailsScreenMethods28() {
       if (!state.provider) return false;
       const focusRestore = this.captureDetailFocus();
       const token = this.detailLoadToken;
-      openRatingDialog({
+      this.activeRatingDialog?.close?.();
+      const handle = openRatingDialog({
         media,
         title: this.meta?.name || this.params?.fallbackTitle || "",
         state,
         onBack: () => {
+          if (this.activeRatingDialog === handle) {
+            this.activeRatingDialog = null;
+          }
           if (token === this.detailLoadToken) this.restoreDetailFocusAfterRating(focusRestore);
         },
         onFinished: (result) => {
+          if (this.activeRatingDialog === handle) {
+            this.activeRatingDialog = null;
+          }
           if (token !== this.detailLoadToken) return;
           this.syncRatingButton({ animate: true });
           this.restoreDetailFocusAfterRating(focusRestore);
           this.showRatingResult(result);
         }
       });
+      this.activeRatingDialog = handle;
       return true;
     },
     restoreDetailFocusAfterRating(focusRestore) {
@@ -141,22 +157,30 @@ export function createMetaDetailsScreenMethods28() {
       this.destroyDetailHoldDialog();
       // The OK keyup that would settle the long press goes to the rating panel instead.
       this.cancelPendingEpisodeHold();
-      openRatingDialog({
+      this.activeRatingDialog?.close?.();
+      const handle = openRatingDialog({
         media,
         title: this.meta?.name || this.params?.fallbackTitle || "",
         subtitle: [`S${Number(episode.season || 0)}E${Number(episode.episode || 0)}`, episode.title || ""].filter(Boolean).join(" - "),
         state,
         onBack: () => {
+          if (this.activeRatingDialog === handle) {
+            this.activeRatingDialog = null;
+          }
           if (token !== this.detailLoadToken) return;
           this.episodeHoldMenu = { videoId, optionIndex, episode: { ...episode } };
           this.mountEpisodeHoldDialog({ focusIndex: optionIndex, reopened: true });
         },
         onFinished: (result) => {
+          if (this.activeRatingDialog === handle) {
+            this.activeRatingDialog = null;
+          }
           if (token !== this.detailLoadToken) return;
           this.focusDetailDescriptor(this.getEpisodeFocusDescriptor(videoId));
           this.showRatingResult(result);
         }
       });
+      this.activeRatingDialog = handle;
       return true;
     }
   };

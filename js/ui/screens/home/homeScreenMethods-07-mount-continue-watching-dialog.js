@@ -33,11 +33,13 @@ export function createHomeScreenMethods07() {
       this.lockHomeHoldFocus();
       this.destroyHomeHoldDialog();
       const options = this.getContinueWatchingMenuOptions();
+      // A pointer hold has no Enter keyup to release the suppression.
+      const suppressEnter = !this.continueWatchingMenu?.fromPointer;
       this._homeHoldDialog = new NuvioDialog({
         title: item.title || "Untitled",
         subtitle: t("cw_dialog_subtitle", {}, "Choose what you want to do with this item."),
         widthVw: 37.5,
-        suppressEnterUntilKeyUp: true,
+        suppressEnterUntilKeyUp: suppressEnter,
         buttons: options.map((option, index) => ({
           label: option.label,
           key: option.action,
@@ -55,7 +57,7 @@ export function createHomeScreenMethods07() {
           this.dismissContinueWatchingMenu();
         }
       }).mount(document.body);
-      this.suppressHoldMenuEnterUntilKeyUp = true;
+      this.suppressHoldMenuEnterUntilKeyUp = suppressEnter;
       this.scheduleHoldMenuScrollRestore();
       return true;
     },
@@ -67,11 +69,12 @@ export function createHomeScreenMethods07() {
       this.lockHomeHoldFocus();
       this.destroyHomeHoldDialog();
       const options = this.getPosterHoldMenuOptions();
+      const suppressEnter = !this.posterHoldMenu?.fromPointer;
       this._homeHoldDialog = new NuvioDialog({
         title: item.name || "Untitled",
         subtitle: t("home_poster_dialog_subtitle", {}, "Title actions"),
         widthVw: 37.5,
-        suppressEnterUntilKeyUp: true,
+        suppressEnterUntilKeyUp: suppressEnter,
         buttons: options.map((option, index) => ({
           label: option.label,
           key: option.action,
@@ -89,7 +92,7 @@ export function createHomeScreenMethods07() {
           this.dismissPosterHoldMenu();
         }
       }).mount(document.body);
-      this.suppressHoldMenuEnterUntilKeyUp = true;
+      this.suppressHoldMenuEnterUntilKeyUp = suppressEnter;
       this.scheduleHoldMenuScrollRestore();
       return true;
     },
@@ -257,7 +260,7 @@ export function createHomeScreenMethods07() {
         node.dataset.itemType || "movie"
       );
     },
-    async openPosterHoldMenu(node) {
+    async openPosterHoldMenu(node, fromPointer = false) {
       const item = this.getPosterItemFromNode(node);
       if (!item?.id) {
         return false;
@@ -285,7 +288,8 @@ export function createHomeScreenMethods07() {
         optionIndex: 0,
         isSaved: Boolean(isSaved),
         isWatched: Boolean(isWatched),
-        librarySourceMode
+        librarySourceMode,
+        fromPointer
       };
       return this.mountPosterHoldDialog();
     },
@@ -307,7 +311,7 @@ export function createHomeScreenMethods07() {
       this.holdMenuScrollState = null;
       return true;
     },
-    openContinueWatchingMenu(node) {
+    openContinueWatchingMenu(node, fromPointer = false) {
       const item = this.getContinueWatchingItemFromNode(node);
       if (!item?.contentId) {
         return false;
@@ -322,7 +326,8 @@ export function createHomeScreenMethods07() {
         index: Number(node?.dataset?.navCol || 0),
         rowKey: this.getNodeRowKey(node) || "continue_watching",
         optionIndex: 0,
-        item
+        item,
+        fromPointer
       };
       return this.mountContinueWatchingDialog();
     },

@@ -146,6 +146,10 @@ export function createPlayerScreenMethods55() {
         });
       }
 
+      // Don't allocate a blob for a selection that is already superseded.
+      if (!isCurrentSelection()) {
+        return;
+      }
       let resolvedSubtitleUrl = "";
       if (detectedAss) {
         if (!assFallbackVtt) {
@@ -162,7 +166,7 @@ export function createPlayerScreenMethods55() {
       } else {
         resolvedSubtitleUrl = subtitle.url;
       }
-      if (!isCurrentSelection() || !resolvedSubtitleUrl) {
+      if (!resolvedSubtitleUrl) {
         return;
       }
 
