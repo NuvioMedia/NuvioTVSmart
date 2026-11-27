@@ -89,7 +89,7 @@ export function createHomeScreenMethods08() {
       this.pendingContinueWatchingHoldTimer = setTimeout(() => {
         this.pendingContinueWatchingHoldTimer = null;
         const pending = this.pendingContinueWatchingHoldTarget;
-        if (!pending || Router.getCurrent() !== "home") {
+        if (!pending || Router.getCurrentScreen?.() !== this) {
           return;
         }
         let current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
@@ -148,7 +148,7 @@ export function createHomeScreenMethods08() {
         this.pendingContinueWatchingEnterTimer = null;
         const pending = this.pendingContinueWatchingEnterTarget;
         this.pendingContinueWatchingEnterTarget = null;
-        if (!pending || Router.getCurrent() !== "home") {
+        if (!pending || Router.getCurrentScreen?.() !== this) {
           return;
         }
         const current = this.container?.querySelector(".home-continue-card.focusable.focused") || null;

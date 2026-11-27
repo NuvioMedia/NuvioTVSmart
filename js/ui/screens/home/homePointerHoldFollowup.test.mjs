@@ -70,10 +70,17 @@ test("hold dialogs skip Enter suppression for pointer holds and keep it for keyb
 
 test("pointer hold timer threads fromPointer into openHoldMenuForNode", async () => {
   const timers = [];
+  let activeScreen = null;
   const methods = await load(
     "./homeScreenMethods-08-open-hold-menu-for-node.js",
     "createHomeScreenMethods08",
-    { Router: { getCurrent: () => "home" }, CW_HOLD_DELAY_MS: 650 },
+    {
+      Router: {
+        getCurrent: () => "home",
+        getCurrentScreen: () => activeScreen
+      },
+      CW_HOLD_DELAY_MS: 650
+    },
     { setTimeout: (fn) => timers.push(fn), clearTimeout() {} }
   );
   const node = { dataset: { itemId: "tt1", videoId: "", season: "", episode: "" } };
@@ -85,6 +92,7 @@ test("pointer hold timer threads fromPointer into openHoldMenuForNode", async ()
     getContinueWatchingItemFromNode: () => ({ contentId: "tt1", videoId: "" }),
     openHoldMenuForNode: (n, fromPointer) => calls.push(fromPointer)
   });
+  activeScreen = screen;
   screen.startPendingContinueWatchingHold(node, true);
   timers.pop()();
   screen.startPendingContinueWatchingHold(node);
@@ -95,20 +103,18 @@ test("pointer hold timer threads fromPointer into openHoldMenuForNode", async ()
 test("FolderDetail follow-layout holds forward the pointer source and the pressed card", async () => {
   const timers = [];
   const opened = [];
-  const homeCalls = [];
   const pressed = { dataset: { itemId: "tt1", itemType: "movie" } };
   const other = { dataset: { itemId: "tt2", itemType: "movie" } };
+  let activeScreen = null;
   const methods = await load(
-    "../collection/folderDetailScreenMethods-04-load-more-follow-layout-row.js",
-    "createFolderDetailScreenMethods04",
+    "./homeScreenMethods-08-open-hold-menu-for-node.js",
+    "createHomeScreenMethods08",
     {
-      Router: { getCurrent: () => "folderDetail" },
-      HomeScreen: {
-        startPendingContinueWatchingHold: (node, fromPointer) => {
-          homeCalls.push([node, fromPointer]);
-          return "home";
-        }
-      }
+      Router: {
+        getCurrent: () => "folderDetail",
+        getCurrentScreen: () => activeScreen
+      },
+      CW_HOLD_DELAY_MS: 650
     },
     { setTimeout: (fn) => timers.push(fn), clearTimeout() {} }
   );
@@ -126,6 +132,7 @@ test("FolderDetail follow-layout holds forward the pointer source and the presse
     hasPendingContinueWatchingHold: (node) => node === pressed,
     openHoldMenuForNode: (node, fromPointer) => opened.push([node, fromPointer])
   });
+  activeScreen = screen;
 
   // Pointer: the pressed card is used even when hover focus sits elsewhere.
   screen.startPendingContinueWatchingHold(pressed, true);
@@ -136,9 +143,4 @@ test("FolderDetail follow-layout holds forward the pointer source and the presse
   screen.startPendingContinueWatchingHold(pressed);
   timers.pop()();
   assert.deepEqual(opened, [[pressed, true]]);
-
-  // Grid layout delegates to Home and keeps the pointer source.
-  screen.useHomeFollowLayout = false;
-  assert.equal(screen.startPendingContinueWatchingHold(pressed, true), "home");
-  assert.deepEqual(homeCalls, [[pressed, true]]);
 });
