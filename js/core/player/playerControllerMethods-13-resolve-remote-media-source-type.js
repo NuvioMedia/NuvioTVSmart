@@ -1,5 +1,6 @@
 import { createStreamRedirectReporter } from "./streamRedirect.js";
 import { applyAdaptiveRequestHeaders } from "./adaptiveRequestHeaders.js";
+import { createClearKeyPlaylistLoader } from "./clearKeyEme.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerController.js";
 
@@ -41,6 +42,8 @@ export function createPlayerControllerMethods13() {
       const forwardedHeaders = this.normalizePlaybackHeaders(requestHeaders);
       const isWebOs = Platform.isWebOS();
       const isLivePlayback = this.isLivePlaybackItemType();
+      const Hls = hlsJsEngine.getConstructor();
+      const clearKeyLoader = this.currentClearKeys && Hls ? createClearKeyPlaylistLoader(Hls) : null;
       return {
         autoStartLoad: false,
         enableWorker: !isWebOs,
@@ -84,7 +87,10 @@ export function createPlayerControllerMethods13() {
             ...initParams,
             headers
           });
-        }
+        },
+        // The ClearKey pairs are already in the CDM: skip the key tag hls.js
+        // would otherwise download (see createClearKeyPlaylistLoader).
+        ...(clearKeyLoader ? { loader: clearKeyLoader } : {})
       };
     },
     playWithHlsJs(url, requestHeaders = {}, playToken = null) {

@@ -61,6 +61,8 @@ export function saveReusableStreamLink(
       headers: torrent ? {} : headers || hints.proxyHeaders?.request || {},
       filename:
         hints.filename || candidate.filename || raw.filename || launchHints.filename || null,
+      // ClearKey streams are useless without their pairs: keep them with the link.
+      clearKeys: hints.clearKeys || candidate.clearKeys || raw.clearKeys || null,
       videoHash: hints.videoHash || raw.videoHash || launchHints.videoHash || null,
       videoSize: hints.videoSize ?? raw.videoSize ?? launchHints.videoSize ?? null,
       bingeGroup: hints.bingeGroup || null,
@@ -99,6 +101,7 @@ export function cachedStreamLinkCandidate(cached) {
     mimeType: cached.mimeType,
     sourceType: cached.sourceType,
     behaviorHints: {
+      clearKeys: cached.clearKeys || null,
       filename: cached.filename,
       videoHash: cached.videoHash,
       videoSize: cached.videoSize,
