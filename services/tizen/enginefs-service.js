@@ -18,10 +18,7 @@ function isLoopbackAddress(value) {
 
 function isLoopbackRequest(request) {
   var socket = request && (request.socket || request.connection);
-  if (!socket) {
-    return true;
-  }
-  return isLoopbackAddress(socket.remoteAddress);
+  return isLoopbackAddress(socket && socket.remoteAddress);
 }
 
 function wrapTizenLoopbackListener(listener) {
@@ -312,18 +309,39 @@ function startEngineFsRuntime() {
   diagnostic("subtitle service start requested", { port: process.env.PORT });
 }
 
-function requestRemoveAll() {
+// Closing the listener before /removeAll completes makes the request fail, so
+// keep the runtime alive until the cache cleanup answered or gave up.
+function requestRemoveAll(onDone) {
+  var done = false;
+  function finish() {
+    if (done) return;
+    done = true;
+    if (typeof onDone === "function") onDone();
+  }
   try {
     var http = require("http");
     var port = Number(process.env.PORT || 2710) || 2710;
     http
       .get("http://127.0.0.1:" + port + "/removeAll", function (response) {
         response.resume();
+        response.on("end", finish);
+        response.on("aborted", finish);
+        response.on("error", finish);
       })
-      .on("error", function () {});
+      .on("error", finish);
   } catch (_) {
-    // Service shutdown cleanup is best-effort.
+    finish();
   }
+}
+
+function closeTrackedHttpServers() {
+  trackedHttpServers.splice(0).forEach(function (server) {
+    try {
+      if (server && typeof server.close === "function") {
+        server.close();
+      }
+    } catch (_) {}
+  });
 }
 
 module.exports.onStart = function () {
@@ -343,14 +361,7 @@ function stopEngineFsRuntime() {
   try {
     require("./runtime/tx3g-subtitle-service.cjs").stop();
   } catch (_) {}
-  requestRemoveAll();
-  trackedHttpServers.splice(0).forEach(function (server) {
-    try {
-      if (server && typeof server.close === "function") {
-        server.close();
-      }
-    } catch (_) {}
-  });
+  requestRemoveAll(closeTrackedHttpServers);
 }
 
 // onExit is the documented Tizen Web Service lifecycle callback. Keep onStop

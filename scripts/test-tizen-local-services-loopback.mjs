@@ -19,17 +19,16 @@ const engineServicePath = path.join(rootDir, "services", "tizen", "enginefs-serv
 function runMockTx3gRequest(remoteAddress) {
   let statusCode = 0;
   let body = "";
-  tx3gService.handleRequest(
-    { url: "/settings", method: "GET", socket: { remoteAddress } },
-    {
-      writeHead(code) {
-        statusCode = code;
-      },
-      end(chunk) {
-        body += chunk ? String(chunk) : "";
-      }
+  const request = { url: "/settings", method: "GET" };
+  if (remoteAddress !== null) request.socket = { remoteAddress };
+  tx3gService.handleRequest(request, {
+    writeHead(code) {
+      statusCode = code;
+    },
+    end(chunk) {
+      body += chunk ? String(chunk) : "";
     }
-  );
+  });
   return { statusCode, body: JSON.parse(body || "{}") };
 }
 
@@ -38,9 +37,16 @@ test("tx3g-subtitle-service rejects non-loopback clients with 403 and allows loo
   assert.equal(remoteResult.statusCode, 403);
   assert.equal(remoteResult.body.errorCode, "FORBIDDEN");
 
+  const unknownResult = runMockTx3gRequest(null);
+  assert.equal(unknownResult.statusCode, 403);
+
   const localResult = runMockTx3gRequest("127.0.0.1");
   assert.equal(localResult.statusCode, 200);
   assert.equal(localResult.body.tx3g, true);
+
+  assert.equal(runMockTx3gRequest("::1").statusCode, 200);
+  assert.equal(runMockTx3gRequest("::ffff:127.0.0.1").statusCode, 200);
+  assert.equal(runMockTx3gRequest("::ffff:192.0.2.55").statusCode, 403);
 });
 
 test("custom-poster-config.stopAll() and plugin-http close tear down active sessions", async () => {
@@ -70,6 +76,8 @@ test("custom-poster-config.stopAll() and plugin-http close tear down active sess
 test("enginefs-service wraps http servers with loopback guard and closes them on exit", () => {
   const createdServers = [];
   let closedCount = 0;
+  let removeAllResponse = null;
+  let removeAllRequests = 0;
 
   const fakeHttp = {
     createServer(listener) {
@@ -91,7 +99,17 @@ test("enginefs-service wraps http servers with loopback guard and closes them on
       createdServers.push(server);
       return server;
     },
-    get() {
+    get(_url, callback) {
+      removeAllRequests += 1;
+      removeAllResponse = {
+        handlers: {},
+        resume() {},
+        on(event, fn) {
+          this.handlers[event] = fn;
+          return this;
+        }
+      };
+      callback(removeAllResponse);
       return { on() {} };
     }
   };
@@ -156,6 +174,22 @@ test("enginefs-service wraps http servers with loopback guard and closes them on
   assert.equal(deniedStatus, 403);
   assert.match(deniedBody, /Loopback/i);
 
+  let unknownStatus = 0;
+  createdServers[0]._listener(
+    { url: "/" },
+    {
+      headersSent: false,
+      writeHead(code) {
+        unknownStatus = code;
+      },
+      end() {}
+    }
+  );
+  assert.equal(unknownStatus, 403);
+
   engineMod.exports.onExit();
+  assert.equal(removeAllRequests, 1);
+  assert.equal(closedCount, 0, "keep the listener open until /removeAll responds");
+  removeAllResponse.handlers.end();
   assert.equal(closedCount, 1);
 });

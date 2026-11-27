@@ -47,10 +47,7 @@ function isLoopbackAddress(value) {
 
 function isLoopbackRequest(request) {
   var socket = request && (request.socket || request.connection);
-  if (!socket) {
-    return true;
-  }
-  return isLoopbackAddress(socket.remoteAddress);
+  return isLoopbackAddress(socket && socket.remoteAddress);
 }
 
 function handleRequest(request, response) {
