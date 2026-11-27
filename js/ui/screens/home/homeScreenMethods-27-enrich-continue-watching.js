@@ -4,7 +4,32 @@ import {
   isServerContentId,
   resolveContinueWatchingSeriesContentId
 } from "./continueWatchingSeriesIdentity.js";
+import { flushContinueWatchingEnrichmentCache } from "./homeScreenHelpers-10-get-cached-continue-watching-enrichment.js";
 import * as internals from "./homeScreenContext.js";
+
+const CW_INPUT_QUIET_MS = 1800;
+
+export async function waitForHomeInputQuiet(screen, shouldContinue) {
+  if (typeof setTimeout !== "function") {
+    return !shouldContinue || shouldContinue();
+  }
+  const isPostPaint = screen?.hasPaintedInitialHomeContent === true || screen?.isInitialHomeLoading === false;
+  if (!isPostPaint) {
+    return !shouldContinue || shouldContinue();
+  }
+  while (!shouldContinue || shouldContinue()) {
+    const lastInputAt = Number(screen?.lastHomeInputAt || 0);
+    if (!(lastInputAt > 0)) {
+      return true;
+    }
+    const remainingMs = CW_INPUT_QUIET_MS - (Date.now() - lastInputAt);
+    if (remainingMs <= 0) {
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, remainingMs));
+  }
+  return false;
+}
 
 export function createHomeScreenMethods27() {
   const {
@@ -36,132 +61,163 @@ export function createHomeScreenMethods27() {
 
   return {
     async enrichContinueWatching(items = [], options = {}) {
-      const [enrichedInProgressItems, nextUpItems] = await Promise.all([
-        mapWithConcurrency(items || [], CW_MAX_ENRICHMENT_CONCURRENCY, async (item) => {
-          if (isCloudContinueWatchingItem(item)) {
-            return {
-              ...item,
-              title: firstNonEmpty(item.title, item.name, item.contentId),
-              description: firstNonEmpty(item.description),
-              continueWatchingMetaResolved: true
-            };
-          }
-          const cachedItem = applyCachedContinueWatchingEnrichment(item);
-          const needsEpisodeRating =
-            isSeriesTypeForContinueWatching(cachedItem.contentType || cachedItem.type) &&
-            !Object.prototype.hasOwnProperty.call(cachedItem, "episodeImdbRating");
-          // An episode id stored as a series content id can only be resolved by
-          // the media server, so check each server series once before trusting
-          // its cached enrichment.
-          const needsServerSeriesIdentity =
-            isSeriesTypeForContinueWatching(cachedItem.contentType || cachedItem.type) &&
-            isServerContentId(cachedItem.contentId) &&
-            cachedItem.serverSeriesIdentityChecked !== true;
-          if (
-            !options?.forceRefreshMetadata &&
-            !needsEpisodeRating &&
-            !needsServerSeriesIdentity &&
-            !needsContinueWatchingMetadataRefresh([cachedItem])
-          ) {
-            return cachedItem;
-          }
-          try {
-            let meta =
-              item.enrichedMeta ||
-              (await this.fetchMetaForContinueWatching(item.contentType || "movie", item.contentId, options?.metaTimeoutMs || 1800, [
-                item.imdbId
-              ]));
-            const resolvedMeta = Boolean(meta);
-            if (!meta) {
-              meta = {
-                id: item.contentId,
-                type: item.contentType || "movie",
-                name: item.title || prettyId(item.contentId)
-              };
+      const shouldContinue = typeof options?.shouldContinue === "function" ? options.shouldContinue : null;
+      let enrichedInProgressItems = [];
+      let nextUpItems = [];
+      try {
+        [enrichedInProgressItems, nextUpItems] = await Promise.all([
+          mapWithConcurrency(items || [], CW_MAX_ENRICHMENT_CONCURRENCY, async (item) => {
+            if (shouldContinue && !shouldContinue()) {
+              return item;
             }
-            if (meta) {
-              const enrichedMeta = await this.enrichContinueWatchingMetaWithTmdb(meta, item);
-              const contentId = resolveContinueWatchingSeriesContentId(item.contentId, enrichedMeta);
-              const episodeEntry = findEpisodeEntry(enrichedMeta.videos, item.season, item.episode);
-              const runtimeMinutes = parseRuntimeMinutes(
-                episodeEntry?.runtimeMinutes ?? enrichedMeta.episodeRuntime ?? enrichedMeta.runtimeMinutes ?? enrichedMeta.runtime ?? 0
-              );
-              const episodeImdbRating = isSeriesTypeForContinueWatching(item.contentType || item.type)
-                ? await resolveContinueWatchingEpisodeRating(item, episodeEntry?.imdbRating ?? item.episodeImdbRating, enrichedMeta.videos)
-                : null;
-              const enriched = {
+            if (isCloudContinueWatchingItem(item)) {
+              return {
                 ...item,
-                contentId,
-                title: enrichedMeta.name || prettyId(item.contentId),
-                landscapePoster:
-                  enrichedMeta.landscapePoster || enrichedMeta.thumbnail || enrichedMeta.backdrop || enrichedMeta.background || null,
-                episodeThumbnail: episodeEntry?.thumbnail || enrichedMeta.episodeThumbnail || item.episodeThumbnail || null,
-                poster: enrichedMeta.poster || enrichedMeta.thumbnail || enrichedMeta.background || enrichedMeta.backdrop || null,
-                background: enrichedMeta.background || enrichedMeta.backdrop || enrichedMeta.thumbnail || enrichedMeta.poster || null,
-                backdrop: enrichedMeta.backdrop || enrichedMeta.background || null,
-                thumbnail: enrichedMeta.thumbnail || enrichedMeta.poster || null,
-                logo: enrichedMeta.logo || null,
-                description: enrichedMeta.description || "",
-                releaseInfo: enrichedMeta.releaseInfo || "",
-                imdbRating: resolveImdbRating(enrichedMeta),
-                episodeImdbRating,
-                genres: Array.isArray(enrichedMeta.genres) ? enrichedMeta.genres : [],
-                runtimeMinutes,
-                durationMs:
-                  Number(item.durationMs || 0) > 0
-                    ? Number(item.durationMs || 0)
-                    : runtimeMinutes > 0
-                      ? Math.round(runtimeMinutes * 60000)
-                      : 0,
-                ageRating: firstNonEmpty(enrichedMeta.ageRating, enrichedMeta.age_rating),
-                status: firstNonEmpty(enrichedMeta.status),
-                language: firstNonEmpty(enrichedMeta.language),
-                country: firstNonEmpty(enrichedMeta.country),
-                episodeTitle: firstNonEmpty(enrichedMeta.episodeTitle, episodeEntry?.title, item.episodeTitle, item.subtitle),
-                episodeDescription: firstNonEmpty(
-                  enrichedMeta.episodeDescription,
-                  episodeEntry?.overview,
-                  item.episodeDescription,
-                  item.episode_description
-                ),
-                continueWatchingMetaResolved: true,
-                serverSeriesIdentityChecked:
-                  resolvedMeta && isServerContentId(item.contentId) ? true : cachedItem.serverSeriesIdentityChecked === true
+                title: firstNonEmpty(item.title, item.name, item.contentId),
+                description: firstNonEmpty(item.description),
+                continueWatchingMetaResolved: true
               };
-              saveContinueWatchingEnrichment(enriched);
-              return enriched;
             }
-          } catch (error) {
-            console.warn("Continue watching enrichment failed", error);
-          }
-          return {
-            ...cachedItem,
-            title: firstNonEmpty(cachedItem.title, cachedItem.name),
-            landscapePoster: cachedItem.landscapePoster || cachedItem.thumbnail || cachedItem.backdrop || cachedItem.background || null,
-            episodeThumbnail: cachedItem.episodeThumbnail || null,
-            poster: cachedItem.poster || cachedItem.thumbnail || null,
-            background: cachedItem.background || cachedItem.backdrop || cachedItem.poster || null,
-            backdrop: cachedItem.backdrop || cachedItem.background || null,
-            thumbnail: cachedItem.thumbnail || cachedItem.poster || null,
-            logo: cachedItem.logo || null,
-            description: cachedItem.description || "",
-            releaseInfo: cachedItem.releaseInfo || "",
-            genres: Array.isArray(cachedItem.genres) ? cachedItem.genres : [],
-            runtimeMinutes: Number(cachedItem.runtimeMinutes ?? cachedItem.runtime ?? 0) || 0,
-            ageRating: firstNonEmpty(cachedItem.ageRating, cachedItem.age_rating),
-            status: firstNonEmpty(cachedItem.status),
-            language: firstNonEmpty(cachedItem.language),
-            country: firstNonEmpty(cachedItem.country),
-            episodeTitle: firstNonEmpty(cachedItem.episodeTitle, cachedItem.subtitle)
-          };
-        }),
-        this.buildNextUpItems({
-          allProgress: options?.allProgress || [],
-          inProgressItems: items || [],
-          nextUpProgressCandidates: options?.nextUpProgressCandidates || [],
-          watchedItems: options?.watchedItems || []
-        })
-      ]);
+            const cachedItem = applyCachedContinueWatchingEnrichment(item);
+            const needsEpisodeRating =
+              isSeriesTypeForContinueWatching(cachedItem.contentType || cachedItem.type) &&
+              !Object.prototype.hasOwnProperty.call(cachedItem, "episodeImdbRating");
+            // An episode id stored as a series content id can only be resolved by
+            // the media server, so check each server series once before trusting
+            // its cached enrichment.
+            const needsServerSeriesIdentity =
+              isSeriesTypeForContinueWatching(cachedItem.contentType || cachedItem.type) &&
+              isServerContentId(cachedItem.contentId) &&
+              cachedItem.serverSeriesIdentityChecked !== true;
+            if (
+              !options?.forceRefreshMetadata &&
+              !needsEpisodeRating &&
+              !needsServerSeriesIdentity &&
+              !needsContinueWatchingMetadataRefresh([cachedItem])
+            ) {
+              return cachedItem;
+            }
+            if (!(await waitForHomeInputQuiet(this, shouldContinue))) {
+              return cachedItem;
+            }
+            try {
+              let meta =
+                item.enrichedMeta ||
+                (await this.fetchMetaForContinueWatching(item.contentType || "movie", item.contentId, options?.metaTimeoutMs || 1800, [
+                  item.imdbId
+                ]));
+              if (shouldContinue && !shouldContinue()) {
+                return cachedItem;
+              }
+              const resolvedMeta = Boolean(meta);
+              if (!meta) {
+                meta = {
+                  id: item.contentId,
+                  type: item.contentType || "movie",
+                  name: item.title || prettyId(item.contentId)
+                };
+              }
+              if (meta) {
+                const enrichedMeta = await this.enrichContinueWatchingMetaWithTmdb(meta, item);
+                if (shouldContinue && !shouldContinue()) {
+                  return cachedItem;
+                }
+                const contentId = resolveContinueWatchingSeriesContentId(item.contentId, enrichedMeta);
+                const episodeEntry = findEpisodeEntry(enrichedMeta.videos, item.season, item.episode);
+                const runtimeMinutes = parseRuntimeMinutes(
+                  episodeEntry?.runtimeMinutes ?? enrichedMeta.episodeRuntime ?? enrichedMeta.runtimeMinutes ?? enrichedMeta.runtime ?? 0
+                );
+                const episodeImdbRating = isSeriesTypeForContinueWatching(item.contentType || item.type)
+                  ? await resolveContinueWatchingEpisodeRating(
+                      item,
+                      episodeEntry?.imdbRating ?? item.episodeImdbRating,
+                      enrichedMeta.videos
+                    )
+                  : null;
+                if (shouldContinue && !shouldContinue()) {
+                  return cachedItem;
+                }
+                const enriched = {
+                  ...item,
+                  contentId,
+                  title: enrichedMeta.name || prettyId(item.contentId),
+                  landscapePoster:
+                    enrichedMeta.landscapePoster || enrichedMeta.thumbnail || enrichedMeta.backdrop || enrichedMeta.background || null,
+                  episodeThumbnail: episodeEntry?.thumbnail || enrichedMeta.episodeThumbnail || item.episodeThumbnail || null,
+                  poster: enrichedMeta.poster || enrichedMeta.thumbnail || enrichedMeta.background || enrichedMeta.backdrop || null,
+                  background: enrichedMeta.background || enrichedMeta.backdrop || enrichedMeta.thumbnail || enrichedMeta.poster || null,
+                  backdrop: enrichedMeta.backdrop || enrichedMeta.background || null,
+                  thumbnail: enrichedMeta.thumbnail || enrichedMeta.poster || null,
+                  logo: enrichedMeta.logo || null,
+                  description: enrichedMeta.description || "",
+                  releaseInfo: enrichedMeta.releaseInfo || "",
+                  imdbRating: resolveImdbRating(enrichedMeta),
+                  episodeImdbRating,
+                  genres: Array.isArray(enrichedMeta.genres) ? enrichedMeta.genres : [],
+                  runtimeMinutes,
+                  durationMs:
+                    Number(item.durationMs || 0) > 0
+                      ? Number(item.durationMs || 0)
+                      : runtimeMinutes > 0
+                        ? Math.round(runtimeMinutes * 60000)
+                        : 0,
+                  ageRating: firstNonEmpty(enrichedMeta.ageRating, enrichedMeta.age_rating),
+                  status: firstNonEmpty(enrichedMeta.status),
+                  language: firstNonEmpty(enrichedMeta.language),
+                  country: firstNonEmpty(enrichedMeta.country),
+                  episodeTitle: firstNonEmpty(enrichedMeta.episodeTitle, episodeEntry?.title, item.episodeTitle, item.subtitle),
+                  episodeDescription: firstNonEmpty(
+                    enrichedMeta.episodeDescription,
+                    episodeEntry?.overview,
+                    item.episodeDescription,
+                    item.episode_description
+                  ),
+                  continueWatchingMetaResolved: true,
+                  serverSeriesIdentityChecked:
+                    resolvedMeta && isServerContentId(item.contentId) ? true : cachedItem.serverSeriesIdentityChecked === true
+                };
+                saveContinueWatchingEnrichment(enriched, { deferWrite: true });
+                return enriched;
+              }
+            } catch (error) {
+              console.warn("Continue watching enrichment failed", error);
+            }
+            return {
+              ...cachedItem,
+              title: firstNonEmpty(cachedItem.title, cachedItem.name),
+              landscapePoster: cachedItem.landscapePoster || cachedItem.thumbnail || cachedItem.backdrop || cachedItem.background || null,
+              episodeThumbnail: cachedItem.episodeThumbnail || null,
+              poster: cachedItem.poster || cachedItem.thumbnail || null,
+              background: cachedItem.background || cachedItem.backdrop || cachedItem.poster || null,
+              backdrop: cachedItem.backdrop || cachedItem.background || null,
+              thumbnail: cachedItem.thumbnail || cachedItem.poster || null,
+              logo: cachedItem.logo || null,
+              description: cachedItem.description || "",
+              releaseInfo: cachedItem.releaseInfo || "",
+              genres: Array.isArray(cachedItem.genres) ? cachedItem.genres : [],
+              runtimeMinutes: Number(cachedItem.runtimeMinutes ?? cachedItem.runtime ?? 0) || 0,
+              ageRating: firstNonEmpty(cachedItem.ageRating, cachedItem.age_rating),
+              status: firstNonEmpty(cachedItem.status),
+              language: firstNonEmpty(cachedItem.language),
+              country: firstNonEmpty(cachedItem.country),
+              episodeTitle: firstNonEmpty(cachedItem.episodeTitle, cachedItem.subtitle)
+            };
+          }),
+          (async () => {
+            if (!(await waitForHomeInputQuiet(this, shouldContinue))) {
+              return [];
+            }
+            return this.buildNextUpItems({
+              allProgress: options?.allProgress || [],
+              inProgressItems: items || [],
+              nextUpProgressCandidates: options?.nextUpProgressCandidates || [],
+              watchedItems: options?.watchedItems || []
+            });
+          })()
+        ]);
+      } finally {
+        flushContinueWatchingEnrichmentCache();
+      }
 
       const inProgressItems = dedupeContinueWatchingInProgress(enrichedInProgressItems);
       const inProgressSeriesIds = new Set(

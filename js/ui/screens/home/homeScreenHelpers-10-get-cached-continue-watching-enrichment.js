@@ -205,10 +205,16 @@ import { normalizeCatalogItem } from "./homeScreenHelpers-08-partition-continue-
 // render pass from bumping cachedAt; older entries are refreshed so the 14-day
 // cache age still revalidates their metadata.
 const CW_ENRICHMENT_WRITE_DEDUPE_MS = 60 * 60 * 1000;
+const CW_ENRICHMENT_FLUSH_DEBOUNCE_MS = 600;
 
 let cwEnrichmentMemoRaw;
 let cwEnrichmentMemoRevision = -1;
 let cwEnrichmentMemoCache = null;
+let cwEnrichmentPendingCache = null;
+let cwEnrichmentPendingBaseRevision = -1;
+let cwEnrichmentPendingBaseRaw;
+let cwEnrichmentFlushTimer = null;
+let cwEnrichmentLifecycleHooksBound = false;
 
 function readRawCwEnrichmentText() {
   try {
@@ -219,7 +225,30 @@ function readRawCwEnrichmentText() {
   }
 }
 
+function cancelPendingCwEnrichmentFlush() {
+  if (cwEnrichmentFlushTimer) {
+    clearTimeout(cwEnrichmentFlushTimer);
+    cwEnrichmentFlushTimer = null;
+  }
+  cwEnrichmentPendingCache = null;
+  cwEnrichmentPendingBaseRevision = -1;
+  cwEnrichmentPendingBaseRaw = undefined;
+}
+
+function hasExternalCwEnrichmentMutation() {
+  if (LocalStore.revision(CW_ENRICHMENT_CACHE_KEY) !== cwEnrichmentPendingBaseRevision) {
+    return true;
+  }
+  return cwEnrichmentPendingBaseRaw !== undefined && readRawCwEnrichmentText() !== cwEnrichmentPendingBaseRaw;
+}
+
 function getMemoizedContinueWatchingEnrichmentCache() {
+  if (cwEnrichmentPendingCache) {
+    if (!hasExternalCwEnrichmentMutation()) {
+      return cwEnrichmentPendingCache;
+    }
+    cancelPendingCwEnrichmentFlush();
+  }
   const raw = readRawCwEnrichmentText();
   const revision = LocalStore.revision(CW_ENRICHMENT_CACHE_KEY);
   if (cwEnrichmentMemoCache && raw !== undefined && raw === cwEnrichmentMemoRaw && revision === cwEnrichmentMemoRevision) {
@@ -230,6 +259,43 @@ function getMemoizedContinueWatchingEnrichmentCache() {
   cwEnrichmentMemoRaw = raw;
   cwEnrichmentMemoRevision = revision;
   return cwEnrichmentMemoCache;
+}
+
+function bindCwEnrichmentLifecycleFlushHooks() {
+  if (cwEnrichmentLifecycleHooksBound) {
+    return;
+  }
+  cwEnrichmentLifecycleHooksBound = true;
+  const onVisibilityChange = () => {
+    if (globalThis.document?.hidden) {
+      flushContinueWatchingEnrichmentCache();
+    }
+  };
+  const onFlushEvent = () => {
+    flushContinueWatchingEnrichmentCache();
+  };
+  globalThis.document?.addEventListener?.("visibilitychange", onVisibilityChange);
+  globalThis.document?.addEventListener?.("nuvio:beforeExitApp", onFlushEvent);
+  globalThis.window?.addEventListener?.("pagehide", onFlushEvent);
+}
+
+/** Persist any deferred Continue Watching enrichment batch once, unless cleared externally. */
+export function flushContinueWatchingEnrichmentCache() {
+  if (!cwEnrichmentPendingCache) {
+    cancelPendingCwEnrichmentFlush();
+    return false;
+  }
+  if (hasExternalCwEnrichmentMutation()) {
+    cancelPendingCwEnrichmentFlush();
+    return false;
+  }
+  const cacheToWrite = cwEnrichmentPendingCache;
+  cancelPendingCwEnrichmentFlush();
+  LocalStore.set(CW_ENRICHMENT_CACHE_KEY, cacheToWrite);
+  cwEnrichmentMemoCache = cacheToWrite;
+  cwEnrichmentMemoRaw = readRawCwEnrichmentText();
+  cwEnrichmentMemoRevision = LocalStore.revision(CW_ENRICHMENT_CACHE_KEY);
+  return true;
 }
 
 function cwEnrichmentEntryEquals(left, right) {
@@ -308,7 +374,7 @@ export function applyCachedContinueWatchingEnrichment(item = {}) {
   });
 }
 
-export function saveContinueWatchingEnrichment(item = {}) {
+export function saveContinueWatchingEnrichment(item = {}, { deferWrite = false } = {}) {
   const normalized = normalizeContinueWatchingItem(item);
   if (!normalized?.contentId || isRawContinueWatchingTitle(normalized) || !hasContinueWatchingArtwork(normalized)) {
     return;
@@ -365,6 +431,24 @@ export function saveContinueWatchingEnrichment(item = {}) {
       .slice(0, enrichmentCacheLimit);
     nextCache = Object.fromEntries(entries);
   }
+  if (deferWrite) {
+    bindCwEnrichmentLifecycleFlushHooks();
+    if (!cwEnrichmentPendingCache) {
+      cwEnrichmentPendingBaseRevision = LocalStore.revision(CW_ENRICHMENT_CACHE_KEY);
+      cwEnrichmentPendingBaseRaw = cwEnrichmentMemoRaw !== undefined ? cwEnrichmentMemoRaw : readRawCwEnrichmentText();
+    }
+    cwEnrichmentPendingCache = nextCache;
+    cwEnrichmentMemoCache = nextCache;
+    if (cwEnrichmentFlushTimer) {
+      clearTimeout(cwEnrichmentFlushTimer);
+    }
+    cwEnrichmentFlushTimer = setTimeout(() => {
+      cwEnrichmentFlushTimer = null;
+      flushContinueWatchingEnrichmentCache();
+    }, CW_ENRICHMENT_FLUSH_DEBOUNCE_MS);
+    return;
+  }
+  cancelPendingCwEnrichmentFlush();
   LocalStore.set(CW_ENRICHMENT_CACHE_KEY, nextCache);
   cwEnrichmentMemoCache = nextCache;
   cwEnrichmentMemoRaw = readRawCwEnrichmentText();
