@@ -213,6 +213,12 @@ export function createFolderDetailScreenMethods05() {
           if (this.boundHomeMouseDownHandler) {
             this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
           }
+          if (this.boundHomeMouseUpHandler) {
+            this.boundHomeEventContainer.removeEventListener("mouseup", this.boundHomeMouseUpHandler);
+          }
+          if (this.boundHomeMouseOutHandler) {
+            this.boundHomeEventContainer.removeEventListener("mouseout", this.boundHomeMouseOutHandler);
+          }
           if (this.boundHomeMouseOverHandler) {
             this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
           }

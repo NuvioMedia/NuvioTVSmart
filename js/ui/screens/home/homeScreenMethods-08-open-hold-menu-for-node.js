@@ -17,12 +17,12 @@ export function createHomeScreenMethods08() {
   } = internals;
 
   return {
-    openHoldMenuForNode(node) {
+    openHoldMenuForNode(node, fromPointer = false) {
       if (this.isContinueWatchingHoldTarget(node)) {
-        return this.openContinueWatchingMenu(node);
+        return this.openContinueWatchingMenu(node, fromPointer);
       }
       if (this.isPosterHoldTarget(node)) {
-        void this.openPosterHoldMenu(node);
+        void this.openPosterHoldMenu(node, fromPointer);
         return true;
       }
       return false;
@@ -101,7 +101,7 @@ export function createHomeScreenMethods08() {
           return;
         }
         pending.holdTriggered = true;
-        this.openHoldMenuForNode(current);
+        this.openHoldMenuForNode(current, fromPointer);
       }, CW_HOLD_DELAY_MS);
       return true;
     },
