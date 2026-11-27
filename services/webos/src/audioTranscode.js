@@ -267,7 +267,7 @@ async function handleRequest(req, res) {
           if (bytes > 65536) {
             const limitError = new Error("Payload too large");
             cleanup();
-            req.destroy(limitError);
+            req.destroy();
             reject(limitError);
             return;
           }

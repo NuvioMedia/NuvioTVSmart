@@ -355,6 +355,12 @@ function requestRange(url, start, end, maxBytes, redirects, requestContext) {
           bitmapSubtitleError("RANGE_ABORTED", "Bitmap subtitle range response aborted")
         );
       });
+      res.on("error", function () {
+        if (requestContext) requestContext.requests.delete(req);
+        finishReject(
+          bitmapSubtitleError("RANGE_ABORTED", "Bitmap subtitle range response aborted")
+        );
+      });
       res.on("end", function () {
         var totalSize = null;
         var contentRange = String(res.headers["content-range"] || "");

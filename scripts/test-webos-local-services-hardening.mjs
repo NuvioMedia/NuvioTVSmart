@@ -83,6 +83,24 @@ test("serverHost rejects non-loopback requests with 403 and allows loopback", as
 
   assert.equal(deniedStatus, 403);
   assert.match(deniedBody, /Loopback/i);
+
+  let allowedStatus = 0;
+  let allowedBody = "";
+  innerServers[0]._listener(
+    { url: "/", socket: { remoteAddress: "::ffff:127.0.0.1" } },
+    {
+      headersSent: false,
+      writeHead(code) {
+        allowedStatus = code;
+      },
+      end(chunk) {
+        allowedBody = String(chunk || "");
+      }
+    }
+  );
+
+  assert.equal(allowedStatus, 200);
+  assert.equal(allowedBody, "ok");
 });
 
 test("bitmapSubtitles requestRange enforces maxBytes, handles aborted response, and respects cancelled context", async () => {
@@ -113,6 +131,77 @@ test("bitmapSubtitles requestRange enforces maxBytes, handles aborted response, 
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test("bitmapSubtitles requestRange rejects responses aborted mid-body", async () => {
+  const server = http.createServer((_req, res) => {
+    res.writeHead(206, {
+      "Content-Range": "bytes 0-1023/2048",
+      "Content-Length": 1024
+    });
+    res.write(Buffer.alloc(16, 0x41));
+    setTimeout(() => res.destroy(), 20);
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const { port } = server.address();
+    await assert.rejects(
+      () =>
+        bitmapSubtitles._test.requestRange(`http://127.0.0.1:${port}/aborted.mks`, 0, 1023, 2048, 0, {
+          cancelled: false,
+          requests: new Set()
+        }),
+      (error) => error && error.code === "RANGE_ABORTED"
+    );
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("imageProxy prunes cache entries beyond file and byte limits", () => {
+  const src = fs.readFileSync(path.join(rootDir, "services", "webos", "src", "imageProxy.js"), "utf8");
+  const entries = [];
+  for (let index = 0; index < 130; index += 1) {
+    entries.push({
+      name: `hash${String(index).padStart(4, "0")}.png`,
+      size: 1024 * 1024,
+      mtimeMs: index
+    });
+  }
+  const removed = [];
+  const fakeFs = {
+    readdirSync: () => entries.map((entry) => entry.name),
+    statSync: (filePath) => {
+      const entry = entries.find((item) => item.name === path.basename(filePath));
+      if (!entry) throw new Error("ENOENT");
+      return { isFile: () => true, size: entry.size, mtimeMs: entry.mtimeMs };
+    },
+    unlinkSync: (filePath) => removed.push(path.basename(filePath))
+  };
+  const mod = { exports: {} };
+  const fn = vm.runInNewContext(
+    `(function (exports, require, module, __filename, __dirname) {\n${src}\n})`,
+    { Buffer, console, process, setTimeout, clearTimeout, Promise, URL },
+    { filename: "imageProxy.js" }
+  );
+  fn(
+    mod.exports,
+    (id) =>
+      id === "fs" ? fakeFs : id === "os" ? { tmpdir: () => "/tmp" } : require(id),
+    mod,
+    "imageProxy.js",
+    "."
+  );
+
+  mod.exports._test.pruneCacheDir();
+
+  // 130 x 1 MiB exceeds both the 128-file and 64 MiB limits, so the 66
+  // oldest images (and their metadata) are removed.
+  assert.equal(removed.length, 132);
+  assert.ok(removed.includes("hash0000.png"));
+  assert.ok(removed.includes("hash0000.json"));
+  assert.ok(removed.includes("hash0065.png"));
+  assert.ok(!removed.includes("hash0066.png"));
 });
 
 test("audioTranscode destroys static asset read stream when response closes", () => {

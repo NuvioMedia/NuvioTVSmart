@@ -488,5 +488,6 @@ function createImageProxyHandler() {
 }
 
 module.exports = {
-  createImageProxyHandler: createImageProxyHandler
+  createImageProxyHandler: createImageProxyHandler,
+  _test: { pruneCacheDir: pruneCacheDir }
 };
