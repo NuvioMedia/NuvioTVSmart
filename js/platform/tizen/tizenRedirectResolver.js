@@ -92,7 +92,10 @@ export async function resolveTizenDirectRedirect(
     clearTimeout(timer);
     // Only the status line and headers are needed; stop the body transfer.
     try {
-      response?.body?.cancel?.();
+      const cancelPromise = response?.body?.cancel?.();
+      if (cancelPromise && typeof cancelPromise.catch === "function") {
+        cancelPromise.catch(() => {});
+      }
     } catch (_) {
       // Ignore body cancellation failures.
     }
