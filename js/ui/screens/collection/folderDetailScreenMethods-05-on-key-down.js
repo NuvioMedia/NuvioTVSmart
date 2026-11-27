@@ -222,6 +222,10 @@ export function createFolderDetailScreenMethods05() {
           if (this.boundHomeMouseOutHandler) {
             this.boundHomeEventContainer.removeEventListener("mouseout", this.boundHomeMouseOutHandler);
           }
+          if (this.boundHomeMouseMoveHandler) {
+            this.boundHomeEventContainer.removeEventListener("mousemove", this.boundHomeMouseMoveHandler);
+            this.boundHomeEventContainer.removeEventListener("pointermove", this.boundHomeMouseMoveHandler);
+          }
           if (this.boundHomeMouseOverHandler) {
             this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
           }

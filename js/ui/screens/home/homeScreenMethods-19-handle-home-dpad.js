@@ -1,5 +1,9 @@
 import * as internals from "./homeScreenContext.js";
 
+// A hover transition caused by a real pointer move is dispatched in the same
+// turn as its mousemove, so this only has to cover that pair.
+const HOME_POINTER_HOVER_GRACE_MS = 250;
+
 export function createHomeScreenMethods19() {
   const {
     getLegacySidebarSelectedNode,
@@ -246,10 +250,22 @@ export function createHomeScreenMethods19() {
           }
         };
       }
+      if (!this.boundHomeMouseMoveHandler) {
+        this.boundHomeMouseMoveHandler = () => {
+          this.lastHomePointerMoveAt = Date.now();
+        };
+      }
       if (!this.boundHomeMouseOverHandler) {
         this.boundHomeMouseOverHandler = (event) => {
           const target = event?.target?.closest?.(".home-main .home-content-card.focusable");
           if (!target || !this.container?.contains(target) || target.classList.contains("focused")) {
+            return;
+          }
+          // Row scrolling and card expansion shift content under a resting Magic
+          // Remote pointer and fire mouseover with no pointer movement. Taking
+          // focus there would shift the row again and feed the loop, so a hover
+          // only counts when the pointer actually moved.
+          if (Date.now() - Number(this.lastHomePointerMoveAt || 0) > HOME_POINTER_HOVER_GRACE_MS) {
             return;
           }
           // Match Android TV: while the expanded sidebar owns navigation, pointer
@@ -261,6 +277,7 @@ export function createHomeScreenMethods19() {
           this.setFocusedNode(target, { suppressDelegatedFocus: true });
           if (this.isMainNode(target)) {
             this.lastMainFocus = target;
+            this.revealPointerHoveredRow(target);
           }
           this.syncFocusedCollectionCardState();
           this.scheduleModernHeroUpdate(target);
@@ -297,6 +314,8 @@ export function createHomeScreenMethods19() {
         this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
         this.boundHomeEventContainer.removeEventListener("mouseup", this.boundHomeMouseUpHandler);
         this.boundHomeEventContainer.removeEventListener("mouseout", this.boundHomeMouseOutHandler);
+        this.boundHomeEventContainer.removeEventListener("mousemove", this.boundHomeMouseMoveHandler);
+        this.boundHomeEventContainer.removeEventListener("pointermove", this.boundHomeMouseMoveHandler);
         this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
         this.boundHomeEventContainer.removeEventListener("wheel", this.boundHomeWheelHandler);
       }
@@ -305,9 +324,25 @@ export function createHomeScreenMethods19() {
       this.container.addEventListener("mousedown", this.boundHomeMouseDownHandler);
       this.container.addEventListener("mouseup", this.boundHomeMouseUpHandler);
       this.container.addEventListener("mouseout", this.boundHomeMouseOutHandler);
+      this.container.addEventListener("mousemove", this.boundHomeMouseMoveHandler, { passive: true });
+      this.container.addEventListener("pointermove", this.boundHomeMouseMoveHandler, { passive: true });
       this.container.addEventListener("mouseover", this.boundHomeMouseOverHandler);
       this.container.addEventListener("wheel", this.boundHomeWheelHandler, { passive: false });
       this.boundHomeEventContainer = this.container;
+    },
+    revealPointerHoveredRow(target) {
+      const viewport = this.getHomeViewport();
+      const anchor = viewport ? this.getMainFocusAnchor(target) : null;
+      if (!anchor) {
+        return;
+      }
+      // Android brings the focused row into view whatever moved the focus.
+      // Reveal only the clipped part of the row, never re-center it.
+      const overflow = anchor.getBoundingClientRect().bottom - (viewport.getBoundingClientRect().bottom - 24);
+      if (overflow <= 0) {
+        return;
+      }
+      this.animateScroll(viewport, "y", Number(viewport.scrollTop || 0) + overflow, this.getScrollDuration(150));
     },
     bindHomeViewportEvents() {
       const viewport = this.getHomeViewport();
