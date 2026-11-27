@@ -63,7 +63,7 @@ export function createHomeScreenMethods08() {
         String(node.dataset.episode || "") === String(pending.episode || "")
       );
     },
-    startPendingContinueWatchingHold(node) {
+    startPendingContinueWatchingHold(node, fromPointer = false) {
       if (!this.isHomeHoldTarget(node)) {
         return false;
       }
@@ -92,7 +92,11 @@ export function createHomeScreenMethods08() {
         if (!pending || Router.getCurrent() !== "home") {
           return;
         }
-        const current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
+        let current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
+        if (fromPointer && !this.hasPendingContinueWatchingHold(current)) {
+          // Pointer holds are tied to the pressed card, which may not be the focused one.
+          current = node;
+        }
         if (!this.hasPendingContinueWatchingHold(current)) {
           return;
         }
