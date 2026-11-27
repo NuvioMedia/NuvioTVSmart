@@ -345,9 +345,37 @@ export function createHomeScreenMethods13() {
       this.expandedPosterNode = node;
       requestAnimationFrame(() => {
         if (node.classList.contains("focused")) {
-          this.ensureTrackHorizontalVisibility(node);
+          this.revealExpandedPosterTrailingEdge(node);
         }
       });
+    },
+    getExpandedPosterWidth(node) {
+      if (!node?.classList?.contains("is-landscape")) {
+        const shell = this.container?.querySelector(".home-screen-shell");
+        const metrics = shell ? this.getCachedModernPortraitPosterMetrics(shell) : null;
+        if (Number(metrics?.expandedWidth) > 0) {
+          return Number(metrics.expandedWidth);
+        }
+      }
+      return Number(node?.offsetWidth || 0);
+    },
+    revealExpandedPosterTrailingEdge(node) {
+      const track = node?.closest?.(".home-track");
+      if (!track) {
+        return;
+      }
+      // Android reveals only the expanded card's trailing edge, plus a small
+      // margin. Realigning the card instead would drag the whole row under a
+      // hovering pointer and turn the expansion into another hover target.
+      const metrics = this.getTrackViewportMetrics(track);
+      const trackRect = track.getBoundingClientRect();
+      const nodeRect = node.getBoundingClientRect();
+      const visibleRight = trackRect.left + Number(track.clientWidth || 0) - metrics.safeRightPadding;
+      const overshoot = nodeRect.left + this.getExpandedPosterWidth(node) - visibleRight;
+      if (overshoot <= 0) {
+        return;
+      }
+      this.animateScroll(track, "x", Number(track.scrollLeft || 0) + overshoot + 30, this.getScrollDuration(160));
     },
     async getTrailerSourceForItem(item) {
       if (isCollectionFolderItem(item)) {
