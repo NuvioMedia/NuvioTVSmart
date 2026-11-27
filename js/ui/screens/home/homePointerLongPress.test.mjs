@@ -77,14 +77,14 @@ test("pointer press held past CW_HOLD_DELAY_MS opens the hold menu and swallows 
   });
   screen.ensureDelegatedEventsBound();
 
-  const down = { button: 0, target: card };
+  const down = { button: 0, target: card, timeStamp: 5000 };
   const click = (node = card) =>
     handlers.click({ target: node, preventDefault() {}, stopPropagation() {} });
   {
     // Short press: no menu, click runs the normal action.
     handlers.mousedown(down);
     now += 100;
-    handlers.mouseup?.({ target: card });
+    handlers.mouseup?.({ target: card, timeStamp: 5100 });
     click({
       ...card,
       dataset: { action: "resumeProgress" },
@@ -98,7 +98,7 @@ test("pointer press held past CW_HOLD_DELAY_MS opens the hold menu and swallows 
     handlers.mousedown(down);
     now += 700;
     timers.pop()();
-    handlers.mouseup?.({ target: card });
+    handlers.mouseup?.({ target: card, timeStamp: 5700 });
     click({
       ...card,
       dataset: { action: "resumeProgress" },
@@ -108,7 +108,7 @@ test("pointer press held past CW_HOLD_DELAY_MS opens the hold menu and swallows 
     assert.equal(selected.length, 1);
 
     // The press after a hold is a normal click again.
-    handlers.mousedown(down);
+    handlers.mousedown({ button: 0, target: card }); // no timestamps: Date.now fallback
     now += 50;
     handlers.mouseup?.({ target: card });
     click({
@@ -117,6 +117,21 @@ test("pointer press held past CW_HOLD_DELAY_MS opens the hold menu and swallows 
       closest: () => ({ ...card, dataset: { action: "resumeProgress" } })
     });
     assert.equal(selected.length, 2);
+
+    // Busy main thread: tap lasted 100 ms by event time, but mouseup is processed after 650 ms of wall clock.
+    let cancelled = 0;
+    handlers.mousedown({ ...down, timeStamp: 1000 });
+    screen.cancelPendingContinueWatchingHold = () => cancelled++;
+    now += 800;
+    handlers.mouseup?.({ target: card, timeStamp: 1100 });
+    assert.equal(cancelled, 1);
+    click({
+      ...card,
+      dataset: { action: "resumeProgress" },
+      closest: () => ({ ...card, dataset: { action: "resumeProgress" } })
+    });
+    assert.equal(selected.length, 3);
+    assert.equal(opened.length, 1);
   }
 });
 

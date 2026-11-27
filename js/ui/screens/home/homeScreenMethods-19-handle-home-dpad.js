@@ -10,6 +10,18 @@ export function createHomeScreenMethods19() {
     CW_HOLD_DELAY_MS
   } = internals;
 
+  // Hold time must come from input event timestamps (performance clock), not from when a busy main
+  // thread got to the event; fall back to Date.now() for both ends if either stamp is missing.
+  const eventTime = (event) => {
+    const t = Number(event?.timeStamp);
+    return Number.isFinite(t) && t > 0 ? t : 0;
+  };
+  const pointerHeldMs = (screen, event) => {
+    const down = screen.pointerHoldDownStamp;
+    const up = eventTime(event);
+    return down && up ? up - down : Date.now() - screen.pointerHoldStartedAt;
+  };
+
   return {
     handleHomeDpad(event) {
       const keyCode = Number(event?.keyCode || 0);
@@ -202,18 +214,20 @@ export function createHomeScreenMethods19() {
           // Magic Remote pointer sends no key events, so mirror the Enter hold here.
           this.pointerHoldSwallowClick = false;
           this.pointerHoldStartedAt = 0;
+          this.pointerHoldDownStamp = 0;
           const card = event?.button === 0 ? event.target?.closest?.(".home-main .focusable") : null;
           if (card && this.container?.contains(card) && this.startPendingContinueWatchingHold(card, true)) {
             this.pointerHoldStartedAt = Date.now();
+            this.pointerHoldDownStamp = eventTime(event);
           }
         };
       }
       if (!this.boundHomeMouseUpHandler) {
-        this.boundHomeMouseUpHandler = () => {
+        this.boundHomeMouseUpHandler = (event) => {
           if (!this.pointerHoldStartedAt) {
             return;
           }
-          this.pointerHoldSwallowClick = Date.now() - this.pointerHoldStartedAt >= CW_HOLD_DELAY_MS;
+          this.pointerHoldSwallowClick = pointerHeldMs(this, event) >= CW_HOLD_DELAY_MS;
           this.pointerHoldStartedAt = 0;
           if (!this.pointerHoldSwallowClick) {
             this.cancelPendingContinueWatchingHold();
@@ -226,7 +240,7 @@ export function createHomeScreenMethods19() {
           if (!this.pointerHoldStartedAt || !card || card.contains(event.relatedTarget)) {
             return;
           }
-          if (Date.now() - this.pointerHoldStartedAt < CW_HOLD_DELAY_MS) {
+          if (pointerHeldMs(this, event) < CW_HOLD_DELAY_MS) {
             this.pointerHoldStartedAt = 0;
             this.cancelPendingContinueWatchingHold();
           }
