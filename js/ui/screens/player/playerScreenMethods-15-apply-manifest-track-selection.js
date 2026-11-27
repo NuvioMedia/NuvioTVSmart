@@ -71,6 +71,7 @@ export function createPlayerScreenMethods15() {
     renderPlayerUi() {
       this.uiRefs = null;
       this.lastUiTickState = null;
+      this.renderedSubtitleAutoSyncStatusMarkup = "";
       this.container.querySelector("#playerUiRoot")?.remove();
 
       const root = document.createElement("div");
@@ -97,9 +98,10 @@ export function createPlayerScreenMethods15() {
         const header = this.getPlayerHeaderData();
         const loadingMeta = this.getLoadingOverlayMeta();
         const osdClockEnabled = Boolean(PlayerSettingsStore.get().osdClockEnabled);
+        const safeBackdropUrl = loadingMeta.backdropUrl ? escapeAttribute(loadingMeta.backdropUrl.replace(/'/g, "%27")) : "";
         root.innerHTML = `
             <div id="playerLoadingOverlay" class="player-loading-overlay">
-              <div class="player-loading-backdrop"${loadingMeta.backdropUrl ? ` style="background-image:url('${loadingMeta.backdropUrl}')"` : ""}></div>
+              <div class="player-loading-backdrop"${safeBackdropUrl ? ` style="background-image:url('${safeBackdropUrl}')"` : ""}></div>
               <div class="player-loading-gradient"></div>
               <div class="player-loading-center">
                 <div class="player-loading-identity${loadingMeta.logoUrl ? " has-logo" : ""}">

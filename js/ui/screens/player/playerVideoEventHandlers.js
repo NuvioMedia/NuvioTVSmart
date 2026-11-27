@@ -83,6 +83,8 @@ export function createPlayerVideoEventHandlers(video, isTizenAvPlayPlayback) {
     if (this.isStartupErrorVisible()) {
       return;
     }
+    const mountToken = this.playerMountToken;
+    const errorPlaybackUrl = this.activePlaybackUrl;
     this.seekLoading = false;
     this.bufferingActive = false;
     this.seekLoadingBaselineSeconds = null;
@@ -186,6 +188,9 @@ export function createPlayerVideoEventHandlers(video, isTizenAvPlayPlayback) {
     if (!this.hasPresentedPlaybackFrame && (mediaErrorCode === 2 || mediaErrorCode === 3 || mediaErrorCode === 4)) {
       if (currentEngineFsState) {
         const stats = await this.fetchCurrentEngineFsStats({ timeoutMs: 2500 });
+        if (!this.playerRouteActive || this.playerMountToken !== mountToken || this.activePlaybackUrl !== errorPlaybackUrl) {
+          return;
+        }
         if (this.shouldRetryEngineFsStartupError(stats)) {
           this.scheduleEngineFsStartupRetry({ mediaErrorCode, stats });
           return;

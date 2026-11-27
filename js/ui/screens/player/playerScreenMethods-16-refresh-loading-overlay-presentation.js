@@ -21,22 +21,24 @@ export function createPlayerScreenMethods16() {
       }
       const loadingMeta = this.getLoadingOverlayMeta();
       const identity = this.uiRefs?.loadingIdentity;
-      const logo = this.uiRefs?.loadingLogo;
+      const logoTargets = [this.uiRefs?.loadingLogoBase, this.uiRefs?.loadingLogoFill].filter(Boolean);
       const title = this.uiRefs?.loadingTitle;
       const subtitle = this.uiRefs?.loadingSubtitle;
       if (identity) {
         identity.classList.toggle("has-logo", Boolean(loadingMeta.logoUrl));
       }
-      if (logo) {
+      logoTargets.forEach((logo, index) => {
         if (loadingMeta.logoUrl) {
           if (logo.getAttribute("src") !== loadingMeta.logoUrl) {
             logo.setAttribute("src", loadingMeta.logoUrl);
           }
-          logo.setAttribute("alt", loadingMeta.title || "logo");
+          if (index === 0) {
+            logo.setAttribute("alt", loadingMeta.title || "logo");
+          }
         } else {
           logo.removeAttribute("src");
         }
-      }
+      });
       if (title) {
         title.textContent = loadingMeta.title || this.params?.playerTitle || this.params?.itemTitle || this.params?.itemId || "Nuvio";
       }
