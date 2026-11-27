@@ -39,6 +39,9 @@ export function createHomeScreenMethods30() {
       this.cancelPendingContinueWatchingEnter();
       this.cancelPendingContinueWatchingHold();
       this.suppressHoldMenuEnterUntilKeyUp = false;
+      this.pointerHoldStartedAt = 0;
+      this.pointerHoldDownStamp = 0;
+      this.pointerHoldSwallowClick = false;
       this.destroyHomeHoldDialog();
       this.unlockHomeHoldFocus();
       this.continueWatchingMenu = null;
@@ -141,6 +144,8 @@ export function createHomeScreenMethods30() {
         this.boundHomeEventContainer.removeEventListener("focusin", this.boundHomeFocusInHandler);
         this.boundHomeEventContainer.removeEventListener("click", this.boundHomeClickHandler);
         this.boundHomeEventContainer.removeEventListener("mousedown", this.boundHomeMouseDownHandler);
+        this.boundHomeEventContainer.removeEventListener("mouseup", this.boundHomeMouseUpHandler);
+        this.boundHomeEventContainer.removeEventListener("mouseout", this.boundHomeMouseOutHandler);
         this.boundHomeEventContainer.removeEventListener("mouseover", this.boundHomeMouseOverHandler);
         this.boundHomeEventContainer.removeEventListener("wheel", this.boundHomeWheelHandler);
         this.boundHomeEventContainer = null;

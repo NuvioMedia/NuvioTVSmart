@@ -90,6 +90,8 @@ export const FolderDetailScreen = {
   boundHomeFocusInHandler: null,
   boundHomeClickHandler: null,
   boundHomeMouseDownHandler: null,
+  boundHomeMouseUpHandler: null,
+  boundHomeMouseOutHandler: null,
   boundHomeMouseOverHandler: null,
   boundHomeWheelHandler: null,
   boundHomeEventContainer: null,
