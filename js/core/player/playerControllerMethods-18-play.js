@@ -117,10 +117,11 @@ export function createPlayerControllerMethods18() {
       this.currentClearKeys = normalizeClearKeys(clearKeys);
       if (this.currentClearKeys) {
         this.clearKeyPlaybackUrl = requestedUrl;
-      } else if (this.clearKeySession && this.clearKeyPlaybackUrl && requestedUrl !== this.clearKeyPlaybackUrl) {
-        // Another, non-ClearKey source on the same element: let its own DRM
-        // install key systems again. The ClearKey MediaKeys stay attached; they
-        // do not affect clear or differently protected media.
+      } else if (!this.clearKeySession || requestedUrl !== this.clearKeyPlaybackUrl) {
+        // Another, non-ClearKey source on the same element (or a ClearKey
+        // attempt that failed before attaching): let its own DRM install key
+        // systems again. The ClearKey MediaKeys stay attached; they do not
+        // affect clear or differently protected media.
         releaseClearKeyGuard(this.video);
         releaseClearKeyEncryptedEvent(this.video);
         this.clearKeySession = null;
