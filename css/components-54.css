@@ -193,6 +193,7 @@
 }
 
 .series-detail-actions .series-primary-btn,
+.series-detail-actions .series-secondary-btn,
 .series-detail-actions .series-circle-btn,
 .series-season-btn,
 .series-insight-tab,
@@ -677,6 +678,42 @@
 .series-circle-btn.focused,
 .detail-company-card.focused {
   box-shadow: inset 0 0 0 4px var(--detail-focus-ring);
+}
+
+.series-primary-btn.focused,
+.series-secondary-btn.focused,
+.series-circle-btn.focused {
+  transform: scale(1.1);
+  position: relative;
+  z-index: 1;
+}
+
+/* Keep the focus ring distinct from the white Play CTA and light accent fills
+   in WHITE/GRAPHITE by separating the inner border with --bg-color. */
+:root:not([data-nuvio-theme]) .series-primary-btn.focused,
+:root:not([data-nuvio-theme]) .series-secondary-btn.focused,
+:root:not([data-nuvio-theme]) .series-circle-btn.focused,
+:root[data-nuvio-theme="WHITE"] .series-primary-btn.focused,
+:root[data-nuvio-theme="WHITE"] .series-secondary-btn.focused,
+:root[data-nuvio-theme="WHITE"] .series-circle-btn.focused,
+:root[data-nuvio-theme="GRAPHITE"] .series-primary-btn.focused,
+:root[data-nuvio-theme="GRAPHITE"] .series-secondary-btn.focused,
+:root[data-nuvio-theme="GRAPHITE"] .series-circle-btn.focused {
+  box-shadow:
+    inset 0 0 0 4px #ffffff,
+    inset 0 0 0 8px #0d0d0d;
+  box-shadow:
+    inset 0 0 0 4px var(--detail-focus-ring, #ffffff),
+    inset 0 0 0 8px var(--bg-color, #0d0d0d);
+}
+
+@media (forced-colors: active) {
+  .series-primary-btn.focused,
+  .series-secondary-btn.focused,
+  .series-circle-btn.focused {
+    outline: 4px solid Highlight;
+    outline-offset: -4px;
+  }
 }
 
 .movie-cast-card.focused .movie-cast-avatar {

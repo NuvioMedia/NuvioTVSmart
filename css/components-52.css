@@ -398,6 +398,16 @@
   margin-bottom: 16px;
 }
 
+.detail-hero-body {
+  padding: 8px 24px 0;
+  margin: -8px -24px 0;
+}
+
+.detail-trailer-active .detail-hero-body {
+  padding: 0;
+  margin: 0;
+}
+
 .series-detail-actions {
   gap: var(--detail-action-gap);
   padding: 0;
