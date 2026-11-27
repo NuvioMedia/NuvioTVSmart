@@ -187,7 +187,12 @@ import {
   uniqueNonEmptyValues
 } from "./homeUtils.js";
 
-import { preloadHeroLogo, prepareHeroImageEnter, shouldRescaleHeroLogo } from "./homeScreenHelpers-02-extract-release-date-text.js";
+import {
+  preloadHeroLogo,
+  prepareHeroImageEnter,
+  restoreHeroImageTransition,
+  shouldRescaleHeroLogo
+} from "./homeScreenHelpers-02-extract-release-date-text.js";
 
 export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs = HOME_MODERN_HERO_BACKDROP_CROSSFADE_MS, options = {}) {
   if (!(logoNode instanceof HTMLImageElement)) {
@@ -208,6 +213,9 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
   const finalize = () => {
     if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
       return;
+    }
+    if (typeof restoreHeroImageTransition === "function") {
+      restoreHeroImageTransition(logoNode);
     }
     logoNode.classList.remove("home-hero-logo-transition-enter", "is-visible");
     clearGhosts();
@@ -255,8 +263,16 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
         if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
           return;
         }
-        logoNode.classList.add("is-visible");
-        setTimeout(() => finalize(), durationMs);
+        requestAnimationFrame(() => {
+          if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
+            return;
+          }
+          if (typeof restoreHeroImageTransition === "function") {
+            restoreHeroImageTransition(logoNode);
+          }
+          logoNode.classList.add("is-visible");
+          setTimeout(() => finalize(), durationMs);
+        });
       });
     });
     return;
@@ -293,6 +309,9 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
       requestAnimationFrame(() => {
         if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
           return;
+        }
+        if (typeof restoreHeroImageTransition === "function") {
+          restoreHeroImageTransition(logoNode);
         }
         logoNode.classList.add("is-visible");
         ghost?.classList?.add("is-fading-out");
