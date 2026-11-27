@@ -139,14 +139,6 @@ function canUseClearKeyEme() {
  * MediaKeys already attached: used when a different, non-ClearKey source is
  * played on the same video element, so its own DRM can take over.
  */
-/**
- * Loads the pairs into the element's ClearKey CDM, so the MSE pipeline decrypts
- * the encrypted samples it is about to receive. Chromium's ClearKey CDM reads
- * `keyids` init data, so the manifest does not need a PSSH of its own.
- *
- * Returns the session (its key statuses say whether the keys were accepted) or
- * null when there is nothing to attach; throws when the platform cannot do it.
- */
 export function releaseClearKeyGuard(video) {
   const state = clearKeyGuards.get(video);
   if (!state) {
@@ -160,6 +152,14 @@ export function releaseClearKeyGuard(video) {
   }
 }
 
+/**
+ * Loads the pairs into the element's ClearKey CDM, so the MSE pipeline decrypts
+ * the encrypted samples it is about to receive. Chromium's ClearKey CDM reads
+ * `keyids` init data, so the manifest does not need a PSSH of its own.
+ *
+ * Returns the session (its key statuses say whether the keys were accepted) or
+ * null when there is nothing to attach; throws when the platform cannot do it.
+ */
 export async function attachClearKeyMediaKeys(video, clearKeys) {
   if (!video || typeof video.setMediaKeys !== "function") {
     throw new Error("ClearKey needs a MediaKeys-capable video element");

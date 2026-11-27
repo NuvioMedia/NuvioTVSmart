@@ -34,13 +34,12 @@ export function createPlayerControllerMethods18() {
         }
         this.preparedClearKeySet = this.currentClearKeys;
         this.clearKeySession = await attachClearKeyMediaKeys(this.video, this.currentClearKeys);
-        this.lastClearKeyError = null;
         return true;
       } catch (error) {
         this.lastPlaybackErrorCode = 4;
-        this.lastClearKeyError = String(error?.message || error || "ClearKey unavailable");
         this.clearKeySession = null;
-        throw new Error(`ClearKey decryption is not available (${this.lastClearKeyError})`);
+        const reason = String(error?.message || error || "ClearKey unavailable");
+        throw new Error(`ClearKey decryption is not available (${reason})`, { cause: error });
       }
     },
     async play(
