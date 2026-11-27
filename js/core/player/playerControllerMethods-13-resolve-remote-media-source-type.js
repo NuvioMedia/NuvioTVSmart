@@ -336,6 +336,13 @@ export function createPlayerControllerMethods13() {
             scheduling: {
               scheduleWhilePaused: false
             },
+            ...(this.currentClearKeys
+              ? {
+                  // Our ClearKey CDM decrypts the samples; dash.js must not react
+                  // to the media's `encrypted` event with a key system of its own.
+                  protection: { ignoreEmeEncryptedEvent: true }
+                }
+              : {}),
             liveCatchup: {
               enabled: false
             }
