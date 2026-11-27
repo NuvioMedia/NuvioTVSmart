@@ -223,7 +223,12 @@ export function createSearchScreenMethods03() {
             }
           },
           onChanged: () => {
-            void this.refreshWatchedTitleIds().then(() => this.render());
+            void this.refreshWatchedTitleIds().then(() => {
+              if (!this.container || internals.Router?.getCurrentScreen?.() !== this) {
+                return;
+              }
+              this.render();
+            });
           }
         });
       }

@@ -125,7 +125,12 @@ export function createDiscoverScreenMethods03() {
             this.requestRender();
           },
           onChanged: () => {
-            void this.refreshWatchedTitleIds().then(() => this.requestRender());
+            void this.refreshWatchedTitleIds().then(() => {
+              if (!this.container || Router.getCurrent() !== "discover") {
+                return;
+              }
+              this.requestRender();
+            });
           }
         });
       }
