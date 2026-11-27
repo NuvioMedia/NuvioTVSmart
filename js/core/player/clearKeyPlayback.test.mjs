@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { createClearKeyPlaylistLoader } from "./clearKeyEme.js";
+import { attachClearKeyMediaKeys, createClearKeyPlaylistLoader } from "./clearKeyEme.js";
 import { createPlayerControllerMethods18 } from "./playerControllerMethods-18-play.js";
 
 const mimeContext = {
@@ -71,5 +71,24 @@ test("clear key: the reuse-last-link cache keeps the pairs", async () => {
   assert.equal(
     candidate.behaviorHints.clearKeys,
     "00112233445566778899aabbccddeeff:ffeeddccbbaa99887766554433221100"
+  );
+});
+
+test("clear key: a device without the CDM fails cleanly and a clear stream detaches", async () => {
+  const video = {
+    mediaKeys: {},
+    detached: undefined,
+    setMediaKeys: async (value) => (video.detached = value)
+  };
+  assert.equal(await attachClearKeyMediaKeys(video, null), null);
+  assert.equal(video.detached, null);
+
+  await assert.rejects(
+    () =>
+      attachClearKeyMediaKeys(
+        { setMediaKeys: async () => {} },
+        "00112233445566778899aabbccddeeff:ffeeddccbbaa99887766554433221100"
+      ),
+    /ClearKey EME is not available/
   );
 });
