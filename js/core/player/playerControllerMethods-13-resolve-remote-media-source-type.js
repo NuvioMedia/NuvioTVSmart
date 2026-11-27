@@ -1,5 +1,6 @@
 import { createStreamRedirectReporter } from "./streamRedirect.js";
 import { applyAdaptiveRequestHeaders } from "./adaptiveRequestHeaders.js";
+import { createClearKeyPlaylistLoader } from "./clearKeyEme.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerController.js";
 
@@ -41,6 +42,8 @@ export function createPlayerControllerMethods13() {
       const forwardedHeaders = this.normalizePlaybackHeaders(requestHeaders);
       const isWebOs = Platform.isWebOS();
       const isLivePlayback = this.isLivePlaybackItemType();
+      const Hls = hlsJsEngine.getConstructor();
+      const clearKeyLoader = this.currentClearKeys && Hls ? createClearKeyPlaylistLoader(Hls) : null;
       return {
         autoStartLoad: false,
         enableWorker: !isWebOs,
@@ -84,7 +87,10 @@ export function createPlayerControllerMethods13() {
             ...initParams,
             headers
           });
-        }
+        },
+        // The ClearKey pairs are already in the CDM: skip the key tag hls.js
+        // would otherwise download (see createClearKeyPlaylistLoader).
+        ...(clearKeyLoader ? { loader: clearKeyLoader } : {})
       };
     },
     playWithHlsJs(url, requestHeaders = {}, playToken = null) {
@@ -330,6 +336,13 @@ export function createPlayerControllerMethods13() {
             scheduling: {
               scheduleWhilePaused: false
             },
+            ...(this.currentClearKeys
+              ? {
+                  // Our ClearKey CDM decrypts the samples; dash.js must not react
+                  // to the media's `encrypted` event with a key system of its own.
+                  protection: { ignoreEmeEncryptedEvent: true }
+                }
+              : {}),
             liveCatchup: {
               enabled: false
             }
@@ -340,6 +353,18 @@ export function createPlayerControllerMethods13() {
           player.addRequestInterceptor((request) => applyAdaptiveRequestHeaders(request, forwardedHeaders, url));
         }
         const reportRedirect = createStreamRedirectReporter(this, url, playToken);
+        if (this.currentClearKeys) {
+          // The MPD advertises Widevine/PlayReady for the same CENC samples. Our
+          // ClearKey CDM decrypts them; without this dash.js would create a
+          // session for that key system and request its license (on LG an
+          // invalid endpoint that times out). Treat the stream as plain MSE.
+          player.addResponseInterceptor((response) => {
+            if (typeof response?.data === "string" && response.data.includes("<MPD")) {
+              response.data = response.data.replace(/<ContentProtection\b[^>]*\/>|<ContentProtection\b[\s\S]*?<\/ContentProtection>/g, "");
+            }
+            return Promise.resolve(response);
+          });
+        }
         player.addResponseInterceptor((response) => {
           if (response.request?.url === url && response.status >= 200 && response.status < 300) {
             reportRedirect(response.url);
@@ -393,6 +418,7 @@ export function createPlayerControllerMethods13() {
         console.warn("DASH source attach failed", error);
         try {
           player?.reset?.();
+          player?.destroy?.();
         } catch (_) {
           // Ignore reset failures on partial init.
         }

@@ -20,6 +20,7 @@ export function createPlayerScreenMethods73() {
       } catch (error) {
         console.warn("[party] leaving playback failed", error);
       }
+      this.closePartyModalDialog?.();
       this.unbindParty();
       this.partyPanelVisible = false;
       try {

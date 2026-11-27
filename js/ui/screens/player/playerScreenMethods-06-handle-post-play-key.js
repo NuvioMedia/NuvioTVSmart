@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { normalizeClearKeys } from "../../../core/streams/clearKeys.js";
 import * as internals from "./playerScreenContext.js";
 
 export function createPlayerScreenMethods06() {
@@ -222,6 +223,9 @@ export function createPlayerScreenMethods06() {
       const requestHeaders = this.getCurrentStreamRequestHeaders(streamCandidate);
       const mediaSourceType = this.resolvePlaybackMediaSourceType(streamCandidate);
       return {
+        clearKeys: normalizeClearKeys(
+          streamCandidate?.behaviorHints?.clearKeys || streamCandidate?.raw?.behaviorHints?.clearKeys || streamCandidate?.clearKeys || null
+        ),
         itemId: this.params.itemId || null,
         itemType: normalizeItemType(this.params.itemType || "movie"),
         imdbId: this.params.imdbId || this.params.imdb_id || null,

@@ -134,6 +134,11 @@ export function createPlayerControllerMethods12() {
       if (!normalizedUrl) {
         return null;
       }
+      if (this.currentClearKeys) {
+        // ClearKey only exists in the MSE paths: switching to a native/AVPlay
+        // engine cannot decrypt it, so report the failure instead of looping.
+        return null;
+      }
       const attemptedEngines = this.getAttemptedPlaybackEngines(normalizedUrl);
       const currentEngine = String(this.playbackEngine || "").trim();
       const candidates = this.getPlaybackEngineCandidates(normalizedUrl, sourceType, itemType);
@@ -291,17 +296,30 @@ export function createPlayerControllerMethods12() {
         return null;
       }
 
+      const timeoutMs = Math.max(250, Number(WEBOS_MEDIA_TYPE_PROBE_TIMEOUT_MS || 2500));
       const controller = typeof AbortController === "function" ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), WEBOS_MEDIA_TYPE_PROBE_TIMEOUT_MS) : null;
+      let timeoutId = 0;
       try {
-        const response = await fetch(url, {
+        const fetchPromise = fetch(url, {
           method: "HEAD",
           headers: this.normalizePlaybackHeaders(requestHeaders),
           cache: "no-store",
           redirect: "follow",
           ...(controller ? { signal: controller.signal } : {})
         });
-        if (!response.ok) {
+        if (fetchPromise && typeof fetchPromise.catch === "function") {
+          fetchPromise.catch(() => {});
+        }
+        const response = await Promise.race([
+          fetchPromise,
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => {
+              controller?.abort?.();
+              reject(new Error("timeout"));
+            }, timeoutMs);
+          })
+        ]);
+        if (!response || !response.ok) {
           return null;
         }
         return this.resolveRuntimeSourceType(response.headers?.get?.("content-type"));

@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 globalThis.localStorage ??= { getItem: () => null, setItem() {}, removeItem() {} };
 const { StreamInfoMethods } = await import("../js/ui/screens/player/streamInfoOverlay.js");
-const { createPlayerScreenMethods70 } = await import("../js/ui/screens/player/playerScreenMethods-70-on-pointer-activate.js");
+const { createPlayerScreenMethods70 } =
+  await import("../js/ui/screens/player/playerScreenMethods-70-on-pointer-activate.js");
 
 // Back reaches the player through FocusEngine.consumeBackRequest(), never
 // onKeyDown. Like Android, it must close the stream info overlay first and
@@ -15,12 +16,20 @@ test("Back closes the stream info overlay instead of leaving the player", () => 
     ...StreamInfoMethods,
     consumeBackRequest: createPlayerScreenMethods70().consumeBackRequest,
     streamInfoVisible: true,
-    streamInfoOverlay: { remove: () => { removed = true; } },
+    streamInfoOverlay: {
+      remove: () => {
+        removed = true;
+      }
+    },
     streamInfoRestore: { controlsVisible: true, controlFocusZone: "buttons", controlFocusIndex: 2 },
     chaptersPanelVisible: true,
-    setControlsVisible(visible) { controls = visible; },
+    setControlsVisible(visible) {
+      controls = visible;
+    },
     resetControlsAutoHide() {},
-    isStartupErrorVisible() { throw new Error("Back fell through to player exit logic"); }
+    isStartupErrorVisible() {
+      throw new Error("Back fell through to player exit logic");
+    }
   };
   assert.equal(screen.consumeBackRequest(), true);
   assert.equal(screen.streamInfoVisible, false);
