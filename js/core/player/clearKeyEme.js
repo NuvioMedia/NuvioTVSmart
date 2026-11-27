@@ -4,7 +4,7 @@ import {
   parseClearKeys
 } from "../streams/clearKeys.js";
 
-export const CLEAR_KEY_KEY_SYSTEM = "org.w3.clearkey";
+const CLEAR_KEY_KEY_SYSTEM = "org.w3.clearkey";
 
 // One ClearKey attachment per video element. Older Chromium (webOS 5, Tizen 5,
 // Chromium 63/68) refuses to replace or remove MediaKeys once a MediaSource is
@@ -46,7 +46,6 @@ function watchKeyStatuses(video, session) {
   } catch (_) {
     // Older engines without the event fall back to the initial status.
   }
-  return refresh;
 }
 
 async function waitForUsableKey(session, timeoutMs = 1500) {
@@ -127,7 +126,7 @@ const CLEAR_KEY_CONFIG = [
   }
 ];
 
-export function canUseClearKeyEme() {
+function canUseClearKeyEme() {
   return Boolean(
     typeof navigator !== "undefined" &&
     typeof navigator.requestMediaKeySystemAccess === "function" &&
@@ -136,17 +135,17 @@ export function canUseClearKeyEme() {
 }
 
 /**
+ * Stops holding off key systems installed by the player, without touching the
+ * MediaKeys already attached: used when a different, non-ClearKey source is
+ * played on the same video element, so its own DRM can take over.
+ */
+/**
  * Loads the pairs into the element's ClearKey CDM, so the MSE pipeline decrypts
  * the encrypted samples it is about to receive. Chromium's ClearKey CDM reads
  * `keyids` init data, so the manifest does not need a PSSH of its own.
  *
  * Returns the session (its key statuses say whether the keys were accepted) or
  * null when there is nothing to attach; throws when the platform cannot do it.
- */
-/**
- * Stops holding off key systems installed by the player, without touching the
- * MediaKeys already attached: used when a different, non-ClearKey source is
- * played on the same video element, so its own DRM can take over.
  */
 export function releaseClearKeyGuard(video) {
   const state = clearKeyGuards.get(video);
@@ -197,6 +196,11 @@ export async function attachClearKeyMediaKeys(video, clearKeys) {
       throw new Error("this TV cannot change ClearKey keys during playback");
     }
     await originalSetMediaKeys(video)(mediaKeys);
+  }
+  try {
+    previous?.session?.close();
+  } catch (_) {
+    // The replaced session may already be closed.
   }
   const usable = await waitForUsableKey(session);
   installMediaKeysGuard(video, mediaKeys, usable);

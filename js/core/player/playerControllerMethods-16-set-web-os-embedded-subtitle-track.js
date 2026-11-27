@@ -119,10 +119,10 @@ export function createPlayerControllerMethods16() {
             // The player API starts live DASH correctly.
             try {
               this.dashInstance.play();
+              return null;
             } catch (_) {
               // Fall back to the element below.
             }
-            return null;
           }
           const playPromise = this.video.play();
           const handledPromise = this.handleNativePlayStartedUnderStartupGate(playPromise);

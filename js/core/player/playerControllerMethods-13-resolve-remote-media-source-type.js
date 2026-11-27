@@ -334,10 +334,7 @@ export function createPlayerControllerMethods13() {
               bufferTimeDefault: isWebOs ? 8 : 12
             },
             scheduling: {
-              // The startup audio gate pauses the element before the first frame;
-              // with scheduling off, dash.js stops fetching live segments and
-              // never resumes (seen on webOS live ClearKey channels).
-              scheduleWhilePaused: Boolean(this.currentClearKeys)
+              scheduleWhilePaused: false
             },
             liveCatchup: {
               enabled: false
