@@ -399,16 +399,18 @@ class AuthManagerClass {
       return this.refreshPromise;
     }
 
-    this.lastRefreshFailureKind = null;
     const accessToken = SessionStore.accessToken;
     const refreshToken = SessionStore.refreshToken;
     if (!refreshToken) {
+      this.lastRefreshFailureKind = null;
       return Boolean(accessToken) && !isJwtExpired(accessToken, 0);
     }
 
     if (!force && accessToken && !isJwtExpired(accessToken)) {
       return true;
     }
+
+    this.lastRefreshFailureKind = null;
 
     this.refreshPromise = (async () => {
       try {
