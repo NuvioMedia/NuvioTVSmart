@@ -6,6 +6,10 @@ export const HOME_TV_PERFORMANCE_POLICY = Object.freeze({
   modernArtworkEvictMarginPx: 2600,
   legacyArtworkEvictMarginPx: 1600,
   modernTrailerCleanupDelayMs: 2400,
+  // Tizen has no Site Isolation, so a paused YouTube iframe shares the app's
+  // main thread. Wait just past the 350 ms focus/frame-pace window before tearing
+  // it down so teardown cost stays out of D-pad frame-pace sampling.
+  modernTizenTrailerCleanupDelayMs: 450,
   // A paused YouTube iframe shares the app's thread: measured on a 2019 Tizen
   // set it kept every D-pad press near 500 ms busy until it was removed, while
   // removing it is a single ~340 ms task. Constrained sets drop it right after
@@ -65,9 +69,13 @@ export function getArtworkEvictMarginPx(profile = null, deviceMemory = 0) {
 }
 
 export function getTrailerCleanupDelayMs(profile = null) {
-  return isModernTvProfile(profile)
-    ? HOME_TV_PERFORMANCE_POLICY.modernTrailerCleanupDelayMs
-    : HOME_TV_PERFORMANCE_POLICY.legacyTrailerCleanupDelayMs;
+  if (!isModernTvProfile(profile)) {
+    return HOME_TV_PERFORMANCE_POLICY.legacyTrailerCleanupDelayMs;
+  }
+  if (profile?.platform === "tizen") {
+    return HOME_TV_PERFORMANCE_POLICY.modernTizenTrailerCleanupDelayMs;
+  }
+  return HOME_TV_PERFORMANCE_POLICY.modernTrailerCleanupDelayMs;
 }
 
 export function getHeroEnrichDwellMs(profile = null) {

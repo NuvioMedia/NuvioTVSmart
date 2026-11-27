@@ -291,16 +291,17 @@ export function createHomeScreenMethods12() {
       if (!container) {
         return;
       }
-      this.pauseTrailerLayer(container);
       this.homeTrailerLayerCleanupTimers ||= new WeakMap();
       const pendingCleanup = this.homeTrailerLayerCleanupTimers.get(container);
-      if (pendingCleanup) {
-        if (pendingCleanup.idleId) {
-          globalThis.cancelIdleCallback?.(pendingCleanup.idleId);
-        }
-        if (pendingCleanup.timeoutId) {
-          clearTimeout(pendingCleanup.timeoutId);
-        }
+      const hasMedia = Boolean(container.firstElementChild || container.querySelector?.("iframe, video"));
+      if (!hasMedia && !container.classList?.contains?.("is-active") && !pendingCleanup) {
+        return;
+      }
+      this.pauseTrailerLayer(container);
+      container.classList.remove("is-active");
+      this.scheduleTrailerLayerHide(container);
+      if (pendingCleanup && !pendingCleanup.completed) {
+        return;
       }
       const cleanupState = { idleId: 0, timeoutId: 0, completed: false };
       const cleanup = () => {
@@ -326,8 +327,6 @@ export function createHomeScreenMethods12() {
         cleanup();
       }, getTrailerCleanupDelayMs(getTvRuntimePerformanceProfile()));
       this.homeTrailerLayerCleanupTimers.set(container, cleanupState);
-      container.classList.remove("is-active");
-      this.scheduleTrailerLayerHide(container);
     },
     refreshPendingHomeTrailerCleanup() {
       const layers = this.getHomeTrailerLayers(".home-poster-trailer-layer, .home-hero-trailer-layer");
