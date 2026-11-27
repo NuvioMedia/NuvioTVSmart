@@ -180,9 +180,14 @@ export class NuvioDialog {
         el.appendChild(label);
         this._setButtonSelected(el, Boolean(btn.selected));
         el.dataset.key = btn.key || String(i);
-        el.addEventListener("click", () => {
+        el.addEventListener("click", (event) => {
+          // A key held since before the menu opened can make the TV browser fire keyboard clicks
+          // (detail 0) on the focused button; they are not a choice (Android waits for a fresh press).
+          if (this._enterSuppressed && event?.detail === 0) return;
           if (btn.onAction) btn.onAction();
         });
+        // Magic Remote pointer: move the highlight with the cursor.
+        el.addEventListener("mouseenter", () => this._focusIndex(i));
         actions.appendChild(el);
         this._buttonEls.push(el);
       });

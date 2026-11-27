@@ -134,6 +134,11 @@ export function createPlayerControllerMethods12() {
       if (!normalizedUrl) {
         return null;
       }
+      if (this.currentClearKeys) {
+        // ClearKey only exists in the MSE paths: switching to a native/AVPlay
+        // engine cannot decrypt it, so report the failure instead of looping.
+        return null;
+      }
       const attemptedEngines = this.getAttemptedPlaybackEngines(normalizedUrl);
       const currentEngine = String(this.playbackEngine || "").trim();
       const candidates = this.getPlaybackEngineCandidates(normalizedUrl, sourceType, itemType);

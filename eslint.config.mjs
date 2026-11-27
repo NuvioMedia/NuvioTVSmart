@@ -31,6 +31,9 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
+      // New in ESLint 10's recommended set. The existing dead stores are
+      // unrelated to this change: clean them up, then drop this line.
+      "no-useless-assignment": "off",
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-unused-vars": [
         "error",

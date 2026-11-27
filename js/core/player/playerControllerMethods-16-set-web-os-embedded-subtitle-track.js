@@ -113,6 +113,17 @@ export function createPlayerControllerMethods16() {
             return null;
           }
           this.applyStartupAudioGateToVideo();
+          if (this.currentClearKeys && this.playbackEngine === "dash.js" && typeof this.dashInstance?.play === "function") {
+            // An early video.play() while dash.js is still wiring the live MSE
+            // leaves its scheduler stuck (bufferStalled after the first buffer).
+            // The player API starts live DASH correctly.
+            try {
+              this.dashInstance.play();
+              return null;
+            } catch (_) {
+              // Fall back to the element below.
+            }
+          }
           const playPromise = this.video.play();
           const handledPromise = this.handleNativePlayStartedUnderStartupGate(playPromise);
           if (handledPromise && typeof handledPromise.catch === "function") {

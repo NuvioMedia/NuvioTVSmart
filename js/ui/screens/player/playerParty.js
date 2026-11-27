@@ -457,6 +457,7 @@ export function createPlayerPartyMethods() {
       this.renderPartyPill();
     },
     unbindParty() {
+      this.closePartyModalDialog();
       this.partyUnsubscribers?.forEach((unsubscribe) => unsubscribe());
       this.partyUnsubscribers = [];
       clearTimeout(this.partyNoticeTimer);
@@ -801,6 +802,7 @@ export function createPlayerPartyMethods() {
       this.renderPartyPill();
     },
     dismissPartyPanel() {
+      this.closePartyModalDialog();
       if (!this.partyPanelVisible) return;
       this.partyPanelVisible = false;
       this.renderPartyPanel();
@@ -809,6 +811,14 @@ export function createPlayerPartyMethods() {
       this.focusFirstControl?.();
       this.resetControlsAutoHide?.();
       if (this.paused) this.schedulePauseOverlay?.();
+    },
+    closePartyModalDialog() {
+      this.partyModalToken = Number(this.partyModalToken || 0) + 1;
+      const active = this.partyModalDialog;
+      this.partyModalDialog = null;
+      try {
+        active?.destroy?.();
+      } catch (_) {}
     },
     renderPartyPanel() {
       const panel = this.partyRefs?.panel;
@@ -950,46 +960,86 @@ export function createPlayerPartyMethods() {
         case "switch":
           if (party) {
             const media = this.currentPartyMedia();
-            showConfirmDialog({
+            this.closePartyModalDialog();
+            let dialog = null;
+            dialog = showConfirmDialog({
               title: t("party_switch_title"),
               message: t("party_switch_message", [displayTitle(media)]),
               confirmLabel: t("party_switch_confirm"),
+              onDismiss: () => {
+                if (this.partyModalDialog === dialog) this.partyModalDialog = null;
+              },
               onConfirm: () =>
                 void PartyRepository.publishMedia(
                   this.currentPartyMedia(),
                   this.partyPositionMs() ?? 0
                 )
             });
+            this.partyModalDialog = dialog;
           }
           break;
         case "leave":
           this.dismissPartyPanel();
           void PartyRepository.leave();
           break;
-        case "end":
-          showConfirmDialog({
+        case "end": {
+          this.closePartyModalDialog();
+          let dialog = null;
+          dialog = showConfirmDialog({
             title: t("party_end_title"),
             message: t("party_end_message"),
             confirmLabel: t("party_end"),
+            onDismiss: () => {
+              if (this.partyModalDialog === dialog) this.partyModalDialog = null;
+            },
             onConfirm: () => {
               this.dismissPartyPanel();
               void PartyRepository.end();
             }
           });
+          this.partyModalDialog = dialog;
           break;
+        }
         case "remove": {
           const member = party?.members.find((entry) => entry.id === node.dataset.memberId);
           if (!member) return;
-          showConfirmDialog({
+          this.closePartyModalDialog();
+          let dialog = null;
+          dialog = showConfirmDialog({
             title: t("party_remove_title", [member.display_name]),
             message: t("party_remove_message"),
             confirmLabel: t("party_remove"),
+            onDismiss: () => {
+              if (this.partyModalDialog === dialog) this.partyModalDialog = null;
+            },
             onConfirm: () => void PartyRepository.removeMember(member.id)
           });
+          this.partyModalDialog = dialog;
           break;
         }
         case "invite":
-          if (party) void showInviteDialog(party);
+          if (party) {
+            this.closePartyModalDialog();
+            const modalToken = this.partyModalToken;
+            const mountToken = this.playerMountToken;
+            let inviteDialog = null;
+            void showInviteDialog(party, {
+              onDismiss: () => {
+                if (this.partyModalDialog === inviteDialog) this.partyModalDialog = null;
+              }
+            }).then((dialog) => {
+              inviteDialog = dialog;
+              if (
+                !this.playerRouteActive ||
+                this.playerMountToken !== mountToken ||
+                this.partyModalToken !== modalToken
+              ) {
+                dialog?.destroy?.();
+                return;
+              }
+              this.partyModalDialog = dialog;
+            });
+          }
           break;
         case "hostOnly":
           if (party) void PartyRepository.setHostOnly(!party.hostOnly);
