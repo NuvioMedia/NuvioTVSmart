@@ -16,17 +16,24 @@ const moduleSource = stripModule(
   )
 );
 
-test("homeScreenMethods-08 hold and enter timers use Router.getCurrentScreen() === this so FolderDetailScreen works", async () => {
-  let activeScreen = null;
+const HOLD_DELAY_MS = 20;
+
+function createHarness() {
+  const state = {
+    activeScreen: null,
+    holdOpenedFor: null,
+    selectedItem: null,
+    focusRememberedFor: null
+  };
   const scheduled = [];
   const context = vm.createContext({
     internals: {
       Router: {
         getCurrent: () => "folderDetail",
-        getCurrentScreen: () => activeScreen
+        getCurrentScreen: () => state.activeScreen
       },
-      CW_HOLD_DELAY_MS: 20,
-      CW_ENTER_DELAY_MS: 20,
+      CW_HOLD_DELAY_MS: HOLD_DELAY_MS,
+      CW_ENTER_DELAY_MS: HOLD_DELAY_MS,
       normalizeContinueWatchingItem: (item) => item,
       continueWatchingClickOpensDetails: () => false,
       isCloudContinueWatchingItem: () => false
@@ -40,29 +47,58 @@ test("homeScreenMethods-08 hold and enter timers use Router.getCurrentScreen() =
   context.globalThis = context;
   vm.runInContext(`${moduleSource}\nglobalThis.api = createHomeScreenMethods08();`, context);
 
-  const focusedNode = { dataset: { itemId: "tt123" } };
-  let holdOpenedFor = null;
+  const focusedNode = { dataset: { itemId: "tt1", itemType: "movie", videoId: "v1" } };
   const screen = Object.assign(Object.create(context.api), {
     container: {
       querySelector: () => focusedNode
     },
     isHomeHoldTarget: () => true,
     isPosterHoldTarget: () => true,
-    getPosterItemFromNode: () => ({ id: "tt123", type: "movie", name: "Example" }),
+    getPosterItemFromNode: () => ({ id: "tt1", type: "movie", name: "Example" }),
+    getContinueWatchingItemFromNode: () => ({ contentId: "tt1", videoId: "v1" }),
     hasPendingContinueWatchingHold: () => true,
     openHoldMenuForNode(node) {
-      holdOpenedFor = node;
+      state.holdOpenedFor = node;
+    },
+    rememberReturnFocusForNode(node) {
+      state.focusRememberedFor = node;
+    },
+    openContinueWatchingSelection(item) {
+      state.selectedItem = item;
     }
   });
-  activeScreen = screen;
+  state.activeScreen = screen;
+  return { state, screen, scheduled, focusedNode };
+}
+
+test("hold and enter timers accept the active FolderDetail screen", () => {
+  const { state, screen, scheduled, focusedNode } = createHarness();
 
   assert.equal(screen.startPendingContinueWatchingHold(focusedNode), true);
-  assert.equal(scheduled.length, 1);
-  scheduled[0]();
-
+  scheduled.at(-1)();
   assert.equal(
-    holdOpenedFor,
+    state.holdOpenedFor,
     focusedNode,
     "poster hold menu must open when Router.getCurrentScreen() matches the delegating FolderDetailScreen"
   );
+
+  assert.equal(screen.scheduleContinueWatchingEnter(focusedNode), true);
+  scheduled.at(-1)();
+  assert.equal(state.selectedItem?.contentId, "tt1");
+  assert.equal(state.focusRememberedFor, focusedNode);
+});
+
+test("hold and enter timers stop once another screen becomes active", () => {
+  const { state, screen, scheduled, focusedNode } = createHarness();
+
+  assert.equal(screen.startPendingContinueWatchingHold(focusedNode), true);
+  state.activeScreen = {};
+  scheduled.at(-1)();
+  assert.equal(state.holdOpenedFor, null);
+
+  state.activeScreen = screen;
+  assert.equal(screen.scheduleContinueWatchingEnter(focusedNode), true);
+  state.activeScreen = {};
+  scheduled.at(-1)();
+  assert.equal(state.selectedItem, null);
 });

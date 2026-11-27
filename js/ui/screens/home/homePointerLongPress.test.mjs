@@ -26,11 +26,15 @@ test("pointer press held past CW_HOLD_DELAY_MS opens the hold menu and swallows 
     setTimeout: (fn) => timers.push(fn),
     clearTimeout: () => {}
   };
+  let activeScreen = null;
   const holdMethods = await load(
     "./homeScreenMethods-08-open-hold-menu-for-node.js",
     "createHomeScreenMethods08",
     {
-      Router: { getCurrent: () => "home" },
+      Router: {
+        getCurrent: () => "home",
+        getCurrentScreen: () => activeScreen
+      },
       CW_HOLD_DELAY_MS: HOLD_MS
     },
     globals
@@ -75,6 +79,7 @@ test("pointer press held past CW_HOLD_DELAY_MS opens the hold menu and swallows 
     openContinueWatchingMenu: (node) => opened.push(node),
     openContinueWatchingFromNode: (node) => selected.push(node)
   });
+  activeScreen = screen;
   screen.ensureDelegatedEventsBound();
 
   const down = { button: 0, target: card, timeStamp: 5000 };
@@ -143,10 +148,17 @@ test("pointer hold opens the menu for the pressed card even when focus moved off
     setTimeout: (fn) => timers.push(fn),
     clearTimeout: () => {}
   };
+  let activeScreen = null;
   const holdMethods = await load(
     "./homeScreenMethods-08-open-hold-menu-for-node.js",
     "createHomeScreenMethods08",
-    { Router: { getCurrent: () => "home" }, CW_HOLD_DELAY_MS: 650 },
+    {
+      Router: {
+        getCurrent: () => "home",
+        getCurrentScreen: () => activeScreen
+      },
+      CW_HOLD_DELAY_MS: 650
+    },
     globals
   );
   const mk = (id) => ({ dataset: { itemId: id, videoId: "", season: "", episode: "" } });
@@ -161,6 +173,7 @@ test("pointer hold opens the menu for the pressed card even when focus moved off
     getContinueWatchingItemFromNode: (n) => ({ contentId: n.dataset.itemId, videoId: "" }),
     openHoldMenuForNode: (n) => opened.push(n)
   });
+  activeScreen = screen;
 
   // Keyboard path: focus moved off the pressed card, timer does nothing.
   screen.startPendingContinueWatchingHold(pressed);

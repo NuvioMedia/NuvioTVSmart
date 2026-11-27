@@ -206,49 +206,6 @@ export function createFolderDetailScreenMethods04() {
           heroMetaEnriching: false
         });
       }
-    },
-    startPendingContinueWatchingHold(node, fromPointer = false) {
-      if (!this.useHomeFollowLayout) {
-        return HomeScreen.startPendingContinueWatchingHold.call(this, node, fromPointer);
-      }
-      if (!this.isHomeHoldTarget(node)) {
-        return false;
-      }
-      this.cancelPendingContinueWatchingEnter();
-      this.cancelPendingContinueWatchingHold();
-      const isPoster = this.isPosterHoldTarget(node);
-      const item = isPoster ? this.getPosterItemFromNode(node) : this.getContinueWatchingItemFromNode(node);
-      if (isPoster && !item?.id) {
-        return false;
-      }
-      if (!isPoster && !item?.contentId) {
-        return false;
-      }
-      this.pendingContinueWatchingHoldTarget = {
-        kind: isPoster ? "poster" : "continueWatching",
-        itemId: String(isPoster ? item.id : item.contentId || ""),
-        itemType: String(isPoster ? item.type : ""),
-        videoId: String(isPoster ? "" : item.videoId || ""),
-        holdTriggered: false
-      };
-      this.pendingContinueWatchingHoldTimer = setTimeout(() => {
-        this.pendingContinueWatchingHoldTimer = null;
-        const pending = this.pendingContinueWatchingHoldTarget;
-        if (!pending || Router.getCurrent() !== "folderDetail") {
-          return;
-        }
-        let current = this.container?.querySelector(".home-continue-card.focusable.focused, .home-poster-card.focusable.focused") || null;
-        if (fromPointer && !this.hasPendingContinueWatchingHold(current)) {
-          // Pointer holds are tied to the pressed card, which may not be the focused one.
-          current = node;
-        }
-        if (!this.hasPendingContinueWatchingHold(current)) {
-          return;
-        }
-        pending.holdTriggered = true;
-        this.openHoldMenuForNode(current, fromPointer);
-      }, 650);
-      return true;
     }
   };
 }
