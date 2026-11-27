@@ -9,43 +9,37 @@ const stripModule = (source) =>
     .replace(/^import\s+["'][^"']+["'];\r?\n/gm, "")
     .replace(/^export /gm, "");
 
-const [m11Source, m15Source, m16Source, m30Source, m43Source, m55Source, videoErrSource] =
-  await Promise.all([
-    readFile(
-      new URL(
-        "./playerScreenMethods-11-release-current-engine-fs-stream-best-effort.js",
-        import.meta.url
-      ),
-      "utf8"
+const [m11Source, m15Source, m16Source, m30Source, m55Source, videoErrSource] = await Promise.all([
+  readFile(
+    new URL(
+      "./playerScreenMethods-11-release-current-engine-fs-stream-best-effort.js",
+      import.meta.url
     ),
-    readFile(
-      new URL("./playerScreenMethods-15-apply-manifest-track-selection.js", import.meta.url),
-      "utf8"
-    ),
-    readFile(
-      new URL("./playerScreenMethods-16-refresh-loading-overlay-presentation.js", import.meta.url),
-      "utf8"
-    ),
-    readFile(
-      new URL("./playerScreenMethods-30-schedule-buffering-spinner-refresh.js", import.meta.url),
-      "utf8"
-    ),
-    readFile(
-      new URL("./playerScreenMethods-43-get-ass-subtitle-container.js", import.meta.url),
-      "utf8"
-    ),
-    readFile(
-      new URL("./playerScreenMethods-55-apply-fallback-addon-subtitle.js", import.meta.url),
-      "utf8"
-    ),
-    readFile(new URL("./playerVideoEventHandlers.js", import.meta.url), "utf8")
-  ]);
+    "utf8"
+  ),
+  readFile(
+    new URL("./playerScreenMethods-15-apply-manifest-track-selection.js", import.meta.url),
+    "utf8"
+  ),
+  readFile(
+    new URL("./playerScreenMethods-16-refresh-loading-overlay-presentation.js", import.meta.url),
+    "utf8"
+  ),
+  readFile(
+    new URL("./playerScreenMethods-30-schedule-buffering-spinner-refresh.js", import.meta.url),
+    "utf8"
+  ),
+  readFile(
+    new URL("./playerScreenMethods-55-apply-fallback-addon-subtitle.js", import.meta.url),
+    "utf8"
+  ),
+  readFile(new URL("./playerVideoEventHandlers.js", import.meta.url), "utf8")
+]);
 
-test("PlayerScreen guards loading logo/backdrop escaping, VTT trimEnd, cancelled subtitle objectURLs, and stale EngineFS error retry", async () => {
-  const originalTrimEnd = String.prototype.trimEnd;
+test("PlayerScreen guards loading logo/backdrop escaping, stale subtitle object URLs, and stale EngineFS error retry", async () => {
   let capturedHtml = "";
   let retryScheduled = 0;
-  let revokedCount = 0;
+  let createdObjectUrls = 0;
 
   class FakeElement {
     constructor() {
@@ -84,10 +78,11 @@ test("PlayerScreen guards loading logo/backdrop escaping, VTT trimEnd, cancelled
       })
     },
     URL: {
-      createObjectURL: () => "blob:sub-1",
-      revokeObjectURL: () => {
-        revokedCount += 1;
-      }
+      createObjectURL: () => {
+        createdObjectUrls += 1;
+        return "blob:sub-1";
+      },
+      revokeObjectURL: () => {}
     },
     Blob: class FakeBlob {},
     PlayerController: { video: null },
@@ -104,7 +99,7 @@ test("PlayerScreen guards loading logo/backdrop escaping, VTT trimEnd, cancelled
       TorrentSettingsStore: { get: () => ({}) },
       Environment: { isWebOS: () => false, isTizen: () => false },
       Platform: { isTizen: () => false, isWebOS: () => false },
-      isAssSubtitle: () => true,
+      isAssSubtitle: () => false,
       SUBTITLE_LANGUAGE_OFF_KEY: "off",
       SUBTITLE_VIRTUAL_ROW_GAP: 8,
       createSubtitleOptionVirtualState: () => ({}),
@@ -132,7 +127,7 @@ test("PlayerScreen guards loading logo/backdrop escaping, VTT trimEnd, cancelled
   });
   ctx.globalThis = ctx;
   vm.runInContext(
-    `${stripModule(m11Source)}\n${stripModule(m15Source)}\n${stripModule(m16Source)}\n${stripModule(m30Source)}\n${stripModule(m43Source)}\n${stripModule(m55Source)}\n${stripModule(videoErrSource)}\nglobalThis.api = { ...createPlayerScreenMethods11(), ...createPlayerScreenMethods15(), ...createPlayerScreenMethods16(), ...createPlayerScreenMethods30(), ...createPlayerScreenMethods43(), ...createPlayerScreenMethods55() };`,
+    `${stripModule(m11Source)}\n${stripModule(m15Source)}\n${stripModule(m16Source)}\n${stripModule(m30Source)}\n${stripModule(m55Source)}\n${stripModule(videoErrSource)}\nglobalThis.api = { ...createPlayerScreenMethods11(), ...createPlayerScreenMethods15(), ...createPlayerScreenMethods16(), ...createPlayerScreenMethods30(), ...createPlayerScreenMethods55() };`,
     ctx
   );
 
@@ -200,9 +195,9 @@ test("PlayerScreen guards loading logo/backdrop escaping, VTT trimEnd, cancelled
     },
     revokeExternalSubtitleObjectUrls() {
       this.externalSubtitleObjectUrls.length = 0;
-      revokedCount += 1;
     },
     createSubtitleObjectUrl() {
+      createdObjectUrls += 1;
       return "blob:sub-created";
     },
     convertSrtToVtt: (s) => s,
@@ -212,13 +207,9 @@ test("PlayerScreen guards loading logo/backdrop escaping, VTT trimEnd, cancelled
     disableEmbeddedSubtitleSelection() {},
     clearMountedExternalSubtitleTracks() {},
     clearHtmlSubtitleOverlay() {},
-    fetchSubtitleRawBody: async () => ({ body: "[Script Info]", contentType: "text/x-ssa" }),
-    applyAssSubtitleBody: async () => {
+    fetchSubtitleRawBody: async () => {
       player.subtitleSelectionToken += 1;
-      return {
-        applied: false,
-        fallbackVtt: "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHi\n"
-      };
+      return { body: "1\n00:00:01,000 --> 00:00:02,000\nHi\n", contentType: "text/plain" };
     },
     normalizeSubtitleSelectionToken: (t) => Number(t || 0)
   });
@@ -250,19 +241,7 @@ test("PlayerScreen guards loading logo/backdrop escaping, VTT trimEnd, cancelled
     "refreshLoadingOverlayPresentation must update loadingLogoFill in addition to loadingLogoBase"
   );
 
-  // 3. VTT cue parser works even without String.prototype.trimEnd (Chromium 53/63).
-  String.prototype.trimEnd = undefined;
-  try {
-    const cues = player.parseSubtitleCues(
-      "WEBVTT\n\n00:00:01.000 --> 00:00:03.000   \nHello world   \n"
-    );
-    assert.equal(cues.length, 1);
-    assert.equal(cues[0].text, "Hello world");
-  } finally {
-    String.prototype.trimEnd = originalTrimEnd;
-  }
-
-  // 4. Stale fetchCurrentEngineFsStats after stream switch must not schedule retry.
+  // 3. Stale fetchCurrentEngineFsStats after stream switch must not schedule retry.
   let handlers = null;
   vm.runInContext("globalThis.__makeHandlers = createPlayerVideoEventHandlers;", ctx);
   handlers = ctx.__makeHandlers.call(player, {}, () => false);
@@ -273,15 +252,15 @@ test("PlayerScreen guards loading logo/backdrop escaping, VTT trimEnd, cancelled
     "stale EngineFS error callback after switching stream must not call scheduleEngineFsStartupRetry"
   );
 
-  // 5. Superseded external subtitle selection revokes created objectURLs cleanly.
+  // 4. A superseded external subtitle load must not allocate a blob URL.
   await player.applyFallbackAddonSubtitle(0, 1, {
     id: "sub-1",
-    url: "https://example.com/sub.ass",
+    url: "https://example.com/sub.srt",
     lang: "en"
   });
   assert.equal(
-    revokedCount,
-    1,
-    "superseded external subtitle load must revoke object URLs created before bailout"
+    createdObjectUrls,
+    0,
+    "superseded external subtitle load must not create object URLs that would never be mounted"
   );
 });

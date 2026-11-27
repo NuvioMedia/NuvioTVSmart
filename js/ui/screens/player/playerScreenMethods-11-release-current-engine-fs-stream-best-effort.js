@@ -78,11 +78,11 @@ export function createPlayerScreenMethods11() {
       this.playerExitCleanupHandler = null;
     },
     getTrackProbeUrl() {
-      const currentCandidate = this.getCurrentStreamCandidate?.();
+      const currentCandidate = this.getCurrentStreamCandidate();
       return String(this.activePlaybackUrl || currentCandidate?.url || PlayerController.video?.currentSrc || "").trim();
     },
     getCurrentStreamFilenameHint() {
-      const candidate = this.getCurrentStreamCandidate?.();
+      const candidate = this.getCurrentStreamCandidate();
       return String(candidate?.behaviorHints?.filename || candidate?.raw?.behaviorHints?.filename || "").trim();
     },
     isEmbeddedTrackDiscoverySupported(url = this.getTrackProbeUrl()) {
@@ -100,7 +100,7 @@ export function createPlayerScreenMethods11() {
         (typeof PlayerController.isLikelyDashMimeType === "function" && PlayerController.isLikelyDashMimeType(probeMimeType))
       );
     },
-    isCurrentSourceLikelyDash(url = this.getTrackProbeUrl(), streamCandidate = this.getCurrentStreamCandidate?.()) {
+    isCurrentSourceLikelyDash(url = this.getTrackProbeUrl(), streamCandidate = this.getCurrentStreamCandidate()) {
       const isLikelyDashMimeType = PlayerController.isLikelyDashMimeType;
       if (typeof isLikelyDashMimeType !== "function") {
         return false;

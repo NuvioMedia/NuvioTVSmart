@@ -95,7 +95,7 @@ export function createPlayerScreenMethods43() {
       return normalized
         .split(/\n{2,}/)
         .map((block) => {
-          const lines = block.split("\n").map((line) => line.replace(/\s+$/, ""));
+          const lines = block.split("\n").map((line) => line.trimEnd());
           const timingIndex = lines.findIndex((line) => line.includes("-->"));
           if (timingIndex < 0) {
             return null;

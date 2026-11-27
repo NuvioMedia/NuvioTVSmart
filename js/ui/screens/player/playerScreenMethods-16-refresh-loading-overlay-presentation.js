@@ -21,7 +21,7 @@ export function createPlayerScreenMethods16() {
       }
       const loadingMeta = this.getLoadingOverlayMeta();
       const identity = this.uiRefs?.loadingIdentity;
-      const logoTargets = [this.uiRefs?.loadingLogoBase || this.uiRefs?.loadingLogo, this.uiRefs?.loadingLogoFill].filter(Boolean);
+      const logoTargets = [this.uiRefs?.loadingLogoBase, this.uiRefs?.loadingLogoFill].filter(Boolean);
       const title = this.uiRefs?.loadingTitle;
       const subtitle = this.uiRefs?.loadingSubtitle;
       if (identity) {
