@@ -1490,6 +1490,9 @@ function createPluginHttpServer(options) {
       logger.warn("Plugin service error", error.message || error);
   });
   server.on("close", function () {
+    try {
+      require("./custom-poster-config.cjs").stopAll();
+    } catch (_) {}
     destroyRouteAgents(networkState);
   });
   return server;
