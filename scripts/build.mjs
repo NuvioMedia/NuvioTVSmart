@@ -1,6 +1,7 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 import coreJsCompat from "core-js-compat";
 import postcssGlobalData from "@csstools/postcss-global-data";
@@ -91,24 +92,52 @@ function splitFunctionArgs(value) {
   return args;
 }
 
+function findBalancedMathCall(input) {
+  const regex = /\b(min|max|clamp)\(/g;
+  const match = regex.exec(input);
+  if (!match) {
+    return null;
+  }
+  const fn = match[1];
+  const openIdx = match.index + fn.length;
+  let depth = 1;
+  let i = openIdx + 1;
+  for (; i < input.length && depth > 0; i += 1) {
+    if (input[i] === "(") depth += 1;
+    else if (input[i] === ")") depth -= 1;
+  }
+  if (depth !== 0) {
+    return null;
+  }
+  return {
+    fn,
+    start: match.index,
+    end: i,
+    argsText: input.slice(openIdx + 1, i - 1)
+  };
+}
+
 function toLegacyLengthValue(value) {
   let result = value.trim();
-  let changed = true;
+  let guard = 0;
 
-  while (changed) {
-    changed = false;
-    result = result.replace(
-      /\b(min|max|clamp)\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g,
-      (match, fn, argsText) => {
-        const args = splitFunctionArgs(argsText).map(toLegacyLengthValue);
-        const computed = computeLegacyMathValue(fn, args);
-        const replacement =
-          computed ||
-          (fn === "clamp" ? args[2] || args[1] || args[0] : chooseStaticMathFallback(fn, args));
-        changed = true;
-        return replacement || match;
-      }
-    );
+  while (guard < 64) {
+    guard += 1;
+    const call = findBalancedMathCall(result);
+    if (!call) {
+      break;
+    }
+    const args = splitFunctionArgs(call.argsText).map(toLegacyLengthValue);
+    const computed = computeLegacyMathValue(call.fn, args);
+    const replacement =
+      computed ||
+      (call.fn === "clamp"
+        ? args[2] || args[1] || args[0]
+        : chooseStaticMathFallback(call.fn, args));
+    if (!replacement) {
+      break;
+    }
+    result = `${result.slice(0, call.start)}${replacement}${result.slice(call.end)}`;
   }
 
   return result;
@@ -877,4 +906,12 @@ async function runBuild() {
   }
 }
 
-runBuild();
+// Resolve the entry path so a build started through a symlinked checkout still runs.
+const isMainModule =
+  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+
+export { findBalancedMathCall, toLegacyLengthValue };
+
+if (isMainModule) {
+  runBuild();
+}
