@@ -231,8 +231,18 @@ const jpegSize = ${jpegDimensions.toString()};
 const pngSize = ${pngStillDimensions.toString()};
 const resizeTarget = ${artworkResizeTarget.toString()};
 
+let decodeTail = Promise.resolve();
+const runExclusiveDecode = (task) => {
+  const next = decodeTail.then(task, task);
+  decodeTail = next.then(
+    () => {},
+    () => {}
+  );
+  return next;
+};
+
 self.onmessage = async (event) => {
-  const { id, url, width, height, fit, kind, timeoutMs } = event.data || {};
+  const { id, url, width, height, fit, kind, timeoutMs, preferDataUrl } = event.data || {};
   let full = null;
   const hasTimeout = Number(timeoutMs) > 0 && typeof AbortController === "function";
   const controller = hasTimeout ? new AbortController() : null;
@@ -271,20 +281,29 @@ self.onmessage = async (event) => {
       if (dimensions.width <= width && dimensions.height <= height) {
         throw new Error("logo already small");
       }
-      full = await createImageBitmap(new Blob([bytes]), {
-        resizeWidth: Math.min(width, dimensions.width),
-        resizeQuality: "medium",
-        imageOrientation: "from-image"
+      const out = await runExclusiveDecode(async () => {
+        let bitmap = null;
+        try {
+          bitmap = await createImageBitmap(new Blob([bytes]), {
+            resizeWidth: Math.min(width, dimensions.width),
+            resizeQuality: "medium",
+            imageOrientation: "from-image"
+          });
+          // Enforce both width and height bounds while keeping transparent edges.
+          const scale = Math.min(width / bitmap.width, height / bitmap.height, 1);
+          const targetW = Math.max(1, Math.round(bitmap.width * scale));
+          const targetH = Math.max(1, Math.round(bitmap.height * scale));
+          const canvas = new OffscreenCanvas(targetW, targetH);
+          canvas
+            .getContext("2d", { alpha: true, willReadFrequently: true })
+            .drawImage(bitmap, 0, 0, targetW, targetH);
+          return await canvas.convertToBlob({ type: "image/webp", quality: 0.92 });
+        } finally {
+          if (bitmap) {
+            bitmap.close();
+          }
+        }
       });
-      // Enforce both width and height bounds while keeping transparent edges.
-      const scale = Math.min(width / full.width, height / full.height, 1);
-      const targetW = Math.max(1, Math.round(full.width * scale));
-      const targetH = Math.max(1, Math.round(full.height * scale));
-      const canvas = new OffscreenCanvas(targetW, targetH);
-      canvas.getContext("2d", { alpha: true }).drawImage(full, 0, 0, targetW, targetH);
-      const out = await canvas.convertToBlob({ type: "image/webp", quality: 0.92 });
-      full.close();
-      full = null;
       self.postMessage({ id, ok: true, blob: out });
       return;
     }
@@ -325,7 +344,7 @@ self.onmessage = async (event) => {
           return;
         }
         sniffed = true;
-        const head = concatChunks(chunks, total);
+        const head = chunks[0]?.byteLength >= 30 ? chunks[0] : concatChunks(chunks, total);
         const jpeg = isJpeg(head);
         const webp = jpeg ? null : webpInfo(head);
         if (!jpeg && !webp) {
@@ -366,26 +385,43 @@ self.onmessage = async (event) => {
       throw new Error("animated webp");
     }
     const dimensions = jpeg ? jpegSize(view) : webp;
-    const resize = dimensions ? resizeTarget(dimensions.width, dimensions.height, 1280) : null;
-    full = await createImageBitmap(
-      new Blob([view]),
-      resize ? { ...resize, resizeQuality: "low" } : undefined
-    );
-    if (full.width <= width && full.height <= height) {
-      // Already no larger than the card. Re-encoding would only lose quality.
+    if (dimensions && dimensions.width <= width && dimensions.height <= height) {
       throw new Error("already small");
     }
+    const resize = dimensions ? resizeTarget(dimensions.width, dimensions.height, 1280) : null;
     const alpha = Boolean(webp && webp.alpha);
-    const crop = sourceRect(full.width, full.height, width, height, fit);
-    const canvas = new OffscreenCanvas(width, height);
-    canvas.getContext("2d", { alpha }).drawImage(full, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
-    const out = await canvas.convertToBlob(
-      alpha
-        ? { type: "image/webp", quality: 0.85 }
-        : { type: "image/jpeg", quality: 0.82 }
-    );
-    full.close();
-    full = null;
+    const out = await runExclusiveDecode(async () => {
+      let decoded = null;
+      try {
+        decoded = await createImageBitmap(
+          new Blob([view]),
+          resize ? { ...resize, resizeQuality: "low" } : undefined
+        );
+        if (decoded.width <= width && decoded.height <= height) {
+          // Already no larger than the card. Re-encoding would only lose quality.
+          throw new Error("already small");
+        }
+        const crop = sourceRect(decoded.width, decoded.height, width, height, fit);
+        const canvas = new OffscreenCanvas(width, height);
+        canvas
+          .getContext("2d", { alpha, willReadFrequently: true })
+          .drawImage(decoded, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
+        return await canvas.convertToBlob(
+          alpha
+            ? { type: "image/webp", quality: 0.85 }
+            : { type: "image/jpeg", quality: 0.82 }
+        );
+      } finally {
+        if (decoded) {
+          decoded.close();
+        }
+      }
+    });
+    if (preferDataUrl && typeof FileReaderSync === "function") {
+      const dataUrl = new FileReaderSync().readAsDataURL(out);
+      self.postMessage({ id, ok: true, dataUrl });
+      return;
+    }
     self.postMessage({ id, ok: true, blob: out });
   } catch (error) {
     if (full) {
@@ -413,6 +449,12 @@ export function artworkWorkerCount(cores, deviceMemory) {
   }
   const value = Number(cores) || 4;
   return Math.min(Math.max(value - 1, 1), 3);
+}
+
+const WORKER_JOB_SLOTS = 2;
+
+function workerJobSlots() {
+  return WORKER_JOB_SLOTS;
 }
 
 function workerCount() {
@@ -468,16 +510,237 @@ export function shouldRescaleHomeArtwork() {
 // A worker that hangs would hold its slot forever and every later poster
 // would stay blank, which is worse than the oversized decode this replaces.
 const JOB_TIMEOUT_MS = 15000;
-const WORKER_JOB_SLOTS = 2;
+const CAMERA_SCROLL_POLL_MS = 60;
+const CAMERA_SCROLL_MAX_WAIT_MS = 450;
+const DPAD_PACE_QUIET_MS = 355;
+const DPAD_PACE_MAX_WAIT_MS = 650;
+const DPAD_POST_SETTLE_SPACING_MS = 20;
+const DPAD_POST_SETTLE_WINDOW_MS = 1050;
+const DPAD_OFFSCREEN_FLUSH_QUIET_MS = 1150;
+const MAX_COMPLETIONS_PER_FRAME = 1;
 
-function createPool() {
+let lastDpadKeydownAt = 0;
+let keydownListenerBound = false;
+
+function ensureDpadKeydownListener() {
+  if (keydownListenerBound) {
+    return;
+  }
+  try {
+    if (typeof globalThis.addEventListener === "function") {
+      globalThis.addEventListener(
+        "keydown",
+        () => {
+          lastDpadKeydownAt = Date.now();
+        },
+        { passive: true, capture: true }
+      );
+      keydownListenerBound = true;
+    }
+  } catch (_) {}
+}
+
+function isCameraScrollingActive() {
+  try {
+    return Boolean(globalThis.document?.querySelector?.(".is-camera-scrolling"));
+  } catch (_) {
+    return false;
+  }
+}
+
+function isDpadPaceActive() {
+  return lastDpadKeydownAt > 0 && Date.now() - lastDpadKeydownAt < DPAD_PACE_QUIET_MS;
+}
+
+function shouldDeferCompletionFlush() {
+  return isDpadPaceActive() || isCameraScrollingActive();
+}
+
+function nextFlushableCompletionIndex(state, now = Date.now()) {
+  if (!state?.pendingCompletions?.length) {
+    return -1;
+  }
+  let bestIndex = -1;
+  let bestPriority = Infinity;
+  for (let index = 0; index < state.pendingCompletions.length; index += 1) {
+    const priority = state.pendingCompletions[index].job?.priority ?? 2;
+    if (priority < bestPriority) {
+      bestPriority = priority;
+      bestIndex = index;
+      if (bestPriority === 0) {
+        break;
+      }
+    }
+  }
+  if (
+    bestPriority > 0 &&
+    lastDpadKeydownAt > 0 &&
+    now - lastDpadKeydownAt < DPAD_OFFSCREEN_FLUSH_QUIET_MS
+  ) {
+    return -1;
+  }
+  return bestIndex;
+}
+
+function scheduleNextCompletionChunk(state) {
+  if (
+    !state ||
+    state.disposed ||
+    state.chunkTimer ||
+    state.chunkRaf ||
+    state.flushTimer ||
+    !state.pendingCompletions.length
+  ) {
+    return;
+  }
+  const now = Date.now();
+  const flushIndex = nextFlushableCompletionIndex(state, now);
+  if (flushIndex < 0) {
+    state.flushWaitStartedAt = 0;
+    state.flushWaitingOnKeydown = false;
+    if (!state.restDrainTimer) {
+      const remaining = Math.max(16, DPAD_OFFSCREEN_FLUSH_QUIET_MS - (now - lastDpadKeydownAt));
+      state.restDrainTimer = setTimeout(() => {
+        state.restDrainTimer = null;
+        if (!state || state.disposed || !state.pendingCompletions.length) {
+          return;
+        }
+        scheduleNextCompletionChunk(state);
+      }, remaining);
+    }
+    return;
+  }
+  if (state.restDrainTimer) {
+    clearTimeout(state.restDrainTimer);
+    state.restDrainTimer = null;
+  }
+  const onTick = () => {
+    if (!state || state.disposed || !state.pendingCompletions.length) {
+      return;
+    }
+    const maxWaitMs =
+      state.flushWaitingOnKeydown || isDpadPaceActive()
+        ? DPAD_PACE_MAX_WAIT_MS
+        : CAMERA_SCROLL_MAX_WAIT_MS;
+    if (
+      shouldDeferCompletionFlush() &&
+      (!state.flushWaitStartedAt || Date.now() - state.flushWaitStartedAt < maxWaitMs)
+    ) {
+      scheduleCompletionFlush(state);
+      return;
+    }
+    flushPendingCompletions(state);
+  };
+  if (lastDpadKeydownAt > 0 && now - lastDpadKeydownAt < DPAD_POST_SETTLE_WINDOW_MS) {
+    state.chunkTimer = setTimeout(() => {
+      state.chunkTimer = null;
+      onTick();
+    }, DPAD_POST_SETTLE_SPACING_MS);
+    return;
+  }
+  if (typeof globalThis.requestAnimationFrame === "function") {
+    state.chunkRaf = globalThis.requestAnimationFrame(() => {
+      state.chunkRaf = 0;
+      onTick();
+    });
+  } else {
+    state.chunkTimer = setTimeout(() => {
+      state.chunkTimer = null;
+      onTick();
+    }, 16);
+  }
+}
+
+function flushPendingCompletions(state) {
+  if (!state || state.disposed) {
+    return;
+  }
+  const flushIndex = nextFlushableCompletionIndex(state);
+  if (flushIndex < 0) {
+    state.flushWaitStartedAt = 0;
+    state.flushWaitingOnKeydown = false;
+    pump(state);
+    if (state.pendingCompletions.length) {
+      scheduleNextCompletionChunk(state);
+    }
+    return;
+  }
+  const batch = state.pendingCompletions.splice(flushIndex, MAX_COMPLETIONS_PER_FRAME);
+  for (let index = 0; index < batch.length; index += 1) {
+    const entry = batch[index];
+    if (entry.job) {
+      entry.job.settle(entry.ok ? entry.payload : null, entry.reason);
+    }
+  }
+  pump(state);
+  if (state.pendingCompletions.length) {
+    scheduleNextCompletionChunk(state);
+  } else {
+    state.flushWaitStartedAt = 0;
+    state.flushWaitingOnKeydown = false;
+  }
+}
+
+function scheduleCompletionFlush(state) {
+  if (!state || state.disposed) {
+    return;
+  }
+  const now = Date.now();
+  if (!state.flushWaitStartedAt) {
+    state.flushWaitStartedAt = now;
+  }
+  const scrollActive = isCameraScrollingActive();
+  const dpadActive = isDpadPaceActive();
+  if (dpadActive) {
+    state.flushWaitingOnKeydown = true;
+  }
+  if (state.flushTimer) {
+    return;
+  }
+  const maxWaitMs = state.flushWaitingOnKeydown ? DPAD_PACE_MAX_WAIT_MS : CAMERA_SCROLL_MAX_WAIT_MS;
+  const elapsed = now - state.flushWaitStartedAt;
+  const remainingCap = Math.max(1, maxWaitMs - elapsed);
+  let delay = 1;
+  if (scrollActive) {
+    delay = Math.min(CAMERA_SCROLL_POLL_MS, remainingCap);
+  } else if (dpadActive) {
+    const remainingKeyMs = Math.max(1, DPAD_PACE_QUIET_MS - (now - lastDpadKeydownAt));
+    delay = Math.min(remainingKeyMs, remainingCap);
+  }
+  state.flushTimer = setTimeout(() => {
+    state.flushTimer = null;
+    if (!state || state.disposed) {
+      return;
+    }
+    const activeMaxWait =
+      state.flushWaitingOnKeydown || isDpadPaceActive()
+        ? DPAD_PACE_MAX_WAIT_MS
+        : CAMERA_SCROLL_MAX_WAIT_MS;
+    if (shouldDeferCompletionFlush() && Date.now() - state.flushWaitStartedAt < activeMaxWait) {
+      scheduleCompletionFlush(state);
+      return;
+    }
+    flushPendingCompletions(state);
+  }, delay);
+}
+
+function createPool({ preferDataUrl = false } = {}) {
+  ensureDpadKeydownListener();
   const workerUrl = URL.createObjectURL(new Blob([WORKER_SOURCE], { type: "text/javascript" }));
   const state = {
     workerUrl,
+    preferDataUrl: Boolean(preferDataUrl),
     workers: [],
     idle: [],
     queue: [],
     jobs: new Map(),
+    pendingCompletions: [],
+    flushTimer: null,
+    flushWaitStartedAt: 0,
+    flushWaitingOnKeydown: false,
+    chunkTimer: null,
+    chunkRaf: 0,
+    restDrainTimer: null,
     nextId: 1,
     cache: new Map(),
     failed: new Map(),
@@ -509,14 +772,29 @@ function spawnWorker(state) {
     return false;
   }
   worker.onmessage = (event) => {
-    const { id, ok, blob, reason } = event.data || {};
+    const { id, ok, blob, dataUrl, reason } = event.data || {};
+    const payload = typeof dataUrl === "string" && dataUrl ? dataUrl : blob;
     const job = state.jobs.get(id);
     if (job) {
       state.jobs.delete(id);
       clearTimeout(job.timer);
-      job.settle(ok ? blob : null, reason);
     }
-    state.idle.push(worker);
+    if (!state.disposed && !state.suspended && state.workers.includes(worker)) {
+      state.idle.push(worker);
+    }
+    if (shouldDeferCompletionFlush() || lastDpadKeydownAt > 0) {
+      state.pendingCompletions.push({ job, worker, ok, payload, reason });
+      if (shouldDeferCompletionFlush()) {
+        scheduleCompletionFlush(state);
+      } else {
+        scheduleNextCompletionChunk(state);
+      }
+      pump(state);
+      return;
+    }
+    if (job) {
+      job.settle(ok ? payload : null, reason);
+    }
     pump(state);
   };
   worker.onerror = () => retireWorker(state, worker, "worker error");
@@ -524,7 +802,8 @@ function spawnWorker(state) {
   // Each job spends most of its time waiting on the network, and the worker
   // handler is async, so two slots per worker overlap a download with the
   // other job's decode (about OkHttp's five requests per host on Android).
-  for (let slot = 0; slot < WORKER_JOB_SLOTS; slot += 1) {
+  const slots = workerJobSlots();
+  for (let slot = 0; slot < slots; slot += 1) {
     state.idle.push(worker);
   }
   return true;
@@ -598,10 +877,17 @@ function pump(state) {
       if (job.timeoutMs > 0) {
         message.timeoutMs = job.timeoutMs;
       }
+    } else if (state.preferDataUrl) {
+      message.preferDataUrl = true;
     }
     worker.postMessage(message);
   }
-  if (state.suspendRequested && !state.queue.length && !state.jobs.size) {
+  if (
+    state.suspendRequested &&
+    !state.queue.length &&
+    !state.jobs.size &&
+    !state.pendingCompletions.length
+  ) {
     suspendWorkers(state);
   }
 }
@@ -631,7 +917,9 @@ function suspendWorkers(state) {
     if (entry.uses > 0) {
       return;
     }
-    URL.revokeObjectURL(entry.objectUrl);
+    if (String(entry.objectUrl).startsWith("blob:")) {
+      URL.revokeObjectURL(entry.objectUrl);
+    }
     state.cache.delete(key);
   });
 }
@@ -640,7 +928,7 @@ function suspendPool(state) {
   if (!state || state.disposed) {
     return;
   }
-  if (state.queue.length || state.jobs.size) {
+  if (state.queue.length || state.jobs.size || state.pendingCompletions.length) {
     // A poster is being re-encoded right now. Cut it only once the answer is
     // in, or the card would keep the oversized original instead.
     state.suspendRequested = true;
@@ -705,7 +993,9 @@ function trimCache(state) {
     if (entry.uses > 0) {
       continue;
     }
-    URL.revokeObjectURL(entry.objectUrl);
+    if (String(entry.objectUrl).startsWith("blob:")) {
+      URL.revokeObjectURL(entry.objectUrl);
+    }
     state.cache.delete(key);
   }
 }
@@ -716,7 +1006,7 @@ function getPoolFor(kind) {
     return null;
   }
   if (current === null) {
-    const created = createPool();
+    const created = createPool({ preferDataUrl: kind !== "generic" });
     if (!created) {
       if (kind === "generic") genericPool = undefined;
       else pool = undefined;
@@ -762,6 +1052,7 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
   }
   const pendingJob = state.inflight.get(key);
   if (pendingJob) {
+    const prevPriority = pendingJob.priority;
     pendingJob.priority = Math.min(pendingJob.priority, priority);
     // A second card wanting the same artwork means the queued job is no longer
     // stale just because the first card went away.
@@ -771,6 +1062,13 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
     // zero while another card is still painting it, and trimCache would then
     // revoke a url that is on screen.
     pendingJob.waiters += 1;
+    if (
+      prevPriority > 0 &&
+      pendingJob.priority === 0 &&
+      state.pendingCompletions.some((entry) => entry.job === pendingJob)
+    ) {
+      scheduleNextCompletionChunk(state);
+    }
     return pendingJob.promise;
   }
   const job = {
@@ -785,7 +1083,7 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
     waiters: 1
   };
   job.promise = new Promise((resolve) => {
-    job.settle = (blob, reason) => {
+    job.settle = (payload, reason) => {
       // A timeout and a late reply can both land, and settling twice would
       // leak a second object url for the same job.
       if (job.done) {
@@ -793,14 +1091,18 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
       }
       job.done = true;
       state.inflight.delete(key);
-      if (!blob || state.disposed) {
-        if (!blob && !state.disposed) {
+      if (!payload || state.disposed) {
+        if (!payload && !state.disposed) {
           rememberArtworkFailure(state, key, reason, url);
         }
         resolve(null);
         return;
       }
-      const objectUrl = URL.createObjectURL(blob);
+      if (job.waiters === 1 && job.isStale?.()) {
+        resolve(null);
+        return;
+      }
+      const objectUrl = typeof payload === "string" ? payload : URL.createObjectURL(payload);
       const entry = { objectUrl, uses: job.waiters };
       state.cache.set(key, entry);
       trimCache(state);
@@ -919,7 +1221,8 @@ export function rescaleArtwork(url, options) {
 }
 
 function releaseFromPool(state, objectUrl) {
-  if (!state || !objectUrl || !String(objectUrl).startsWith("blob:")) {
+  const value = String(objectUrl || "");
+  if (!state || (!value.startsWith("blob:") && !value.startsWith("data:"))) {
     return;
   }
   for (const entry of state.cache.values()) {
@@ -948,6 +1251,25 @@ function resetPool(state) {
     return;
   }
   state.disposed = true;
+  if (state.flushTimer) {
+    clearTimeout(state.flushTimer);
+    state.flushTimer = null;
+  }
+  if (state.chunkTimer) {
+    clearTimeout(state.chunkTimer);
+    state.chunkTimer = null;
+  }
+  if (state.restDrainTimer) {
+    clearTimeout(state.restDrainTimer);
+    state.restDrainTimer = null;
+  }
+  if (state.chunkRaf && typeof globalThis.cancelAnimationFrame === "function") {
+    globalThis.cancelAnimationFrame(state.chunkRaf);
+    state.chunkRaf = 0;
+  }
+  state.flushWaitStartedAt = 0;
+  state.flushWaitingOnKeydown = false;
+  state.pendingCompletions.splice(0).forEach((entry) => entry.job?.settle(null, "reset"));
   state.jobs.forEach((job) => {
     clearTimeout(job.timer);
     job.settle(null, "reset");
@@ -960,7 +1282,11 @@ function resetPool(state) {
       worker.terminate();
     } catch (_) {}
   });
-  state.cache.forEach((entry) => URL.revokeObjectURL(entry.objectUrl));
+  state.cache.forEach((entry) => {
+    if (String(entry.objectUrl).startsWith("blob:")) {
+      URL.revokeObjectURL(entry.objectUrl);
+    }
+  });
   URL.revokeObjectURL(state.workerUrl);
   state.cache.clear();
   state.jobs.clear();
