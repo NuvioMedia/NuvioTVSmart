@@ -26,14 +26,11 @@ export async function resolveContinueWatchingEpisodeRating(
   try {
     const lookup = (async () => {
       const contentId = String(item.contentId || item.id || "");
-      const imdbCandidate = String(item.imdbId || contentId).split(":")[0];
-      const imdbId = /^tt\d+$/i.test(imdbCandidate) ? imdbCandidate : null;
       const tmdbId =
         item.tmdbId ||
         (await TmdbService.ensureTmdbId(contentId, "series", { requireEnabled: false }));
-      if (!imdbId && !tmdbId) return fallbackRating;
+      if (!tmdbId) return fallbackRating;
       const ratings = await imdbEpisodeRatingsRepository.getEpisodeRatings({
-        imdbId,
         tmdbId,
         addonEpisodes: addonEpisodeAirDates(addonVideos)
       });
