@@ -2,8 +2,15 @@
 import * as internals from "./metaDetailsScreenContext.js";
 
 export function createMetaDetailsScreenMethods20() {
-  const { ScreenUtils, localizedGenreLabel, contentTextDirection, renderLoadingIndicator, detectQuality, renderStreamAddonIcon } =
-    internals;
+  const {
+    ScreenUtils,
+    localizedGenreLabel,
+    contentTextDirection,
+    renderLoadingIndicator,
+    detectQuality,
+    renderStreamAddonIcon,
+    escapeHtml
+  } = internals;
 
   return {
     stopTrailerPlayback({ keepDom = false, restartAutoplay = true, restoreFocus = true, immediateClear = false } = {}) {
@@ -222,7 +229,7 @@ export function createMetaDetailsScreenMethods20() {
             <div class="series-stream-overlay-backdrop"></div>
             <div class="series-stream-panel">
               <div class="series-stream-left">
-                ${this.meta?.logo ? `<img src="${this.meta.logo}" class="series-stream-logo" alt="logo" />` : `<div class="series-stream-heading">${this.meta?.name || "Series"}</div>`}
+                ${this.meta?.logo ? `<img src="${escapeHtml(this.meta.logo)}" class="series-stream-logo" alt="logo" />` : `<div class="series-stream-heading">${this.meta?.name || "Series"}</div>`}
                 <div class="series-stream-episode">${pending.episode ? `S${pending.episode.season} E${pending.episode.episode}` : ""}</div>
                 <div class="series-stream-episode-title">${pending.episode?.title || ""}</div>
               </div>
@@ -302,7 +309,7 @@ export function createMetaDetailsScreenMethods20() {
             <div class="series-stream-overlay-backdrop"></div>
             <div class="series-stream-panel">
               <div class="series-stream-left">
-                ${this.meta?.logo ? `<img src="${this.meta.logo}" class="series-stream-logo" alt="logo" />` : `<div class="series-stream-heading">${this.meta?.name || "Movie"}</div>`}
+                ${this.meta?.logo ? `<img src="${escapeHtml(this.meta.logo)}" class="series-stream-logo" alt="logo" />` : `<div class="series-stream-heading">${this.meta?.name || "Movie"}</div>`}
                 <div class="series-stream-episode">${this.meta?.name || ""}</div>
                 <div class="series-stream-episode-title">${Array.isArray(this.meta?.genres) ? this.meta.genres.slice(0, 3).map(localizedGenreLabel).join(" • ") : ""}</div>
               </div>

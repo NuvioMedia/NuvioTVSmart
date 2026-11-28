@@ -218,7 +218,7 @@ export function createMetaDetailsScreenMethods07() {
       const heroTitle = meta.name || "Untitled";
       const heroDescription = meta.description || t("detail.noDescription", {}, "No description.");
       const logoOrTitle = meta.logo
-        ? `<img src="${meta.logo}" class="series-detail-logo" alt="${escapeHtml(meta.name || "logo")}" decoding="async" fetchpriority="high" />`
+        ? `<img src="${escapeAttribute(meta.logo)}" class="series-detail-logo" alt="${escapeHtml(meta.name || "logo")}" decoding="async" fetchpriority="high" />`
         : `<h1 class="series-detail-title" dir="${contentTextDirection(heroTitle)}">${escapeHtml(heroTitle)}</h1>`;
       const externalRatings = this.renderExternalRatingsRow(meta);
       const trailerSource = this.trailerSource || resolveTrailerSource(meta);
