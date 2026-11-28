@@ -223,3 +223,98 @@ globalThis.buildYoutubeEmbedUrl = buildYoutubeEmbedUrl;`,
   assert.equal(ready, true);
   assert.equal(container.posted.length, 1);
 });
+
+test("a fresh YouTube trailer stays covered until its startup chrome is gone", async () => {
+  const listeners = {};
+  const timers = [];
+  const frames = [];
+  const context = vm.createContext({
+    console,
+    setTimeout: (fn, ms) => {
+      timers.push(Number(ms) || 0);
+      return setTimeout(fn, Math.min(Number(ms) || 0, 30));
+    },
+    clearTimeout,
+    window: {
+      addEventListener: (name, fn) => {
+        listeners[name] = fn;
+      },
+      removeEventListener: (name) => {
+        delete listeners[name];
+      }
+    },
+    document: {
+      createElement: () => {
+        const frame = {
+          dataset: {},
+          contentWindow: {},
+          listeners: {},
+          isConnected: true,
+          parentElement: null,
+          addEventListener: (name, fn) => {
+            frame.listeners[name] = fn;
+          },
+          setAttribute: () => {},
+          removeAttribute: () => {},
+          blur: () => {}
+        };
+        frames.push(frame);
+        return frame;
+      }
+    },
+    internals: {
+      metaRepository: {},
+      isCollectionFolderItem: () => false,
+      resolveTrailerSource: () => null,
+      withTimeout: (promise) => promise,
+      resolveTrailerMetaWithTmdbFallback: async () => null,
+      LayoutPreferences: { get: () => ({}) }
+    }
+  });
+  context.globalThis = context;
+  vm.runInContext(
+    `${source}\nglobalThis.api = Object.assign(createHomeScreenMethods12(), createHomeScreenMethods13());`,
+    context
+  );
+
+  const classes = new Set();
+  const container = {
+    classList: {
+      add: (name) => classes.add(name),
+      remove: (...names) => names.forEach((name) => classes.delete(name)),
+      contains: (name) => classes.has(name)
+    },
+    firstElementChild: null,
+    querySelector: () => null,
+    appendChild: (frame) => {
+      container.firstElementChild = frame;
+      frame.parentElement = container;
+    }
+  };
+  const screen = Object.assign(Object.create(context.api), {
+    homeTrailerLayerCleanupTimers: new WeakMap(),
+    homeTrailerLayerHideTimers: new WeakMap()
+  });
+
+  let ready = false;
+  screen.mountTrailerLayer(
+    container,
+    { kind: "youtube", ytId: "dQw4w9WgXcQ", embedUrl: "https://proxy.example.test/embed?v=dQw4w9WgXcQ" },
+    () => {
+      ready = true;
+    }
+  );
+
+  const frame = frames[0];
+  assert.ok(frame, "the trailer iframe must be mounted");
+  listeners.message?.({ source: frame.contentWindow, data: { source: "nuvio-youtube-proxy", type: "firstFrame" } });
+
+  assert.equal(classes.has("is-active"), false, "the layer must stay hidden while YouTube shows its chrome");
+  assert.ok(
+    timers.some((ms) => ms >= 4000),
+    "the reveal must wait for YouTube's startup chrome to disappear"
+  );
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.equal(classes.has("is-active"), true);
+  assert.equal(ready, true, "the preview must still report ready once it is visible");
+});
