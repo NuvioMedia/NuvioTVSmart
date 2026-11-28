@@ -63,7 +63,7 @@ beforeEach(() => {
   SessionStore.refreshToken = "refresh-token-1";
   AuthManager.lastRefreshFailureKind = null;
   AuthManager.refreshPromise = null;
-  AuthManager.state = AuthState.SIGNED_IN;
+  AuthManager.state = AuthState.AUTHENTICATED;
   originalSignOut = AuthManager.signOut.bind(AuthManager);
 });
 
