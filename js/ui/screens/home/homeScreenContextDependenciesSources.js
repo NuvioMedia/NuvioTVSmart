@@ -317,6 +317,7 @@ export {
   getCachedContinueWatchingEnrichment,
   applyCachedContinueWatchingEnrichment,
   saveContinueWatchingEnrichment,
+  saveContinueWatchingEnrichments,
   readContinueWatchingDisplaySnapshot,
   writeContinueWatchingDisplaySnapshot,
   buildContinueWatchingSignature,
