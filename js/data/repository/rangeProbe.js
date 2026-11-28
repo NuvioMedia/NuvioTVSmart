@@ -48,7 +48,7 @@ export async function fetchRange(
   start,
   length,
   probe = null,
-  { partialOnly = false } = {}
+  { partialOnly = false, onResponse = null } = {}
 ) {
   if (probe?.expired) {
     return null;
@@ -67,6 +67,8 @@ export async function fetchRange(
     if (probe?.expired) {
       return null;
     }
+    // Lets a caller read response headers (Content-Disposition) without another request.
+    onResponse?.(response);
     const range = response.headers.get("content-range");
     const validStatus =
       response.status === 206 || (response.status === 200 && start === 0 && !partialOnly);
