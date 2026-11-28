@@ -3,6 +3,9 @@ import { registerHomeDomNodes } from "./homeDomUpdate.js";
 import { createHeroDescriptionAutoScroller } from "./heroDescriptionAutoScroll.js";
 import * as internals from "./homeScreenContext.js";
 
+const HERO_DESCRIPTION_INPUT_QUIET_MS = 1600;
+const HERO_DESCRIPTION_SCROLL_POLL_MS = 120;
+
 export function createHomeScreenMethods05() {
   const {
     getTvHeroTransitionMode,
@@ -34,7 +37,10 @@ export function createHomeScreenMethods05() {
         return;
       }
 
-      const display = this.layoutMode === "modern" ? buildModernHeroPresentation(hero) : buildHeroDisplayModel(hero, this.layoutMode);
+      const display =
+        this.layoutMode === "modern"
+          ? buildModernHeroPresentation(hero, this.layoutPrefs)
+          : buildHeroDisplayModel(hero, this.layoutMode, this.layoutPrefs);
       if (!display) {
         return;
       }
@@ -186,7 +192,26 @@ export function createHomeScreenMethods05() {
       void ensureHeroMdbListRatings.call(this);
       this.applyHeroDescriptionAutoScroll();
     },
+    clearHeroDescriptionAutoScrollTimer() {
+      if (this.heroDescriptionAutoScrollDelayTimer) {
+        clearTimeout(this.heroDescriptionAutoScrollDelayTimer);
+        this.heroDescriptionAutoScrollDelayTimer = null;
+      }
+    },
+    getHeroDescriptionAutoScrollDeferMs() {
+      if (!(this.isLegacyTvRuntime?.() || this.shouldUseBoundedHomeImageHydration?.())) {
+        return 0;
+      }
+      if (this.isModernHydrationScrollActive?.()) {
+        return HERO_DESCRIPTION_SCROLL_POLL_MS;
+      }
+      const lastInputAt = Number(this.lastHomeInputAt || 0);
+      return lastInputAt > 0
+        ? Math.min(HERO_DESCRIPTION_INPUT_QUIET_MS, Math.max(0, HERO_DESCRIPTION_INPUT_QUIET_MS - (Date.now() - lastInputAt)))
+        : 0;
+    },
     applyHeroDescriptionAutoScroll() {
+      this.clearHeroDescriptionAutoScrollTimer();
       if (this.heroDescriptionAutoScrollFrame) {
         cancelAnimationFrame(this.heroDescriptionAutoScrollFrame);
         this.heroDescriptionAutoScrollFrame = 0;
@@ -198,21 +223,41 @@ export function createHomeScreenMethods05() {
       }
       if (!this.heroDescriptionAutoScroller) {
         this.heroDescriptionAutoScroller = createHeroDescriptionAutoScroller({
-          isPaused: () => this.isTrailerPlaying?.() === true || this.pauseOverlayVisible === true,
+          isPaused: () =>
+            this.isTrailerPlaying?.() === true ||
+            this.pauseOverlayVisible === true ||
+            Boolean(this.isModernHydrationScrollActive?.()) ||
+            (Number(this.lastHomeInputAt || 0) > 0 && Date.now() - Number(this.lastHomeInputAt || 0) < HERO_DESCRIPTION_INPUT_QUIET_MS),
           onHoldChange: (holding) => {
             this.heroDescriptionScrollHolding = Boolean(holding);
           }
         });
       }
-      // Measuring here would force a synchronous layout inside the hero update.
-      // Android sizes AutoScrollingText during composition, at frame time.
-      this.heroDescriptionAutoScrollFrame = requestAnimationFrame(() => {
-        this.heroDescriptionAutoScrollFrame = 0;
-        if (!node.isConnected) {
+      const scheduleApplyFrame = () => {
+        if (!this.container || !node.isConnected || !this.layoutPrefs?.heroDescriptionAutoScrollEnabled) {
           return;
         }
-        this.heroDescriptionAutoScroller.apply(node, Boolean(this.layoutPrefs?.heroDescriptionAutoScrollEnabled));
-      });
+        // Measuring here would force a synchronous layout inside the hero update.
+        // Android sizes AutoScrollingText during composition, at frame time.
+        this.heroDescriptionAutoScrollFrame = requestAnimationFrame(() => {
+          this.heroDescriptionAutoScrollFrame = 0;
+          if (!this.container || !node.isConnected) {
+            return;
+          }
+          this.heroDescriptionAutoScroller.apply(node, Boolean(this.layoutPrefs?.heroDescriptionAutoScrollEnabled));
+        });
+      };
+      const deferMs = this.getHeroDescriptionAutoScrollDeferMs();
+      if (deferMs > 0) {
+        this.heroDescriptionAutoScroller?.stop();
+        this.heroDescriptionAutoScrollDelayTimer = setTimeout(() => {
+          this.heroDescriptionAutoScrollDelayTimer = null;
+          // Re-check after the wait: another key or scroll may still be active.
+          this.applyHeroDescriptionAutoScroll();
+        }, deferMs);
+        return;
+      }
+      scheduleApplyFrame();
     },
     setSidebarExpanded(expanded) {
       const nextExpanded = Boolean(expanded);

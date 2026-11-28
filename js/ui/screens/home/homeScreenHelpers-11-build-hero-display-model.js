@@ -192,12 +192,11 @@ import {
 import { isCollectionFolderItem } from "./homeScreenHelpers-04-animate-hero-logo-swap.js";
 import { normalizeCollectionFolderItem } from "./homeScreenHelpers-05-normalize-collection-folder-item.js";
 import { extractYear, resolveImdbRating } from "./homeScreenHelpers-01-modern-sidebar-pill-auto-collapse-ms.js";
-import { hideHomeHeroRatings } from "./homeScreenHelpers-10-get-cached-continue-watching-enrichment.js";
 import { formatRuntimeText, extractReleaseDateText } from "./homeScreenHelpers-02-extract-release-date-text.js";
 import { normalizeContinueWatchingItem } from "./homeScreenHelpers-09-normalize-continue-watching-item.js";
 import { normalizeCatalogItem } from "./homeScreenHelpers-08-partition-continue-watching-rows.js";
 
-export function buildHeroDisplayModel(hero, layoutMode) {
+export function buildHeroDisplayModel(hero, layoutMode, layoutPrefs = null) {
   if (isCollectionFolderItem(hero)) {
     const normalized = normalizeCollectionFolderItem(hero);
     return {
@@ -211,13 +210,14 @@ export function buildHeroDisplayModel(hero, layoutMode) {
       chips: []
     };
   }
+  const prefs = layoutPrefs || LayoutPreferences.get();
   const year = extractYear(hero);
-  const mdbListMarkup = renderHeroMdbListRatings(hero, layoutMode);
+  const mdbListMarkup = renderHeroMdbListRatings(hero, layoutMode, prefs);
   const imdb =
-    mdbListMarkup || hideHomeHeroRatings()
+    mdbListMarkup || !showHomeRatings(prefs?.homeImdbRatingsVisibility)
       ? null
       : hero?.heroSource === "continueWatching"
-        ? continueWatchingRating(hero, LayoutPreferences.get().detailImdbRatingsVisibility)
+        ? continueWatchingRating(hero, prefs?.detailImdbRatingsVisibility)
         : resolveImdbRating(hero);
   const genres = Array.isArray(hero?.genres) ? hero.genres.filter(Boolean).slice(0, 3).map(localizedGenreLabel) : [];
   const typeLabel = formatContentTypeLabel(hero?.type || hero?.apiType || "movie", "movie");
@@ -264,7 +264,7 @@ export function buildHeroDisplayModel(hero, layoutMode) {
   };
 }
 
-export function buildModernHeroPresentation(hero) {
+export function buildModernHeroPresentation(hero, layoutPrefs = null) {
   if (isCollectionFolderItem(hero)) {
     const normalizedCollection = normalizeCollectionFolderItem(hero);
     if (!normalizedCollection) {
@@ -292,17 +292,18 @@ export function buildModernHeroPresentation(hero) {
     return null;
   }
 
+  const prefs = layoutPrefs || LayoutPreferences.get();
   const isSeries = String(normalized.type || normalized.apiType || "").toLowerCase() === "series";
   const genres = Array.isArray(normalized.genres) ? normalized.genres.filter(Boolean).map(localizedGenreLabel) : [];
   const contentTypeText = formatContentTypeLabel(normalized.type || normalized.apiType || "movie", "movie");
   const runtimeText = formatRuntimeText(normalized);
   const yearText = extractReleaseDateText(normalized);
-  const mdbListMarkup = renderHeroMdbListRatings(normalized, "modern");
+  const mdbListMarkup = renderHeroMdbListRatings(normalized, "modern", prefs);
   const imdbText =
-    mdbListMarkup || hideHomeHeroRatings()
+    mdbListMarkup || !showHomeRatings(prefs?.homeImdbRatingsVisibility)
       ? ""
       : isContinueWatchingHero
-        ? continueWatchingRating(normalized, LayoutPreferences.get().detailImdbRatingsVisibility)
+        ? continueWatchingRating(normalized, prefs?.detailImdbRatingsVisibility)
         : resolveImdbRating(normalized);
   const rawStatus = firstNonEmpty(normalized.status);
   const statusKeys = {
