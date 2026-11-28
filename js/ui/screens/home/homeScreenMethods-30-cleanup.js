@@ -113,6 +113,22 @@ export function createHomeScreenMethods30() {
         cancelAnimationFrame(this.homeTruncationFrame);
         this.homeTruncationFrame = null;
       }
+      if (this.homeHeroBoundsFrame) {
+        cancelAnimationFrame(this.homeHeroBoundsFrame);
+        this.homeHeroBoundsFrame = 0;
+      }
+      if (this.homeHeroBoundsSettleTimer) {
+        clearTimeout(this.homeHeroBoundsSettleTimer);
+        this.homeHeroBoundsSettleTimer = null;
+      }
+      if (this.collectionFocusGifTimer) {
+        clearTimeout(this.collectionFocusGifTimer);
+        this.collectionFocusGifTimer = null;
+      }
+      if (this.collectionFocusGifRaf) {
+        cancelAnimationFrame(this.collectionFocusGifRaf);
+        this.collectionFocusGifRaf = 0;
+      }
       if (this.homeLazyImageHydrationRaf) {
         cancelAnimationFrame(this.homeLazyImageHydrationRaf);
         this.homeLazyImageHydrationRaf = 0;

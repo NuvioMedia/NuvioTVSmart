@@ -4,22 +4,6 @@ import { getTrailerMountGraceMs } from "../../../platform/tvPerformancePolicy.js
 
 export function createHomeScreenMethods14() {
   const { applyTrailerAudioPreferences, getTvRuntimePerformanceProfile, MODERN_HOME_CONSTANTS } = internals;
-  const shouldSkipMeasuredTruncation = (screen) => {
-    try {
-      if (typeof screen?.isPerformanceConstrained === "function" && screen.isPerformanceConstrained()) {
-        return true;
-      }
-    } catch (_) {}
-    try {
-      if (
-        globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
-        globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
-      ) {
-        return true;
-      }
-    } catch (_) {}
-    return false;
-  };
 
   return {
     async activateFocusedPosterFlow(node, flowToken = Number(this.focusedPosterFlowToken || 0)) {
@@ -140,16 +124,13 @@ export function createHomeScreenMethods14() {
         return;
       }
       if (this.layoutMode === "modern") {
-        if (shouldSkipMeasuredTruncation(this)) {
-          if (this.homeHeroBoundsSettleTimer) {
-            clearTimeout(this.homeHeroBoundsSettleTimer);
-            this.homeHeroBoundsSettleTimer = null;
-          }
-          if (this.homeHeroBoundsFrame) {
-            cancelAnimationFrame(this.homeHeroBoundsFrame);
-            this.homeHeroBoundsFrame = 0;
-          }
-          return;
+        if (this.homeHeroBoundsSettleTimer) {
+          clearTimeout(this.homeHeroBoundsSettleTimer);
+          this.homeHeroBoundsSettleTimer = null;
+        }
+        if (this.homeHeroBoundsFrame) {
+          cancelAnimationFrame(this.homeHeroBoundsFrame);
+          this.homeHeroBoundsFrame = 0;
         }
         // Measuring here forced a layout in the middle of every hero update,
         // two or three times per focus: 17 ms each on a 2025 OLED. The previous
@@ -160,32 +141,26 @@ export function createHomeScreenMethods14() {
             return;
           }
           if (typeof this.isModernHydrationScrollActive === "function" && this.isModernHydrationScrollActive()) {
-            if (this.homeHeroBoundsFrame) {
-              cancelAnimationFrame(this.homeHeroBoundsFrame);
-              this.homeHeroBoundsFrame = 0;
-            }
-            if (!this.homeHeroBoundsSettleTimer) {
-              const pollMs = Number(MODERN_HOME_CONSTANTS?.verticalScrollSettlePollMs || 60);
-              this.homeHeroBoundsSettleTimer = setTimeout(() => {
+            this.homeHeroBoundsSettleTimer = setTimeout(
+              () => {
                 this.homeHeroBoundsSettleTimer = null;
                 scheduleBoundsFrame();
-              }, pollMs);
-            }
+              },
+              Number(MODERN_HOME_CONSTANTS?.verticalScrollSettlePollMs || 60)
+            );
             return;
           }
-          if (!this.homeHeroBoundsFrame) {
-            this.homeHeroBoundsFrame = requestAnimationFrame(() => {
-              this.homeHeroBoundsFrame = 0;
-              if (!this.container || this.layoutMode !== "modern" || this.homeDomPreserved) {
-                return;
-              }
-              if (typeof this.isModernHydrationScrollActive === "function" && this.isModernHydrationScrollActive()) {
-                scheduleBoundsFrame();
-                return;
-              }
-              this.applyModernHeroDescriptionBounds(this.container);
-            });
-          }
+          this.homeHeroBoundsFrame = requestAnimationFrame(() => {
+            this.homeHeroBoundsFrame = 0;
+            if (!this.container || this.layoutMode !== "modern" || this.homeDomPreserved) {
+              return;
+            }
+            if (typeof this.isModernHydrationScrollActive === "function" && this.isModernHydrationScrollActive()) {
+              scheduleBoundsFrame();
+              return;
+            }
+            this.applyModernHeroDescriptionBounds(this.container);
+          });
         };
         scheduleBoundsFrame();
         return;
@@ -193,9 +168,19 @@ export function createHomeScreenMethods14() {
       // Tizen fast path: the binary-search textContent loop below forces
       // dozens of reflows per render. Fast-path runtimes already get pure
       // CSS ellipsis/line-clamp (see components-45.css), so skip the JS pass.
-      if (shouldSkipMeasuredTruncation(this)) {
-        return;
-      }
+      try {
+        if (typeof this.isPerformanceConstrained === "function" && this.isPerformanceConstrained()) {
+          return;
+        }
+      } catch (_) {}
+      try {
+        if (
+          globalThis?.document?.body?.classList?.contains("legacy-tizen") ||
+          globalThis?.document?.documentElement?.classList?.contains("legacy-tizen")
+        ) {
+          return;
+        }
+      } catch (_) {}
       this.homeTruncationScope = scope || null;
       if (this.homeTruncationFrame) {
         cancelAnimationFrame(this.homeTruncationFrame);
@@ -266,15 +251,12 @@ export function createHomeScreenMethods14() {
       registerHomeDomNodes(Array.from(nodes).filter((node) => node instanceof HTMLElement));
     },
     applyModernHeroDescriptionBounds(root = null) {
-      if (!this.container || this.layoutMode !== "modern" || shouldSkipMeasuredTruncation(this)) {
+      if (!this.container || this.layoutMode !== "modern") {
         return;
       }
       const modernHeroDescriptionMaxLines = 4;
       const scope = root instanceof HTMLElement ? root : this.container;
       const heroNodes = scope.classList?.contains("home-hero-card") ? [scope] : Array.from(scope.querySelectorAll(".home-hero-card"));
-      const boundsCache = this.modernHeroBoundsCache || (this.modernHeroBoundsCache = new WeakMap());
-      const boundsVersion = Number(this.modernHeroBoundsVersion || 0);
-      const viewportKey = `${globalThis?.innerWidth || 0}x${globalThis?.innerHeight || 0}`;
       heroNodes.forEach((heroNode) => {
         const description = heroNode.querySelector(".home-hero-description");
         if (!(description instanceof HTMLElement)) {
@@ -285,34 +267,18 @@ export function createHomeScreenMethods14() {
           return;
         }
 
-        const copy = description.closest?.(".home-modern-hero-copy") || null;
-        const copyChildren = copy ? Array.from(copy.children || []) : [];
-        const siblingKey = copyChildren
-          .filter((node) => node !== description)
-          .map((node) => `${node.className || ""}:${node.textContent || ""}:${node.querySelector?.("img")?.getAttribute?.("src") || ""}`)
-          .join("\u0001");
-        const copyWidth = copy ? Number(copy.clientWidth || 0) : 0;
-        const copyHeight = copy ? Number(copy.clientHeight || 0) : 0;
-        const signature = `${boundsVersion}|${viewportKey}|${copyWidth}x${copyHeight}|${description.textContent || ""}|${siblingKey}`;
-        const cached = boundsCache.get(description);
-        if (
-          cached &&
-          cached.signature === signature &&
-          description.style.maxHeight === cached.maxHeight &&
-          description.style.webkitLineClamp === cached.lineClamp
-        ) {
-          return;
-        }
-
         const descriptionStyle = getComputedStyle(description);
         const lineHeight = parseFloat(descriptionStyle.lineHeight || "0") || 0;
         const fontSize = parseFloat(descriptionStyle.fontSize || "0") || 0;
         const lineBoxHeight = Math.max(1, Math.ceil(lineHeight || fontSize * 1.35 || description.offsetHeight || 1));
-        const siblings = copyChildren.filter((node) => node !== description && getComputedStyle(node).display !== "none");
+        const copy = description.closest(".home-modern-hero-copy");
+        const siblings = copy
+          ? Array.from(copy.children).filter((node) => node !== description && getComputedStyle(node).display !== "none")
+          : [];
         const spacing = copy ? parseFloat(getComputedStyle(copy).rowGap || "0") || 0 : 0;
         const occupiedHeight = siblings.reduce((height, node) => height + node.getBoundingClientRect().height, 0);
         const availableHeight = copy
-          ? copyHeight - occupiedHeight - spacing * siblings.length
+          ? copy.clientHeight - occupiedHeight - spacing * siblings.length
           : lineBoxHeight * modernHeroDescriptionMaxLines;
         const lines = Math.min(modernHeroDescriptionMaxLines, Math.max(0, Math.floor(availableHeight / lineBoxHeight)));
         const maxHeight = `${lineBoxHeight * lines}px`;
@@ -323,7 +289,6 @@ export function createHomeScreenMethods14() {
         if (description.style.webkitLineClamp !== lineClamp) {
           description.style.webkitLineClamp = lineClamp;
         }
-        boundsCache.set(description, { signature, maxHeight, lineClamp });
       });
     },
     ensureHomeTruncationObservers() {
@@ -334,14 +299,12 @@ export function createHomeScreenMethods14() {
       if (globalThis?.document?.fonts?.ready) {
         document.fonts.ready
           .then(() => {
-            this.modernHeroBoundsVersion = Number(this.modernHeroBoundsVersion || 0) + 1;
             this.scheduleHomeTruncationUpdate();
           })
           .catch(() => {});
       }
       if (typeof window !== "undefined") {
         window.addEventListener("resize", () => {
-          this.modernHeroBoundsVersion = Number(this.modernHeroBoundsVersion || 0) + 1;
           this.scheduleHomeTruncationUpdate();
         });
       }

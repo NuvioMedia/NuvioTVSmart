@@ -251,6 +251,29 @@ test("non-TV horizontal scheduleModernHeroUpdate keeps immediate commit and enri
   assert.equal(harness.screen.heroEnrichDwellTimer || null, null);
 });
 
+test("legacy TV keeps its short preload and commit timing", () => {
+  const harness = createHeroHarness({
+    profile: { isTvRuntime: true, isPerformanceConstrained: false, isLegacyTvRuntime: true },
+    heroDelayMs: 150,
+    lastHomeInputAt: 10000
+  });
+
+  harness.screen.scheduleModernHeroUpdate(harness.card);
+  const preloadTimer = Array.from(harness.scheduler.timers.values()).find(
+    (entry) => entry.id === harness.screen.heroBackdropPreloadTimer
+  );
+  const commitTimer = Array.from(harness.scheduler.timers.values()).find(
+    (entry) => entry.id === harness.screen.heroFocusDelayTimer
+  );
+  assert.equal(preloadTimer?.delay, 70, "legacy preload stays ahead of the hero commit");
+  assert.equal(commitTimer?.delay, 150);
+
+  harness.scheduler.flushTimers();
+  harness.scheduler.flushRafs();
+  assert.deepEqual(harness.calls.preloads, ["tt100"]);
+  assert.deepEqual(harness.calls.applies, [{ id: "tt100", enriching: true }]);
+});
+
 test("constrained TV keeps heroMetaEnriching false and waits constrained dwell before enrichment", () => {
   const harness = createHeroHarness({
     profile: { isTvRuntime: true, isPerformanceConstrained: true, isLegacyTvRuntime: false },
@@ -268,28 +291,18 @@ test("constrained TV keeps heroMetaEnriching false and waits constrained dwell b
   assert.equal(enrichTimer?.delay, 500);
 });
 
-test("modern hero description bounds skip legacy-tizen, defer during scroll, and memoize unchanged copy", () => {
+test("modern hero description bounds wait for camera scroll before measuring", () => {
   const scheduler = createFakeTimers();
   class HTMLElement {}
   let computedStyleReads = 0;
   let rectReads = 0;
   let scrollActive = true;
-  let legacyTizen = true;
-  const resizeListeners = [];
 
   const context = vm.createContext({
     HTMLElement,
-    WeakMap,
-    innerWidth: 1920,
-    innerHeight: 1080,
     document: {
-      body: { classList: { contains: (name) => name === "legacy-tizen" && legacyTizen } },
+      body: { classList: { contains: () => false } },
       documentElement: { classList: { contains: () => false } }
-    },
-    window: {
-      addEventListener: (event, handler) => {
-        if (event === "resize") resizeListeners.push(handler);
-      }
     },
     getComputedStyle: (node) => {
       computedStyleReads += 1;
@@ -354,23 +367,17 @@ test("modern hero description bounds skip legacy-tizen, defer during scroll, and
     isModernHydrationScrollActive: () => scrollActive
   });
 
-  // 1. .legacy-tizen skips JS truncation bounds entirely (CSS line-clamp owns it).
-  screen.scheduleHomeTruncationUpdate();
-  assert.equal(scheduler.rafs.size, 0, "legacy-tizen must not schedule rAF bounds measurement");
-  assert.equal(scheduler.timers.size, 0);
-  screen.applyModernHeroDescriptionBounds(container);
-  assert.equal(computedStyleReads, 0);
-  assert.equal(rectReads, 0);
-
-  // 2. Non-legacy-tizen defers measurement while hydration scroll is active.
-  legacyTizen = false;
+  // 1. Camera scroll active: no rAF bounds measurement, only a settle poll.
   screen.scheduleHomeTruncationUpdate();
   assert.equal(scheduler.rafs.size, 0, "must defer rAF while camera scroll is active");
   assert.equal(scheduler.timers.size, 1, "settle poll timer armed during scroll");
+  assert.equal(computedStyleReads, 0);
+  assert.equal(rectReads, 0);
 
   scheduler.flushTimers();
   assert.equal(scheduler.rafs.size, 0, "continues waiting while scroll stays active");
 
+  // 2. Camera scroll settles: measure once and apply the four-line clamp.
   scrollActive = false;
   scheduler.flushTimers();
   assert.equal(scheduler.rafs.size, 1, "schedules rAF once camera scroll settles");
@@ -379,28 +386,14 @@ test("modern hero description bounds skip legacy-tizen, defer during scroll, and
   assert.ok(rectReads > 0);
   assert.equal(description.style.webkitLineClamp, "4");
 
-  // 3. Second call with unchanged copy dimensions & text skips layout/style reads.
+  // 3. A newer hero copy replaces the pending measurement with fresh content.
+  description.textContent = "A different synopsis";
   const prevComputedReads = computedStyleReads;
   const prevRectReads = rectReads;
   screen.scheduleHomeTruncationUpdate();
   scheduler.flushRafs();
-  assert.equal(computedStyleReads, prevComputedReads, "unchanged hero copy skips getComputedStyle");
-  assert.equal(rectReads, prevRectReads, "unchanged hero copy skips getBoundingClientRect");
-
-  // 4. Changing description text invalidates memoization and re-measures.
-  description.textContent = "A different synopsis";
-  screen.scheduleHomeTruncationUpdate();
-  scheduler.flushRafs();
   assert.ok(computedStyleReads > prevComputedReads);
   assert.ok(rectReads > prevRectReads);
-
-  // 5. Resize observer invalidates memoization even with identical text/dimensions.
-  const readsAfterTextChange = computedStyleReads;
-  screen.ensureHomeTruncationObservers();
-  assert.equal(resizeListeners.length, 1);
-  resizeListeners[0]();
-  scheduler.flushRafs();
-  assert.ok(computedStyleReads > readsAfterTextChange, "resize invalidates bounds memoization");
 });
 
 test("focusNode skips redundant vertical visibility check on same-row horizontal moves and aligns camera settle flags", () => {
@@ -676,7 +669,7 @@ test("focusNode defers collection GIF hydration into 380ms timer on bounded TV a
   assert.equal(gifHydrations[1].id, "col-a");
 });
 
-test("focusNode skips track horizontal alignment and pagination at col 0 on vertical moves when scrollLeft <= 1", () => {
+test("focusNode skips track horizontal alignment and origin pagination only when the row can scroll", () => {
   const context = vm.createContext({
     internals: {
       HOME_PERF_DEBUG: false,
@@ -690,12 +683,12 @@ test("focusNode skips track horizontal alignment and pagination at col 0 on vert
 
   const trackAtOrigin = { scrollLeft: 0 };
   const scrolledTrack = { scrollLeft: 120 };
-  const makeCard = (id, navCol, track, anchor) => {
+  const makeCard = (id, navRow, navCol, track, anchor) => {
     const classes = new Set();
     return {
       id,
       anchor,
-      dataset: { navZone: "main", navCol: String(navCol) },
+      dataset: { navZone: "main", navRow: String(navRow), navCol: String(navCol) },
       closest: (selector) => (selector === ".home-track" ? track : null),
       classList: {
         add: (name) => classes.add(name),
@@ -707,15 +700,19 @@ test("focusNode skips track horizontal alignment and pagination at col 0 on vert
 
   const row1 = { id: "r1" };
   const row2 = { id: "r2" };
-  const r1c0 = makeCard("r1c0", 0, trackAtOrigin, row1);
-  const r2c0 = makeCard("r2c0", 0, trackAtOrigin, row2);
-  const r2c2 = makeCard("r2c2", 2, trackAtOrigin, row2);
-  const r1c0Scrolled = makeCard("r1c0s", 0, scrolledTrack, row1);
+  const row3 = { id: "r3" };
+  const r1c0 = makeCard("r1c0", 0, 0, trackAtOrigin, row1);
+  const r1c1 = makeCard("r1c1", 0, 1, trackAtOrigin, row1);
+  const r2c0 = makeCard("r2c0", 1, 0, trackAtOrigin, row2);
+  const r2c2 = makeCard("r2c2", 1, 2, trackAtOrigin, row2);
+  const r3c0 = makeCard("r3c0", 2, 0, trackAtOrigin, row3);
+  const r1c0Scrolled = makeCard("r1c0s", 0, 0, scrolledTrack, row1);
 
   let horizCalls = 0;
   let paginationCalls = 0;
   const screen = Object.assign(Object.create(context.api), {
     layoutMode: "modern",
+    navModel: { rows: [[r1c0, r1c1], [r2c0, r2c2], [r3c0]] },
     refreshPendingHomeTrailerCleanup() {},
     getExpandedPosterScrollAdjustments: () => ({ horizontal: 0, vertical: 0 }),
     focusWithoutAutoScroll() {},
@@ -763,4 +760,9 @@ test("focusNode skips track horizontal alignment and pagination at col 0 on vert
   screen.focusNode(r2c2, r2c0, "left");
   assert.equal(horizCalls, 3);
   assert.equal(paginationCalls, 2);
+
+  // 5. A single-card row cannot paginate by moving right, so the origin fetch stays.
+  screen.focusNode(r1c0, r3c0, "down");
+  assert.equal(horizCalls, 3, "origin horizontal alignment is still redundant");
+  assert.equal(paginationCalls, 3, "single-card rows keep the origin pagination request");
 });

@@ -43,6 +43,10 @@ export function createHomeScreenMethods10() {
         this.container?.querySelector(".home-modern-hero-card")?.classList.add("is-hero-focus-pending");
       }
       const shouldWaitForCamera = !immediate && (deferUntilVerticalSettle || isModernTvProfile(tvProfile));
+      // Legacy TVs commit the hero in 150-260 ms, sooner than the input window
+      // below: extending their preload would only start it after the commit.
+      const pacesAgainstTvInput = Boolean(tvProfile?.isTvRuntime && !tvProfile.isLegacyTvRuntime && !immediate);
+      const inputPaceAt = Number(this.lastHomeInputAt || 0);
       const targetTrack = node?.closest?.(".home-track, .home-grid-track") || null;
       const isCameraScrollActive = () => {
         if (
@@ -55,14 +59,10 @@ export function createHomeScreenMethods10() {
         return Boolean(targetTrack && this.isScrollAnimationActive?.(targetTrack, "x"));
       };
       const getInputPaceQuietRemainingMs = () => {
-        if (!tvProfile?.isTvRuntime || immediate) {
+        if (!pacesAgainstTvInput || !(inputPaceAt > 0)) {
           return 0;
         }
-        const lastInputAt = Number(this.lastHomeInputAt || 0);
-        if (!(lastInputAt > 0)) {
-          return 0;
-        }
-        return Math.max(0, MODERN_TV_HERO_PACE_QUIET_MS - (Date.now() - lastInputAt));
+        return Math.max(0, MODERN_TV_HERO_PACE_QUIET_MS - (Date.now() - inputPaceAt));
       };
       const getCameraOrInputPollDelayMs = () => {
         const quietRemainingMs = getInputPaceQuietRemainingMs();
@@ -79,8 +79,9 @@ export function createHomeScreenMethods10() {
         }
         callback();
       };
-      const preloadDelay =
-        tvProfile?.isTvRuntime && !immediate ? Math.max(MODERN_TV_HERO_PACE_QUIET_MS, delay - 80) : Math.max(0, Math.min(120, delay - 80));
+      const preloadDelay = pacesAgainstTvInput
+        ? Math.max(MODERN_TV_HERO_PACE_QUIET_MS, delay - 80)
+        : Math.max(0, Math.min(120, delay - 80));
       this.heroBackdropPreloadTimer = setTimeout(() => {
         this.heroBackdropPreloadTimer = null;
         waitForVerticalSettle(() => {
@@ -134,7 +135,9 @@ export function createHomeScreenMethods10() {
           // the enriching flag would keep the previous backdrop on screen.
           const enrichDwellMs = shouldEnrichHero ? getHeroEnrichDwellMs(activeTvProfile) : 0;
           const postCommitEnrichDelayMs =
-            shouldEnrichHero && !enrichDwellMs && activeTvProfile?.isTvRuntime && !immediate ? MODERN_TV_HERO_ENRICH_SETTLE_DELAY_MS : 0;
+            shouldEnrichHero && !enrichDwellMs && activeTvProfile?.isTvRuntime && !activeTvProfile.isLegacyTvRuntime && !immediate
+              ? MODERN_TV_HERO_ENRICH_SETTLE_DELAY_MS
+              : 0;
           const effectiveEnrichDelayMs = enrichDwellMs || postCommitEnrichDelayMs;
           const focusedHero =
             shouldEnrichHero && !effectiveEnrichDelayMs

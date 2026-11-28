@@ -8,6 +8,9 @@ import {
 } from "./homeRowWindow.js";
 import { chunkHomeGridCards } from "./homeScreenHelpers-14-get-home-grid-column-count.js";
 
+// Bounded TV runtimes decode the overlay after the focus frame instead of inside it.
+const MODERN_TV_COLLECTION_GIF_SETTLE_DELAY_MS = 380;
+
 export function createHomeScreenMethods18() {
   const { HOME_PERF_DEBUG, homePerfNow, logHomePerf, groupNodesByOffsetTop } = internals;
 
@@ -71,7 +74,7 @@ export function createHomeScreenMethods18() {
         const shouldDeferCollectionGif =
           deferHomeArtworkUntilSettle && (this.isPerformanceConstrained?.() || this.shouldUseBoundedHomeImageHydration?.());
         if (shouldDeferCollectionGif) {
-          this.collectionFocusGifTimer = setTimeout(hydrateFocusedCollection, 380);
+          this.collectionFocusGifTimer = setTimeout(hydrateFocusedCollection, MODERN_TV_COLLECTION_GIF_SETTLE_DELAY_MS);
         } else if (typeof requestAnimationFrame === "function") {
           this.collectionFocusGifRaf = requestAnimationFrame(hydrateFocusedCollection);
         } else {
@@ -92,12 +95,17 @@ export function createHomeScreenMethods18() {
         const sameModernRowAnchor = Boolean(currentMainAnchor && targetMainAnchor && currentMainAnchor === targetMainAnchor);
         const isVerticalMove = direction === "up" || direction === "down";
         const targetNavCol = Number(target?.dataset?.navCol || 0);
+        const targetNavRowNodes = this.navModel?.rows?.[Number(target?.dataset?.navRow || 0)] || null;
         const isVerticalAtTrackOrigin =
           this.layoutMode === "modern" &&
           isVerticalMove &&
           !scrollAdjustments.horizontal &&
           targetNavCol === 0 &&
           Number(target?.closest?.(".home-track")?.scrollLeft || 0) <= 1;
+        // A row with a single mounted card cannot be paginated by moving right,
+        // so only skip the redundant origin fetch when another card exists.
+        const canSkipOriginPagination =
+          this.layoutMode === "modern" && isVerticalMove && targetNavCol === 0 && Number(targetNavRowNodes?.length || 0) > 1;
         if (!usingDelayedCameraFollow) {
           if (!isVerticalAtTrackOrigin) {
             this.ensureTrackHorizontalVisibility(target, direction, scrollAdjustments.horizontal);
@@ -106,7 +114,7 @@ export function createHomeScreenMethods18() {
             this.ensureMainVerticalVisibility(target, direction, current, scrollAdjustments.vertical);
           }
         }
-        if (!(this.layoutMode === "modern" && isVerticalMove && targetNavCol === 0)) {
+        if (!canSkipOriginPagination) {
           this.scheduleModernTrackPaginationForFocus(target);
         }
         this.ensureContinueWatchingRenderAhead(target);
