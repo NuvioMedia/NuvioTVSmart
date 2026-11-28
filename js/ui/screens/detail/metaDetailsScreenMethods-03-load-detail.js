@@ -254,8 +254,7 @@ export function createMetaDetailsScreenMethods03() {
             this.castItems = fallbackCast;
           }
         }
-        if (!this.isBackNavigation)
-          this.selectedSeason = this.resolveInitialSelectedSeason(latestProgress, currentProgressItemsForDetail);
+        if (!this.isBackNavigation) this.selectedSeason = this.resolveInitialSelectedSeason(latestProgress, currentProgressItemsForDetail);
         this.selectedRatingSeason = this.selectedRatingSeason || this.selectedSeason || 1;
         this.nextEpisodeToWatch = this.computeNextEpisodeToWatch(latestProgress);
         this.updateRenderedDetailSections(this.meta);

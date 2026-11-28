@@ -337,7 +337,11 @@ test("a fresh YouTube trailer stays covered until its startup chrome is gone", a
   let ready = false;
   screen.mountTrailerLayer(
     container,
-    { kind: "youtube", ytId: "dQw4w9WgXcQ", embedUrl: "https://proxy.example.test/embed?v=dQw4w9WgXcQ" },
+    {
+      kind: "youtube",
+      ytId: "dQw4w9WgXcQ",
+      embedUrl: "https://proxy.example.test/embed?v=dQw4w9WgXcQ"
+    },
     () => {
       ready = true;
     }
@@ -345,9 +349,16 @@ test("a fresh YouTube trailer stays covered until its startup chrome is gone", a
 
   const frame = frames[0];
   assert.ok(frame, "the trailer iframe must be mounted");
-  listeners.message?.({ source: frame.contentWindow, data: { source: "nuvio-youtube-proxy", type: "firstFrame" } });
+  listeners.message?.({
+    source: frame.contentWindow,
+    data: { source: "nuvio-youtube-proxy", type: "firstFrame" }
+  });
 
-  assert.equal(classes.has("is-active"), false, "the layer must stay hidden while YouTube shows its chrome");
+  assert.equal(
+    classes.has("is-active"),
+    false,
+    "the layer must stay hidden while YouTube shows its chrome"
+  );
   assert.ok(
     timers.some((ms) => ms >= 4000),
     "the reveal must wait for YouTube's startup chrome to disappear"

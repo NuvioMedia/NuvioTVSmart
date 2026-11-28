@@ -53,7 +53,13 @@ function makeScreen(shell) {
   };
 }
 
-function makeNode({ closestMap = {}, navRow = undefined, offsetTop = 0, offsetHeight = 200, focusKey = "k" } = {}) {
+function makeNode({
+  closestMap = {},
+  navRow = undefined,
+  offsetTop = 0,
+  offsetHeight = 200,
+  focusKey = "k"
+} = {}) {
   return {
     dataset: { ...(navRow === undefined ? {} : { navRow: String(navRow) }), focusKey },
     offsetTop,

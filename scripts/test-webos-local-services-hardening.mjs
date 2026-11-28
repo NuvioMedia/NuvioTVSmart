@@ -147,10 +147,17 @@ test("bitmapSubtitles requestRange rejects responses aborted mid-body", async ()
     const { port } = server.address();
     await assert.rejects(
       () =>
-        bitmapSubtitles._test.requestRange(`http://127.0.0.1:${port}/aborted.mks`, 0, 1023, 2048, 0, {
-          cancelled: false,
-          requests: new Set()
-        }),
+        bitmapSubtitles._test.requestRange(
+          `http://127.0.0.1:${port}/aborted.mks`,
+          0,
+          1023,
+          2048,
+          0,
+          {
+            cancelled: false,
+            requests: new Set()
+          }
+        ),
       (error) => error && error.code === "RANGE_ABORTED"
     );
   } finally {
@@ -159,7 +166,10 @@ test("bitmapSubtitles requestRange rejects responses aborted mid-body", async ()
 });
 
 test("imageProxy prunes cache entries beyond file and byte limits", () => {
-  const src = fs.readFileSync(path.join(rootDir, "services", "webos", "src", "imageProxy.js"), "utf8");
+  const src = fs.readFileSync(
+    path.join(rootDir, "services", "webos", "src", "imageProxy.js"),
+    "utf8"
+  );
   const entries = [];
   for (let index = 0; index < 130; index += 1) {
     entries.push({
@@ -186,8 +196,7 @@ test("imageProxy prunes cache entries beyond file and byte limits", () => {
   );
   fn(
     mod.exports,
-    (id) =>
-      id === "fs" ? fakeFs : id === "os" ? { tmpdir: () => "/tmp" } : require(id),
+    (id) => (id === "fs" ? fakeFs : id === "os" ? { tmpdir: () => "/tmp" } : require(id)),
     mod,
     "imageProxy.js",
     "."
