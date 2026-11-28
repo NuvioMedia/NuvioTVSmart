@@ -153,6 +153,7 @@ export function createDefaultExpandedState(sectionId) {
       stream: false,
       audio: false,
       subtitles: false,
+      profanity: false,
       p2p: false
     };
   }

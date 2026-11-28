@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { ProfanityFilterStore } from "../../../data/local/profanityFilterStore.js";
 import * as internals from "./settingsScreenContext.js";
 
 export function createSettingsScreenMethods01() {
@@ -265,6 +266,7 @@ export function createSettingsScreenMethods01() {
         },
         memberAccess,
         player: PlayerSettingsStore.get(),
+        profanity: ProfanityFilterStore.get(),
         torrent: TorrentSettingsStore.get(),
         layout: LayoutPreferences.get(),
         homeCatalog: HomeCatalogStore.get(),

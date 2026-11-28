@@ -4,6 +4,7 @@ import { renderPlaybackGeneralBody } from "./settingsScreenPlaybackMarkup-01-gen
 import { renderPlaybackAudioBody } from "./settingsScreenPlaybackMarkup-02-audio.js";
 import { renderPlaybackSubtitleBody } from "./settingsScreenPlaybackMarkup-04-subtitles.js";
 import { renderPlaybackP2pBody } from "./settingsScreenPlaybackMarkup-05-p2p.js";
+import { renderPlaybackProfanityBody } from "./settingsScreenPlaybackMarkup-07-profanity.js";
 
 export function renderPlaybackSectionMarkup(model) {
   const { TorrentSettingsStore, P2pCacheService, Platform, TizenCapabilities, SECTION_META, t } = internals;
@@ -16,6 +17,7 @@ export function renderPlaybackSectionMarkup(model) {
   const generalBody = renderPlaybackGeneralBody.call(this, model);
   const audioBody = renderPlaybackAudioBody.call(this, model);
   const subtitleBody = renderPlaybackSubtitleBody.call(this, model);
+  const profanityBody = renderPlaybackProfanityBody.call(this, model);
   const p2pBody = renderPlaybackP2pBody.call(this, model, {
     torrentSettings,
     tizenP2pUnsupported,
@@ -49,6 +51,13 @@ export function renderPlaybackSectionMarkup(model) {
                 subtitle: t("settings.playback.groups.subtitles.subtitle"),
                 expanded: Boolean(expanded.subtitles),
                 bodyHtml: subtitleBody
+              })}
+              ${this.renderCollapsibleRow({
+                focusKey: "playback:toggle:profanity",
+                title: t("profanity_group_title", {}, "Profanity Filter"),
+                subtitle: t("profanity_group_subtitle", {}, "Mute and censor swearing using subtitles"),
+                expanded: Boolean(expanded.profanity),
+                bodyHtml: profanityBody
               })}
               ${this.renderCollapsibleRow({
                 focusKey: "playback:toggle:p2p",
