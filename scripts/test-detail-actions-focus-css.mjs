@@ -33,7 +33,7 @@ assert.ok(heroBodyRule, "components-52.css defines clip buffer on .detail-hero-b
 assert.match(heroBodyRule[1], /padding:\s*8px\s+24px\s+0/);
 assert.match(heroBodyRule[1], /margin:\s*-8px\s+-24px\s+0/);
 
-// 2. components-54.css transitions and full-mode scale(1.1) + Variant A ring.
+// 2. components-54.css transitions and full-mode 1:1 Android TV scale(1.1) + single 4px ring.
 const rules54 = parseRules(css54);
 assert.ok(
   rules54.some(
@@ -53,30 +53,21 @@ for (const sel of [
     rules54.some((r) => r.selectors.includes(sel) && /transform:\s*scale\(1\.1\)/.test(r.body)),
     `components-54.css applies transform: scale(1.1) to ${sel}`
   );
+  assert.ok(
+    rules54.some(
+      (r) =>
+        r.selectors.includes(sel) &&
+        /box-shadow:\s*inset 0 0 0 4px var\(--detail-focus-ring\)/.test(r.body)
+    ),
+    `components-54.css keeps single inset 4px ring on ${sel}`
+  );
 }
 
-for (const themeSel of [
-  ":root:not([data-nuvio-theme])",
-  ':root[data-nuvio-theme="WHITE"]',
-  ':root[data-nuvio-theme="GRAPHITE"]'
-]) {
-  for (const btn of [
-    ".series-primary-btn.focused",
-    ".series-secondary-btn.focused",
-    ".series-circle-btn.focused"
-  ]) {
-    const fullSel = `${themeSel} ${btn}`;
-    assert.ok(
-      rules54.some(
-        (r) =>
-          r.selectors.includes(fullSel) &&
-          /inset 0 0 0 4px var\(--detail-focus-ring,\s*#ffffff\)/.test(r.body) &&
-          /inset 0 0 0 8px var\(--bg-color,\s*#0d0d0d\)/.test(r.body)
-      ),
-      `components-54.css defines double-inset contrast ring for ${fullSel}`
-    );
-  }
-}
+assert.equal(
+  /inset 0 0 0 8px/.test(css54),
+  false,
+  "components-54.css keeps full mode 1:1 with Android TV (no double-inset ring outside performance-constrained)"
+);
 
 assert.match(
   css54,
