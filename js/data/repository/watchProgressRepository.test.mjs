@@ -151,3 +151,53 @@ test("deduplicateInProgress still deduplicates series to the newest episode", ()
   assert.equal(result[0].episode, 2);
   assert.equal(result[0].updatedAt, 300);
 });
+
+test("deduplicateInProgress keeps one card per Cloud Library file", () => {
+  const items = [
+    {
+      contentId: "realdebrid:torrent:pack-1",
+      videoId: "realdebrid:torrent:pack-1:episode-1.mkv",
+      contentType: "cloud",
+      positionMs: 2000,
+      durationMs: 5000,
+      updatedAt: 200,
+      source: "cloud_local"
+    },
+    {
+      contentId: "realdebrid:torrent:pack-1",
+      videoId: "realdebrid:torrent:pack-1:episode-2.mkv",
+      contentType: "cloud",
+      positionMs: 1500,
+      durationMs: 5000,
+      updatedAt: 100,
+      source: "cloud_local"
+    }
+  ];
+
+  const result = deduplicateInProgress(items);
+  assert.equal(result.length, 2);
+});
+
+test("deduplicateInProgress keeps the newest movie state so a completed record hides a stale paused one", () => {
+  const items = [
+    {
+      contentId: "tt4444444",
+      contentType: "movie",
+      positionMs: 2000,
+      durationMs: 5000,
+      updatedAt: 100,
+      source: "trakt_playback"
+    },
+    {
+      contentId: "tt4444444",
+      contentType: "movie",
+      positionMs: 5000,
+      durationMs: 5000,
+      updatedAt: 200,
+      source: "trakt_local"
+    }
+  ];
+
+  const result = deduplicateInProgress(items);
+  assert.equal(result.length, 0);
+});

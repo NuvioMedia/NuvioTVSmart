@@ -336,6 +336,10 @@ export function deduplicateInProgress(items = [], recentLimit = 300) {
       .slice()
       .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0))
       .filter((item) => {
+        // Cloud progress is one card per file, not one per catalog title.
+        if (isCloudProgressItem(item)) {
+          return true;
+        }
         const seenIds = isSeriesType(item?.contentType) ? seenSeriesIds : seenMovieIds;
 
         const identities = Array.from(watchedItemIdentityValues(item))
