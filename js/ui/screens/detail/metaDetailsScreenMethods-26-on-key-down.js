@@ -1,4 +1,5 @@
 import { openDetailShuffle } from "./detailEpisodeShuffle.js";
+import { toggleDetailProfanityFilter } from "./detailProfanityFilter.js";
 import { ProfileManager } from "../../../core/profile/profileManager.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
@@ -362,6 +363,13 @@ export function createMetaDetailsScreenMethods26() {
 
       if (action === "toggleLibrary") {
         await this.toggleLibraryFromHero();
+        return;
+      }
+
+      if (action === "toggleProfanityFilter") {
+        if (toggleDetailProfanityFilter(this)) {
+          this.render(this.meta, this.captureDetailFocus());
+        }
         return;
       }
 

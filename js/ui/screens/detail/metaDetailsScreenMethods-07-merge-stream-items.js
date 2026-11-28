@@ -1,4 +1,5 @@
 import { hasWatchProgressStarted, isWatchProgressCompleted } from "../../../domain/model/watchProgress.js";
+import { renderDetailProfanityButton, renderDetailProfanityStatus } from "./detailProfanityFilter.js";
 import { detailShuffleSettings } from "./detailEpisodeShuffle.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
@@ -254,9 +255,11 @@ export function createMetaDetailsScreenMethods07() {
                 </button>
                 ${showWatchedButton ? `<button class="series-circle-btn focusable${this.isMarkedWatched ? " is-selected" : ""}" data-action="toggleWatched" aria-label="${escapeAttribute(this.isMarkedWatched ? t("common.markUnwatched", {}, "Mark Unwatched") : t("common.markWatched", {}, "Mark Watched"))}">${renderWatchedGlyph(this.isMarkedWatched)}</button>` : ""}
                 ${this.renderRatingButton()}
+                ${renderDetailProfanityButton(this, meta, t)}
                 ${trailerButton}
               </div>
               ${this.renderResumeIndicator()}
+              ${renderDetailProfanityStatus(this, meta, t)}
               ${creditLine ? `<p class="series-detail-support">${escapeHtml(creditPrefix)}: ${escapeHtml(creditLine)}</p>` : ""}
               ${externalRatings}
               <div class="series-detail-description" data-action="openSynopsis" dir="${contentTextDirection(heroDescription)}"><span class="detail-synopsis-preview">${escapeHtml(heroDescription)}</span><span class="detail-synopsis-more" hidden>${escapeHtml(t("hero_synopsis_read_more"))}</span></div>
