@@ -175,7 +175,9 @@ export function createMetaDetailsScreenMethods11() {
         labelNode.textContent = this.getSeriesHeroPlayLabel();
       }
     },
-    syncEpisodeCardWatchedDom(episode) {
+    // Bulk callers pass the preferences read once per sync pass; each read
+    // goes to storage and clones the profile settings.
+    syncEpisodeCardWatchedDom(episode, layoutPreferences = null) {
       const videoId = String(episode?.id || "").trim();
       if (!videoId || !this.container) {
         return;
@@ -198,7 +200,8 @@ export function createMetaDetailsScreenMethods11() {
       const isWatched = this.isEpisodeMarkedWatched(episode);
 
       card.classList.toggle("watched", isWatched);
-      image.classList.toggle("is-blurred", Boolean(LayoutPreferences.get().blurUnwatchedEpisodes) && !isWatched);
+      const preferences = layoutPreferences || LayoutPreferences.get();
+      image.classList.toggle("is-blurred", Boolean(preferences.blurUnwatchedEpisodes) && !isWatched);
 
       let statusNode = thumb.querySelector(".series-episode-status");
       if (isWatched) {
@@ -237,14 +240,14 @@ export function createMetaDetailsScreenMethods11() {
         return;
       }
       this.syncSeriesHeroPlayButtonLabel();
-      (Array.isArray(episodes) ? episodes : []).forEach((episode) => {
-        this.syncEpisodeCardWatchedDom(episode);
+      if (!Array.isArray(episodes) || !episodes.length) {
+        return;
+      }
+      const layoutPreferences = LayoutPreferences.get();
+      episodes.forEach((episode) => {
+        this.syncEpisodeCardWatchedDom(episode, layoutPreferences);
       });
-      if (
-        Array.isArray(episodes) &&
-        episodes.length > 0 &&
-        LayoutPreferences.get().detailImdbRatingsVisibility === "HIDE_UNWATCHED_EPISODES"
-      ) {
+      if (layoutPreferences.detailImdbRatingsVisibility === "HIDE_UNWATCHED_EPISODES") {
         this.updateRenderedDetailSections(this.meta);
       }
     },
