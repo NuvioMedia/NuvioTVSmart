@@ -236,8 +236,10 @@ export function animateHeroBackdropSwap(
     if (Number(backdrop.heroBackdropTransitionToken || 0) !== token) {
       return;
     }
-    if (typeof restoreHeroImageTransition === "function") {
-      restoreHeroImageTransition(backdrop);
+    restoreHeroImageTransition(backdrop);
+    const canvas = getCanvas();
+    if (canvas) {
+      restoreHeroImageTransition(canvas);
     }
     backdrop.classList.remove("home-hero-backdrop-transition-enter", "is-visible");
     getCanvas()?.classList?.remove("home-hero-backdrop-transition-enter", "is-visible");
@@ -310,22 +312,22 @@ export function animateHeroBackdropSwap(
     if (bitmap && parent) {
       const previousCanvas = getCanvas();
       if (singleLayer && previousCanvas) {
+        // Reuse the layer in place instead of churning the compositor with a
+        // fresh canvas per swap. The enter reset below hides the reused layer
+        // first, otherwise the new artwork would paint and fade the old one out.
         layer = previousCanvas;
-        layer.classList.remove("is-visible", "home-hero-backdrop-transition-ghost", "is-fading-out");
-        layer.classList.add("home-hero-backdrop-transition-enter");
-        layer.width = bitmap.width;
-        layer.height = bitmap.height;
-        layer.getContext("2d")?.drawImage(bitmap, 0, 0);
+        layer.classList.remove("home-hero-backdrop-transition-ghost", "is-fading-out");
       } else {
         layer = document.createElement("canvas");
-        layer.className = "home-hero-backdrop home-hero-backdrop-canvas home-hero-backdrop-transition-enter";
-        layer.width = bitmap.width;
-        layer.height = bitmap.height;
-        layer.getContext("2d")?.drawImage(bitmap, 0, 0);
+        layer.className = "home-hero-backdrop home-hero-backdrop-canvas";
         // Last in the wrap, so it paints above the fading ghost.
         parent.appendChild(layer);
         releaseCanvasLayer(previousCanvas);
       }
+      layer.width = bitmap.width;
+      layer.height = bitmap.height;
+      layer.getContext("2d")?.drawImage(bitmap, 0, 0);
+      prepareHeroImageEnter(layer, "home-hero-backdrop-transition-enter");
       backdrop.heroBackdropCanvasSrc = normalizedSrc;
       // Dropping src releases the full-size decode; the canvas carries the artwork.
       backdrop.removeAttribute("src");
@@ -342,9 +344,7 @@ export function animateHeroBackdropSwap(
       if (Number(backdrop.heroBackdropTransitionToken || 0) !== token || backdrop.isConnected === false) {
         return;
       }
-      if (layer === backdrop && typeof restoreHeroImageTransition === "function") {
-        restoreHeroImageTransition(layer);
-      }
+      restoreHeroImageTransition(layer);
       layer.classList.add("is-visible");
       ghost?.classList?.add("is-fading-out");
       setTimeout(() => {
@@ -355,10 +355,8 @@ export function animateHeroBackdropSwap(
       if (Number(backdrop.heroBackdropTransitionToken || 0) !== token || backdrop.isConnected === false) {
         return;
       }
-      if (singleLayer && layer === backdrop && typeof restoreHeroImageTransition !== "function") {
-        reveal();
-        return;
-      }
+      // The reset painted one frame with transitions suppressed; the next
+      // frame restores them and fades the settled artwork in.
       requestAnimationFrame(reveal);
     });
   });

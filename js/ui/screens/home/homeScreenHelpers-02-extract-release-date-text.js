@@ -235,7 +235,7 @@ export function shouldEnrichModernHero(hero) {
 
 export const HERO_IMAGE_PRELOAD_CACHE_LIMIT = 32;
 
-export const HERO_BACKDROP_BITMAP_CACHE_LIMIT = 8;
+export const HERO_BACKDROP_BITMAP_CACHE_LIMIT = 4;
 
 // Android's hero Coil request is 220x100dp, which is the 440x200 box the web
 // hero paints at TV density. Addon logos can be 1664x437 or larger, and the
@@ -249,6 +249,10 @@ export const HERO_LOGO_RESCALE_CACHE_LIMIT = 16;
 const HERO_LOGO_MAX_BYTES = 8 * 1024 * 1024;
 
 export const HERO_IMAGE_PRELOAD_TIMEOUT_MS = 1500;
+
+// Mirrors the poster rescaler's per-job budget: a worker that dies mid-decode
+// is retired so the next hero swap can spawn a fresh one.
+const HERO_ARTWORK_WORKER_TIMEOUT_MS = 15000;
 
 export const heroImagePreloadCache = new Map();
 
@@ -270,77 +274,17 @@ function canDecodeHeroBackdropBitmap(src) {
 
 const HERO_BACKDROP_HEADER_SLICE_BYTES = 65536;
 
+// The worker reuses the header parsers the main-thread fallback uses, so a
+// source the worker trusts and the same source decoded in-thread can never
+// disagree about its natural size.
 const HERO_BACKDROP_WORKER_SOURCE = `
-function ascii(b, o, n) {
-  let s = "";
-  for (let i = 0; i < n; i += 1) s += String.fromCharCode(b[o + i] || 0);
-  return s;
-}
-function u16be(b, o) { return (b[o] << 8) | b[o + 1]; }
-function u16le(b, o) { return b[o] | (b[o + 1] << 8); }
-function u32be(b, o) { return ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0; }
-function u32le(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
-function headerDimensions(bytes) {
-  if (!bytes || bytes.length < 24) return null;
-  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
-    let offset = 8;
-    while (offset + 8 <= bytes.length) {
-      const len = u32be(bytes, offset);
-      const t = ascii(bytes, offset + 4, 4);
-      if (t === "acTL") return null;
-      if (t === "IDAT" || t === "IEND") break;
-      offset += 12 + len;
-    }
-    const w = u32be(bytes, 16);
-    const h = u32be(bytes, 20);
-    return w > 0 && h > 0 ? { width: w, height: h } : null;
-  }
-  if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") {
-    let off = 12;
-    while (off + 8 <= bytes.length) {
-      const t = ascii(bytes, off, 4);
-      const sz = u32le(bytes, off + 4);
-      const d = off + 8;
-      if (t === "VP8X") {
-        if (bytes[d] & 0x02) return null;
-        return {
-          width: 1 + (bytes[d + 4] | (bytes[d + 5] << 8) | (bytes[d + 6] << 16)),
-          height: 1 + (bytes[d + 7] | (bytes[d + 8] << 8) | (bytes[d + 9] << 16))
-        };
-      }
-      if (t === "VP8L") {
-        const bits = u32le(bytes, d + 1);
-        return { width: 1 + (bits & 0x3fff), height: 1 + ((bits >>> 14) & 0x3fff) };
-      }
-      if (t === "VP8 " && bytes[d + 3] === 0x9d && bytes[d + 4] === 0x01 && bytes[d + 5] === 0x2a) {
-        return { width: u16le(bytes, d + 6) & 0x3fff, height: u16le(bytes, d + 8) & 0x3fff };
-      }
-      off = d + sz + (sz & 1);
-    }
-    return null;
-  }
-  if (bytes[0] === 0xff && bytes[1] === 0xd8) {
-    let off = 2;
-    while (off + 9 < bytes.length) {
-      if (bytes[off] !== 0xff) { off += 1; continue; }
-      const m = bytes[off + 1];
-      if (m === 0xd8 || m === 0xd9 || (m >= 0xd0 && m <= 0xd7) || m === 0x01) { off += 2; continue; }
-      if (m === 0xda) break;
-      const seg = u16be(bytes, off + 2);
-      if (seg < 2 || off + 2 + seg > bytes.length) break;
-      if ((m >= 0xc0 && m <= 0xc3) || (m >= 0xc5 && m <= 0xc7) || (m >= 0xc9 && m <= 0xcb) || (m >= 0xcd && m <= 0xcf)) {
-        const h = u16be(bytes, off + 5);
-        const w = u16be(bytes, off + 7);
-        return w > 0 && h > 0 ? { width: w, height: h } : null;
-      }
-      off += 2 + seg;
-    }
-  }
-  return null;
-}
-function headerWidth(bytes) {
-  return Number(headerDimensions(bytes)?.width || 0);
-}
+const ascii = ${ascii.toString()};
+const uint16le = ${uint16le.toString()};
+const uint32le = ${uint32le.toString()};
+const webpLogoDimensions = ${webpLogoDimensions.toString()};
+const pngStillDimensions = ${pngStillDimensions.toString()};
+const jpegDimensions = ${jpegDimensions.toString()};
+const heroLogoDimensions = ${heroLogoDimensions.toString()};
 self.onmessage = async (event) => {
   const { id, kind, url, resizeWidth, targetWidth, targetHeight, maxSmallWidth, maxSmallHeight, timeoutMs } = event.data || {};
   const hasTimeout = Number(timeoutMs) > 0 && typeof AbortController === "function";
@@ -358,7 +302,7 @@ self.onmessage = async (event) => {
         self.postMessage({ id, ok: true, skippedSmall: true });
         return;
       }
-      const dims = headerDimensions(new Uint8Array(bytes));
+      const dims = heroLogoDimensions(new Uint8Array(bytes));
       if (!dims) {
         self.postMessage({ id, ok: true, skippedSmall: true });
         return;
@@ -390,7 +334,7 @@ self.onmessage = async (event) => {
     const headBuf = typeof blob.slice === "function"
       ? await blob.slice(0, ${HERO_BACKDROP_HEADER_SLICE_BYTES}).arrayBuffer()
       : await blob.arrayBuffer();
-    const naturalWidth = headerWidth(new Uint8Array(headBuf));
+    const naturalWidth = Number(heroLogoDimensions(new Uint8Array(headBuf))?.width || 0);
     const bitmap = naturalWidth > 0 && naturalWidth <= resizeWidth
       ? await createImageBitmap(blob)
       : await createImageBitmap(blob, { resizeWidth, resizeQuality: "low" });
@@ -505,15 +449,43 @@ function decodeHeroBackdropBitmap(url, resizeWidth) {
   }
   return new Promise((resolve, reject) => {
     const id = heroBackdropWorkerNextId++;
-    heroBackdropWorkerJobs.set(id, { resolve, reject });
+    // A hero decode whose fetch never settles would leave the backdrop blank
+    // forever and block every later decode on the single worker, so retire the
+    // worker on the same budget the poster rescaler uses.
+    const timer = setTimeout(() => {
+      heroBackdropWorkerJobs.delete(id);
+      resetHeroBackdropWorker(new Error("hero backdrop worker timeout"));
+    }, HERO_ARTWORK_WORKER_TIMEOUT_MS);
+    heroBackdropWorkerJobs.set(id, {
+      resolve: (bitmap) => {
+        clearTimeout(timer);
+        resolve(bitmap);
+      },
+      reject: (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    });
     try {
       worker.postMessage({ id, url, resizeWidth });
     } catch (error) {
+      clearTimeout(timer);
       heroBackdropWorkerJobs.delete(id);
       resetHeroBackdropWorker(error);
       decodeHeroBackdropBitmapInThread(url, resizeWidth).then(resolve, reject);
     }
   });
+}
+
+/**
+ * Drop the hero decode worker and every cached backdrop bitmap. Used when the
+ * Home DOM is discarded, and when Home goes off-screen for playback: images a
+ * canvas already painted stay, and the next hero swap starts a fresh worker.
+ */
+export function resetHeroArtworkWorker() {
+  resetHeroBackdropWorker(new Error("hero artwork worker reset"));
+  heroBackdropBitmapCache.forEach((entry) => entry.then((result) => result?.bitmap?.close?.()));
+  heroBackdropBitmapCache.clear();
 }
 
 export function preloadHeroBackdrop(src) {
@@ -801,6 +773,7 @@ export function resetHeroLogoRescaleCache() {
     }
   });
   heroLogoRescaleCache.clear();
+  resetHeroArtworkWorker();
 }
 
 export function preloadImageSource(src) {

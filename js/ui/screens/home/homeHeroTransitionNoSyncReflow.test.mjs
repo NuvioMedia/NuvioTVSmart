@@ -68,7 +68,6 @@ function createDomMocks() {
       });
     }
     set className(value) {
-      this.classList = this.classList;
       const next = new Set(
         String(value || "")
           .split(/\s+/)
@@ -294,9 +293,19 @@ test("hero backdrop (<canvas> and <img>) and logo transitions never force synchr
   assert.equal(singleWrap.children.at(-1), reusedCanvas);
   assert.equal(reusedCanvas.width, 1920);
   assert.equal(reusedCanvas.height, 1080);
+  assert.equal(
+    reusedCanvas.style.getPropertyValue("transition"),
+    "none",
+    "reused canvas must reset with its transition suppressed, so the new artwork does not fade the old one out first"
+  );
   await flushRafs();
   await flushRafs();
   assert.equal(reusedCanvas.classList.contains("is-visible"), true);
+  assert.equal(
+    reusedCanvas.style.getPropertyValue("transition"),
+    "",
+    "reveal must restore the canvas transition"
+  );
 });
 
 test("preloadHeroBackdrop bypasses CPU resizeWidth for <=1920px headers, uses transferable Worker when available, and falls back in-thread", async () => {
@@ -499,7 +508,7 @@ test("preloadHeroBackdrop bypasses CPU resizeWidth for <=1920px headers, uses tr
     let logoBlobUrlCount = 0;
     globalThis.URL.createObjectURL = (blob) => {
       const part = String(blob?.parts?.[0] || "");
-      if (part.includes("headerDimensions")) return "blob:hero-worker/logo";
+      if (part.includes("self.onmessage")) return "blob:hero-worker/logo";
       logoBlobUrlCount += 1;
       return `blob:logo/${logoBlobUrlCount}`;
     };
@@ -531,6 +540,7 @@ test("preloadHeroBackdrop bypasses CPU resizeWidth for <=1920px headers, uses tr
     // Worker path: skippedSmall short-circuits before URL.createObjectURL; oversized logo encodes blob.
     failWorkerCtor = false;
     const workerPosts = [];
+    let logoWorkerTerminations = 0;
     class FakeLogoWorker {
       constructor() {
         this.onmessage = null;
@@ -547,7 +557,9 @@ test("preloadHeroBackdrop bypasses CPU resizeWidth for <=1920px headers, uses tr
           }
         });
       }
-      terminate() {}
+      terminate() {
+        logoWorkerTerminations += 1;
+      }
     }
     globalThis.Worker = FakeLogoWorker;
     const modWorkerLogo = await import(
@@ -567,6 +579,11 @@ test("preloadHeroBackdrop bypasses CPU resizeWidth for <=1920px headers, uses tr
     const bigWorkerLogo = await modWorkerLogo.preloadHeroLogo("https://art/logo-worker-big.png");
     assert.deepEqual(bigWorkerLogo, { loaded: true, src: "blob:logo/3" });
     assert.equal(logoBlobUrlCount, 3);
+
+    // 4. Leaving Home terminates the dedicated worker and drops its bitmap cache.
+    modWorkerLogo.resetHeroArtworkWorker();
+    assert.equal(logoWorkerTerminations, 1, "reset must terminate the hero worker");
+    assert.equal(modWorkerLogo.heroBackdropBitmapCache.size, 0);
   } finally {
     if (prevNavigatorUa) Object.defineProperty(globalThis.navigator, "userAgent", prevNavigatorUa);
     if (prevNavigatorMem)

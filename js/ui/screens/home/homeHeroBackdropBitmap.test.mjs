@@ -99,7 +99,8 @@ function setup(results) {
     prepareHeroImageEnter: (node, enterClass) => {
       node.classList.remove("is-visible");
       node.classList.add(enterClass);
-    }
+    },
+    restoreHeroImageTransition: () => {}
   });
   vm.runInContext(source, context);
   const wrap = new FakeElement("div");

@@ -214,9 +214,7 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
     if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
       return;
     }
-    if (typeof restoreHeroImageTransition === "function") {
-      restoreHeroImageTransition(logoNode);
-    }
+    restoreHeroImageTransition(logoNode);
     logoNode.classList.remove("home-hero-logo-transition-enter", "is-visible");
     clearGhosts();
   };
@@ -267,9 +265,7 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
           if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
             return;
           }
-          if (typeof restoreHeroImageTransition === "function") {
-            restoreHeroImageTransition(logoNode);
-          }
+          restoreHeroImageTransition(logoNode);
           logoNode.classList.add("is-visible");
           setTimeout(() => finalize(), durationMs);
         });
@@ -310,9 +306,7 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
         if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
           return;
         }
-        if (typeof restoreHeroImageTransition === "function") {
-          restoreHeroImageTransition(logoNode);
-        }
+        restoreHeroImageTransition(logoNode);
         logoNode.classList.add("is-visible");
         ghost?.classList?.add("is-fading-out");
         setTimeout(() => {
