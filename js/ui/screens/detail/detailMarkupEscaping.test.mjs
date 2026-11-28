@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as cheerio from "cheerio";
 
 const storageMap = new Map();
 globalThis.localStorage = {
@@ -42,6 +43,8 @@ const { createMetaDetailsScreenMethods07 } =
   await import("./metaDetailsScreenMethods-07-merge-stream-items.js");
 const { createMetaDetailsScreenMethods08 } =
   await import("./metaDetailsScreenMethods-08-render-external-ratings-row.js");
+const { createMetaDetailsScreenMethods16 } =
+  await import("./metaDetailsScreenMethods-16-render-comments-section.js");
 
 const XSS = "<script>alert(1)</script>";
 
@@ -128,4 +131,52 @@ test("renderSeriesLayout attribute-escapes backdrop style URL", () => {
     "backdrop style attribute must escape HTML metacharacters"
   );
   assert.equal(html.includes('bg.jpg")'), false, "backdrop style attribute must escape quotes");
+});
+
+test("renderHeroSection keeps an addon logo URL inside the src attribute", () => {
+  const methods = createMetaDetailsScreenMethods07();
+  const payload = 'x" onerror="alert(1)';
+  const ctx = {
+    params: { itemType: "movie" },
+    isSavedInLibrary: false,
+    isMarkedWatched: false,
+    renderExternalRatingsRow: () => "",
+    renderResumeIndicator: () => "",
+    getActiveResumeProgress: () => null,
+    renderRatingButton: () => "",
+    renderHeroMetaRows: () => "",
+    renderLibraryGlyph: () => "",
+    renderWatchedGlyph: () => "",
+    renderPlayGlyph: () => "",
+    renderTrailerGlyph: () => ""
+  };
+
+  const previousWarn = console.warn;
+  console.warn = () => {};
+  let html;
+  try {
+    html = methods.renderHeroSection.call(ctx, {
+      meta: { id: "tt1", type: "movie", name: "Demo", description: "Demo", logo: payload },
+      playLabel: "Play"
+    });
+  } finally {
+    console.warn = previousWarn;
+  }
+
+  const $ = cheerio.load(html);
+  const logo = $(".series-detail-logo");
+  assert.equal(logo.length, 1);
+  assert.equal(logo.attr("src"), payload);
+  assert.equal(logo.attr("onerror"), undefined);
+});
+
+test("renderCompanyLogosSection keeps a company logo URL inside the src attribute", () => {
+  const methods = createMetaDetailsScreenMethods16();
+  const payload = 'x" onerror="alert(1)';
+  const html = methods.renderCompanyLogosSection([{ name: "Acme", logo: payload }]);
+  const $ = cheerio.load(html);
+  const logo = $(".detail-company-card img");
+  assert.equal(logo.length, 1);
+  assert.equal(logo.attr("src"), payload);
+  assert.equal(logo.attr("onerror"), undefined);
 });
