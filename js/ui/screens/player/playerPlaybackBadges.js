@@ -70,6 +70,7 @@ export function refinePlaybackText(decoderText = "", metadata = []) {
 }
 
 const TONE_MAPPED_TO_SDR = /\bto[ ._-]*sdr\b|\b(?:hdr(?:10)?|dv|dovi)-?2-?sdr\b|\b2-?sdr\b|\btone[ ._-]?map(?:ped|ping)\b/i;
+const HDR_CAPABLE_CODEC = /h26[5]|h\.265|hev[1c]|hvc1|dvh[1e]|dva[1v]|dav1|av01|av1|vp09|vp9/i;
 
 // AVPlay and <video> expose no colour info, so an HDR-capable codec takes its dynamic range from the filename.
 export function metadataDynamicRange(videoCodec, metadata = []) {
@@ -109,6 +110,7 @@ export function readPlaybackMediaInfo(controller) {
       controller.avplayAudioTracks?.find((track) => track.avplayTrackIndex === controller.selectedAvPlayAudioTrackIndex) || {};
     const range = String(pick(avVideo, ["hdr_type", "hdr", "HDRType"]) || "").toUpperCase();
     if (range === "HDR10" || range === "HLG" || range === "DV") hdr = [range];
+    else if (range === "SDR") hdr = [];
     audio = {
       ...selectedAudio,
       codec: pick(avAudio, ["codec", "audio_type", "fourCC", "audio_codec"]) || selectedAudio.codec,
@@ -154,10 +156,59 @@ export function readPlaybackMediaInfo(controller) {
 
 const states = new WeakMap();
 
-/** Whether the playing video is HDR/Dolby Vision, from the decoder first and the source name after. */
-export function readPlaybackHdrState(screen, controller) {
+/**
+ * Reads HDR/Dolby Vision status along with readiness and explicit-SDR confirmation so callers can
+ * avoid latching pre-ready `waiting` states or dropping HDR across transient stream reloads.
+ */
+export function readPlaybackHdrStatus(screen, controller) {
+  if (!controller) {
+    return { isHdr: false, confirmed: false, ready: false };
+  }
   try {
+    const playbackEngine = String(controller.playbackEngine || "");
+    const usingAvPlay = Boolean(controller.isUsingAvPlay?.());
+    if (playbackEngine.endsWith("avplay") && (!usingAvPlay || controller.avplayReady === false)) {
+      return { isHdr: false, confirmed: false, ready: false };
+    }
+    if (usingAvPlay) {
+      if (controller.avplayReady === false) {
+        return { isHdr: false, confirmed: false, ready: false };
+      }
+      const streams = controller.getAvPlay()?.getCurrentStreamInfo?.();
+      if (!Array.isArray(streams) || !streams.length) {
+        return { isHdr: false, confirmed: false, ready: false };
+      }
+      if (!streams.some((entry) => String(entry?.type || "").toUpperCase() === "VIDEO")) {
+        return { isHdr: false, confirmed: false, ready: false };
+      }
+    } else if (controller.hlsInstance) {
+      const hls = controller.hlsInstance;
+      const level = hls.levels?.[hls.currentLevel];
+      if (!level || (!level.videoRange && !String(level.videoCodec || "").trim())) {
+        return { isHdr: false, confirmed: false, ready: false };
+      }
+    } else if (controller.dashInstance) {
+      const representation = controller.dashInstance.getCurrentRepresentationForType?.("video");
+      if (!representation || !String(representation.codecs || "").trim()) {
+        return { isHdr: false, confirmed: false, ready: false };
+      }
+    } else {
+      const video = controller.video;
+      if (
+        !playbackEngine ||
+        playbackEngine === "none" ||
+        !video ||
+        (!Number(video.readyState) && !Number(video.videoWidth) && !Number(video.videoHeight))
+      ) {
+        return { isHdr: false, confirmed: false, ready: false };
+      }
+      return { isHdr: false, confirmed: false, ready: true };
+    }
+
     const info = readPlaybackMediaInfo(controller);
+    if (usingAvPlay && !Array.isArray(info.hdr) && !String(info.videoCodec || "").trim()) {
+      return { isHdr: false, confirmed: false, ready: false };
+    }
     const stream = screen?.getCurrentStreamCandidate?.() || null;
     const metadata = [
       resolveStreamFilename(stream, screen?.initialFilenameStreamCandidate, screen?.params?.filename),
@@ -166,10 +217,25 @@ export function readPlaybackHdrState(screen, controller) {
       .map((value) => String(value || "").trim())
       .filter(Boolean);
     const hdr = Array.isArray(info.hdr) ? info.hdr : metadataDynamicRange(info.videoCodec, metadata);
-    return isHdrMediaInfo({ videoCodec: info.videoCodec, hdr });
+    const isHdr = isHdrMediaInfo({ videoCodec: info.videoCodec, hdr });
+    const text = metadata.join(" ").replace(/[._]/g, " ");
+    const hasCodec = Boolean(String(info.videoCodec || "").trim());
+    const isExplicitSdr = Array.isArray(info.hdr)
+      ? !info.hdr.length
+      : TONE_MAPPED_TO_SDR.test(text) || (hasCodec && !HDR_CAPABLE_CODEC.test(String(info.videoCodec || "")));
+    return {
+      isHdr,
+      confirmed: Boolean(isHdr || isExplicitSdr),
+      ready: true
+    };
   } catch (_) {
-    return false;
+    return { isHdr: false, confirmed: false, ready: false };
   }
+}
+
+/** Whether the playing video is HDR/Dolby Vision, from the decoder first and the source name after. */
+export function readPlaybackHdrState(screen, controller) {
+  return readPlaybackHdrStatus(screen, controller).isHdr;
 }
 
 export function syncPlayerPlaybackBadges(screen, controller, renderChip, languageLabel) {
