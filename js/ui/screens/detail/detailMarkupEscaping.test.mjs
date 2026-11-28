@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as cheerio from "cheerio";
 
 const storageMap = new Map();
 globalThis.localStorage = {
@@ -42,6 +43,10 @@ const { createMetaDetailsScreenMethods07 } =
   await import("./metaDetailsScreenMethods-07-merge-stream-items.js");
 const { createMetaDetailsScreenMethods08 } =
   await import("./metaDetailsScreenMethods-08-render-external-ratings-row.js");
+const { createMetaDetailsScreenMethods16 } =
+  await import("./metaDetailsScreenMethods-16-render-comments-section.js");
+const { createMetaDetailsScreenMethods20 } =
+  await import("./metaDetailsScreenMethods-20-stop-trailer-playback.js");
 
 const XSS = "<script>alert(1)</script>";
 
@@ -128,4 +133,97 @@ test("renderSeriesLayout attribute-escapes backdrop style URL", () => {
     "backdrop style attribute must escape HTML metacharacters"
   );
   assert.equal(html.includes('bg.jpg")'), false, "backdrop style attribute must escape quotes");
+});
+
+const ADDON_URL_PAYLOAD = 'x" onerror="alert(1)';
+
+test("renderHeroSection keeps an addon logo URL inside the src attribute", () => {
+  const methods = createMetaDetailsScreenMethods07();
+  const ctx = {
+    params: { itemType: "movie" },
+    isSavedInLibrary: false,
+    isMarkedWatched: false,
+    renderExternalRatingsRow: () => "",
+    renderResumeIndicator: () => "",
+    getActiveResumeProgress: () => null,
+    renderRatingButton: () => "",
+    renderHeroMetaRows: () => "",
+    renderLibraryGlyph: () => "",
+    renderWatchedGlyph: () => "",
+    renderPlayGlyph: () => "",
+    renderTrailerGlyph: () => ""
+  };
+
+  const previousWarn = console.warn;
+  console.warn = () => {};
+  let html;
+  try {
+    html = methods.renderHeroSection.call(ctx, {
+      meta: {
+        id: "tt1",
+        type: "movie",
+        name: "Demo",
+        description: "Demo",
+        logo: ADDON_URL_PAYLOAD
+      },
+      playLabel: "Play"
+    });
+  } finally {
+    console.warn = previousWarn;
+  }
+
+  const $ = cheerio.load(html);
+  const logo = $(".series-detail-logo");
+  assert.equal(logo.length, 1);
+  assert.equal(logo.attr("src"), ADDON_URL_PAYLOAD);
+  assert.equal(logo.attr("onerror"), undefined);
+});
+
+test("renderCompanyLogosSection keeps an addon company logo URL inside the src attribute", () => {
+  const methods = createMetaDetailsScreenMethods16();
+  const html = methods.renderCompanyLogosSection([{ name: "Acme", logo: ADDON_URL_PAYLOAD }]);
+  const $ = cheerio.load(html);
+  const logo = $(".detail-company-card img");
+  assert.equal(logo.length, 1);
+  assert.equal(logo.attr("src"), ADDON_URL_PAYLOAD);
+  assert.equal(logo.attr("onerror"), undefined);
+});
+
+test("stream chooser keeps an addon logo URL inside the src attribute", () => {
+  const methods = createMetaDetailsScreenMethods20();
+  const renderChooser = (
+    renderMethod,
+    pendingKey,
+    pending = { streams: [], addonFilter: "all", loading: false }
+  ) => {
+    const mount = { innerHTML: "" };
+    const ctx = {
+      container: { querySelector: () => mount, querySelectorAll: () => [] },
+      meta: { name: "Demo", logo: ADDON_URL_PAYLOAD, genres: [] },
+      [pendingKey]: pending,
+      getFilteredEpisodeStreams: () => [],
+      applyStreamChooserFocus() {}
+    };
+    methods[renderMethod].call(ctx);
+    return cheerio.load(mount.innerHTML);
+  };
+
+  const movieLogo = renderChooser("renderMovieStreamChooser", "pendingMovieSelection")
+    .root()
+    .find(".series-stream-logo");
+  assert.equal(movieLogo.length, 1);
+  assert.equal(movieLogo.attr("src"), ADDON_URL_PAYLOAD);
+  assert.equal(movieLogo.attr("onerror"), undefined);
+
+  const episodeLogo = renderChooser("renderEpisodeStreamChooser", "pendingEpisodeSelection", {
+    streams: [],
+    addonFilter: "all",
+    loading: false,
+    episode: { season: 1, episode: 1, title: "Pilot" }
+  })
+    .root()
+    .find(".series-stream-logo");
+  assert.equal(episodeLogo.length, 1);
+  assert.equal(episodeLogo.attr("src"), ADDON_URL_PAYLOAD);
+  assert.equal(episodeLogo.attr("onerror"), undefined);
 });
