@@ -1,4 +1,5 @@
 import * as internals from "./homeScreenContext.js";
+import { withResolvedTrailerSource } from "../../../core/media/trailerApi.js";
 
 // YouTube draws its own startup chrome (title, share, transport controls) even
 // with controls=0 and only hides it a few seconds after playback starts. Keep
@@ -30,6 +31,7 @@ export function createHomeScreenMethods13() {
     resolveTrailerSource,
     withTimeout,
     resolveTrailerMetaWithTmdbFallback,
+    extractYear,
     LayoutPreferences
   } = internals;
 
@@ -307,8 +309,8 @@ export function createHomeScreenMethods13() {
           video.addEventListener("playing", tryActivateOnPlaybackFrame);
         }
         let lastVideoTime = 0;
-        video.addEventListener("timeupdate", () => {
-          if (typeof video.requestVideoFrameCallback !== "function" || Number(video.currentTime || 0) > 0) {
+        const syncTrailerState = () => {
+          if (Number(video.currentTime || 0) > 0) {
             tryActivateOnPlaybackFrame();
           }
           if (video.currentTime + 1 < lastVideoTime) {
@@ -316,10 +318,13 @@ export function createHomeScreenMethods13() {
           }
           lastVideoTime = video.currentTime;
           this.trackHomeTrailerHandoff?.(container, source, {
-            currentTime: video.currentTime,
+            currentTime: Number(video.currentTime || 0),
             muted: shouldMute || Boolean(video.muted),
-            paused: video.paused
+            paused: Boolean(video.paused)
           });
+        };
+        ["timeupdate", "play", "pause"].forEach((eventName) => {
+          video.addEventListener(eventName, syncTrailerState);
         });
         video.addEventListener(
           "error",
@@ -475,13 +480,14 @@ export function createHomeScreenMethods13() {
           withTimeout(resolveTrailerMetaWithTmdbFallback(itemMeta, itemType), 2200, null),
           addonMetaPromise
         ]);
-        if (inlineSource) {
-          return inlineSource;
-        }
-        if (inlineFallbackSource) {
-          return inlineFallbackSource;
-        }
-        return result?.status === "success" ? resolveTrailerSource({ ...(result?.data || {}), id: itemId, type: itemType }) : null;
+        const source =
+          inlineSource ||
+          inlineFallbackSource ||
+          (result?.status === "success" ? resolveTrailerSource({ ...(result?.data || {}), id: itemId, type: itemType }) : null);
+        return withResolvedTrailerSource(source, {
+          title: String(itemMeta.name || "").trim(),
+          year: extractYear(itemMeta)
+        });
       } catch (error) {
         console.warn("Home trailer preview lookup failed", error);
         return null;
@@ -519,6 +525,8 @@ export function createHomeScreenMethods13() {
       const heroState = this.heroTrailerPlaybackState;
       const itemKey = card ? this.getFocusedPosterFlowKey(card) : String(heroState?.key || "");
       if (!itemKey || (!source?.ytId && !source?.url)) {
+        // Direct <video> trailers have no YouTube id, but their progress feeds
+        // the same Home-to-detail handoff.
         return;
       }
       this.homeTrailerHandoff = {

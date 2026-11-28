@@ -15,6 +15,7 @@ import {
 } from "../../../data/local/playerSettingsStore.js";
 import { TmdbService } from "../../../core/tmdb/tmdbService.js";
 import { TmdbMetadataService } from "../../../core/tmdb/tmdbMetadataService.js";
+import { withResolvedTrailerSource } from "../../../core/media/trailerApi.js";
 import { isUnreleased } from "../../../core/util/releaseInfoUtils.js";
 import { showStandardDetailRatings } from "../../../core/util/imdbRatingVisibility.js";
 import { toTraktImageUrl } from "../../../core/trakt/traktImageUrl.js";
@@ -1649,7 +1650,19 @@ export class PostPlayRecommendationController {
       language: settings.language
     });
     const trailer = resolveTrailerAsset(candidates);
-    return { ytId: trailer.ytId, url: trailer.url };
+    if (!trailer.ytId) {
+      return { ytId: "", url: trailer.url };
+    }
+    const resolvedSource = await withResolvedTrailerSource(
+      { kind: "youtube", ytId: trailer.ytId },
+      {
+        title: String(recommendation.title || "").trim(),
+        year: String(recommendation.releaseInfo || "").match(/\b(19|20)\d{2}\b/)?.[0] || ""
+      }
+    );
+    return resolvedSource.kind === "video"
+      ? { ytId: "", url: resolvedSource.url }
+      : { ytId: trailer.ytId, url: "" };
   }
 
   async loadRecommendationDetails(index, recommendation, token = this.pipelineToken) {
