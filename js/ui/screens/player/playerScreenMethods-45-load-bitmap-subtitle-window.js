@@ -207,6 +207,7 @@ export function createPlayerScreenMethods45() {
       this.htmlSubtitleLastActiveCues = activeCues;
       const cueKey =
         String(Boolean(this.subtitleStyleSettings?.stripSdh)) +
+        (this.getProfanityCueKey?.() || "") +
         activeCues
           .map(
             (cue) =>
@@ -226,6 +227,7 @@ export function createPlayerScreenMethods45() {
       this.htmlSubtitleActiveCueKey = cueKey;
       if (this.subtitleStyleSettings?.stripSdh)
         activeCues = activeCues.map((cue) => ({ ...cue, text: stripSubtitleSdh(cue.text || "") })).filter((cue) => cue.text.trim());
+      if (typeof this.maskProfanityInCues === "function") activeCues = this.maskProfanityInCues(activeCues);
       if (typeof node.replaceChildren === "function") {
         node.replaceChildren();
       } else {

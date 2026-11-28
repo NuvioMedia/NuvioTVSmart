@@ -9,8 +9,9 @@ export function createPlayerScreenMethods62() {
     renderAudioControlItem(control, index) {
       const focused = this.audioFocusedColumn === "controls" && index === this.audioMixFocusIndex;
       if (control.toggle) {
+        const checked = control.checked ?? this.persistAudioAmplification;
         return `
-            <div class="player-audio-control-card player-audio-toggle focusable${this.persistAudioAmplification ? " selected" : ""}${focused ? " focused" : ""}" role="switch" aria-checked="${this.persistAudioAmplification ? "true" : "false"}" data-audio-column="controls" data-audio-index="${index}">
+            <div class="player-audio-control-card player-audio-toggle focusable${checked ? " selected" : ""}${focused ? " focused" : ""}${control.id === "profanity" ? " player-audio-profanity-toggle" : ""}" role="switch" aria-checked="${checked ? "true" : "false"}" data-audio-column="controls" data-audio-index="${index}">
               <div class="player-dialog-item-main">${escapeHtml(control.title)}</div>
               <div class="player-dialog-item-sub">${escapeHtml(control.helper || "")}</div>
             </div>
@@ -34,6 +35,10 @@ export function createPlayerScreenMethods62() {
           return;
         }
         this.adjustAudioAmplification(direction < 0 ? -1 : 1);
+        return;
+      }
+      if (this.audioMixFocusIndex === 2) {
+        this.toggleProfanityFilterForTitle?.();
         return;
       }
       this.togglePersistAudioAmplification();
@@ -82,7 +87,7 @@ export function createPlayerScreenMethods62() {
         if (this.audioFocusedColumn === "tracks") {
           this.audioDialogIndex = clamp(this.audioDialogIndex - 1, 0, entries.length - 1);
         } else {
-          this.audioMixFocusIndex = clamp(this.audioMixFocusIndex - 1, 0, 1);
+          this.audioMixFocusIndex = clamp(this.audioMixFocusIndex - 1, 0, Math.max(1, Number(this.audioControlCount || 2) - 1));
         }
         this.renderAudioDialog();
         return true;
@@ -92,7 +97,7 @@ export function createPlayerScreenMethods62() {
         if (this.audioFocusedColumn === "tracks") {
           this.audioDialogIndex = clamp(this.audioDialogIndex + 1, 0, entries.length - 1);
         } else {
-          this.audioMixFocusIndex = clamp(this.audioMixFocusIndex + 1, 0, 1);
+          this.audioMixFocusIndex = clamp(this.audioMixFocusIndex + 1, 0, Math.max(1, Number(this.audioControlCount || 2) - 1));
         }
         this.renderAudioDialog();
         return true;

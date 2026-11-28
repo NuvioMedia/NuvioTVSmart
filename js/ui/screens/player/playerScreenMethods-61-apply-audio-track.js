@@ -289,9 +289,25 @@ export function createPlayerScreenMethods61() {
           value: "",
           helper: t("audio_mix_persist_help", {}, "Remember boost for future playback"),
           enabled: true,
-          toggle: true
+          toggle: true,
+          checked: Boolean(this.persistAudioAmplification)
         }
       ];
+      // Profanity filter switch: only once the filter is turned on in Settings.
+      if (this.profanityFilter) {
+        audioControls.push({
+          id: "profanity",
+          title: this.profanityFilter.decision?.enabled
+            ? t("profanity_toggle_on", {}, "Profanity filter: On")
+            : t("profanity_toggle_off", {}, "Profanity filter: Off"),
+          value: "",
+          helper: this.getProfanityFilterStatusLabel?.() || "",
+          enabled: Boolean(this.profanityFilter.identity?.titleKey),
+          toggle: true,
+          checked: Boolean(this.profanityFilter.decision?.enabled)
+        });
+      }
+      this.audioControlCount = audioControls.length;
       this.audioMixFocusIndex = clamp(this.audioMixFocusIndex, 0, audioControls.length - 1);
       if (!entries.length) {
         this.audioFocusedColumn = "controls";

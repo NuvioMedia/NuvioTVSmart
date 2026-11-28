@@ -202,6 +202,7 @@ export function createPlayerScreenMethods01() {
       this.pauseOverlayMeta = this.buildPauseOverlayMeta();
       if (!this.isExternalFrameMode()) {
         this.bindVideoEvents();
+        this.initProfanityFilter();
         this.bindMediaSessionHandlers();
         this.applyAudioAmplification();
         this.applySubtitlePresentationSettings();

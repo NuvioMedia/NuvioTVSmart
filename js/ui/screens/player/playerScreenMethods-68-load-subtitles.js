@@ -17,6 +17,7 @@ export function createPlayerScreenMethods68() {
       const requestToken = (this.subtitleLoadToken || 0) + 1;
       this.subtitleLoadToken = requestToken;
       this.subtitleLoading = true;
+      this.resetProfanityShadowSubtitle?.();
 
       const sidecarSubtitles = this.collectStreamSidecarSubtitles();
       const subtitleLookup = this.buildSubtitleLookupContext();
@@ -83,6 +84,7 @@ export function createPlayerScreenMethods68() {
           this.subtitleLoading = false;
           this.refreshTrackDialogs();
           this.reapplyPendingWebOsAddonSubtitle?.();
+          this.scheduleProfanityShadowSubtitle?.();
         }
       }
     },

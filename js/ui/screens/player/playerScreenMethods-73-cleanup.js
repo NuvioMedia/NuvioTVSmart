@@ -13,6 +13,7 @@ export function createPlayerScreenMethods73() {
       }
     },
     cleanup() {
+      this.destroyProfanityFilter?.();
       this.closeStreamInfo({ restore: false });
       this.stopTrackingBeforeTeardown();
       try {

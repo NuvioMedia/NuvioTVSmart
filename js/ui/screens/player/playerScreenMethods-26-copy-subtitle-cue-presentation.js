@@ -65,6 +65,9 @@ export function createPlayerScreenMethods26() {
           }
         }
       }
+      if (typeof this.maskProfanityText === "function") {
+        cleaned = this.maskProfanityText(cleaned);
+      }
       if (cleaned === cue.text) {
         if (snapshot) snapshot.sdhLastText = cleaned;
         return false;

@@ -1,0 +1,47 @@
+/* Profanity filter: small pill shown while a filtered word is muted. It sits
+   top-left, away from the OSD clock (top-right) and the centered toasts. */
+.player-profanity-indicator {
+  position: absolute;
+  left: min(3.33vw, 64px);
+  top: min(3.33vw, 64px);
+  z-index: 34;
+  display: inline-flex;
+  align-items: center;
+  gap: min(0.52vw, 10px);
+  min-height: min(2.5vw, 48px);
+  padding: 0 min(1.04vw, 20px) 0 min(0.83vw, 16px);
+  border-radius: 999px;
+  background: rgba(9, 13, 20, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(243, 248, 255, 0.92);
+  font-size: min(1.04vw, 20px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.player-profanity-indicator.hidden {
+  opacity: 0;
+}
+
+.player-profanity-indicator-icon {
+  width: min(1.25vw, 24px);
+  height: min(1.25vw, 24px);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1280px), (max-height: 760px) {
+  .player-profanity-indicator {
+    left: 32px;
+    top: 32px;
+    min-height: 36px;
+    font-size: 15px;
+  }
+
+  .player-profanity-indicator-icon {
+    width: 18px;
+    height: 18px;
+  }
+}

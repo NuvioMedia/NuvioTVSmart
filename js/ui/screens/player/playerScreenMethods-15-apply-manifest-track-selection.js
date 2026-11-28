@@ -143,6 +143,10 @@ export function createPlayerScreenMethods15() {
             <div id="playerSkipIntro" class="player-skip-intro hidden"></div>
 
             <div id="playerAspectToast" class="player-aspect-toast hidden"></div>
+            <div id="playerProfanityIndicator" class="player-profanity-indicator hidden" aria-hidden="true">
+              <svg class="player-profanity-indicator-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor"/><path d="M15.5 9.5l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <span class="player-profanity-indicator-label">${escapeHtml(t("profanity_indicator", {}, "Filtered"))}</span>
+            </div>
 
             <div id="playerHtmlSubtitles" class="player-html-subtitles hidden" aria-hidden="true"></div>
             <canvas id="playerBitmapSubtitles" class="player-bitmap-subtitles hidden" aria-hidden="true"></canvas>
@@ -251,6 +255,7 @@ export function createPlayerScreenMethods15() {
             parentalGuide: uiRoot.querySelector("#playerParentalGuide"),
             skipIntro: uiRoot.querySelector("#playerSkipIntro"),
             aspectToast: uiRoot.querySelector("#playerAspectToast"),
+            profanityIndicator: uiRoot.querySelector("#playerProfanityIndicator"),
             htmlSubtitles: uiRoot.querySelector("#playerHtmlSubtitles"),
             assSubtitles: uiRoot.querySelector("#playerAssSubtitles"),
             bitmapSubtitles: uiRoot.querySelector("#playerBitmapSubtitles"),

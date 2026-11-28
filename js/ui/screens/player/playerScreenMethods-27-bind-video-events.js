@@ -59,7 +59,12 @@ export function createPlayerScreenMethods27() {
           }
         ],
         ["hlstrackschanged", onTrackListChanged],
-        ["dashtrackschanged", onTrackListChanged]
+        ["dashtrackschanged", onTrackListChanged],
+        // Profanity filter: re-evaluate the mute state from the fresh clock.
+        ...["timeupdate", "seeked", "seeking", "pause", "playing", "ratechange"].map((eventName) => [
+          eventName,
+          () => this.syncProfanityMute?.()
+        ])
       ];
 
       bindings.forEach(([eventName, handler]) => {

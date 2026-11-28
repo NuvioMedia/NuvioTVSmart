@@ -127,6 +127,7 @@ ${serviceFeature}  <icon src="icon.png"/>
   <tizen:privilege name="http://tizen.org/privilege/unlimitedstorage"/>
 ${applicationLaunchPrivilege}  <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
   <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.audio"/>
 ${engineFsService}${pluginService}  <tizen:profile name="tv-samsung"/>
   <tizen:setting screen-orientation="landscape" context-menu="enable" background-support="disable" encryption="disable" install-location="auto"/>
 </widget>

@@ -145,6 +145,7 @@ export function createPlayerScreenMethods46() {
 
       this.htmlSubtitleCues = [];
       this.htmlSubtitleSelectedId = "avplay-native";
+      this.handleProfanityLiveCue?.(text, Number(detail?.duration || 0));
       const alignment = this.getSubtitleAssAlignment(rawText);
       const layout = this.getSubtitleAssAlignmentSettings(alignment) || {
         line: null,

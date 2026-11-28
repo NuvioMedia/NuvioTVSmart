@@ -54,6 +54,7 @@ export function createPlayerScreenMethods43() {
         (!renderer || this.assSubtitleRenderer === renderer);
       let renderer = null;
       if (!isCurrentSelection()) return { applied: false, stale: true };
+      if (typeof this.prepareAssBodyForProfanityFilter === "function") body = this.prepareAssBodyForProfanityFilter(body);
       this.destroyAssSubtitleRenderer();
       const container = this.getAssSubtitleContainer();
       const video = PlayerController.video;
