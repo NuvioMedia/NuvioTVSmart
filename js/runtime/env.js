@@ -33,10 +33,6 @@
       typeof existing.IMDB_RATINGS_API_BASE_URL === "undefined"
         ? ""
         : existing.IMDB_RATINGS_API_BASE_URL,
-    IMDB_TAPFRAME_API_BASE_URL:
-      typeof existing.IMDB_TAPFRAME_API_BASE_URL === "undefined"
-        ? ""
-        : existing.IMDB_TAPFRAME_API_BASE_URL,
     AVATAR_PUBLIC_BASE_URL:
       typeof existing.AVATAR_PUBLIC_BASE_URL === "undefined" ? "" : existing.AVATAR_PUBLIC_BASE_URL,
     UNIQUE_CONTRIBUTIONS_BASE_URL:

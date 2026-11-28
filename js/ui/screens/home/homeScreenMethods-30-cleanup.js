@@ -85,6 +85,7 @@ export function createHomeScreenMethods30() {
         cancelAnimationFrame(this.heroDescriptionAutoScrollFrame);
         this.heroDescriptionAutoScrollFrame = 0;
       }
+      this.clearHeroDescriptionAutoScrollTimer?.();
       this.heroDescriptionAutoScroller?.stop();
       this.heroDescriptionScrollHolding = false;
       this.cancelPendingHeroFocus();
@@ -128,6 +129,10 @@ export function createHomeScreenMethods30() {
         clearTimeout(this.homeLazyImageNeighborTimer);
         this.homeLazyImageNeighborTimer = null;
       }
+      if (this.homeLazyImageQuietPrefetchTimer) {
+        clearTimeout(this.homeLazyImageQuietPrefetchTimer);
+        this.homeLazyImageQuietPrefetchTimer = null;
+      }
       if (this.homeLazyImageCommitRaf) {
         cancelAnimationFrame(this.homeLazyImageCommitRaf);
         this.homeLazyImageCommitRaf = 0;
@@ -137,6 +142,8 @@ export function createHomeScreenMethods30() {
       this.pendingHomeLazyImageAnchor = null;
       this.pendingHomeLazyImageFocusedRowOnly = false;
       this.pendingHomeLazyImageIncludeNeighborRows = false;
+      this.pendingHomeLazyImageSettleRefreshIndex = false;
+      this.pendingHomeLazyImageSettleViewportChanged = false;
       this.homeLazyImageHydrationNeedsFullScan = false;
       this.homeLazyImageHydrationNeedsIndexRefresh = false;
       this.homeLazyImageHydrationIndex = null;

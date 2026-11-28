@@ -219,23 +219,35 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
     clearGhosts();
   };
 
+  const bindLogoLoadHandlers = () => {
+    logoNode.onload = () => {
+      if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
+        return;
+      }
+      syncHeroLogoFallback(logoNode, false);
+    };
+    logoNode.onerror = () => {
+      if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
+        return;
+      }
+      finalize();
+      syncHeroLogoFallback(logoNode, true);
+    };
+  };
+
   if (!normalizedSrc) {
     finalize();
     logoNode.remove();
     return;
   }
 
-  if (logoNode.heroLogoSourceUrl === normalizedSrc) {
+  if (logoNode.heroLogoSourceUrl === normalizedSrc || (currentSrc === normalizedSrc && !shouldRescaleHeroLogo(normalizedSrc))) {
     finalize();
     logoNode.setAttribute("alt", normalizedAlt);
-    return;
-  }
-
-  // The generated markup starts on the original url. On eligible Tizen sets the
-  // first apply still rescales it, then heroLogoSourceUrl marks the swap as done.
-  if (currentSrc === normalizedSrc && !shouldRescaleHeroLogo(normalizedSrc)) {
-    finalize();
-    logoNode.setAttribute("alt", normalizedAlt);
+    bindLogoLoadHandlers();
+    if (logoNode.complete) {
+      syncHeroLogoFallback(logoNode, Number(logoNode.naturalWidth || 0) === 0);
+    }
     return;
   }
 
@@ -250,11 +262,14 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
       if (Number(logoNode.heroLogoTransitionToken || 0) !== token) {
         return;
       }
+      bindLogoLoadHandlers();
       if (!result.loaded) {
         finalize();
+        syncHeroLogoFallback(logoNode, true);
         applySource(result.src);
         return;
       }
+      syncHeroLogoFallback(logoNode, false);
       prepareHeroImageEnter(logoNode, "home-hero-logo-transition-enter");
       applySource(result.src);
       requestAnimationFrame(() => {
@@ -279,16 +294,22 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
       return;
     }
 
+    bindLogoLoadHandlers();
     if (!result.loaded) {
       finalize();
+      syncHeroLogoFallback(logoNode, true);
       applySource(result.src);
       return;
     }
 
+    // A failed logo was already hidden by the fallback: cloning it would paint a
+    // broken-image icon for the crossfade duration.
+    const canCrossfade = !logoNode.hidden;
+    syncHeroLogoFallback(logoNode, false);
     clearGhosts();
     const parent = logoNode.parentElement;
     let ghost = null;
-    if (parent && currentSrc) {
+    if (parent && currentSrc && canCrossfade) {
       ghost = logoNode.cloneNode(false);
       ghost.classList.remove("home-hero-logo-transition-enter", "is-visible");
       ghost.classList.add("home-hero-logo-transition-ghost");
@@ -315,6 +336,27 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
       });
     });
   });
+}
+
+function syncHeroLogoFallback(logoNode, failed) {
+  if (!logoNode) {
+    return;
+  }
+  const titleNode = logoNode.parentElement?.querySelector?.(".home-hero-title-text");
+  if (failed) {
+    logoNode.hidden = true;
+    // Inline display:none overrides `.home-screen-shell .home-hero-logo { display: block }`.
+    logoNode.style?.setProperty?.("display", "none");
+    logoNode.parentElement?.querySelectorAll?.(".home-hero-logo-transition-ghost")?.forEach((node) => node.remove());
+    if (titleNode) {
+      const hasTitleText = Boolean(String(titleNode.textContent || "").trim());
+      titleNode.classList.toggle("is-hidden", !hasTitleText);
+    }
+    return;
+  }
+  logoNode.hidden = false;
+  logoNode.style?.removeProperty?.("display");
+  titleNode?.classList?.add?.("is-hidden");
 }
 
 export function parseRuntimeMinutes(value) {

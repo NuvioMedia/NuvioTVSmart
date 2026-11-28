@@ -10,6 +10,56 @@ var embeddedTextParser = null;
 // server recovery cannot collide with the subtitle extractor.
 var DEFAULT_PORT = 2715;
 var service = null;
+var audioTranscode = null;
+
+function getAudioTranscode() {
+  if (!audioTranscode) {
+    // Packaged from services/webos/src/audioTranscode.js; loaded only when a
+    // DTS or TrueHD track is converted, never on the EngineFS startup path.
+    audioTranscode = require("./audio-transcode.cjs");
+  }
+  return audioTranscode;
+}
+
+function handleAudioTranscodeRequest(request, response, parsed) {
+  if (parsed.pathname === "/audio-transcode-create") {
+    var sourceUrl = String(parsed.query.url || "").trim();
+    if (!/^https?:\/\//i.test(sourceUrl)) {
+      sendJson(response, 400, { returnValue: false, errorCode: "INVALID_REQUEST" });
+      return true;
+    }
+    getAudioTranscode()
+      .createSession({
+        url: sourceUrl,
+        trackNumber: parseNumber(parsed.query.trackNumber, 0),
+        trackIndex: parseNumber(parsed.query.trackIndex, -1),
+        ahead: parseNumber(parsed.query.ahead, 8)
+      })
+      .then(
+        function (result) {
+          result.returnValue = true;
+          sendJson(response, 200, result);
+        },
+        function (error) {
+          sendJson(response, 422, {
+            returnValue: false,
+            errorCode: "AUDIO_TRANSCODE_FAILED",
+            errorText: String((error && error.message) || error || "Audio conversion unavailable")
+          });
+        }
+      );
+    return true;
+  }
+  if (parsed.pathname === "/audio-transcode-stop") {
+    if (audioTranscode) audioTranscode.stop(String(parsed.query.id || ""));
+    sendJson(response, 200, { returnValue: true });
+    return true;
+  }
+  if (String(parsed.pathname || "").indexOf("/audio-transcode/") === 0) {
+    return getAudioTranscode().handle(request, response);
+  }
+  return false;
+}
 
 function getEmbeddedTextParser() {
   if (!embeddedTextParser) {
@@ -60,6 +110,9 @@ function handleRequest(request, response) {
     return;
   }
   var parsed = urlModule.parse(request.url || "/", true);
+  if (handleAudioTranscodeRequest(request, response, parsed)) {
+    return;
+  }
   if (request.method === "OPTIONS") {
     response.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
@@ -71,7 +124,7 @@ function handleRequest(request, response) {
   }
 
   if (parsed.pathname === "/settings") {
-    sendJson(response, 200, { tx3g: true, embeddedText: true, bitmapSubtitle: true, service: "nuvio-tx3g" });
+    sendJson(response, 200, { tx3g: true, embeddedText: true, bitmapSubtitle: true, audioTranscode: true, service: "nuvio-tx3g" });
     return;
   }
 

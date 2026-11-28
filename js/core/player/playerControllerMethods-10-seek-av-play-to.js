@@ -7,6 +7,9 @@ export function createPlayerControllerMethods10() {
 
   return {
     seekAvPlayTo(targetMs, { emitEvents = true } = {}) {
+      if (this.prepareTizenDtsAudioSeek?.(targetMs)) {
+        return true;
+      }
       if (!this.isUsingAvPlay() || this.avplaySeekInFlight) {
         return false;
       }

@@ -5,6 +5,7 @@ import * as internals from "./homeScreenContext.js";
 const HOME_POINTER_HOVER_GRACE_MS = 250;
 
 export function createHomeScreenMethods19() {
+  const HOME_BOUNDED_HYDRATION_PACE_QUIET_MS = 230;
   const {
     getLegacySidebarSelectedNode,
     getModernSidebarSelectedNode,
@@ -369,12 +370,31 @@ export function createHomeScreenMethods19() {
             if (track?.matches?.(".home-track, .home-grid-track") && this.shouldUseBoundedHomeImageHydration()) {
               const anchor = track.querySelector(".focusable.focused") || track.querySelector(".focusable");
               if (anchor) {
+                const deferTrackHydration = Boolean(
+                  this.layoutMode === "modern" && (this.isScrollAnimationActive?.(track, "x") || this.isModernHydrationScrollActive?.())
+                );
                 this.scheduleHomeLazyImageHydration(anchor, {
                   viewportChanged: true,
+                  deferUntilVerticalSettle: deferTrackHydration,
                   focusedRowOnly: this.isLegacyTvRuntime()
                 });
               }
             }
+            return;
+          }
+          const lastInputAt = Number(this.lastHomeInputAt || 0);
+          const withinPaceWindow = Boolean(
+            this.shouldUseBoundedHomeImageHydration?.() &&
+            lastInputAt > 0 &&
+            Date.now() - lastInputAt < HOME_BOUNDED_HYDRATION_PACE_QUIET_MS
+          );
+          if (withinPaceWindow || Boolean(this.isModernHydrationScrollActive?.())) {
+            // Skip per-frame rAF & timer resets mid-spring during active input;
+            // schedule once per quiet cycle so post-settle rows still hydrate.
+            if (withinPaceWindow && this.homeViewportSettleHydrationTimer) {
+              return;
+            }
+            this.scheduleHomeViewportSettleHydration();
             return;
           }
           if (this.homeViewportScrollFrame) {
@@ -382,9 +402,16 @@ export function createHomeScreenMethods19() {
           }
           this.homeViewportScrollFrame = requestAnimationFrame(() => {
             this.homeViewportScrollFrame = 0;
-            if (this.shouldSuspendModernViewportFocusSync()) {
+            const frameLastInputAt = Number(this.lastHomeInputAt || 0);
+            const frameWithinPaceWindow = Boolean(
+              this.shouldUseBoundedHomeImageHydration?.() &&
+              frameLastInputAt > 0 &&
+              Date.now() - frameLastInputAt < HOME_BOUNDED_HYDRATION_PACE_QUIET_MS
+            );
+            if (this.shouldSuspendModernViewportFocusSync() || frameWithinPaceWindow) {
               // The camera tween's last scroll event lands while it is still
-              // active; without a retry the rows it revealed never hydrate.
+              // active (or inside the frame-pace window); without a retry the
+              // rows it revealed never hydrate.
               this.scheduleHomeViewportSettleHydration();
               return;
             }
@@ -409,17 +436,28 @@ export function createHomeScreenMethods19() {
       if (this.homeViewportSettleHydrationTimer) {
         clearTimeout(this.homeViewportSettleHydrationTimer);
       }
+      const lastInputAt = Number(this.lastHomeInputAt || 0);
+      const paceQuietRemainingMs =
+        this.shouldUseBoundedHomeImageHydration?.() && lastInputAt > 0
+          ? Math.max(0, HOME_BOUNDED_HYDRATION_PACE_QUIET_MS - (Date.now() - lastInputAt))
+          : 0;
+      const delayMs = Math.max(MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs, paceQuietRemainingMs);
       this.homeViewportSettleHydrationTimer = setTimeout(() => {
         this.homeViewportSettleHydrationTimer = null;
         if (!this.container || Router.getCurrent() !== "home") {
           return;
         }
-        if (this.shouldSuspendModernViewportFocusSync()) {
+        const retryLastInputAt = Number(this.lastHomeInputAt || 0);
+        const retryPaceRemainingMs =
+          this.shouldUseBoundedHomeImageHydration?.() && retryLastInputAt > 0
+            ? HOME_BOUNDED_HYDRATION_PACE_QUIET_MS - (Date.now() - retryLastInputAt)
+            : 0;
+        if (this.shouldSuspendModernViewportFocusSync() || retryPaceRemainingMs > 0) {
           this.scheduleHomeViewportSettleHydration();
           return;
         }
-        this.scheduleHomeLazyImageHydration(null, { viewportChanged: true });
-      }, MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs);
+        this.scheduleHomeLazyImageHydration(this.getCurrentFocusedNode?.() || null, { viewportChanged: true });
+      }, delayMs);
     }
   };
 }

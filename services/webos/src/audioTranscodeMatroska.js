@@ -28,7 +28,7 @@ function voidPad(n) {
   }
   throw Error("padding");
 }
-function vint(b, p, signed = false) {
+function vint(b, p, signed) {
   let w = 1;
   for (; w <= 8 && !(b[p] & (1 << (8 - w))); w++);
   if (w > 8 || p + w > b.length) throw Error("vint");
@@ -94,7 +94,7 @@ function trueHdSamples(b) {
     throw Error("truehd-rate");
   return 40;
 }
-function parse(b, start, track, format = "dts") {
+function parse(b, start, track, format) {
   const samples = format === "truehd" ? trueHdSamples : dtsSamples;
   const slots = [],
     input = [];
@@ -138,7 +138,7 @@ function parse(b, start, track, format = "dts") {
         slots.push(previousSlot);
       }
       if (format === "truehd") p.frames.forEach((f, i) => inputPts.push(pts + (i * 40) / 48));
-      input.push(...p.frames);
+      Array.prototype.push.apply(input, p.frames);
       if (first === null) first = pts;
       last = pts + duration;
     }
@@ -202,7 +202,7 @@ function project(ctx, frames, anchor, firstFrame) {
     }
   }
   for (const slot of ctx.slots) {
-    const { e } = slot;
+    const e = slot.e;
     if (slot.drop || slot.crc) {
       voidPad(e.declaredDataEnd - e.start).copy(out, e.start);
       continue;
