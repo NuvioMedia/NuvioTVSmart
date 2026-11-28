@@ -589,7 +589,7 @@ test("scheduleHomeLazyImageHydration avoids eager anchor querySelector and hydra
   assert.equal(g2WrappedNextLine.src, "https://art/g2.jpg");
 });
 
-test("bounded TV hydration and viewport scroll handler defer past 375ms post-input frame-pace window", async () => {
+test("bounded TV hydration and viewport scroll handler defer past 230ms post-input frame-pace window", async () => {
   const { context } = buildCombinedHarness();
   const { row, anchor, firstImg } = makeTrackFixture(context);
   const listeners = new Map();
