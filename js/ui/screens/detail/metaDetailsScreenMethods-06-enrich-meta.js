@@ -1,5 +1,6 @@
 import * as internals from "./metaDetailsScreenContext.js";
 import { addonEpisodeAirDates } from "../../../data/repository/episodeRatingsAlignment.js";
+import { withResolvedTrailerSource } from "../../../core/media/trailerApi.js";
 
 export function createMetaDetailsScreenMethods06() {
   const {
@@ -229,8 +230,12 @@ export function createMetaDetailsScreenMethods06() {
       }
       const settings = TmdbSettingsStore.get();
       const fallbackSource = resolveTrailerSource(meta);
+      const trailerHints = {
+        title: String(meta?.name || "").trim(),
+        year: String(meta?.releaseInfo || "").match(/\b(19|20)\d{2}\b/)?.[0] || ""
+      };
       if (!settings.enabled || !settings.useTrailers || !TMDB_API_KEY) {
-        return fallbackSource;
+        return withResolvedTrailerSource(fallbackSource, trailerHints);
       }
       const itemType = String(meta?.type || this.params?.itemType || "movie");
       const resolutionKey = [meta?.id, itemType, settings.language, settings.enabled, settings.useTrailers].join("|");
@@ -242,7 +247,7 @@ export function createMetaDetailsScreenMethods06() {
           return this.trailerSourceResolutionResult;
         }
       }
-      const resolutionPromise = resolveTmdbTrailerSource(meta, itemType);
+      const resolutionPromise = resolveTmdbTrailerSource(meta, itemType).then((source) => withResolvedTrailerSource(source, trailerHints));
       this.trailerSourceResolutionKey = resolutionKey;
       this.trailerSourceResolutionPromise = resolutionPromise;
       try {

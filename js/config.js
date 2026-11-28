@@ -12,6 +12,7 @@ export const DEVICE_LOGIN_WEB_BASE_URL = String(
 export const YOUTUBE_PROXY_URL = String(
   runtimeEnv.YOUTUBE_PROXY_URL || "youtube-proxy.html"
 ).trim();
+export const TRAILER_API_URL = String(runtimeEnv.TRAILER_API_URL || "").trim();
 export const PARENTAL_GUIDE_API_URL = "https://api.tiffara.com/";
 export const INTRODB_API_URL = String(
   runtimeEnv.INTRODB_API_URL || "https://api.introdb.app/"

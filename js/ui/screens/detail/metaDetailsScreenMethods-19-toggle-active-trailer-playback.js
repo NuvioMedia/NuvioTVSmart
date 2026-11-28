@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 import { shouldContinueTrailerInBackgroundOnBack } from "../../../core/detail/trailerBackPolicy.js";
+import { withResolvedTrailerSource } from "../../../core/media/trailerApi.js";
 import { focusWithoutScroll } from "../../navigation/focusWithoutScroll.js";
 
 export function createMetaDetailsScreenMethods19() {
@@ -299,6 +300,17 @@ export function createMetaDetailsScreenMethods19() {
         if (preferredSource) {
           this.trailerSource = preferredSource;
         }
+      } else if (this.trailerSource?.kind === "youtube") {
+        // Shared trailers come straight from the catalog and skip
+        // resolvePreferredTrailerSource; give them the same resolver path.
+        const resolvedSource = await withResolvedTrailerSource(this.trailerSource, {
+          title: String(this.meta?.name || "").trim(),
+          year: String(this.meta?.releaseInfo || "").match(/\b(19|20)\d{2}\b/)?.[0] || ""
+        });
+        if (token !== this.detailLoadToken || !this.container || (Router?.getCurrent && Router.getCurrent() !== "detail")) {
+          return;
+        }
+        this.trailerSource = resolvedSource;
       }
       if (!this.trailerSource) {
         return;
