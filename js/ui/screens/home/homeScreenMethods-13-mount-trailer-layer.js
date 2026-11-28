@@ -1,5 +1,14 @@
 import * as internals from "./homeScreenContext.js";
 
+// YouTube draws its own startup chrome (title, share, transport controls) even
+// with controls=0 and only hides it a few seconds after playback starts. Keep
+// the layer covered by the backdrop until then so Home previews stay as clean
+// as Android's chromeless trailer player.
+const YOUTUBE_TRAILER_CHROME_SETTLE_MS = 4500;
+// The raw fallback embed has no API signal: its window starts at the iframe
+// load state, which arrives before the player paints.
+const YOUTUBE_FALLBACK_CHROME_SETTLE_MS = 5000;
+
 export function createHomeScreenMethods13() {
   const {
     metaRepository,
@@ -108,6 +117,11 @@ export function createHomeScreenMethods13() {
             if (revealed || !frame.isConnected || frame.parentElement !== container) {
               return;
             }
+            // Focus moved away while the startup chrome was settling: the layer
+            // was paused and hidden, so a late reveal would bring back a still.
+            if (frame.dataset.ambientTrailerPlaying === "false") {
+              return;
+            }
             revealed = true;
             frame.dataset.trailerRevealed = "true";
             if (fallbackTimer) {
@@ -140,7 +154,7 @@ export function createHomeScreenMethods13() {
           }
           if (data.type === "firstFrame") {
             frame.dataset.ambientTrailerPlaying = String(frame.dataset.ambientTrailerLooped !== "true");
-            reveal(150);
+            reveal(YOUTUBE_TRAILER_CHROME_SETTLE_MS);
             return;
           }
           const state = data.type === "state" && data.state && typeof data.state === "object" ? data.state : null;
@@ -162,9 +176,9 @@ export function createHomeScreenMethods13() {
             );
           }
           if (state && Number(state.currentTime || 0) > 0 && state.paused === false) {
-            reveal(150);
+            reveal(YOUTUBE_TRAILER_CHROME_SETTLE_MS);
           } else if (state && state.controllable === false && state.loading === false) {
-            reveal(1200);
+            reveal(YOUTUBE_FALLBACK_CHROME_SETTLE_MS);
           }
         };
         const cleanup = () => {
