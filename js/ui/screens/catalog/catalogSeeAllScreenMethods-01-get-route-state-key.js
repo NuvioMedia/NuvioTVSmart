@@ -304,13 +304,16 @@ export function createCatalogSeeAllScreenMethods01() {
         [row]: Math.max(0, col)
       };
     },
-    resolvePreferredNodeForRow(rowNodes = []) {
+    resolvePreferredNodeForRow(rowNodes = [], preferredCol = undefined) {
       if (!Array.isArray(rowNodes) || !rowNodes.length) {
         return null;
       }
       const rowIndex = Number(rowNodes[0]?.dataset?.navRow || -1);
       const storedIndex = rowIndex >= 0 ? Number(this.rowFocusedIndexByRow?.[rowIndex]) : Number.NaN;
-      const preferredIndex = Number.isFinite(storedIndex) ? storedIndex : 0;
+      const currentCol = preferredCol === undefined || preferredCol === null ? Number.NaN : Number(preferredCol);
+      // Vertical D-pad movement stays in the current grid column, like Discover
+      // and Android TV. The remembered index is only a fallback.
+      const preferredIndex = Number.isFinite(currentCol) ? currentCol : Number.isFinite(storedIndex) ? storedIndex : 0;
       return rowNodes[Math.max(0, Math.min(rowNodes.length - 1, preferredIndex))] || rowNodes[0];
     },
     focusNode(target) {

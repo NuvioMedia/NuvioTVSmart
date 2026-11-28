@@ -59,7 +59,7 @@ export function createCatalogSeeAllScreenMethods02() {
           }
           return true;
         }
-        return this.focusNode(this.resolvePreferredNodeForRow(targetRowNodes)) || true;
+        return this.focusNode(this.resolvePreferredNodeForRow(targetRowNodes, col)) || true;
       }
 
       return false;

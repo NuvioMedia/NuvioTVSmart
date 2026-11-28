@@ -348,9 +348,16 @@ export function createHomeScreenMethods05() {
         [rowKey]: Math.max(0, Number(node.dataset?.navCol || 0))
       };
     },
-    resolvePreferredNodeForRow(rowNodes = [], _fallbackCol = 0) {
+    resolvePreferredNodeForRow(rowNodes = [], fallbackCol = undefined) {
       if (!Array.isArray(rowNodes) || !rowNodes.length) {
         return null;
+      }
+      // Grid layout splits one catalog into several nav rows that share a row key,
+      // so vertical movement keeps the current column there. Classic and Modern
+      // rows scroll horizontally and restore their last focused item instead.
+      const currentCol = fallbackCol === undefined || fallbackCol === null ? Number.NaN : Number(fallbackCol);
+      if (this.layoutMode === "grid" && Number.isFinite(currentCol)) {
+        return rowNodes[Math.max(0, Math.min(rowNodes.length - 1, currentCol))] || rowNodes[0];
       }
       const rowKey = this.getNodeRowKey(rowNodes[0]);
       const storedIndex = rowKey ? Number(this.lastFocusedItemIndexByRowKey?.[rowKey]) : Number.NaN;
