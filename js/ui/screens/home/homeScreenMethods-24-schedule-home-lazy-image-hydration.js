@@ -149,8 +149,10 @@ export function createHomeScreenMethods24() {
             this.shouldUseBoundedHomeImageHydration() && retryLastInputAt > 0
               ? HOME_BOUNDED_HYDRATION_PACE_QUIET_MS - (Date.now() - retryLastInputAt)
               : 0;
+          const hasCameraScrollingClass = Boolean(this.container?.querySelector?.(".is-camera-scrolling"));
           if (
             this.isModernHydrationScrollActive() ||
+            hasCameraScrollingClass ||
             (targetTrack && this.isScrollAnimationActive?.(targetTrack, "x")) ||
             retryPaceRemainingMs > 0
           ) {

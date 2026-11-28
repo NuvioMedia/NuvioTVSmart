@@ -56,7 +56,8 @@ export function createHomeScreenMethods03() {
       if (this.modernVerticalFastScrollState || this._mainVertRaf) {
         return true;
       }
-      return this.isScrollAnimationActive(this.modernCameraFollowLastVerticalContainer, "y");
+      const verticalContainer = this.modernCameraFollowLastVerticalContainer || this.getHomeViewport?.();
+      return this.isScrollAnimationActive(verticalContainer, "y");
     },
     isModernHydrationScrollActive() {
       if (this.layoutMode !== "modern") {
@@ -71,7 +72,17 @@ export function createHomeScreenMethods03() {
       if (this._trackHorizRaf) {
         return true;
       }
-      return this.isScrollAnimationActive(this.modernCameraFollowLastHorizontalContainer, "x");
+      if (this.isScrollAnimationActive(this.modernCameraFollowLastHorizontalContainer, "x")) {
+        return true;
+      }
+      if (this.activeScrollAnimationContainers?.size) {
+        for (const container of this.activeScrollAnimationContainers) {
+          if (this.isScrollAnimationActive(container, "x") || this.isScrollAnimationActive(container, "y")) {
+            return true;
+          }
+        }
+      }
+      return false;
     },
     isSidebarFocusActive() {
       const container = this.container;
