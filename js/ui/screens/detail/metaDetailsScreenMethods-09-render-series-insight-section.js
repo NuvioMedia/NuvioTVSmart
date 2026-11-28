@@ -92,7 +92,7 @@ export function createMetaDetailsScreenMethods09() {
           return `
           <article class="movie-cast-card focusable series-cast-card"
                    data-action="openCastDetail"
-                   data-cast-id="${person.tmdbId || ""}"
+                   data-cast-id="${escapeAttribute(person.tmdbId || "")}"
                    data-cast-key="${escapeHtml(String(person.tmdbId || `${name}:${person.character || ""}`))}"
                    data-cast-name="${escapeHtml(name)}"
                    data-cast-role="${escapeHtml(person.character || "")}"
