@@ -347,7 +347,7 @@ self.onmessage = async (event) => {
           return;
         }
         sniffed = true;
-        const head = concatChunks(chunks, total);
+        const head = chunks[0]?.byteLength >= 30 ? chunks[0] : concatChunks(chunks, total);
         const jpeg = isJpeg(head);
         const webp = jpeg ? null : webpInfo(head);
         if (!jpeg && !webp) {
@@ -388,6 +388,10 @@ self.onmessage = async (event) => {
       throw new Error("animated webp");
     }
     const dimensions = jpeg ? jpegSize(view) : webp;
+    if (dimensions && dimensions.width <= width && dimensions.height <= height) {
+      // Already no larger than the card. Skip decoding before touching a bitmap.
+      throw new Error("already small");
+    }
     const resize = dimensions ? resizeTarget(dimensions.width, dimensions.height, 1280) : null;
     const alpha = Boolean(webp && webp.alpha);
     const out = await runExclusiveDecode(async () => {
@@ -825,6 +829,12 @@ function rescaleWithPool(state, url, { width, height, fit, priority = 2, isStale
         if (!blob && !state.disposed) {
           rememberArtworkFailure(state, key, reason, url);
         }
+        resolve(null);
+        return;
+      }
+      if (job.waiters === 1 && job.isStale?.()) {
+        // Drop completed worker output when its only requester has scrolled off-screen
+        // instead of creating and caching an unused object URL.
         resolve(null);
         return;
       }
