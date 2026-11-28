@@ -100,6 +100,41 @@ export function buildCatalogDisableKey(addonBaseUrl, type, catalogId, catalogNam
   return `${addonBaseUrl}_${type}_${catalogId}_${catalogName}`;
 }
 
+// Home requests only the catalogs it will show, in the saved Home order, so a
+// disabled row never costs a request and never takes a first-batch slot from
+// a visible row. Disabled checks match sortAndFilterRows: either key counts.
+export function selectHomeCatalogDescriptorsToLoad(descriptors = [], homeCatalogPrefs = {}) {
+  const disabledKeys = new Set(
+    Array.isArray(homeCatalogPrefs?.disabled) ? homeCatalogPrefs.disabled : []
+  );
+  const orderIndex = new Map();
+  (Array.isArray(homeCatalogPrefs?.order) ? homeCatalogPrefs.order : []).forEach((key, index) => {
+    if (!orderIndex.has(key)) {
+      orderIndex.set(key, index);
+    }
+  });
+  const unordered = Number.MAX_SAFE_INTEGER;
+  return (Array.isArray(descriptors) ? descriptors : [])
+    .map((descriptor, position) => ({
+      descriptor,
+      position,
+      orderKey: buildCatalogOrderKey(descriptor?.addonId, descriptor?.type, descriptor?.catalogId),
+      disableKey: buildCatalogDisableKey(
+        descriptor?.addonBaseUrl,
+        descriptor?.type,
+        descriptor?.catalogId,
+        descriptor?.catalogName
+      )
+    }))
+    .filter((entry) => !disabledKeys.has(entry.orderKey) && !disabledKeys.has(entry.disableKey))
+    .map((entry) => ({
+      ...entry,
+      rank: orderIndex.has(entry.orderKey) ? orderIndex.get(entry.orderKey) : unordered
+    }))
+    .sort((left, right) => left.rank - right.rank || left.position - right.position)
+    .map((entry) => entry.descriptor);
+}
+
 export function buildCollectionOrderKey(collectionId) {
   const id = String(collectionId || "").trim();
   return id ? `collection_${id}` : "";
