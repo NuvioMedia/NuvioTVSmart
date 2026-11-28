@@ -43,6 +43,9 @@
         var videoId = params.v || "qBg39HCJiTU";
         var startMuted = params.muted === "1";
         var desiredMuted = startMuted;
+        // A parent whose layer stays hidden for a while after the first frame
+        // (Home waits out YouTube's startup chrome) unmutes itself on reveal.
+        var holdMuted = params.hold_muted === "1";
         var unmuteFallbackTimer = null;
         var autoplay = params.autoplay !== "0";
         var loop = params.loop !== "0";
@@ -196,7 +199,9 @@
               currentTime: state.currentTime
             });
             if (!desiredMuted) {
-              unmuteWithAutoplayFallback();
+              if (!holdMuted) {
+                unmuteWithAutoplayFallback();
+              }
               state = getPlayerStatePayload();
             }
           }
@@ -285,6 +290,8 @@
             }
           } else if (command === "setMuted") {
             desiredMuted = Boolean(payload && payload.muted);
+            // An explicit request from the parent replaces the reveal hold.
+            holdMuted = false;
             if (desiredMuted) {
               clearUnmuteFallbackTimer();
               player.mute();

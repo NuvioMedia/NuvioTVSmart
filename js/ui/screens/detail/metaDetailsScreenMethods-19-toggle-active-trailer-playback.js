@@ -255,14 +255,6 @@ export function createMetaDetailsScreenMethods19() {
           ${controlsMarkup}
         `;
       this.cacheTrailerRefs();
-      const mountedVideo = this.trailerUiRefs?.video || null;
-      if (mountedVideo) {
-        mountedVideo.defaultMuted = true;
-        mountedVideo.muted = true;
-        try {
-          mountedVideo.volume = 0;
-        } catch (_) {}
-      }
       if (this.trailerPlaybackMode === "manual") {
         focusWithoutScroll(this.trailerUiRefs?.overlay);
       }

@@ -306,6 +306,34 @@ test("youtube-proxy stays muted until firstFrame (playerState===1 && currentTime
   assert.equal(h.mockPlayer.muted, false);
 });
 
+test("youtube-proxy holds audio for layers that reveal after the chrome settles", async () => {
+  const h = await runYoutubeProxyHarness({
+    search: "?v=dQw4w9WgXcQ&muted=0&autoplay=1&hold_muted=1"
+  });
+  h.playerConfig.events.onReady({ target: h.mockPlayer });
+  h.mockPlayer.playerState = 1;
+  h.mockPlayer.currentTime = 0.25;
+  h.tickIntervals();
+
+  assert.ok(
+    h.posted.some((m) => m.type === "firstFrame"),
+    "firstFrame must still be reported"
+  );
+  assert.equal(
+    h.mockPlayer.unMuteCalls,
+    0,
+    "hold_muted must keep playback silent after the first frame"
+  );
+  const heldState = h.posted.filter((m) => m.type === "state").at(-1);
+  assert.equal(heldState?.state?.muted, true, "state must report the held mute");
+
+  h.sendCommand("setMuted", { muted: false });
+  assert.equal(h.mockPlayer.unMuteCalls, 1, "reveal must unmute through setMuted");
+  assert.equal(h.mockPlayer.muted, false);
+  const revealedState = h.posted.filter((m) => m.type === "state").at(-1);
+  assert.equal(revealedState?.state?.muted, false, "state must report the revealed unmute");
+});
+
 test("youtube-proxy re-mutes and resumes playback if unmuting on firstFrame triggers autoplay policy pause", async () => {
   const h = await runYoutubeProxyHarness({
     search: "?v=dQw4w9WgXcQ&muted=0&autoplay=1",
@@ -335,7 +363,7 @@ const stripModule = (source) =>
     .replace(/^import\s+["'][^"']+["'];\r?\n/gm, "")
     .replace(/^export /gm, "");
 
-test("home mountTrailerLayer reveals YouTube on 0ms, waits for frame readiness for video, unmutes with autoplay fallback, and tracks handoff", async () => {
+test("home mountTrailerLayer holds YouTube audio until the chrome-settled reveal, waits for frame readiness for video, unmutes with autoplay fallback, and tracks handoff", async () => {
   const source13 = stripModule(
     await readFile(
       new URL("../js/ui/screens/home/homeScreenMethods-13-mount-trailer-layer.js", import.meta.url),
@@ -355,10 +383,16 @@ test("home mountTrailerLayer reveals YouTube on 0ms, waits for frame readiness f
     WeakMap,
     HTMLElement: function HTMLElement() {},
     setTimeout: (fn, ms) => {
-      scheduledTimeouts.push(ms);
-      return setTimeout(fn, ms);
+      const timer = { fn, ms };
+      scheduledTimeouts.push(timer);
+      return timer;
     },
-    clearTimeout,
+    clearTimeout: (timer) => {
+      const index = scheduledTimeouts.indexOf(timer);
+      if (index >= 0) {
+        scheduledTimeouts.splice(index, 1);
+      }
+    },
     requestAnimationFrame: (fn) => setTimeout(fn, 0),
     internals: {
       metaRepository: {},
@@ -386,7 +420,7 @@ test("home mountTrailerLayer reveals YouTube on 0ms, waits for frame readiness f
   context.globalThis = context;
   vm.runInContext(`${source13}\nglobalThis.api = createHomeScreenMethods13();`, context);
 
-  // Part A: YouTube reveal uses 0ms delay (not 150ms).
+  // Part A: unmuted YouTube layers stay muted, and hidden, until the chrome settles.
   const ytContainer = createMockElement("div");
   const screen = Object.assign(Object.create(context.api), {
     clearTrailerLayer() {},
@@ -397,26 +431,53 @@ test("home mountTrailerLayer reveals YouTube on 0ms, waits for frame readiness f
   });
 
   let ytReady = false;
+  const posted = [];
   screen.mountTrailerLayer(
     ytContainer,
-    { kind: "youtube", ytId: "abc123", embedUrl: "https://proxy.example.test/?v=abc123" },
+    {
+      kind: "youtube",
+      ytId: "abc123",
+      embedUrl: "https://proxy.example.test/?v=abc123",
+      muted: false
+    },
     () => {
       ytReady = true;
     }
   );
   const frame = ytContainer.querySelector("iframe");
   assert.ok(frame);
-  frame.contentWindow = {};
+  frame.contentWindow = { postMessage: (message) => posted.push(message) };
   scheduledTimeouts.length = 0;
 
   messageListener({
     source: frame.contentWindow,
     data: { source: "nuvio-youtube-proxy", type: "firstFrame", videoId: "abc123", currentTime: 0.2 }
   });
-  assert.equal(scheduledTimeouts[0], 0, "firstFrame reveal must use 0ms delay instead of 150ms");
-  await new Promise((r) => setTimeout(r, 15));
+  assert.equal(scheduledTimeouts.length, 1, "firstFrame must schedule the chrome-settled reveal");
+  assert.equal(scheduledTimeouts[0].ms, 4500, "reveal must wait for YouTube's startup chrome");
+  assert.equal(
+    ytContainer.classList.contains("is-active"),
+    false,
+    "layer must stay hidden while muted"
+  );
+  assert.equal(ytReady, false);
+  assert.equal(posted.length, 0, "audio must stay muted until the visual reveal");
+
+  scheduledTimeouts.shift().fn();
   assert.equal(ytReady, true);
   assert.equal(ytContainer.classList.contains("is-active"), true);
+  assert.equal(
+    JSON.stringify(posted),
+    JSON.stringify([
+      {
+        source: "nuvio-detail-trailer",
+        type: "command",
+        command: "setMuted",
+        payload: { muted: false }
+      }
+    ]),
+    "unmute must happen with the visual reveal"
+  );
 
   // Part B: <video> starts muted, ignores loadedmetadata/canplay/loadeddata, activates on frame, unmutes, and tracks handoff.
   const card = createMockElement("div");
@@ -477,7 +538,6 @@ test("home mountTrailerLayer reveals YouTube on 0ms, waits for frame readiness f
   assert.ok(capturedVideo);
   assert.equal(capturedVideo.defaultMuted, true, "home <video> must initialize defaultMuted=true");
   assert.equal(capturedVideo.muted, true, "home <video> must initialize muted=true");
-  assert.equal(capturedVideo.volume, 0, "home <video> must initialize volume=0");
   assert.equal(capturedVideo.hasAttribute("muted"), true, "home <video> must have muted attribute");
 
   // Premature readiness events and resolved play() promise must NOT activate or unmute.
@@ -506,7 +566,6 @@ test("home mountTrailerLayer reveals YouTube on 0ms, waits for frame readiness f
   );
   assert.equal(videoReady, true);
   assert.equal(capturedVideo.muted, false, "must unmute on reveal when source.muted === false");
-  assert.equal(capturedVideo.volume, 1);
 
   // timeupdate populates homeTrailerHandoff for kind:"video".
   capturedVideo.currentTime = 4.5;
@@ -553,7 +612,6 @@ test("home mountTrailerLayer reveals YouTube on 0ms, waits for frame readiness f
   policyRvfc = "fired";
   triggerPolicyRvfc();
   assert.equal(policyVideo.muted, true, "must revert to muted if unmuting triggers browser pause");
-  assert.equal(policyVideo.volume, 0);
   assert.ok(policyPlayCalls >= 2, "must retry video.play() after reverting to muted");
 });
 
@@ -684,7 +742,6 @@ test("detail syncTrailerDom + bindTrailerVideoEvents starts <video> muted and un
   mockVideo.dispatchEvent("playing");
   assert.equal(screen.trailerVisualReady, true);
   assert.equal(mockVideo.muted, false, "detail <video> must unmute when markReady fires");
-  assert.equal(mockVideo.volume, 1);
   assert.equal(screen.trailerMuted, false);
 
   // Autoplay policy pause fallback on detail <video> unmute.
@@ -710,7 +767,6 @@ test("detail syncTrailerDom + bindTrailerVideoEvents starts <video> muted and un
     true,
     "detail <video> must revert to muted on autoplay policy pause"
   );
-  assert.equal(mockVideo.volume, 0);
   assert.equal(screen.trailerMuted, true);
   assert.ok(
     detailPolicyPlayCalls >= 1,

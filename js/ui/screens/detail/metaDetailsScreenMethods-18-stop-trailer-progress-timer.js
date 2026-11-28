@@ -228,10 +228,30 @@ export function createMetaDetailsScreenMethods18() {
         return;
       }
       this.detachTrailerMediaListeners();
-      let unmuteFallbackTimer = null;
       const sync = () => {
         this.applyTrailerVideoSubtitleState(video);
         this.updateTrailerOverlay();
+      };
+      const revertToMuted = () => {
+        this.trailerMuted = true;
+        video.muted = true;
+        video.setAttribute?.("muted", "");
+        const retryPlay = video.play?.();
+        if (retryPlay?.catch) {
+          retryPlay.catch(() => {});
+        }
+        this.updateTrailerOverlay();
+      };
+      const settleUnmute = () => {
+        this.trailerUnmuteFallbackTimer = null;
+        if (!this.isTrailerPlaying || video.isConnected === false || video.muted) {
+          return;
+        }
+        // Autoplay policy paused the unmuted trailer: resume it muted so the
+        // reveal never lands on a frozen frame.
+        if (video.paused) {
+          revertToMuted();
+        }
       };
       const markReady = () => {
         if (!this.isTrailerPlaying || video.paused || !video.isConnected) {
@@ -240,53 +260,16 @@ export function createMetaDetailsScreenMethods18() {
         const wasReady = Boolean(this.trailerVisualReady);
         this.markTrailerVisualReady();
         if (!wasReady && !this.trailerMuted) {
-          let policyReverted = false;
-          const revertToMuted = () => {
-            if (policyReverted) {
-              return;
-            }
-            policyReverted = true;
-            this.trailerMuted = true;
-            video.muted = true;
-            video.setAttribute?.("muted", "");
-            try {
-              video.volume = 0;
-            } catch (_) {}
-            const retryPlay = video.play?.();
-            if (retryPlay?.catch) {
-              retryPlay.catch(() => {});
-            }
-            this.updateTrailerOverlay();
-          };
-          const onPolicyPause = () => {
-            if (!this.isTrailerPlaying || video.isConnected === false) {
-              return;
-            }
-            revertToMuted();
-          };
-          video.addEventListener("pause", onPolicyPause, { once: true });
-          unmuteFallbackTimer = setTimeout(() => {
-            unmuteFallbackTimer = null;
-            video.removeEventListener?.("pause", onPolicyPause);
-          }, 120);
           video.muted = false;
           video.removeAttribute?.("muted");
-          try {
-            video.volume = 1;
-          } catch (_) {}
           if (video.paused) {
-            clearTimeout(unmuteFallbackTimer);
-            unmuteFallbackTimer = null;
-            video.removeEventListener?.("pause", onPolicyPause);
-            revertToMuted();
+            settleUnmute();
+          } else {
+            clearTimeout(this.trailerUnmuteFallbackTimer);
+            this.trailerUnmuteFallbackTimer = setTimeout(settleUnmute, 120);
           }
         }
         this.updateTrailerOverlay();
-      };
-      const handleTimeUpdateForReady = () => {
-        if (!this.trailerVisualReady && Number(video.currentTime || 0) > 0 && Number(video.readyState || 0) >= 2 && !video.paused) {
-          markReady();
-        }
       };
       const handleEnded = () => {
         if (this.isTrailerPlaying) {
@@ -315,24 +298,11 @@ export function createMetaDetailsScreenMethods18() {
         this.trailerMediaListeners.push({ target: video, eventName: "playing", handler: markReady });
       }
       [
-        ["timeupdate", handleTimeUpdateForReady],
         ["ended", handleEnded],
         ["error", handleError]
       ].forEach(([eventName, handler]) => {
         video.addEventListener(eventName, handler);
         this.trailerMediaListeners.push({ target: video, eventName, handler });
-      });
-      this.trailerMediaListeners.push({
-        target: {
-          removeEventListener: () => {
-            if (unmuteFallbackTimer) {
-              clearTimeout(unmuteFallbackTimer);
-              unmuteFallbackTimer = null;
-            }
-          }
-        },
-        eventName: "cleanup",
-        handler: () => {}
       });
     },
     markTrailerVisualReady() {
