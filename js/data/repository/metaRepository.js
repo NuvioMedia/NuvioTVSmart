@@ -26,6 +26,25 @@ function firstNonBlank(...values) {
   return null;
 }
 
+// Android's MetaMapper reads castMembers from app_extras.cast, which is where
+// add-ons such as AIOMetadata put the people list.
+function mapAppExtrasCast(people) {
+  return (Array.isArray(people) ? people : [])
+    .map((person) => {
+      const name = String(person?.name ?? "").trim();
+      if (!name) {
+        return null;
+      }
+      return {
+        name,
+        character: String(person?.character ?? "").trim(),
+        photo: String(person?.photo ?? "").trim(),
+        tmdbId: person?.tmdbId ?? null
+      };
+    })
+    .filter(Boolean);
+}
+
 class MetaRepository {
   constructor() {
     this.metaCache = new BoundedCache(MAX_META_CACHE_ENTRIES);
@@ -347,6 +366,7 @@ class MetaRepository {
         : meta.appExtras && typeof meta.appExtras === "object" && !Array.isArray(meta.appExtras)
           ? meta.appExtras
           : {};
+    const appExtrasCast = mapAppExtrasCast(appExtras.cast);
 
     return {
       ...meta,
@@ -362,6 +382,10 @@ class MetaRepository {
         : [],
       videos: Array.isArray(meta.videos) ? meta.videos : [],
       releaseInfo: normalizeDisplayText(meta.releaseInfo || ""),
+      castMembers:
+        Array.isArray(meta.castMembers) && meta.castMembers.length
+          ? meta.castMembers
+          : appExtrasCast,
       ageRating: firstNonBlank(
         appExtras.certificationLocal,
         appExtras.certification_local,
