@@ -186,7 +186,45 @@ test("renderCompanyLogosSection keeps an addon company logo URL inside the src a
   const logo = $(".detail-company-card img");
   assert.equal(logo.length, 1);
   assert.equal(logo.attr("src"), ADDON_URL_PAYLOAD);
-  assert.equal(logo.attr("onerror"), undefined);
+  assert.doesNotMatch(
+    String(logo.attr("onerror") || ""),
+    /alert/,
+    "the logo URL must not reach the error handler"
+  );
+});
+
+test("renderCompanyLogosSection keeps the company name as a hidden fallback for a failed logo", () => {
+  const methods = createMetaDetailsScreenMethods16();
+  const html = methods.renderCompanyLogosSection([
+    { name: "Acme <Studios>", logo: "https://image.tmdb.org/t/p/w500/acme.png" },
+    { name: "", logo: "/nameless.png" },
+    { name: "Text Only", logo: "" }
+  ]);
+  const $ = cheerio.load(html);
+  const cards = $(".detail-company-card");
+  assert.equal(cards.length, 3);
+
+  const withLogo = cards.eq(0);
+  const fallback = withLogo.find("img + span");
+  assert.equal(fallback.length, 1, "a logo card must carry its name right after the image");
+  assert.equal(fallback.text(), "Acme <Studios>");
+  assert.equal(fallback.attr("hidden"), "hidden");
+
+  const runErrorHandler = (image) => new Function(withLogo.find("img").attr("onerror")).call(image);
+  const span = { hidden: true };
+  let removed = false;
+  runErrorHandler({
+    nextElementSibling: span,
+    remove() {
+      removed = true;
+    }
+  });
+  assert.equal(span.hidden, false, "a failed logo must reveal the company name");
+  assert.equal(removed, true, "a failed logo must not stay as a blank placeholder");
+
+  assert.equal(cards.eq(1).find("span").length, 0, "a nameless logo has no fallback text to show");
+  assert.equal(cards.eq(2).find("img").length, 0);
+  assert.equal(cards.eq(2).find("span").attr("hidden"), undefined);
 });
 
 test("stream chooser keeps an addon logo URL inside the src attribute", () => {
