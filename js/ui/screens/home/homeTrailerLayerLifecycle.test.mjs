@@ -151,6 +151,44 @@ test("a later key never postpones a pending trailer cleanup", () => {
   assert.deepEqual(scheduled, [mounted]);
 });
 
+test("later focus moves never slide a scheduled trailer cleanup deadline", () => {
+  const screen = makeScreen(buildContext());
+  const container = makeContainer("https://www.youtube.com/embed/abc");
+  screen.clearTrailerLayer = () => {};
+
+  screen.scheduleTrailerLayerCleanup(container);
+  const firstTimer = screen.homeTrailerLayerCleanupTimers.get(container).timeoutId;
+
+  // collapseFocusedPoster calls this on every D-pad move.
+  screen.scheduleTrailerLayerCleanup(container);
+  screen.scheduleTrailerLayerCleanup(container);
+
+  assert.equal(
+    screen.homeTrailerLayerCleanupTimers.get(container).timeoutId,
+    firstTimer,
+    "a pending cleanup must keep its original deadline"
+  );
+  screen.cancelTrailerLayerCleanup(container);
+});
+
+test("empty inactive trailer layers do not schedule a cleanup", () => {
+  const screen = makeScreen(buildContext());
+  const classes = new Set();
+  const emptyLayer = {
+    classList: {
+      add: (name) => classes.add(name),
+      remove: (...names) => names.forEach((name) => classes.delete(name)),
+      contains: (name) => classes.has(name)
+    },
+    firstElementChild: null,
+    querySelector: () => null
+  };
+
+  screen.scheduleTrailerLayerCleanup(emptyLayer);
+
+  assert.equal(screen.homeTrailerLayerCleanupTimers.has(emptyLayer), false);
+});
+
 test("a trailer that has not shown a frame is dropped when focus moves, on any TV", async () => {
   const context = buildContext();
   const screen = makeScreen(context);
