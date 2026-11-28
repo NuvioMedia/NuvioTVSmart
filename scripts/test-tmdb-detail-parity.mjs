@@ -71,7 +71,14 @@ async function setup() {
             },
             ({ path }) => {
               const contents = path.endsWith("config.js")
-                ? 'export const TMDB_API_KEY = "fixture-key";'
+                ? `export const TMDB_API_KEY = "fixture-key";
+export const TRAILER_API_URL = "";
+export const AVATAR_PUBLIC_BASE_URL = "";
+export const DEVICE_LOGIN_WEB_BASE_URL = "";
+export const SUPABASE_ANON_KEY = "";
+export const SUPABASE_FALLBACK_URL = "";
+export const SUPABASE_URL = "";
+export const TV_LOGIN_WEB_BASE_URL = "";`
                 : path.endsWith("tmdbSettingsStore.js")
                   ? "export const { TmdbSettingsStore, normalizeTmdbLanguageCode } = fixtures;"
                   : path.endsWith("pluginServiceClient.js")
@@ -280,7 +287,13 @@ test("season failures are isolated and concurrency is limited to four like Andro
     peak = Math.max(peak, active);
     await Promise.resolve();
     active--;
-    if (url.pathname.endsWith("/2")) throw Error("offline");
+    if (url.pathname.endsWith("/2")) {
+      return {
+        get episodes() {
+          throw Error("offline");
+        }
+      };
+    }
     return { episodes: [{ episode_number: 1, name: url.pathname.split("/").at(-1) }] };
   };
   const episodes = await TmdbMetadataService.fetchEpisodeEnrichment({
@@ -453,6 +466,7 @@ async function loadScreen(
     maybeAutoOpenContinueWatchingStream() {},
     maybePlayOnLoad() {},
     refreshTrailerSource() {},
+    refreshRatingSource() {},
     loadTraktComments() {},
     fetchMoreLikeThis: async () => [],
     loadMdbListRatings() {},

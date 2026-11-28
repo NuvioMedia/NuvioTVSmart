@@ -571,7 +571,8 @@ const frameScreen = {
   warmBitmapSubtitleSharedResources() {},
   setLoadingLogoFillTarget() {},
   isStartupGateReleaseReady: () => false,
-  clearPlaybackStallGuard() {}
+  clearPlaybackStallGuard() {},
+  resetNextEpisodeCardDismissal() {}
 };
 assert.equal(frameMethods.markPlaybackPresentedAfterAdvance.call(frameScreen, 0), false);
 assert.equal(frameStarts, 0);
