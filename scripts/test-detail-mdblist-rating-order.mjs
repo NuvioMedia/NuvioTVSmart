@@ -11,7 +11,10 @@ globalThis.localStorage = {
   }
 };
 globalThis.window = globalThis;
-globalThis.navigator = { userAgent: "node" };
+Object.defineProperty(globalThis, "navigator", {
+  value: { userAgent: "node" },
+  configurable: true
+});
 globalThis.document = {
   documentElement: { lang: "en" },
   addEventListener() {},

@@ -23,13 +23,13 @@ test("encoded shape overrides landscape artwork and preserves original fallback"
   assert.equal(result.poster, "https://posters.test/landscape/tt1234");
   assert.equal(result.rawPosterUrl, "original");
   assert.equal(result.rawLandscapePosterUrl, "wide");
-  assert.equal(
-    customPosterForItem(item, "home", "landscape", {
-      ...settings,
-      customPosterUrlPattern: "https://posters.test/{imdb_id}"
-    }),
-    item
-  );
+  const fallback = customPosterForItem(item, "home", "landscape", {
+    ...settings,
+    customPosterUrlPattern: "https://posters.test/{imdb_id}"
+  });
+  assert.equal(fallback.poster, "original");
+  assert.equal(fallback.landscapePoster, "wide");
+  assert.equal(fallback.rawPosterUrl, undefined);
 });
 
 test("language matching removes only media titles and keeps genuine repeated tags", () => {
