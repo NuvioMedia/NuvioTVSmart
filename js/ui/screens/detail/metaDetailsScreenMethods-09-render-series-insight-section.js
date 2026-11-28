@@ -80,7 +80,7 @@ export function createMetaDetailsScreenMethods09() {
     },
     renderSeriesCastTrack(kind = "series") {
       if (!Array.isArray(this.castItems) || !this.castItems.length) {
-        return `<div class="series-insight-empty">No cast information.</div>`;
+        return `<div class="series-insight-empty">${t("detail.noCast", {}, "No cast information.")}</div>`;
       }
       const className = kind === "movie" ? "movie-cast-track" : "series-cast-track";
       const cards = this.castItems

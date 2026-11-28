@@ -2372,6 +2372,7 @@
     <string name="collections_valid_summary">%1$d colecție(i), %2$d dosar(e)</string>
     <string name="collections_confirm_import">Confirmă importul</string>
     <string name="collections_folder_count">%1$d dosar(e)</string>
+    <string name="collections_folder_not_found">Folderul colecției nu a fost găsit.</string>
     <string name="collections_editor_row_title">Titlul rândului</string>
     <string name="collections_editor_save">Salvează</string>
     <string name="collections_editor_backdrop">Imagine de fundal</string>
@@ -2914,6 +2915,7 @@
     <string name="detail.trailerControlsHint">OK Redare/Pauză  STÂNGA/DREAPTA Căutare  SUS/JOS Audio  ÎNAPOI Închidere</string>
     <string name="detail.trailerFallbackHint">Folosiți butonul „Înapoi” pentru a închide trailerul</string>
     <string name="detail.creatorCast">Creator și Distribuție</string>
+    <string name="detail.noCast">Nu există informații despre distribuție.</string>
     <string name="detail.ratings">Evaluări</string>
     <string name="detail.moreLikeThis">Alte asemenea</string>
     <string name="home.continueWatching">Continuă vizionarea</string>
@@ -3345,7 +3347,7 @@
     <string name="profile_copy_settings_credentials_title">Copy credentials from %1$s?</string>
     <string name="profile_copy_settings_success_title">Settings copied</string>
     <string name="profile_copy_settings_error_title">Could not copy settings</string>
-    <string name="common.done">Done</string>
+    <string name="common.done">Gata</string>
     <string name="settings_stream_badges_in_player_title">Show in player</string>
     <string name="settings_stream_badges_in_player_description">Show badges for the video and audio that is playing under the player title. Needs a badge pack that matches plain text, like 2160p or Atmos.</string>
     <string name="settings_stream_player_badges_title">Player badges</string>

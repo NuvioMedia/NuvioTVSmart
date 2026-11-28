@@ -253,7 +253,7 @@ export const CatalogOrderScreen = {
                     class="catalog-order-action catalog-order-reorder ${reorderLocked ? "is-disabled" : "catalog-order-focusable"}"
                     ${reorderLocked ? 'tabindex="-1" aria-disabled="true"' : `data-row="${index}" data-col="0" data-action="${isMoving ? "done" : "reorder"}" data-key="${escapeHtml(item.key)}" tabindex="-1"`}>
               <span class="material-icons" aria-hidden="true">${isMoving ? "check" : "reorder"}</span>
-              ${isMoving ? `<span class="catalog-order-done-label">Done</span>` : ""}
+              ${isMoving ? `<span class="catalog-order-done-label">${escapeHtml(t("common.done", "Done"))}</span>` : ""}
             </button>`;
 
         return `
@@ -265,7 +265,7 @@ export const CatalogOrderScreen = {
                 ? `${item.addonName} • ${t("catalog_order_pinned_to_top", "Pinned to top")}`
                 : item.addonName
             )}</p>
-            ${item.isDisabled ? '<p class="catalog-order-card-disabled">Disabled on Home</p>' : ""}
+            ${item.isDisabled ? `<p class="catalog-order-card-disabled">${escapeHtml(t("catalog_order_disabled_on_home", "Disabled on Home"))}</p>` : ""}
           </div>
           <div class="catalog-order-card-actions">
             ${reorderControl}
@@ -274,7 +274,7 @@ export const CatalogOrderScreen = {
                     ${reorderLocked ? 'tabindex="-1" aria-disabled="true"' : `data-row="${index}" data-col="1"`}
                     data-action="toggle"
                     data-disable-key="${escapeHtml(item.disableKey)}"
-                    tabindex="-1">${item.isDisabled ? "Enable" : "Disable"}</button>
+                    tabindex="-1">${escapeHtml(item.isDisabled ? t("catalog_order_enable", "Enable") : t("catalog_order_disable", "Disable"))}</button>
           </div>
         </article>
       `;
@@ -284,10 +284,10 @@ export const CatalogOrderScreen = {
     this.container.innerHTML = `
       <div class="catalog-order-shell">
         <main class="catalog-order-main">
-          <h1 class="catalog-order-title">Reorder Home Catalogs</h1>
-          <p class="catalog-order-subtitle">This controls catalog row order on Home (Classic + Modern + Grid).</p>
+          <h1 class="catalog-order-title">${escapeHtml(t("catalog_order_title", "Reorder Home Catalogs"))}</h1>
+          <p class="catalog-order-subtitle">${escapeHtml(t("catalog_order_subtitle", "This controls catalog row order on Home (Classic + Modern + Grid)."))}</p>
           <section class="catalog-order-list">
-            ${this.model.items.length ? itemsHtml : '<p class="catalog-order-empty">No home catalogs available yet.</p>'}
+            ${this.model.items.length ? itemsHtml : `<p class="catalog-order-empty">${escapeHtml(t("catalog_order_empty", "No home catalogs available yet."))}</p>`}
           </section>
         </main>
         <div class="catalog-order-pinned-notice hidden" role="status">
@@ -411,11 +411,11 @@ export const CatalogOrderScreen = {
     this.container.innerHTML = `
       <div class="catalog-order-shell">
         <main class="catalog-order-main">
-          <h1 class="catalog-order-title">Reorder Home Catalogs</h1>
-          <p class="catalog-order-subtitle">This controls catalog row order on Home (Classic + Modern + Grid).</p>
+          <h1 class="catalog-order-title">${escapeHtml(t("catalog_order_title", "Reorder Home Catalogs"))}</h1>
+          <p class="catalog-order-subtitle">${escapeHtml(t("catalog_order_subtitle", "This controls catalog row order on Home (Classic + Modern + Grid)."))}</p>
           <section class="catalog-order-list catalog-order-loading">
             ${renderLoadingIndicator()}
-            <span>Loading...</span>
+            <span>${escapeHtml(t("common.loading", "Loading..."))}</span>
           </section>
         </main>
       </div>

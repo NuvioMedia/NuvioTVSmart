@@ -22,7 +22,8 @@ export function createFolderDetailScreenMethods01() {
     buildAddonTabLabel,
     buildTmdbTabLabel,
     buildTraktTabLabel,
-    buildFolderSourceKey
+    buildFolderSourceKey,
+    I18n
   } = internals;
 
   return {
@@ -171,7 +172,7 @@ export function createFolderDetailScreenMethods01() {
       this.heroItem = null;
 
       if (!this.collection || !this.folder) {
-        this.container.innerHTML = `<div class="seeall-shell"><div class="seeall-empty">Collection folder not found.</div></div>`;
+        this.container.innerHTML = `<div class="seeall-shell"><div class="seeall-empty">${escapeHtml(I18n.t("collections_folder_not_found", {}, { fallback: "Collection folder not found." }))}</div></div>`;
         return;
       }
 
@@ -298,7 +299,7 @@ export function createFolderDetailScreenMethods01() {
             </header>
             <div class="seeall-loading">
               ${renderLoadingIndicator()}
-              <span>Loading...</span>
+              <span>${escapeHtml(I18n.t("common.loading", {}, { fallback: "Loading..." }))}</span>
             </div>
           </div>
         `;
