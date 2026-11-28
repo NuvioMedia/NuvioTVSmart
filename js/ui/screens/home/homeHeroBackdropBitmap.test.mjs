@@ -99,7 +99,8 @@ function setup(results) {
     prepareHeroImageEnter: (node, enterClass) => {
       node.classList.remove("is-visible");
       node.classList.add(enterClass);
-    }
+    },
+    restoreHeroImageTransition: () => {}
   });
   vm.runInContext(source, context);
   const wrap = new FakeElement("div");
@@ -110,7 +111,9 @@ function setup(results) {
   return { swap: context.animateHeroBackdropSwap, wrap, image };
 }
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 5));
+// The rAF steps are setTimeout callbacks in this harness, so give the queued
+// frames and the crossfade timer room to run under a loaded test runner.
+const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 test("bitmap backdrops crossfade over the previous artwork and keep the <img> as anchor", async () => {
   const bitmapB = { width: 1920, height: 1080 };

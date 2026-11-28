@@ -1,6 +1,6 @@
 import * as internals from "./homeScreenContext.js";
 import { resetHomeArtworkRescaler } from "../../images/tvPosterRescaler.js";
-import { resetHeroLogoRescaleCache } from "./homeScreenHelpers-02-extract-release-date-text.js";
+import { resetHeroArtworkWorker, resetHeroLogoRescaleCache } from "./homeScreenHelpers-02-extract-release-date-text.js";
 
 export function createHomeScreenMethods30() {
   const { ScreenUtils, Platform } = internals;
@@ -78,6 +78,9 @@ export function createHomeScreenMethods30() {
       }
       this.endModernVerticalFastScroll({ land: false });
       this.stopHeroRotation();
+      // Leaving Home (another route, playback or sign-out) must not leave the
+      // hero decode worker parked next to the player's video buffer.
+      resetHeroArtworkWorker();
       if (this.heroDescriptionAutoScrollFrame) {
         cancelAnimationFrame(this.heroDescriptionAutoScrollFrame);
         this.heroDescriptionAutoScrollFrame = 0;

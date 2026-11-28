@@ -34,6 +34,7 @@ function setupHome() {
     registerHomeDomNodes: () => {},
     resetHomeArtworkRescaler: () => {},
     resetHeroLogoRescaleCache: () => {},
+    resetHeroArtworkWorker: () => {},
     createHeroDescriptionAutoScroller: () => ({
       apply: (node, enabled) => applyCalls.push({ node, enabled }),
       stop: () => {
