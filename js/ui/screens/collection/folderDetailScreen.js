@@ -33,6 +33,7 @@ import {
   renderTitleWatchedBadge
 } from "../../components/watchedTitleBadge.js";
 import { renderLoadingIndicator } from "../../components/loadingIndicator.js";
+import { I18n } from "../../../i18n/index.js";
 import { createFolderDetailScreenMethods01 } from "./folderDetailScreenMethods-01-get-route-state-key.js";
 import { createFolderDetailScreenMethods02 } from "./folderDetailScreenMethods-02-load-tab.js";
 import { createFolderDetailScreenMethods03 } from "./folderDetailScreenMethods-03-render.js";
@@ -73,7 +74,8 @@ export {
   buildWatchedTitleIdSet,
   isTitleItemWatched,
   renderTitleWatchedBadge,
-  renderLoadingIndicator
+  renderLoadingIndicator,
+  I18n
 };
 export * from "./folderDetailScreenHelpers-01-tmdb-api-url.js";
 export * from "./folderDetailScreenHelpers-02-build-fallback-streaming-sources.js";

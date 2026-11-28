@@ -23,7 +23,8 @@ export function createFolderDetailScreenMethods03() {
     buildHeroDisplay,
     buildFolderHeroSeed,
     sourceType,
-    buildFolderSourceRows
+    buildFolderSourceRows,
+    I18n
   } = internals;
 
   return {
@@ -127,7 +128,7 @@ export function createFolderDetailScreenMethods03() {
             ? `
               <div class="seeall-loading folder-row-loading">
                 ${renderLoadingIndicator()}
-                <span>Loading...</span>
+                <span>${escapeHtml(I18n.t("common.loading", {}, { fallback: "Loading..." }))}</span>
               </div>
             `
             : "";
@@ -180,7 +181,7 @@ export function createFolderDetailScreenMethods03() {
                   ? `
                 <div class="seeall-loading">
                   ${renderLoadingIndicator()}
-                  <span>Loading...</span>
+                  <span>${escapeHtml(I18n.t("common.loading", {}, { fallback: "Loading..." }))}</span>
                 </div>
               `
                   : ""

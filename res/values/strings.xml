@@ -2854,6 +2854,7 @@
     <string name="detail.trailerControlsHint">OK Play/Pause  LEFT/RIGHT Seek  UP/DOWN Audio  BACK Close</string>
     <string name="detail.trailerFallbackHint">Use back to close the trailer</string>
     <string name="detail.creatorCast">Creator and Cast</string>
+    <string name="detail.noCast">No cast information.</string>
     <string name="detail.ratings">Ratings</string>
     <string name="detail.moreLikeThis">More Like This</string>
     <string name="home.continueWatching">Continue Watching</string>
