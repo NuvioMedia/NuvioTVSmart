@@ -234,6 +234,7 @@ export function createHomeScreenMethods02() {
       }
 
       const startTime = performance.now();
+      let lastWrittenPosition = Math.round(startValue);
       const tick = (now) => {
         if (container.isConnected === false) {
           existing[key] = null;
@@ -243,7 +244,11 @@ export function createHomeScreenMethods02() {
           return;
         }
         const progress = Math.min(1, (now - startTime) / effectiveDuration);
-        container[property] = Math.round(startValue + (nextValue - startValue) * easing(progress));
+        const nextRounded = Math.round(startValue + (nextValue - startValue) * easing(progress));
+        if (nextRounded !== lastWrittenPosition) {
+          container[property] = nextRounded;
+          lastWrittenPosition = nextRounded;
+        }
         if (progress < 1) {
           existing[key] = requestAnimationFrame(tick);
           map.set(container, existing);
@@ -288,34 +293,45 @@ export function createHomeScreenMethods02() {
         tweenMap.set(container, tweenState);
       }
 
+      const isTvRuntime = Boolean(getTvRuntimePerformanceProfile()?.isTvRuntime);
+      const useFastTvSpring = isTvRuntime && options?.stiffness == null;
       const springMap = this.springScrollAnimations || (this.springScrollAnimations = new WeakMap());
       const existing = springMap.get(container) || {};
       const active = existing[key];
       if (active) {
         active.target = nextValue;
-        active.stiffness = Number(options?.stiffness ?? active.stiffness ?? MODERN_HOME_CONSTANTS.springScrollStiffness);
-        active.dampingRatio = Number(options?.dampingRatio ?? active.dampingRatio ?? MODERN_HOME_CONSTANTS.springScrollDampingRatio);
-        active.precision = Number(options?.precision ?? active.precision ?? 0.5);
-        active.velocityEpsilon = Number(options?.velocityEpsilon ?? active.velocityEpsilon ?? 0.5);
+        active.stiffness = Number(
+          options?.stiffness ?? (useFastTvSpring ? 1100 : (active.stiffness ?? MODERN_HOME_CONSTANTS.springScrollStiffness))
+        );
+        active.dampingRatio = Number(
+          options?.dampingRatio ?? (useFastTvSpring ? 1.0 : (active.dampingRatio ?? MODERN_HOME_CONSTANTS.springScrollDampingRatio))
+        );
+        active.precision = Number(options?.precision ?? (useFastTvSpring ? 2 : (active.precision ?? 1)));
+        active.velocityEpsilon = Number(options?.velocityEpsilon ?? (useFastTvSpring ? 55 : (active.velocityEpsilon ?? 12)));
         active.damping = 2 * active.dampingRatio * Math.sqrt(active.stiffness);
+        if (Math.abs(nextValue - active.position) > 1) {
+          markCameraScrollActive(container);
+        }
         springMap.set(container, existing);
         return;
       }
 
-      const stiffness = Number(options?.stiffness ?? MODERN_HOME_CONSTANTS.springScrollStiffness);
-      const dampingRatio = Number(options?.dampingRatio ?? MODERN_HOME_CONSTANTS.springScrollDampingRatio);
+      const stiffness = Number(options?.stiffness ?? (useFastTvSpring ? 1100 : MODERN_HOME_CONSTANTS.springScrollStiffness));
+      const dampingRatio = Number(options?.dampingRatio ?? (useFastTvSpring ? 1.0 : MODERN_HOME_CONSTANTS.springScrollDampingRatio));
+      const initialPosition = Number(container[property] || 0);
 
       const state = {
         target: nextValue,
-        position: Number(container[property] || 0),
+        position: initialPosition,
+        lastWrittenPosition: Math.round(initialPosition),
         velocity: 0,
         raf: null,
         lastTime: performance.now(),
         stiffness,
         dampingRatio,
         damping: 2 * dampingRatio * Math.sqrt(stiffness),
-        precision: Number(options?.precision ?? 0.5),
-        velocityEpsilon: Number(options?.velocityEpsilon ?? 0.5)
+        precision: Number(options?.precision ?? (useFastTvSpring ? 2 : 1)),
+        velocityEpsilon: Number(options?.velocityEpsilon ?? (useFastTvSpring ? 55 : 12))
       };
 
       const tick = (now) => {
@@ -328,28 +344,36 @@ export function createHomeScreenMethods02() {
         }
         const deltaSeconds = Math.min(0.034, Math.max(0.001, (now - state.lastTime) / 1000));
         state.lastTime = now;
-        const displacement = state.position - Number(state.target || 0);
-        const acceleration = -state.stiffness * displacement - state.damping * state.velocity;
-        state.velocity += acceleration * deltaSeconds;
-        state.position += state.velocity * deltaSeconds;
-        container[property] = state.position;
+        const targetPos = Number(state.target || 0);
+        // Sub-step integration so high-stiffness TV springs stay critically
+        // damped with zero overshoot even on 34 ms frame drops.
+        const subSteps = Math.max(1, Math.ceil(deltaSeconds / 0.004));
+        const stepSeconds = deltaSeconds / subSteps;
+        for (let step = 0; step < subSteps; step += 1) {
+          const displacement = state.position - targetPos;
+          const acceleration = -state.stiffness * displacement - state.damping * state.velocity;
+          state.velocity += acceleration * stepSeconds;
+          state.position += state.velocity * stepSeconds;
+        }
+        const nextRounded = Math.round(state.position);
 
-        // Reading scroll position after writing it can flush layout. It only
-        // affects settling once velocity is low enough; keep that check first.
-        if (Math.abs(state.velocity) <= state.velocityEpsilon) {
-          // A hidden container (.home-dom-preserved display:none or
-          // content-visibility) reports no scroll range, so its position can
-          // never reach the requested target: clamp to the live range and
-          // settle instead of scheduling frames nobody can see.
-          const settledTarget = Math.min(getContainerMaxScroll(container, axis), Math.max(0, Number(state.target || 0)));
-          if (Math.abs(settledTarget - Number(container[property] || 0)) <= state.precision) {
-            container[property] = settledTarget;
-            existing[key] = null;
-            springMap.set(container, existing);
-            this.untrackScrollContainerIfIdle?.(container);
-            clearCameraScrollActive(container);
-            return;
+        // Settle purely in JS math so we never read scrollTop/scrollHeight
+        // inside rAF after IntersectionObserver unparks an incoming row.
+        if (Math.abs(state.velocity) <= state.velocityEpsilon && Math.abs(targetPos - nextRounded) <= state.precision) {
+          if (state.lastWrittenPosition !== targetPos) {
+            container[property] = targetPos;
+            state.lastWrittenPosition = targetPos;
           }
+          existing[key] = null;
+          springMap.set(container, existing);
+          this.untrackScrollContainerIfIdle?.(container);
+          clearCameraScrollActive(container);
+          return;
+        }
+
+        if (nextRounded !== state.lastWrittenPosition) {
+          container[property] = nextRounded;
+          state.lastWrittenPosition = nextRounded;
         }
 
         state.raf = requestAnimationFrame(tick);
@@ -357,7 +381,9 @@ export function createHomeScreenMethods02() {
         springMap.set(container, existing);
       };
 
-      markCameraScrollActive(container);
+      if (Math.abs(nextValue - initialPosition) > 1) {
+        markCameraScrollActive(container);
+      }
       this.trackScrollContainer?.(container);
       state.raf = requestAnimationFrame(tick);
       existing[key] = state;

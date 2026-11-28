@@ -165,6 +165,9 @@ export function createPlayerScreenMethods30() {
       if (!this.startupAudioGateActive) {
         return false;
       }
+      // Like a pending webOS selection, a Tizen DTS/TrueHD conversion keeps the
+      // gate (and the logo) until the converted track is ready to play.
+      const pendingAudioSelection = Boolean(this.pendingWebOsAudioSelection || PlayerController.isTizenDtsAudioPreparing?.());
       const readyState =
         typeof PlayerController.getPlaybackReadyState === "function"
           ? Number(PlayerController.getPlaybackReadyState() || 0)
@@ -175,7 +178,7 @@ export function createPlayerScreenMethods30() {
         canReleasePlayingNativeStartupAudioGate({
           allowNativePlayback: this.startupAudioGateAllowsNativePlayback,
           hasPresentedPlaybackFrame: this.hasPresentedPlaybackFrame,
-          pendingAudioSelection: Boolean(this.pendingWebOsAudioSelection),
+          pendingAudioSelection,
           readyState
         })
       ) {
@@ -193,9 +196,9 @@ export function createPlayerScreenMethods30() {
           }
           this.applyStartupAudioFallback();
         }
-        return Boolean(this.startupAudioPreferenceApplied) && !this.pendingWebOsAudioSelection;
+        return Boolean(this.startupAudioPreferenceApplied) && !pendingAudioSelection;
       }
-      if (gateDeadlineExpired && !this.pendingWebOsAudioSelection) {
+      if (gateDeadlineExpired && !pendingAudioSelection) {
         if (!this.startupAudioPreferenceApplied) {
           this.applyStartupAudioFallback();
         }
@@ -212,7 +215,7 @@ export function createPlayerScreenMethods30() {
         }
       }
       const audioPreferenceSettled =
-        !this.pendingWebOsAudioSelection &&
+        !pendingAudioSelection &&
         (Boolean(this.startupAudioPreferenceApplied) ||
           (!Environment.isWebOS() && !this.startupAudioPreferenceApplying && !this.hasAudioTracksAvailable()));
       return audioPreferenceSettled && Number.isFinite(readyState) && readyState >= 3;

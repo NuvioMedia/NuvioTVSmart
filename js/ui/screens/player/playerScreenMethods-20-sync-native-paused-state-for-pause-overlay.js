@@ -29,7 +29,8 @@ export function createPlayerScreenMethods20() {
         video?.seeking ||
         readyState < 3 ||
         PlayerController.isWebOsDtsAudioBuffering?.() ||
-        PlayerController.webOsDtsAudioState?.cancelReload
+        PlayerController.webOsDtsAudioState?.cancelReload ||
+        PlayerController.isTizenDtsAudioBuffering?.()
       );
     },
     syncNativePausedStateForPauseOverlay() {

@@ -66,6 +66,7 @@ export function createPlayerControllerMethods18() {
       this.cancelProxyRedirectObservation = null;
       if (!this.video) return;
       this.stopWebOsDtsAudioTranscode({ resetFailures: true });
+      this.stopTizenDtsAudioTranscode({ resetFailures: true });
 
       const requestedUrl = String(url || "").trim();
       const playToken = Number(this.playRequestToken || 0) + 1;
