@@ -327,28 +327,31 @@ function filterForSelectedContinueWatchingSource(items = []) {
   );
 }
 
-function deduplicateInProgress(items = [], recentLimit = 300) {
-  const seenContentIds = new Set();
+export function deduplicateInProgress(items = [], recentLimit = 300) {
+  const seenSeriesIds = new Set();
+  const seenMovieIds = new Set();
 
   return (
     (Array.isArray(items) ? items : [])
       .slice()
       .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0))
       .filter((item) => {
-        if (!isSeriesType(item?.contentType)) {
+        // Cloud progress is one card per file, not one per catalog title.
+        if (isCloudProgressItem(item)) {
           return true;
         }
+        const seenIds = isSeriesType(item?.contentType) ? seenSeriesIds : seenMovieIds;
 
         const identities = Array.from(watchedItemIdentityValues(item))
           .map((value) => value.toLowerCase())
           .filter(Boolean);
-        if (!identities.length || identities.some((identity) => seenContentIds.has(identity))) {
+        if (!identities.length || identities.some((identity) => seenIds.has(identity))) {
           return false;
         }
-        identities.forEach((identity) => seenContentIds.add(identity));
+        identities.forEach((identity) => seenIds.add(identity));
         return true;
       })
-      // Apply the recent-item budget after choosing one state per series.
+      // Apply the recent-item budget after choosing one state per title.
       // A batch of completed episodes must not displace other titles.
       .slice(0, recentLimit)
       // Check eligibility after selecting the newest episode, so an older
