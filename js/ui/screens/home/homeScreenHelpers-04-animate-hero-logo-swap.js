@@ -290,11 +290,14 @@ export function animateHeroLogoSwap(logoNode, nextSrc, nextAlt = "", durationMs 
       return;
     }
 
+    // A failed logo was already hidden by the fallback: cloning it would paint a
+    // broken-image icon for the crossfade duration.
+    const canCrossfade = !logoNode.hidden;
     syncHeroLogoFallback(logoNode, false);
     clearGhosts();
     const parent = logoNode.parentElement;
     let ghost = null;
-    if (parent && currentSrc) {
+    if (parent && currentSrc && canCrossfade) {
       ghost = logoNode.cloneNode(false);
       ghost.classList.remove("home-hero-logo-transition-enter", "is-visible");
       ghost.classList.add("home-hero-logo-transition-ghost");

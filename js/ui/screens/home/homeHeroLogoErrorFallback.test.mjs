@@ -275,6 +275,41 @@ test("animateHeroLogoSwap falls back immediately on re-applied already-broken im
   assert.equal(title.classList.contains("is-hidden"), false);
 });
 
+test("a failed logo replaced by a working one does not crossfade the broken image", async () => {
+  const { FakeElement, FakeImage, context, preloadQueue } = createBrandHarness();
+
+  const brand = new FakeElement("div");
+  brand.classList.add("home-hero-brand");
+  const logo = new FakeImage("img");
+  logo.classList.add("home-hero-logo");
+  logo.setAttribute("src", "https://cdn.example/dead.png");
+  logo.heroLogoSourceUrl = "https://cdn.example/dead.png";
+  logo.hidden = true;
+  logo.style.setProperty("display", "none");
+
+  const title = new FakeElement("h1");
+  title.classList.add("home-hero-title-text");
+  title.textContent = "Spanish";
+  brand.appendChild(logo);
+  brand.appendChild(title);
+
+  preloadQueue.set("https://cdn.example/working.png", () =>
+    Promise.resolve({ loaded: true, src: "https://cdn.example/working.png" })
+  );
+
+  context.animateHeroLogoSwap(logo, "https://cdn.example/working.png", "Spanish", 10);
+  await new Promise((r) => setTimeout(r, 0));
+
+  assert.equal(
+    brand.children.filter((child) => child.classList.contains("home-hero-logo-transition-ghost"))
+      .length,
+    0,
+    "the hidden broken logo must not be cloned as a transition ghost"
+  );
+  assert.equal(logo.hidden, false);
+  assert.equal(title.classList.contains("is-hidden"), true);
+});
+
 test("collection folder with empty title (hideTitle) hides broken logo and keeps title hidden without Untitled", async () => {
   const { FakeElement, FakeImage, context, preloadQueue } = createBrandHarness();
 
