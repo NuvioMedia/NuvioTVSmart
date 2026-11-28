@@ -153,7 +153,7 @@ test("HomeScreen applyHeroToDom reuses this.layoutPrefs without extra LayoutPref
   }
 });
 
-test("applyHeroDescriptionAutoScroll defers rAF by 1500ms during active TV navigation and cancels on re-entry or unmount", async () => {
+test("applyHeroDescriptionAutoScroll defers rAF while TV input or scroll is active and cancels on re-entry or unmount", async () => {
   const vm = await import("node:vm");
   const raw05 = (
     await readFile(
@@ -204,10 +204,10 @@ test("applyHeroDescriptionAutoScroll defers rAF by 1500ms during active TV navig
     isModernHydrationScrollActive: () => hydrationScrollActive
   });
 
-  // Initial call stops any active scroller and schedules 1500ms timer instead of immediate rAF.
+  // Initial call stops any active scroller and schedules the remaining input quiet window instead of an immediate rAF.
   screen.applyHeroDescriptionAutoScroll();
   assert.equal(stopCalls.length, 1, "must stop active auto-scroller before deferring TV re-entry");
-  assert.equal(rafQueue.length, 0, "must not schedule rAF before 1500ms TV settle delay");
+  assert.equal(rafQueue.length, 0, "must not schedule rAF before the TV input quiet window ends");
   assert.ok(screen.heroDescriptionAutoScrollDelayTimer);
   assert.equal(
     scrollerOptions.isPaused(),
@@ -215,28 +215,40 @@ test("applyHeroDescriptionAutoScroll defers rAF by 1500ms during active TV navig
     "auto-scroller isPaused() must pause during <1600ms home input window"
   );
 
-  // Rapid re-entry stops again, cancels the previous timer, and resets the 1500ms wait.
+  // Rapid re-entry stops again, cancels the previous timer, and resets the wait.
   const firstTimer = screen.heroDescriptionAutoScrollDelayTimer;
   screen.applyHeroDescriptionAutoScroll();
   assert.equal(stopCalls.length, 2);
   assert.notEqual(screen.heroDescriptionAutoScrollDelayTimer, firstTimer);
 
-  // Unmount (container cleared) before 1500ms fires makes timer a clean no-op.
+  // Unmount (container cleared) before the timer fires makes it a clean no-op.
   screen.container = null;
-  await new Promise((r) => setTimeout(r, 1550));
+  await new Promise((r) => setTimeout(r, 1700));
   assert.equal(rafQueue.length, 0, "unmounted screen must not schedule auto-scroll rAF");
 
-  // Re-mount with active input: after 1500ms, rAF runs and calls apply().
+  // Re-mount with active input: after the quiet window, rAF runs and calls apply().
   screen.container = {
     querySelector: (sel) => (sel === ".home-hero-card .home-hero-description" ? descNode : null)
   };
   screen.lastHomeInputAt = Date.now();
   screen.applyHeroDescriptionAutoScroll();
-  await new Promise((r) => setTimeout(r, 1550));
-  assert.equal(rafQueue.length, 1, "must schedule auto-scroll rAF once 1500ms delay completes");
+  await new Promise((r) => setTimeout(r, 1700));
+  assert.equal(
+    rafQueue.length,
+    1,
+    "must schedule auto-scroll rAF once the input quiet window completes"
+  );
   rafQueue.shift()();
   assert.equal(applyCalls.length, 1);
   assert.equal(applyCalls[0].node, descNode);
+
+  // An idle TV has no reason to postpone the measurement.
+  screen.lastHomeInputAt = Date.now() - 1700;
+  screen.applyHeroDescriptionAutoScroll();
+  assert.equal(rafQueue.length, 1, "idle TV must not delay the auto-scroll measurement");
+  assert.equal(screen.heroDescriptionAutoScrollDelayTimer, null);
+  rafQueue.shift()();
+  assert.equal(applyCalls.length, 2);
 
   // Once input ages >= 1600ms and hydration scroll is inactive, isPaused() clears;
   // active modern hydration scroll pauses again.

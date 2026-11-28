@@ -3,6 +3,9 @@ import { registerHomeDomNodes } from "./homeDomUpdate.js";
 import { createHeroDescriptionAutoScroller } from "./heroDescriptionAutoScroll.js";
 import * as internals from "./homeScreenContext.js";
 
+const HERO_DESCRIPTION_INPUT_QUIET_MS = 1600;
+const HERO_DESCRIPTION_SCROLL_POLL_MS = 120;
+
 export function createHomeScreenMethods05() {
   const {
     getTvHeroTransitionMode,
@@ -191,6 +194,18 @@ export function createHomeScreenMethods05() {
         this.heroDescriptionAutoScrollDelayTimer = null;
       }
     },
+    getHeroDescriptionAutoScrollDeferMs() {
+      if (!(this.isLegacyTvRuntime?.() || this.shouldUseBoundedHomeImageHydration?.())) {
+        return 0;
+      }
+      if (this.isModernHydrationScrollActive?.()) {
+        return HERO_DESCRIPTION_SCROLL_POLL_MS;
+      }
+      const lastInputAt = Number(this.lastHomeInputAt || 0);
+      return lastInputAt > 0
+        ? Math.min(HERO_DESCRIPTION_INPUT_QUIET_MS, Math.max(0, HERO_DESCRIPTION_INPUT_QUIET_MS - (Date.now() - lastInputAt)))
+        : 0;
+    },
     applyHeroDescriptionAutoScroll() {
       this.clearHeroDescriptionAutoScrollTimer();
       if (this.heroDescriptionAutoScrollFrame) {
@@ -208,7 +223,7 @@ export function createHomeScreenMethods05() {
             this.isTrailerPlaying?.() === true ||
             this.pauseOverlayVisible === true ||
             Boolean(this.isModernHydrationScrollActive?.()) ||
-            (Number(this.lastHomeInputAt || 0) > 0 && Date.now() - Number(this.lastHomeInputAt || 0) < 1600),
+            (Number(this.lastHomeInputAt || 0) > 0 && Date.now() - Number(this.lastHomeInputAt || 0) < HERO_DESCRIPTION_INPUT_QUIET_MS),
           onHoldChange: (holding) => {
             this.heroDescriptionScrollHolding = Boolean(holding);
           }
@@ -228,12 +243,14 @@ export function createHomeScreenMethods05() {
           this.heroDescriptionAutoScroller.apply(node, Boolean(this.layoutPrefs?.heroDescriptionAutoScrollEnabled));
         });
       };
-      if (Number(this.lastHomeInputAt || 0) > 0 && (this.isLegacyTvRuntime?.() || this.shouldUseBoundedHomeImageHydration?.())) {
+      const deferMs = this.getHeroDescriptionAutoScrollDeferMs();
+      if (deferMs > 0) {
         this.heroDescriptionAutoScroller?.stop();
         this.heroDescriptionAutoScrollDelayTimer = setTimeout(() => {
           this.heroDescriptionAutoScrollDelayTimer = null;
-          scheduleApplyFrame();
-        }, 1500);
+          // Re-check after the wait: another key or scroll may still be active.
+          this.applyHeroDescriptionAutoScroll();
+        }, deferMs);
         return;
       }
       scheduleApplyFrame();
