@@ -484,7 +484,7 @@
     <string name="addon_manage_from_phone_subtitle">Scanează un cod QR pentru a gestiona complementele și cataloagele Home de pe telefon</string>
     <string name="addon_reorder_title">Rearanjează cataloagele Home</string>
     <string name="addon_order_title">Ordinea addon-urilor</string>
-    <string name="addon_order_subtitle">Stabilește ce addon este întrebat primul de surse.</string>
+    <string name="addon_order_subtitle">Stabilește ce addon este consultat primul pentru surse.</string>
     <string name="addon_order_empty">Niciun addon instalat.</string>
     <string name="addon_reorder_subtitle">Controlează ordinea rândurilor din catalog pe Home (Clasic + Modern + Grilă)</string>
     <string name="addon_qr_scan_instruction">Scanează cu telefonul pentru a gestiona complementele și cataloagele</string>
@@ -3474,7 +3474,7 @@
     <string name="settings_p2p_cache_unsupported">Not available on this TV.</string>
     <string name="library_empty_title">Niciun element de afișat</string>
     <string name="library_empty_local_hint">Schimbă filtrele sau începe să-ți salvezi favoritele ca să le vezi aici</string>
-    <string name="library_empty_trakt_hint">Schimbă filtrele sau folosește + din detalii pentru a adăuga titluri în watchlist sau în liste</string>
+    <string name="library_empty_trakt_hint">Schimbă filtrele sau folosește + din detalii pentru a adăuga titluri în lista de urmărire sau în liste</string>
     <string name="library_empty_simkl_hint">Schimbă filtrele sau folosește + din detalii pentru a adăuga titluri într-o stare Simkl</string>
     <string name="library_empty_simkl_not_auth_title">Simkl nu este conectat</string>
     <string name="library_empty_simkl_not_auth_subtitle">Conectează-ți contul Simkl din Setări ca să vezi biblioteca Simkl</string>
