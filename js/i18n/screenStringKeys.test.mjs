@@ -21,8 +21,10 @@ const screens = {
     "detail.noCast"
   ],
   "js/ui/screens/collection/folderDetailScreenMethods-01-get-route-state-key.js": [
-    "collections_folder_not_found"
-  ]
+    "folder_detail_not_found",
+    "common.loading"
+  ],
+  "js/ui/screens/collection/folderDetailScreenMethods-03-render.js": ["common.loading"]
 };
 
 const hardCoded = [

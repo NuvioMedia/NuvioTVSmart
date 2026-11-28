@@ -2413,7 +2413,6 @@
     <string name="collections_valid_summary">%1$d colecție(i), %2$d dosar(e)</string>
     <string name="collections_confirm_import">Confirmă importul</string>
     <string name="collections_folder_count">%1$d dosar(e)</string>
-    <string name="collections_folder_not_found">Folderul colecției nu a fost găsit.</string>
     <string name="collections_editor_row_title">Titlul rândului</string>
     <string name="collections_editor_save">Salvează</string>
     <string name="collections_editor_unsaved_title">Salvezi modificările?</string>

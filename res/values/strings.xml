@@ -2212,7 +2212,6 @@
     <string name="collections_valid_summary">%1$d collection(s), %2$d folder(s)</string>
     <string name="collections_confirm_import">Confirm Import</string>
     <string name="collections_folder_count">%1$d folder(s)</string>
-    <string name="collections_folder_not_found">Collection folder not found.</string>
     <string name="collections_editor_row_title">Row Title</string>
     <string name="collections_editor_save">Save</string>
     <string name="collections_editor_unsaved_title">Save changes?</string>

@@ -172,7 +172,7 @@ export function createFolderDetailScreenMethods01() {
       this.heroItem = null;
 
       if (!this.collection || !this.folder) {
-        this.container.innerHTML = `<div class="seeall-shell"><div class="seeall-empty">${escapeHtml(I18n.t("collections_folder_not_found", {}, { fallback: "Collection folder not found." }))}</div></div>`;
+        this.container.innerHTML = `<div class="seeall-shell"><div class="seeall-empty">${escapeHtml(I18n.t("folder_detail_not_found", {}, { fallback: "Folder not found" }))}</div></div>`;
         return;
       }
 
