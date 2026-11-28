@@ -16,6 +16,7 @@ export const TV_FRAME_PACE_POLICY = Object.freeze({
   // window, a 2019 entry-level set 75 to 120 ms (up to a third of every
   // animation). The limit sits between the two.
   slowLostMs: 60,
+  consecutiveSlowWindows: 1,
   // Startup renders and first-run network work are not the steady state.
   warmupMs: 20000
 });
@@ -76,9 +77,18 @@ export function createFramePaceMonitor({
   const samples = [];
   let sampling = false;
   let reported = false;
+  let slowWindowStreak = 0;
+  let windowsCompleted = 0;
+  let lastMedianMs = 0;
 
   return {
     samples,
+    getStats: () => ({
+      windowsCompleted,
+      slowWindowStreak,
+      lastMedianMs,
+      samples: samples.slice()
+    }),
     // Call on every key press. Presses that arrive while a window is open
     // (held keys) are covered by that window.
     noteKey() {
@@ -112,13 +122,36 @@ export function createFramePaceMonitor({
           return;
         }
         samples.push(lostMs);
-        if (samples.length > policy.sampleKeys) {
-          samples.shift();
-        }
-        const typical = median(samples);
-        if (samples.length >= policy.sampleKeys && typical > policy.slowLostMs) {
-          reported = true;
-          onSlow?.(typical);
+        const requiredSlowWindows = Math.max(1, Number(policy.consecutiveSlowWindows || 1));
+        if (requiredSlowWindows > 1) {
+          if (samples.length >= policy.sampleKeys) {
+            const typical = median(samples);
+            windowsCompleted += 1;
+            lastMedianMs = typical;
+            samples.length = 0;
+            if (typical > policy.slowLostMs) {
+              slowWindowStreak += 1;
+              if (slowWindowStreak >= requiredSlowWindows) {
+                reported = true;
+                onSlow?.(typical);
+              }
+            } else {
+              slowWindowStreak = 0;
+            }
+          }
+        } else {
+          if (samples.length > policy.sampleKeys) {
+            samples.shift();
+          }
+          if (samples.length >= policy.sampleKeys) {
+            const typical = median(samples);
+            windowsCompleted += 1;
+            lastMedianMs = typical;
+            if (typical > policy.slowLostMs) {
+              reported = true;
+              onSlow?.(typical);
+            }
+          }
         }
       };
       requestFrame(onFrame);
