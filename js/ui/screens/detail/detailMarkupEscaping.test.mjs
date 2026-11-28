@@ -43,6 +43,8 @@ const { createMetaDetailsScreenMethods07 } =
   await import("./metaDetailsScreenMethods-07-merge-stream-items.js");
 const { createMetaDetailsScreenMethods08 } =
   await import("./metaDetailsScreenMethods-08-render-external-ratings-row.js");
+const { createMetaDetailsScreenMethods09 } =
+  await import("./metaDetailsScreenMethods-09-render-series-insight-section.js");
 const { createMetaDetailsScreenMethods16 } =
   await import("./metaDetailsScreenMethods-16-render-comments-section.js");
 const { createMetaDetailsScreenMethods20 } =
@@ -187,6 +189,26 @@ test("renderCompanyLogosSection keeps an addon company logo URL inside the src a
   assert.equal(logo.length, 1);
   assert.equal(logo.attr("src"), ADDON_URL_PAYLOAD);
   assert.equal(logo.attr("onerror"), undefined);
+});
+
+const ADDON_CAST_ID_PAYLOAD = '"><img src=x onerror=alert(1)>';
+
+test("renderSeriesCastTrack keeps an addon cast id inside the data-cast-id attribute", () => {
+  const methods = createMetaDetailsScreenMethods09();
+  const html = methods.renderSeriesCastTrack.call({
+    castItems: [
+      { name: "Valid Actor", character: "Lead", tmdbId: 12345, photo: "" },
+      { name: "Payload Actor", character: "Villain", tmdbId: ADDON_CAST_ID_PAYLOAD, photo: "" }
+    ]
+  });
+
+  const $ = cheerio.load(html);
+  const cards = $(".movie-cast-card");
+  assert.equal(cards.length, 2);
+  assert.equal(cards.eq(0).attr("data-cast-id"), "12345", "valid cast ids must be preserved");
+  assert.equal(cards.eq(1).attr("data-cast-id"), ADDON_CAST_ID_PAYLOAD);
+  assert.equal($("img").length, 0, "cast id payload must not create an img element");
+  assert.equal($("[onerror]").length, 0, "cast id payload must not create an onerror handler");
 });
 
 test("stream chooser keeps an addon logo URL inside the src attribute", () => {
