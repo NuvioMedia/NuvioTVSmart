@@ -89,7 +89,8 @@ export {
   buildCatalogOrderKey,
   catalogShouldShowOnHome,
   catalogSkipStep,
-  catalogSupportsExtra
+  catalogSupportsExtra,
+  selectHomeCatalogDescriptorsToLoad
 } from "../../../core/addons/homeCatalogs.js";
 
 export {
