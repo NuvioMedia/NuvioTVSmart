@@ -3,11 +3,7 @@
   height: var(--home-poster-height);
   aspect-ratio: auto;
   border-radius: var(--home-poster-radius);
-  transition:
-    height 180ms ease-out,
-    border-color 120ms ease,
-    box-shadow 120ms ease,
-    background-color 120ms ease;
+  transition: height 180ms ease-out;
 }
 
 .home-screen-shell.home-layout-modern .home-poster-card.focused .home-poster-frame {
@@ -15,6 +11,49 @@
   box-shadow: 0 0 0 2px var(--secondary-color);
   background-color: var(--focus-bg);
   transform: none;
+}
+
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-poster-card:not(.home-poster-card-loading)
+  .home-poster-frame::before,
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-collection-card
+  .home-poster-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--home-focus-ring) var(--secondary-color);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-poster-card:not(.home-poster-card-loading).focused
+  .home-poster-frame::before,
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-collection-card.focused
+  .home-poster-frame::before {
+  opacity: 1;
+  transform: translateZ(0);
+}
+
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-poster-card:not(.home-poster-card-loading).focused
+  .home-poster-frame {
+  background-color: transparent;
 }
 
 .home-screen-shell.home-layout-modern .home-poster-copy {
