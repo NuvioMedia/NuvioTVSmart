@@ -346,6 +346,9 @@ export function buildYoutubeEmbedUrl(videoId, { muted = true, captionsEnabled = 
       proxyUrl.searchParams.set("v", cleanId);
       proxyUrl.searchParams.set("autoplay", "1");
       proxyUrl.searchParams.set("muted", muted ? "1" : "0");
+      // Home reveals the layer only after YouTube's startup chrome settles, so
+      // the proxy must keep playback muted until the reveal asks for sound.
+      proxyUrl.searchParams.set("hold_muted", "1");
       proxyUrl.searchParams.set("controls", "0");
       proxyUrl.searchParams.set("loop", "1");
       proxyUrl.searchParams.set("playlist", cleanId);

@@ -249,7 +249,7 @@ export function createMetaDetailsScreenMethods19() {
       }
       layer.innerHTML = `
           <div class="detail-trailer-media" data-trailer-media>
-            <video class="detail-trailer-video" autoplay playsinline preload="auto"${this.trailerMuted ? " muted" : ""}>
+            <video class="detail-trailer-video" autoplay playsinline preload="auto" muted>
               <source src="${this.trailerSource.url}" />
             </video>
           </div>

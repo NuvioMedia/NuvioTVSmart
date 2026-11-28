@@ -73,6 +73,7 @@ export function createMetaDetailsScreenMethods02() {
       this.isTrailerPlaying = false;
       this.trailerPlaybackMode = null;
       this.trailerVisualReady = false;
+      this.trailerUnmuteFallbackTimer = null;
       this.trailerHasAutoplayed = false;
       this.trailerMuted = false;
       this.trailerSubtitlesEnabled = false;

@@ -164,7 +164,7 @@ export function createMetaDetailsScreenMethods18() {
           currentTime: Number.isFinite(video.currentTime) ? Number(video.currentTime) : 0,
           duration,
           paused: Boolean(video.paused),
-          muted: Boolean(video.muted),
+          muted: !this.trailerVisualReady ? Boolean(this.trailerMuted) : Boolean(video.muted),
           captionsEnabled: Boolean(this.trailerSubtitlesEnabled),
           loading: Boolean(!video.readyState || video.readyState < 2),
           controllable: true
@@ -193,7 +193,9 @@ export function createMetaDetailsScreenMethods18() {
         return;
       }
       const playback = this.getTrailerPlaybackSnapshot();
-      this.trailerMuted = Boolean(playback.muted);
+      if (this.trailerVisualReady) {
+        this.trailerMuted = Boolean(playback.muted);
+      }
       this.trailerSubtitlesEnabled = Boolean(playback.captionsEnabled);
       if (!this.trailerControlsVisible && !playback.loading && !playback.paused) {
         return;
@@ -230,11 +232,43 @@ export function createMetaDetailsScreenMethods18() {
         this.applyTrailerVideoSubtitleState(video);
         this.updateTrailerOverlay();
       };
+      const revertToMuted = () => {
+        this.trailerMuted = true;
+        video.muted = true;
+        video.setAttribute?.("muted", "");
+        const retryPlay = video.play?.();
+        if (retryPlay?.catch) {
+          retryPlay.catch(() => {});
+        }
+        this.updateTrailerOverlay();
+      };
+      const settleUnmute = () => {
+        this.trailerUnmuteFallbackTimer = null;
+        if (!this.isTrailerPlaying || video.isConnected === false || video.muted) {
+          return;
+        }
+        // Autoplay policy paused the unmuted trailer: resume it muted so the
+        // reveal never lands on a frozen frame.
+        if (video.paused) {
+          revertToMuted();
+        }
+      };
       const markReady = () => {
         if (!this.isTrailerPlaying || video.paused || !video.isConnected) {
           return;
         }
+        const wasReady = Boolean(this.trailerVisualReady);
         this.markTrailerVisualReady();
+        if (!wasReady && !this.trailerMuted) {
+          video.muted = false;
+          video.removeAttribute?.("muted");
+          if (video.paused) {
+            settleUnmute();
+          } else {
+            clearTimeout(this.trailerUnmuteFallbackTimer);
+            this.trailerUnmuteFallbackTimer = setTimeout(settleUnmute, 120);
+          }
+        }
         this.updateTrailerOverlay();
       };
       const handleEnded = () => {
@@ -255,8 +289,15 @@ export function createMetaDetailsScreenMethods18() {
         video.addEventListener(eventName, sync);
         return { target: video, eventName, handler: sync };
       });
+      if (typeof video.requestVideoFrameCallback === "function") {
+        video.requestVideoFrameCallback(() => {
+          markReady();
+        });
+      } else {
+        video.addEventListener("playing", markReady);
+        this.trailerMediaListeners.push({ target: video, eventName: "playing", handler: markReady });
+      }
       [
-        ["playing", markReady],
         ["ended", handleEnded],
         ["error", handleError]
       ].forEach(([eventName, handler]) => {
