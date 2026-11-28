@@ -25,6 +25,8 @@
       typeof existing.YOUTUBE_PROXY_URL === "undefined"
         ? "youtube-proxy.html"
         : existing.YOUTUBE_PROXY_URL,
+    TRAILER_API_URL:
+      typeof existing.TRAILER_API_URL === "undefined" ? "" : existing.TRAILER_API_URL,
     INTRODB_API_URL:
       typeof existing.INTRODB_API_URL === "undefined"
         ? "https://api.introdb.app/"

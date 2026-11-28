@@ -1,4 +1,5 @@
 import * as internals from "./homeScreenContext.js";
+import { withResolvedTrailerSource } from "../../../core/media/trailerApi.js";
 
 // YouTube draws its own startup chrome (title, share, transport controls) even
 // with controls=0 and only hides it a few seconds after playback starts. Keep
@@ -16,6 +17,7 @@ export function createHomeScreenMethods13() {
     resolveTrailerSource,
     withTimeout,
     resolveTrailerMetaWithTmdbFallback,
+    extractYear,
     LayoutPreferences
   } = internals;
 
@@ -253,11 +255,19 @@ export function createHomeScreenMethods13() {
           video.addEventListener(eventName, activate, { once: true });
         });
         let lastVideoTime = 0;
-        video.addEventListener("timeupdate", () => {
+        const syncTrailerState = () => {
           if (video.currentTime + 1 < lastVideoTime) {
             video.dataset.ambientTrailerLooped = "true";
           }
           lastVideoTime = video.currentTime;
+          this.trackHomeTrailerHandoff?.(container, source, {
+            currentTime: Number(video.currentTime || 0),
+            muted: Boolean(video.muted),
+            paused: Boolean(video.paused)
+          });
+        };
+        ["timeupdate", "play", "pause"].forEach((eventName) => {
+          video.addEventListener(eventName, syncTrailerState);
         });
         video.addEventListener(
           "error",
@@ -413,13 +423,14 @@ export function createHomeScreenMethods13() {
           withTimeout(resolveTrailerMetaWithTmdbFallback(itemMeta, itemType), 2200, null),
           addonMetaPromise
         ]);
-        if (inlineSource) {
-          return inlineSource;
-        }
-        if (inlineFallbackSource) {
-          return inlineFallbackSource;
-        }
-        return result?.status === "success" ? resolveTrailerSource({ ...(result?.data || {}), id: itemId, type: itemType }) : null;
+        const source =
+          inlineSource ||
+          inlineFallbackSource ||
+          (result?.status === "success" ? resolveTrailerSource({ ...(result?.data || {}), id: itemId, type: itemType }) : null);
+        return withResolvedTrailerSource(source, {
+          title: String(itemMeta.name || "").trim(),
+          year: extractYear(itemMeta)
+        });
       } catch (error) {
         console.warn("Home trailer preview lookup failed", error);
         return null;
