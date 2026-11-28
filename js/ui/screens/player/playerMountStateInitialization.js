@@ -388,4 +388,11 @@ export function initializePlayerMountState(params, initialStreamUrl) {
   this.videoListeners = [];
   this.mediaSessionHandlersBound = false;
   this.mediaSessionActions = [];
+  this.hdrPlaybackSourceKey = "";
+  this.hdrPlaybackSourceUrl = "";
+  this.hdrPlaybackKey = "";
+  this.hdrPlaybackFirstCheckedAt = 0;
+  this.hdrPlaybackCheckedAt = 0;
+  this.currentPlaybackIsHdr = undefined;
+  this.hdrPresentationSignature = "";
 }

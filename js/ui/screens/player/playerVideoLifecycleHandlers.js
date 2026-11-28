@@ -61,6 +61,7 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
     if (this.seekLoading) {
       this.completeSeekLoadingIfReady();
     }
+    this.syncHdrPresentation?.({ recheck: true });
     if (isTizenAvPlayPlayback()) {
       this.lastPlaybackErrorAt = 0;
       this.sourcesError = "";
@@ -239,6 +240,7 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
     if (this.isStartupErrorVisible()) {
       return;
     }
+    this.syncHdrPresentation?.({ recheck: true });
     PlayerController.reapplyWebOsNativeTrackSelections?.();
     this.reapplyPendingWebOsAddonSubtitle?.(true);
     this.attemptPendingPlaybackRestore({ force: true });
@@ -286,6 +288,7 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
     this.attemptPendingPlaybackRestore();
     this.completeSeekLoadingIfReady();
     this.startupTrackPreferenceReady = true;
+    this.syncHdrPresentation?.({ recheck: true });
     this.refreshTrackDialogs();
     this.applySubtitlePresentationSettings();
     this.applyAspectMode({ showToast: false });
@@ -325,6 +328,7 @@ export function createPlayerVideoLifecycleHandlers(video, isTizenAvPlayPlayback)
   };
 
   const onTrackListChanged = () => {
+    this.syncHdrPresentation?.({ recheck: true });
     this.applyAspectMode({ showToast: false });
     this.refreshTrackDialogs();
     if (this.refreshSubtitleCueStyles()) {

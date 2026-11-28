@@ -225,6 +225,13 @@ export function createPlayerScreenMethods73() {
         } catch (_) {}
         this.uiRefs = null;
         this.lastUiTickState = null;
+        this.hdrPlaybackSourceKey = "";
+        this.hdrPlaybackSourceUrl = "";
+        this.hdrPlaybackKey = "";
+        this.hdrPlaybackFirstCheckedAt = 0;
+        this.hdrPlaybackCheckedAt = 0;
+        this.currentPlaybackIsHdr = undefined;
+        this.hdrPresentationSignature = "";
       }
     }
   };
