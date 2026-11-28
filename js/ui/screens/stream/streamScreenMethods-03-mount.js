@@ -48,6 +48,7 @@ export function createStreamScreenMethods03() {
       this.hasRenderedStreamRouteShell = false;
       this.renderedStreamListStable = false;
       this.renderedStreamListStreams = null;
+      this.renderedStreamFocusStreams = null;
       this.renderedStreamListSourceChips = null;
       // Returning here from the player is a back navigation, not a fresh open, so
       // do not auto-resume or auto-play again. Otherwise exiting the player drops
