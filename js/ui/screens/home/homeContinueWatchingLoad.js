@@ -249,7 +249,8 @@ export function startHomeContinueWatchingLoad(context) {
         const enriched = await this.enrichContinueWatching(this.continueWatching, {
           allProgress: this.allProgress,
           watchedItems: this.watchedItems,
-          nextUpProgressCandidates: this.nextUpProgressCandidates
+          nextUpProgressCandidates: this.nextUpProgressCandidates,
+          shouldContinue: isCurrentHomeContinueWatchingLoad
         });
         if (!isCurrentHomeContinueWatchingLoad()) {
           return;
