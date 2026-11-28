@@ -3,7 +3,7 @@ import * as internals from "./homeScreenContext.js";
 import { getTrailerMountGraceMs } from "../../../platform/tvPerformancePolicy.js";
 
 export function createHomeScreenMethods14() {
-  const { applyTrailerAudioPreferences, getTvRuntimePerformanceProfile } = internals;
+  const { applyTrailerAudioPreferences, getTvRuntimePerformanceProfile, MODERN_HOME_CONSTANTS } = internals;
 
   return {
     async activateFocusedPosterFlow(node, flowToken = Number(this.focusedPosterFlowToken || 0)) {
@@ -124,16 +124,45 @@ export function createHomeScreenMethods14() {
         return;
       }
       if (this.layoutMode === "modern") {
+        if (this.homeHeroBoundsSettleTimer) {
+          clearTimeout(this.homeHeroBoundsSettleTimer);
+          this.homeHeroBoundsSettleTimer = null;
+        }
+        if (this.homeHeroBoundsFrame) {
+          cancelAnimationFrame(this.homeHeroBoundsFrame);
+          this.homeHeroBoundsFrame = 0;
+        }
         // Measuring here forced a layout in the middle of every hero update,
         // two or three times per focus: 17 ms each on a 2025 OLED. The previous
         // bounds stay applied meanwhile and CSS clamps the text, so one
-        // measurement at the start of the next frame is enough.
-        if (!this.homeHeroBoundsFrame) {
+        // measurement after camera scroll settles is enough.
+        const scheduleBoundsFrame = () => {
+          if (!this.container || this.layoutMode !== "modern" || this.homeDomPreserved) {
+            return;
+          }
+          if (typeof this.isModernHydrationScrollActive === "function" && this.isModernHydrationScrollActive()) {
+            this.homeHeroBoundsSettleTimer = setTimeout(
+              () => {
+                this.homeHeroBoundsSettleTimer = null;
+                scheduleBoundsFrame();
+              },
+              Number(MODERN_HOME_CONSTANTS?.verticalScrollSettlePollMs || 60)
+            );
+            return;
+          }
           this.homeHeroBoundsFrame = requestAnimationFrame(() => {
             this.homeHeroBoundsFrame = 0;
+            if (!this.container || this.layoutMode !== "modern" || this.homeDomPreserved) {
+              return;
+            }
+            if (typeof this.isModernHydrationScrollActive === "function" && this.isModernHydrationScrollActive()) {
+              scheduleBoundsFrame();
+              return;
+            }
             this.applyModernHeroDescriptionBounds(this.container);
           });
-        }
+        };
+        scheduleBoundsFrame();
         return;
       }
       // Tizen fast path: the binary-search textContent loop below forces

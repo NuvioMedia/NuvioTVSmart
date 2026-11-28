@@ -220,17 +220,45 @@ const store = createProfileScopedStore({
 });
 
 // get() runs on every preference read; rewriting an unchanged root attribute
-// still invalidates every [data-card-depth] card style in Chromium.
+// or CSS custom property invalidates card styles across Chromium.
 function setRootDataset(root, key, value) {
   if (root.dataset[key] !== value) {
     root.dataset[key] = value;
   }
 }
 
+function setRootStyleProperty(root, name, value) {
+  if (root.style?.getPropertyValue?.(name) !== value) {
+    root.style?.setProperty?.(name, value);
+  }
+}
+
+let lastCardDepthRoot = null;
+let lastCardDepthSignature = "";
+
 function applyCardDepthPresentation(settings) {
   const root = globalThis?.document?.documentElement;
   if (!root) return;
-  setRootDataset(root, "cardDepth", settings.cardDepthEnabled ? "true" : "false");
+  const cardDepthValue = settings.cardDepthEnabled ? "true" : "false";
+  const signature = [
+    cardDepthValue,
+    settings.cardDepthPostersEnabled !== false ? "1" : "0",
+    settings.cardDepthContinueWatchingEnabled !== false ? "1" : "0",
+    settings.cardDepthEpisodeCardsEnabled !== false ? "1" : "0",
+    settings.cardDepthCastEnabled !== false ? "1" : "0",
+    settings.cardDepthTrailersEnabled !== false ? "1" : "0",
+    settings.cardDepthEdgeStrength,
+    settings.cardDepthEdgeCoverage,
+    settings.cardDepthSheenStrength
+  ].join("|");
+  if (
+    lastCardDepthRoot === root &&
+    lastCardDepthSignature === signature &&
+    root.dataset?.cardDepth === cardDepthValue
+  ) {
+    return;
+  }
+  setRootDataset(root, "cardDepth", cardDepthValue);
   setRootDataset(
     root,
     "cardDepthPosters",
@@ -254,18 +282,22 @@ function applyCardDepthPresentation(settings) {
   );
   const edgeStrength = settings.cardDepthEdgeStrength / 100;
   const edgeCoverage = settings.cardDepthEdgeCoverage / 100;
-  root.style.setProperty("--card-depth-edge", String(edgeStrength));
-  root.style.setProperty(
+  setRootStyleProperty(root, "--card-depth-edge", String(edgeStrength));
+  setRootStyleProperty(
+    root,
     "--card-depth-edge-side",
     String(edgeStrength * (0.33 + 0.67 * edgeCoverage))
   );
-  root.style.setProperty("--card-depth-edge-bottom", String(edgeStrength * edgeCoverage));
-  root.style.setProperty("--card-depth-sheen", String(settings.cardDepthSheenStrength / 100));
-  root.style.setProperty("--card-depth-coverage", String(settings.cardDepthEdgeCoverage / 100));
-  root.style.setProperty(
+  setRootStyleProperty(root, "--card-depth-edge-bottom", String(edgeStrength * edgeCoverage));
+  setRootStyleProperty(root, "--card-depth-sheen", String(settings.cardDepthSheenStrength / 100));
+  setRootStyleProperty(root, "--card-depth-coverage", String(settings.cardDepthEdgeCoverage / 100));
+  setRootStyleProperty(
+    root,
     "--card-depth-coverage-size",
     `${12 + Math.round((18 * settings.cardDepthEdgeCoverage) / 100)}px`
   );
+  lastCardDepthRoot = root;
+  lastCardDepthSignature = signature;
 }
 
 export const LayoutPreferences = {

@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { constants as fsConstants } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { transform as esbuildTransform } from "esbuild";
+import { build as esbuildBuild, transform as esbuildTransform } from "esbuild";
 import JSZip from "jszip";
 import { readAppMetadata, syncVersionFiles } from "./appMetadata.mjs";
 import { compatibilityPolicy } from "./compatibilityPolicy.mjs";
@@ -300,6 +300,24 @@ async function stageTizenEngineFsService() {
     ),
     transpiledParser.code,
     "utf8"
+  );
+  // DTS/TrueHD to AC3 conversion shares the webOS service module. Tizen 5.0
+  // runs it on Node 4.4.3: keep ES2015 and lower what that Node cannot parse.
+  await esbuildBuild({
+    entryPoints: [path.join(rootDir, "services", "webos", "src", "audioTranscode.js")],
+    outfile: path.join(stagingDir, `${tizenEngineFsRuntimeDirRelativePath}/audio-transcode.cjs`),
+    bundle: true,
+    platform: "node",
+    format: "cjs",
+    target: "es2015",
+    supported: { "default-argument": false, destructuring: false, "rest-argument": false },
+    banner: { js: '"use strict";' },
+    logLevel: "silent"
+  });
+  await cp(
+    path.join(rootDir, "services", "webos", "runtime", "dts"),
+    path.join(stagingDir, `${tizenEngineFsRuntimeDirRelativePath}/dts`),
+    { recursive: true }
   );
 }
 
@@ -632,7 +650,11 @@ function requiredTizenServiceFiles({
           `${tizenEngineFsRuntimeDirRelativePath}/proxy-redirect-report-patch.cjs`,
           `${tizenEngineFsRuntimeDirRelativePath}/tx3g-subtitle-parser.cjs`,
           `${tizenEngineFsRuntimeDirRelativePath}/tx3g-subtitle-service.cjs`,
-          `${tizenEngineFsRuntimeDirRelativePath}/embedded-text-subtitle-parser.cjs`
+          `${tizenEngineFsRuntimeDirRelativePath}/embedded-text-subtitle-parser.cjs`,
+          `${tizenEngineFsRuntimeDirRelativePath}/audio-transcode.cjs`,
+          `${tizenEngineFsRuntimeDirRelativePath}/dts/ffmpeg-core.js`,
+          `${tizenEngineFsRuntimeDirRelativePath}/dts/ffmpeg-core.wasm`,
+          `${tizenEngineFsRuntimeDirRelativePath}/dts/worker.js`
         ]
       : []),
     ...(requirePluginService

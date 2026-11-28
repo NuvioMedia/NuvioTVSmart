@@ -10,6 +10,30 @@ import { getTvArtworkPixelRatio } from "../../../platform/tvRuntimePerformance.j
 import { getArtworkEvictIdleMs, getArtworkEvictMarginPx, getDeviceMemoryGb } from "../../../platform/tvPerformancePolicy.js";
 
 export function createHomeScreenMethods24() {
+  const HOME_BOUNDED_HYDRATION_PACE_QUIET_MS = 230;
+  const HOME_ACTIVE_STEPPING_QUIET_MS = 1450;
+  const PENDING_ARTWORK_SELECTOR = ".content-poster[data-src], .home-poster-landscape-logo[data-src], .home-continue-bg[data-src]";
+  const hasNearbyPendingArtwork = (anchorNode) => {
+    if (!anchorNode) {
+      return false;
+    }
+    if (anchorNode.querySelector?.(PENDING_ARTWORK_SELECTOR)) {
+      return true;
+    }
+    let next = anchorNode.nextElementSibling;
+    for (let step = 0; step < 4 && next; step += 1, next = next.nextElementSibling) {
+      if (next.querySelector?.(PENDING_ARTWORK_SELECTOR)) {
+        return true;
+      }
+    }
+    let prev = anchorNode.previousElementSibling;
+    for (let step = 0; step < 2 && prev; step += 1, prev = prev.previousElementSibling) {
+      if (prev.querySelector?.(PENDING_ARTWORK_SELECTOR)) {
+        return true;
+      }
+    }
+    return false;
+  };
   const imageRequests = new WeakMap();
   const {
     MODERN_HOME_CONSTANTS,
@@ -50,9 +74,6 @@ export function createHomeScreenMethods24() {
         return;
       }
       const anchorRow = anchorNode instanceof HTMLElement ? anchorNode.closest(HOME_LAZY_IMAGE_ROW_SELECTOR) : null;
-      const anchorImagePending = Boolean(
-        anchorNode?.querySelector?.(".content-poster[data-src], .home-poster-landscape-logo[data-src], .home-continue-bg[data-src]")
-      );
       const legacyFocusedRowPass = Boolean(this.isLegacyTvRuntime() && focusedRowOnly && anchorRow instanceof HTMLElement);
       if (legacyFocusedRowPass) {
         if (this.homeLazyImageNeighborTimer) {
@@ -74,7 +95,7 @@ export function createHomeScreenMethods24() {
         !this.homeLazyImageHydrationRaf &&
         !includeNeighborRows &&
         !viewportChanged &&
-        !(this.shouldUseBoundedHomeImageHydration() && anchorImagePending)
+        !(this.shouldUseBoundedHomeImageHydration() && hasNearbyPendingArtwork(anchorNode))
       ) {
         // Avoid scheduling another animation-frame callback until the DOM,
         // viewport, or focused image changes. Smart-TV bounded hydration may
@@ -103,20 +124,50 @@ export function createHomeScreenMethods24() {
       // poster decodes while the spring was still running, which is the same
       // decode burst the immediate-scroll policy already avoided.
       if (deferUntilVerticalSettle && !legacyFocusedRowPass && this.shouldUseBoundedHomeImageHydration() && this.layoutMode === "modern") {
+        this.pendingHomeLazyImageSettleRefreshIndex = Boolean(this.pendingHomeLazyImageSettleRefreshIndex || refreshIndex);
+        this.pendingHomeLazyImageSettleViewportChanged = Boolean(this.pendingHomeLazyImageSettleViewportChanged || viewportChanged);
         if (this.homeLazyImageHydrationSettleTimer) {
           clearTimeout(this.homeLazyImageHydrationSettleTimer);
         }
         const target = anchorNode instanceof HTMLElement ? anchorNode : null;
-        const hydrationDelayMs = this.shouldUseImmediateFocusScroll()
-          ? MODERN_HOME_CONSTANTS.smartTvLazyHydrationDebounceMs
-          : MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs;
+        const targetTrack = target?.closest?.(".home-track, .home-grid-track") || null;
+        const lastInputAt = Number(this.lastHomeInputAt || 0);
+        const paceQuietRemainingMs =
+          this.shouldUseBoundedHomeImageHydration() && lastInputAt > 0
+            ? Math.max(0, HOME_BOUNDED_HYDRATION_PACE_QUIET_MS - (Date.now() - lastInputAt))
+            : 0;
+        const hydrationDelayMs = Math.max(
+          this.shouldUseImmediateFocusScroll()
+            ? MODERN_HOME_CONSTANTS.smartTvLazyHydrationDebounceMs
+            : MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs,
+          paceQuietRemainingMs
+        );
         const retryAfterVerticalSettle = () => {
           this.homeLazyImageHydrationSettleTimer = null;
-          if (this.isModernHydrationScrollActive()) {
-            this.homeLazyImageHydrationSettleTimer = setTimeout(retryAfterVerticalSettle, MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs);
+          const retryLastInputAt = Number(this.lastHomeInputAt || 0);
+          const retryPaceRemainingMs =
+            this.shouldUseBoundedHomeImageHydration() && retryLastInputAt > 0
+              ? HOME_BOUNDED_HYDRATION_PACE_QUIET_MS - (Date.now() - retryLastInputAt)
+              : 0;
+          if (
+            this.isModernHydrationScrollActive() ||
+            (targetTrack && this.isScrollAnimationActive?.(targetTrack, "x")) ||
+            retryPaceRemainingMs > 0
+          ) {
+            this.homeLazyImageHydrationSettleTimer = setTimeout(
+              retryAfterVerticalSettle,
+              Math.max(MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs, retryPaceRemainingMs)
+            );
             return;
           }
-          this.scheduleHomeLazyImageHydration(target, { refreshIndex });
+          const settledRefreshIndex = Boolean(this.pendingHomeLazyImageSettleRefreshIndex);
+          const settledViewportChanged = Boolean(this.pendingHomeLazyImageSettleViewportChanged);
+          this.pendingHomeLazyImageSettleRefreshIndex = false;
+          this.pendingHomeLazyImageSettleViewportChanged = false;
+          this.scheduleHomeLazyImageHydration(target, {
+            refreshIndex: settledRefreshIndex,
+            viewportChanged: settledViewportChanged
+          });
         };
         this.homeLazyImageHydrationSettleTimer = setTimeout(retryAfterVerticalSettle, hydrationDelayMs);
         return;
@@ -125,6 +176,11 @@ export function createHomeScreenMethods24() {
         clearTimeout(this.homeLazyImageHydrationSettleTimer);
         this.homeLazyImageHydrationSettleTimer = null;
       }
+      if (this.pendingHomeLazyImageSettleRefreshIndex) {
+        this.homeLazyImageHydrationNeedsIndexRefresh = true;
+      }
+      this.pendingHomeLazyImageSettleRefreshIndex = false;
+      this.pendingHomeLazyImageSettleViewportChanged = false;
       if (this.modernVerticalFastScrollState) {
         return;
       }
@@ -180,6 +236,10 @@ export function createHomeScreenMethods24() {
       // A frame may already be queued when the sidebar takes focus. Drop it
       // here as well, so the menu does not inherit the Home hydration burst.
       if (typeof this.isSidebarFocusActive === "function" && this.isSidebarFocusActive()) {
+        if (this.homeLazyImageQuietPrefetchTimer) {
+          clearTimeout(this.homeLazyImageQuietPrefetchTimer);
+          this.homeLazyImageQuietPrefetchTimer = null;
+        }
         return;
       }
       const anchorRow = anchorNode?.closest?.(HOME_LAZY_IMAGE_ROW_SELECTOR) || null;
@@ -200,6 +260,38 @@ export function createHomeScreenMethods24() {
       if (!imageRows.length) {
         return;
       }
+      const isHorizontalOnlyPass = Boolean(
+        sameAnchorRow && useBoundedTvHydration && !forceFullScan && !refreshIndex && !includeNeighborRows
+      );
+      const candidateRows = [];
+      imageRows.forEach((entry) => {
+        const { row } = entry;
+        if (row instanceof HTMLElement && !row.isConnected) {
+          return;
+        }
+        const isFocusedRow = Boolean(anchorRow && row === anchorRow);
+        if (focusedRowOnly && anchorRow && !isFocusedRow) {
+          return;
+        }
+        if (isHorizontalOnlyPass && !isFocusedRow) {
+          return;
+        }
+        // Keep every image the row still owns so eviction can hand its artwork
+        // back later. Only detached nodes leave the index; a loaded poster is
+        // the whole point of the sweep.
+        entry.images = entry.images.filter((image) => image.isConnected);
+        const images = entry.images.filter((image) => image.dataset.src);
+        if (!images.length) {
+          return;
+        }
+        candidateRows.push({ row, isFocusedRow, images });
+      });
+      if (!candidateRows.length) {
+        if (!isHorizontalOnlyPass && getTvRuntimePerformanceProfile().isTvRuntime && Router.getCurrent() === "home") {
+          this.scheduleHomeLazyImageEviction(anchorNode);
+        }
+        return;
+      }
       const viewport =
         this.container.querySelector(".home-modern-rows-viewport") || this.container.querySelector(".home-main") || this.container;
       const viewportRect = viewport.getBoundingClientRect();
@@ -215,32 +307,26 @@ export function createHomeScreenMethods24() {
             }
           : viewportRect;
       const constrained = this.isPerformanceConstrained();
+      const lastInputAt = Number(this.lastHomeInputAt || 0);
+      const isActiveDpadStepping = Boolean(
+        useBoundedTvHydration && !includeNeighborRows && lastInputAt > 0 && Date.now() - lastInputAt < HOME_ACTIVE_STEPPING_QUIET_MS
+      );
+      if (includeNeighborRows && this.homeLazyImageQuietPrefetchTimer) {
+        clearTimeout(this.homeLazyImageQuietPrefetchTimer);
+        this.homeLazyImageQuietPrefetchTimer = null;
+      }
       // Android prefetches the visible window plus a small row/card neighborhood.
       // Keep the browser's DOM-mounted rows from turning every vertical focus
-      // move into a burst of eager image requests.
-      const verticalMargin = useBoundedTvHydration ? 480 : constrained ? 720 : 1200;
-      const horizontalMargin = useBoundedTvHydration ? 320 : constrained ? 520 : 1000;
+      // move into a burst of eager image requests. During active D-pad stepping
+      // on TV, prefetch 2+ horizontal focused-row cards and next-row edges into
+      // workers (offscreen completions wait in RAM until rest) and defer full
+      // neighbor rows until input rests for 1450ms.
+      const verticalMargin = isActiveDpadStepping ? 180 : useBoundedTvHydration ? 540 : constrained ? 720 : 1200;
+      const horizontalMargin = isActiveDpadStepping ? 260 : useBoundedTvHydration ? 480 : constrained ? 640 : 1000;
       const focusedRow = Boolean(anchorRow && anchorRow === anchorNode?.closest?.(HOME_LAZY_IMAGE_ROW_SELECTOR));
-      const focusedRowMargin = focusedRow ? Math.max(96, Math.round(Number(anchorNode?.offsetWidth || 0) * 0.65)) : horizontalMargin;
+      const focusedRowMargin = focusedRow ? Math.max(540, Math.round(Number(anchorNode?.offsetWidth || 248) * 2.2)) : horizontalMargin;
       const pendingLoads = [];
-      imageRows.forEach((entry) => {
-        const { row } = entry;
-        if (row instanceof HTMLElement && !row.isConnected) {
-          return;
-        }
-        const isFocusedRow = Boolean(anchorRow && row === anchorRow);
-        if (focusedRowOnly && anchorRow && !isFocusedRow) {
-          return;
-        }
-        if (sameAnchorRow && useBoundedTvHydration && !forceFullScan && !refreshIndex && !includeNeighborRows && !isFocusedRow) {
-          return;
-        }
-        // Keep every image the row still owns so eviction can hand its artwork
-        // back later. Only detached nodes leave the index; a loaded poster is
-        // the whole point of the sweep.
-        entry.images = entry.images.filter((image) => image.isConnected);
-        const images = entry.images.filter((image) => image.dataset.src);
-        if (!images.length) return;
+      candidateRows.forEach(({ row, isFocusedRow, images }) => {
         // Android's LazyRow loads the visible cards plus a small prefetch
         // neighborhood, not every item in the focused row. Keep the same
         // bounded behavior on Smart-TV runtimes; older/browser fallback paths
@@ -255,26 +341,36 @@ export function createHomeScreenMethods24() {
           }
         }
         const canRescale = !this.isLegacyTvRuntime() && shouldRescaleHomeArtwork();
-        images.forEach((image) => {
+        const isHorizontalTrackRow = Boolean(
+          row instanceof HTMLElement && row.querySelector?.(".home-track") && !row.querySelector?.(".home-grid-track")
+        );
+        let passedLeftEdge = false;
+        for (let index = 0; index < images.length; index += 1) {
+          const image = images[index];
           if (!(image instanceof HTMLImageElement) || !image.isConnected) {
-            return;
+            continue;
           }
           const src = String(image.dataset.src || "").trim();
           if (!src) {
             image.removeAttribute("data-src");
-            return;
+            continue;
           }
           let rect = null;
           if (!shouldHydrateFocusedRowImmediately) {
             const imageHorizontalMargin = isFocusedRow ? focusedRowMargin : horizontalMargin;
             rect = image.getBoundingClientRect();
-            const isNearViewport =
-              rect.bottom >= visibleRect.top - verticalMargin &&
-              rect.top <= visibleRect.bottom + verticalMargin &&
-              rect.right >= visibleRect.left - imageHorizontalMargin &&
-              rect.left <= visibleRect.right + imageHorizontalMargin;
-            if (!isNearViewport) {
-              return;
+            const isVerticalNear = rect.bottom >= visibleRect.top - verticalMargin && rect.top <= visibleRect.bottom + verticalMargin;
+            if (!isVerticalNear) {
+              continue;
+            }
+            if (rect.right >= visibleRect.left - imageHorizontalMargin) {
+              passedLeftEdge = true;
+            }
+            if (rect.left > visibleRect.right + imageHorizontalMargin) {
+              if (isHorizontalTrackRow && passedLeftEdge) {
+                break;
+              }
+              continue;
             }
           }
           // Pre-read rescaler geometry before any DOM attribute mutations so the
@@ -301,7 +397,7 @@ export function createHomeScreenMethods24() {
             rect,
             fit
           });
-        });
+        }
       });
       // Complete geometry reads before changing image layout/loading state.
       if (this.isLegacyTvRuntime()) {
@@ -315,8 +411,38 @@ export function createHomeScreenMethods24() {
       // not only when focus moves, so a row-change gate left artwork behind.
       // The sweep measures rows rather than images, which keeps it cheap enough
       // for the D-pad hot path.
-      if (getTvRuntimePerformanceProfile().isTvRuntime && Router.getCurrent() === "home") {
+      if (!isHorizontalOnlyPass && getTvRuntimePerformanceProfile().isTvRuntime && Router.getCurrent() === "home") {
         this.scheduleHomeLazyImageEviction(anchorNode);
+      }
+      if (isActiveDpadStepping) {
+        if (this.homeLazyImageQuietPrefetchTimer) {
+          clearTimeout(this.homeLazyImageQuietPrefetchTimer);
+        }
+        const scheduleQuietPrefetch = () => {
+          const latestInputAt = Number(this.lastHomeInputAt || 0);
+          const remainingQuietMs = latestInputAt > 0 ? Math.max(0, HOME_ACTIVE_STEPPING_QUIET_MS - (Date.now() - latestInputAt)) : 0;
+          if (remainingQuietMs > 0) {
+            this.homeLazyImageQuietPrefetchTimer = setTimeout(onQuietPrefetch, remainingQuietMs);
+            return;
+          }
+          this.homeLazyImageQuietPrefetchTimer = null;
+          if (!this.container || Router.getCurrent() !== "home") {
+            return;
+          }
+          this.scheduleHomeLazyImageHydration(this.getCurrentFocusedNode?.() || anchorNode, {
+            includeNeighborRows: true,
+            viewportChanged: true
+          });
+        };
+        const onQuietPrefetch = () => {
+          this.homeLazyImageQuietPrefetchTimer = null;
+          if (!this.container || Router.getCurrent() !== "home") {
+            return;
+          }
+          scheduleQuietPrefetch();
+        };
+        const initialWaitMs = Math.max(50, HOME_ACTIVE_STEPPING_QUIET_MS - (Date.now() - lastInputAt));
+        this.homeLazyImageQuietPrefetchTimer = setTimeout(onQuietPrefetch, initialWaitMs);
       }
     },
     assignHomeLazyImageSource(image, src, priority = 2, premeasured = null) {

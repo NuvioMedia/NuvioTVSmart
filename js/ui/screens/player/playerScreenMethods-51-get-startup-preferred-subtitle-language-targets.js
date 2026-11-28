@@ -264,7 +264,8 @@ export function createPlayerScreenMethods51() {
 
       const preferredTargets = this.getStartupPreferredAudioLanguageTargets();
       const selectionReady = (option) =>
-        Boolean(option?.selected) && (!option.requiresAudioConversion || Boolean(PlayerController.webOsDtsAudioState));
+        Boolean(option?.selected) &&
+        (!option.requiresAudioConversion || Boolean(PlayerController.webOsDtsAudioState || PlayerController.tizenDtsAudioState));
       // `loadedmetadata` fires before Tizen AVPlay publishes `getTotalTrackInfo`,
       // so the option list can still hold nothing but the synthetic startup entry.
       // Concluding there means falling back to the runtime's first audio track and

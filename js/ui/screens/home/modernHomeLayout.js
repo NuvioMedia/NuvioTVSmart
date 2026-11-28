@@ -2,6 +2,7 @@ import { LayoutPreferences } from "../../../data/local/layoutPreferences.js";
 import { unchangedHomeRowMarkup } from "./homeDomUpdate.js";
 import { I18n } from "../../../i18n/index.js";
 import { isMediaServerResumeRow } from "./homeUtils.js";
+import { buildHeroLogoErrorHandler } from "./homeImageHelpers.js";
 
 export const MODERN_HOME_CONSTANTS = {
   heroFocusDelayMs: 450,
@@ -358,6 +359,7 @@ function renderModernHeroMarkup({
     );
   }
   if (display.mdbListMarkup) secondaryParts.push(display.mdbListMarkup);
+  const hasTitleText = Boolean(String(display.title || "").trim());
   return `
     <section class="home-hero home-hero-modern">
       <article class="home-hero-card home-modern-hero-card${heroItem?.heroMetaEnriching ? " is-hero-meta-enriching" : ""}"
@@ -378,8 +380,8 @@ function renderModernHeroMarkup({
         </div>
         <div class="home-hero-copy home-modern-hero-copy">
           <div class="home-hero-brand">
-            ${display.logo ? `<img class="home-hero-logo" src="${escapeAttribute(display.logo)}" alt="${escapeAttribute(display.title)}" decoding="async" fetchpriority="high" />` : ""}
-            <h1 class="home-hero-title-text${display.logo ? " is-hidden" : ""}">${escapeHtml(display.title)}</h1>
+            ${display.logo ? `<img class="home-hero-logo" src="${escapeAttribute(display.logo)}" alt="${escapeAttribute(display.title)}" decoding="async" fetchpriority="high" onerror="${buildHeroLogoErrorHandler()}" />` : ""}
+            <h1 class="home-hero-title-text${display.logo || !hasTitleText ? " is-hidden" : ""}">${escapeHtml(display.title)}</h1>
           </div>
           <div class="home-modern-hero-meta-line${display.leadingMeta.length || display.trailingMeta.length || display.showImdbPrimary ? "" : " is-empty"}">
             <div class="home-modern-hero-meta-group home-modern-hero-meta-group-leading">

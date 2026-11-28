@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import * as internals from "./metaDetailsScreenContext.js";
 import { addonEpisodeAirDates } from "../../../data/repository/episodeRatingsAlignment.js";
 
@@ -11,7 +10,6 @@ export function createMetaDetailsScreenMethods06() {
     TMDB_API_KEY,
     TMDB_BASE_URL,
     isSeriesDetailMeta,
-    resolveMetaImdbId,
     resolveMetaTmdbId,
     extractCast,
     mergeGenreLists,
@@ -204,7 +202,6 @@ export function createMetaDetailsScreenMethods06() {
         if (!meta?.id || !episodes?.length) {
           return {};
         }
-        const imdbId = resolveMetaImdbId(meta, this.params);
         const knownTmdbId = resolveMetaTmdbId(meta, this.params);
         const tmdbId =
           knownTmdbId ||
@@ -213,11 +210,10 @@ export function createMetaDetailsScreenMethods06() {
             // enrichment, matching Android TV's detail-screen behavior.
             requireEnabled: false
           }));
-        if (!imdbId && !tmdbId) {
+        if (!tmdbId) {
           return {};
         }
         return await imdbEpisodeRatingsRepository.getEpisodeRatings({
-          imdbId,
           tmdbId,
           // The add-on episodes shown here, so ratings follow its season split (Android).
           addonEpisodes: addonEpisodeAirDates(episodes)

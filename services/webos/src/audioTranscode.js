@@ -1,4 +1,4 @@
-var URL = require("url").URL;
+var parseUrl = require("url").parse;
 var fs = require("fs"),
   path = require("path"),
   crypto = require("crypto"),
@@ -49,6 +49,16 @@ async function unitFor(s, index) {
     );
   return s.unitLoads.get(index);
 }
+// Units prepared ahead of a Tizen seek stay cached until the player reads them.
+function evict(s) {
+  for (const key of s.cache.keys()) {
+    if (!s.pinned.has(key)) {
+      s.cache.delete(key);
+      return true;
+    }
+  }
+  return false;
+}
 async function context(s, index) {
   if (s.contexts.has(index)) return s.contexts.get(index);
   const unit = await unitFor(s, index);
@@ -61,9 +71,8 @@ async function context(s, index) {
       Array.from(s.cache.values()).reduce((n, b) => n + b.length, 0) +
       bytes >
       24 * 1024 * 1024 &&
-    s.cache.size
-  )
-    s.cache.delete(s.cache.keys().next().value);
+    evict(s)
+  );
   if (
     Array.from(s.contexts.values()).reduce((n, c) => n + c.bytes, 0) +
       Array.from(s.cache.values()).reduce((n, b) => n + b.length, 0) +
@@ -83,6 +92,9 @@ function createGeneration(unit) {
     session.cancelled = true;
     t.cancelRequestContext(session.requestContext);
   }
+  // A new generation starts where the player reads. Tizen AVPlay blocks the
+  // page while it seeks, so /control cannot report that position first.
+  playhead = unit.timeMs / 1000;
   session = {
     requestContext: { cancelled: false, requests: new Set() },
     g: ++generation,
@@ -103,6 +115,7 @@ function createGeneration(unit) {
     outputBytes: 0,
     processed: 0,
     cache: new Map(),
+    pinned: new Set(),
     error: null,
     conversions: new Map(),
     expectedPts: null,
@@ -114,11 +127,13 @@ function createGeneration(unit) {
 async function input(s) {
   while (!s.cancelled) {
     if (s.raw.length) {
-      const out = Buffer.alloc(65536);
+      // Each worker request is a synchronous round trip (on Tizen 5.0 through
+      // the page thread), so hand over large chunks.
+      const out = Buffer.alloc(262144);
       let used = 0;
-      while (s.raw.length && used < 65536) {
+      while (s.raw.length && used < 262144) {
         const b = s.raw[0],
-          n = Math.min(65536 - used, b.length - s.rawCursor);
+          n = Math.min(262144 - used, b.length - s.rawCursor);
         b.copy(out, used, s.rawCursor, s.rawCursor + n);
         s.rawCursor += n;
         used += n;
@@ -156,7 +171,7 @@ async function buildConverted(s, index) {
   if (index !== s.index) throw Error("noncontiguous");
   const unit = await unitFor(s, index);
   if (!unit) throw Error("cluster-boundary");
-  while (!s.cancelled && unit.timeMs / 1000 > playhead + 8) await wait();
+  while (!s.cancelled && unit.timeMs / 1000 > playhead + source.ahead) await wait();
   const ctx = await context(s, index);
   while (!s.cancelled) {
     if (s.error) throw Error(s.error);
@@ -172,7 +187,7 @@ async function buildConverted(s, index) {
         s.frameIndex += converted.used;
         s.wanted = 0;
         s.cache.set(index, converted.out);
-        while (s.cache.size > 2) s.cache.delete(s.cache.keys().next().value);
+        while (s.cache.size > 2 && evict(s));
         s.contexts.delete(index);
         s.unitLoads.delete(index);
         if (index >= 4) s.units.delete(index - 4);
@@ -211,8 +226,9 @@ function cors(res) {
 async function handleRequest(req, res) {
   let operationSession = session;
   cors(res);
-  const u = new URL(req.url, "http://localhost");
-  u.pathname = u.pathname.replace("/audio-transcode/" + sessionId, "");
+  // url.parse: the Tizen 5.0 service runs Node 4.4.3, which has no URL class.
+  const u = parseUrl(req.url, true);
+  u.pathname = String(u.pathname || "").replace("/audio-transcode/" + sessionId, "");
   try {
     if (req.method === "OPTIONS") {
       res.writeHead(204, {
@@ -222,7 +238,7 @@ async function handleRequest(req, res) {
       return res.end();
     }
     if (u.pathname === "/control") {
-      const current = Number(u.searchParams.get("time"));
+      const current = Number(u.query.time);
       if (Number.isFinite(current) && current >= 0) playhead = current;
       wake();
       res.setHeader("Content-Type", "application/json");
@@ -242,16 +258,38 @@ async function handleRequest(req, res) {
         )
       );
     }
+    if (u.pathname === "/prepare") {
+      // Tizen AVPlay blocks the page, and with it the worker's requests, until
+      // a seek has data. Convert the target before the player seeks there: the
+      // cue at or before it and the next one, where AVPlay lands on a UE50RU7400.
+      const time = Number(u.query.time);
+      if (!Number.isFinite(time) || time < 0) throw Error("prepare-time");
+      let cue = 0;
+      for (let i = 0; i < cues.length && cues[i].timeMs <= time * 1000; i++) cue = i;
+      const ctx = requestContext;
+      const unit = await units.at(cues[cue].start, ctx);
+      if (ctx.cancelled || requestContext !== ctx) throw Error("cancelled");
+      const s = createGeneration(unit);
+      operationSession = s;
+      s.pinned.add(0);
+      await converted(s, 0);
+      if (await unitFor(s, 1)) {
+        s.pinned.add(1);
+        await converted(s, 1);
+      }
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ g: s.g }));
+    }
     if (u.pathname === "/input") {
       const s = session;
-      if (!s || s.g !== Number(u.searchParams.get("g"))) throw Error("cancelled");
+      if (!s || s.g !== Number(u.query.g)) throw Error("cancelled");
       const b = await input(s);
       res.writeHead(b.length ? 200 : 204);
       return res.end(b);
     }
     if (u.pathname === "/output") {
       const s = session;
-      if (!s || s.g !== Number(u.searchParams.get("g"))) throw Error("cancelled");
+      if (!s || s.g !== Number(u.query.g)) throw Error("cancelled");
       let bytes = 0,
         parts = [];
       let ended = false;
@@ -294,7 +332,7 @@ async function handleRequest(req, res) {
       });
       while (!s.cancelled && s.frames.length > Math.max(96, s.wanted)) await wait();
       if (s.cancelled) throw Error("cancelled");
-      const b = Buffer.concat([s.partial, ...parts]);
+      const b = Buffer.concat([s.partial].concat(parts));
       let p = 0;
       while (p + 2560 <= b.length) {
         if (b[p] !== 11 || b[p + 1] !== 119) throw Error("ac3-sync");
@@ -356,19 +394,30 @@ async function handleRequest(req, res) {
     }
     let s = session;
     let index = s
-      ? (Array.from(s.units).find(([, unit]) => pos >= unit.start && pos < unit.end)?.[0] ?? -1)
+      ? (Array.from(s.units).find((pair) => pos >= pair[1].start && pos < pair[1].end)?.[0] ?? -1)
       : -1;
     if (!s || s.cancelled || index < 0 || (!s.cache.has(index) && s.index !== index)) {
       const ctx = requestContext,
         resolver = units;
       const unit = await resolver.at(pos, ctx);
       if (ctx.cancelled || requestContext !== ctx) throw Error("cancelled");
+      // A prepared Tizen seek owns the session until the player reads it. Hold
+      // other reads (AVPlay drops them when it seeks) instead of replacing it.
+      const holdUntil = Date.now() + 20000;
+      while (
+        !closed &&
+        session &&
+        !session.cancelled &&
+        session.pinned.size &&
+        Date.now() < holdUntil
+      )
+        await wait();
+      if (closed) return res.end();
       // Header discovery awaits I/O; another request may have created the same
       // generation meanwhile. Reuse it rather than cancelling its encoder.
       s = session;
       index = s
-        ? (Array.from(s.units).find(([, entry]) => pos >= entry.start && pos < entry.end)?.[0] ??
-          -1)
+        ? (Array.from(s.units).find((pair) => pos >= pair[1].start && pos < pair[1].end)?.[0] ?? -1)
         : -1;
       if (!s || s.cancelled || index < 0 || (!s.cache.has(index) && s.index !== index)) {
         s = createGeneration(unit);
@@ -378,6 +427,7 @@ async function handleRequest(req, res) {
     operationSession = s;
     while (pos <= end && !closed && pos < meta.cuesOffset) {
       const b = await converted(s, index);
+      for (const pinned of Array.from(s.pinned)) if (pinned <= index) s.pinned.delete(pinned);
       if (closed) break;
       const offset = pos - s.units.get(index).start;
       if (offset < 0 || offset > b.length) throw Error("offset");
@@ -406,8 +456,13 @@ async function handleRequest(req, res) {
       session.error = e.message;
       wake();
     }
-    if (!res.headersSent)
-      res.writeHead(e.code === "REQUEST_SUPERSEDED" || e.message === "cancelled" ? 409 : 500);
+    // A read aborted because a newer generation replaced this one (Node 4
+    // reports the abort as "socket hang up") is superseded, not a failure.
+    const superseded =
+      e.code === "REQUEST_SUPERSEDED" ||
+      e.message === "cancelled" ||
+      Boolean(operationSession && operationSession.cancelled);
+    if (!res.headersSent) res.writeHead(superseded ? 409 : 500);
     res.end();
   }
 }
@@ -449,7 +504,15 @@ async function createSession(options) {
     clearTimeout(deadline);
   }
   if (token !== creation || ctx.cancelled) throw Error("cancelled");
-  source = { url: options.url, trackNumber: prepared.trackNumber, format: prepared.format };
+  // Seconds converted ahead of the playhead. Tizen AVPlay holds its clock
+  // until a model-specific buffer is full, which can exceed the webOS window.
+  const ahead = Number(options.ahead);
+  source = {
+    url: options.url,
+    trackNumber: prepared.trackNumber,
+    format: prepared.format,
+    ahead: Number.isFinite(ahead) && ahead >= 8 && ahead <= 120 ? ahead : 8
+  };
   meta = prepared.meta;
   header = prepared.header;
   cues = prepared.cues;

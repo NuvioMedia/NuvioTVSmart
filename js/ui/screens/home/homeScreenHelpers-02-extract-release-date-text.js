@@ -67,7 +67,7 @@ import { getTvArtworkPixelRatio, getTvHeroTransitionMode, getTvRuntimePerformanc
 
 import { canUseModernTvArtworkBounding } from "../../../platform/tvPerformancePolicy.js";
 
-import { jpegDimensions, pngStillDimensions, rescaleHomeLogoBlob } from "../../images/tvPosterRescaler.js";
+import { jpegDimensions, pngStillDimensions } from "../../images/tvPosterRescaler.js";
 
 import { isFastHorizontalNavigationEnabled } from "../../../platform/sharedKeys.js";
 
@@ -250,6 +250,10 @@ const HERO_LOGO_MAX_BYTES = 8 * 1024 * 1024;
 
 export const HERO_IMAGE_PRELOAD_TIMEOUT_MS = 1500;
 
+// Mirrors the poster rescaler's per-job budget: a worker that dies mid-decode
+// is retired so the next hero swap can spawn a fresh one.
+const HERO_ARTWORK_WORKER_TIMEOUT_MS = 15000;
+
 export const heroImagePreloadCache = new Map();
 
 export const heroBackdropBitmapCache = new Map();
@@ -266,6 +270,222 @@ function canDecodeHeroBackdropBitmap(src) {
     typeof globalThis.createImageBitmap === "function" &&
     /^https?:\/\//i.test(src)
   );
+}
+
+const HERO_BACKDROP_HEADER_SLICE_BYTES = 65536;
+
+// The worker reuses the header parsers the main-thread fallback uses, so a
+// source the worker trusts and the same source decoded in-thread can never
+// disagree about its natural size.
+const HERO_BACKDROP_WORKER_SOURCE = `
+const ascii = ${ascii.toString()};
+const uint16le = ${uint16le.toString()};
+const uint32le = ${uint32le.toString()};
+const webpLogoDimensions = ${webpLogoDimensions.toString()};
+const pngStillDimensions = ${pngStillDimensions.toString()};
+const jpegDimensions = ${jpegDimensions.toString()};
+const heroLogoDimensions = ${heroLogoDimensions.toString()};
+self.onmessage = async (event) => {
+  const { id, kind, url, resizeWidth, targetWidth, targetHeight, maxSmallWidth, maxSmallHeight, timeoutMs } = event.data || {};
+  const hasTimeout = Number(timeoutMs) > 0 && typeof AbortController === "function";
+  const controller = hasTimeout ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), Number(timeoutMs)) : 0;
+  try {
+    const fetchOpts = controller
+      ? { mode: "cors", credentials: "omit", signal: controller.signal }
+      : { mode: "cors", credentials: "omit" };
+    const res = await fetch(url, fetchOpts);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    if (kind === "logo") {
+      const bytes = await res.arrayBuffer();
+      if (bytes.byteLength > 8388608) {
+        self.postMessage({ id, ok: true, skippedSmall: true });
+        return;
+      }
+      const dims = heroLogoDimensions(new Uint8Array(bytes));
+      if (!dims) {
+        self.postMessage({ id, ok: true, skippedSmall: true });
+        return;
+      }
+      if (dims.width <= maxSmallWidth && (!maxSmallHeight || !dims.height || dims.height <= maxSmallHeight)) {
+        self.postMessage({ id, ok: true, skippedSmall: true, width: dims.width, height: dims.height });
+        return;
+      }
+      let bitmap = null;
+      try {
+        bitmap = await createImageBitmap(new Blob([bytes]), {
+          resizeWidth: Math.min(targetWidth, dims.width),
+          resizeQuality: "medium",
+          imageOrientation: "from-image"
+        });
+        const scale = Math.min(targetWidth / bitmap.width, targetHeight / bitmap.height, 1);
+        const w = Math.max(1, Math.round(bitmap.width * scale));
+        const h = Math.max(1, Math.round(bitmap.height * scale));
+        const canvas = new OffscreenCanvas(w, h);
+        canvas.getContext("2d", { alpha: true, willReadFrequently: true }).drawImage(bitmap, 0, 0, w, h);
+        const outBlob = await canvas.convertToBlob({ type: "image/webp", quality: 0.92 });
+        self.postMessage({ id, ok: true, blob: outBlob });
+      } finally {
+        if (bitmap) bitmap.close();
+      }
+      return;
+    }
+    const blob = await res.blob();
+    const headBuf = typeof blob.slice === "function"
+      ? await blob.slice(0, ${HERO_BACKDROP_HEADER_SLICE_BYTES}).arrayBuffer()
+      : await blob.arrayBuffer();
+    const naturalWidth = Number(heroLogoDimensions(new Uint8Array(headBuf))?.width || 0);
+    const bitmap = naturalWidth > 0 && naturalWidth <= resizeWidth
+      ? await createImageBitmap(blob)
+      : await createImageBitmap(blob, { resizeWidth, resizeQuality: "low" });
+    self.postMessage({ id, ok: true, bitmap }, [bitmap]);
+  } catch (_) {
+    self.postMessage({ id, ok: false });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+`;
+
+let heroBackdropWorker = null;
+let heroBackdropWorkerUrl = "";
+let heroBackdropWorkerNextId = 1;
+const heroBackdropWorkerJobs = new Map();
+
+function resetHeroBackdropWorker(err = null) {
+  const pending = Array.from(heroBackdropWorkerJobs.values());
+  heroBackdropWorkerJobs.clear();
+  if (heroBackdropWorker) {
+    try {
+      heroBackdropWorker.terminate?.();
+    } catch (_) {}
+    heroBackdropWorker = null;
+  }
+  if (heroBackdropWorkerUrl) {
+    try {
+      globalThis.URL?.revokeObjectURL?.(heroBackdropWorkerUrl);
+    } catch (_) {}
+    heroBackdropWorkerUrl = "";
+  }
+  pending.forEach((job) => job.reject(err || new Error("hero backdrop worker reset")));
+}
+
+function getHeroBackdropWorker() {
+  if (heroBackdropWorker) {
+    return heroBackdropWorker;
+  }
+  if (typeof globalThis.Worker !== "function" || typeof globalThis.URL?.createObjectURL !== "function" || typeof Blob === "undefined") {
+    return null;
+  }
+  let workerUrl = "";
+  try {
+    workerUrl = globalThis.URL.createObjectURL(new Blob([HERO_BACKDROP_WORKER_SOURCE], { type: "text/javascript" }));
+    const worker = new globalThis.Worker(workerUrl);
+    worker.onmessage = (event) => {
+      const { id, ok, bitmap, blob, skippedSmall, width, height } = event.data || {};
+      const job = heroBackdropWorkerJobs.get(id);
+      if (!job) {
+        bitmap?.close?.();
+        return;
+      }
+      heroBackdropWorkerJobs.delete(id);
+      if (ok && job.kind === "logo") {
+        job.resolve(skippedSmall ? { skippedSmall: true, width, height } : { blob });
+        return;
+      }
+      if (ok && bitmap) {
+        job.resolve(bitmap);
+      } else {
+        job.reject(new Error("hero backdrop worker decode failed"));
+      }
+    };
+    worker.onerror = () => {
+      resetHeroBackdropWorker(new Error("hero backdrop worker error"));
+    };
+    heroBackdropWorker = worker;
+    heroBackdropWorkerUrl = workerUrl;
+    return worker;
+  } catch (_) {
+    if (workerUrl) {
+      try {
+        globalThis.URL?.revokeObjectURL?.(workerUrl);
+      } catch (__) {}
+    }
+    return null;
+  }
+}
+
+async function readBackdropNaturalWidth(blob) {
+  try {
+    const buffer =
+      typeof blob?.slice === "function" ? await blob.slice(0, HERO_BACKDROP_HEADER_SLICE_BYTES).arrayBuffer() : await blob?.arrayBuffer?.();
+    if (!buffer) {
+      return 0;
+    }
+    const dims = heroLogoDimensions(new Uint8Array(buffer));
+    return Number(dims?.width || 0);
+  } catch (_) {
+    return 0;
+  }
+}
+
+async function decodeHeroBackdropBitmapInThread(url, resizeWidth) {
+  const response = await globalThis.fetch(url, { mode: "cors", credentials: "omit" });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  const blob = await response.blob();
+  const naturalWidth = await readBackdropNaturalWidth(blob);
+  if (naturalWidth > 0 && naturalWidth <= resizeWidth) {
+    return globalThis.createImageBitmap(blob);
+  }
+  return globalThis.createImageBitmap(blob, { resizeWidth, resizeQuality: "low" });
+}
+
+function decodeHeroBackdropBitmap(url, resizeWidth) {
+  const worker = getHeroBackdropWorker();
+  if (!worker) {
+    return decodeHeroBackdropBitmapInThread(url, resizeWidth);
+  }
+  return new Promise((resolve, reject) => {
+    const id = heroBackdropWorkerNextId++;
+    // A hero decode whose fetch never settles would leave the backdrop blank
+    // forever and block every later decode on the single worker, so retire the
+    // worker on the same budget the poster rescaler uses.
+    const timer = setTimeout(() => {
+      heroBackdropWorkerJobs.delete(id);
+      resetHeroBackdropWorker(new Error("hero backdrop worker timeout"));
+    }, HERO_ARTWORK_WORKER_TIMEOUT_MS);
+    heroBackdropWorkerJobs.set(id, {
+      resolve: (bitmap) => {
+        clearTimeout(timer);
+        resolve(bitmap);
+      },
+      reject: (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    });
+    try {
+      worker.postMessage({ id, url, resizeWidth });
+    } catch (error) {
+      clearTimeout(timer);
+      heroBackdropWorkerJobs.delete(id);
+      resetHeroBackdropWorker(error);
+      decodeHeroBackdropBitmapInThread(url, resizeWidth).then(resolve, reject);
+    }
+  });
+}
+
+/**
+ * Drop the hero decode worker and every cached backdrop bitmap. Used when the
+ * Home DOM is discarded, and when Home goes off-screen for playback: images a
+ * canvas already painted stay, and the next hero swap starts a fresh worker.
+ */
+export function resetHeroArtworkWorker() {
+  resetHeroBackdropWorker(new Error("hero artwork worker reset"));
+  heroBackdropBitmapCache.forEach((entry) => entry.then((result) => result?.bitmap?.close?.()));
+  heroBackdropBitmapCache.clear();
 }
 
 export function preloadHeroBackdrop(src) {
@@ -287,24 +507,15 @@ export function preloadHeroBackdrop(src) {
     oldest.then((entry) => entry.bitmap?.close?.());
   }
   const resizeWidth = Math.max(1, Math.round((globalThis.innerWidth || 1920) * (globalThis.devicePixelRatio || 1)));
-  const preload = globalThis
-    .fetch(normalized, { mode: "cors", credentials: "omit" })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+  const preload = decodeHeroBackdropBitmap(normalized, resizeWidth).then(
+    (bitmap) => ({ loaded: true, bitmap }),
+    () => {
+      if (heroBackdropBitmapCache.get(normalized) === preload) {
+        heroBackdropBitmapCache.delete(normalized);
       }
-      return response.blob();
-    })
-    .then((blob) => globalThis.createImageBitmap(blob, { resizeWidth, resizeQuality: "medium" }))
-    .then(
-      (bitmap) => ({ loaded: true, bitmap }),
-      () => {
-        if (heroBackdropBitmapCache.get(normalized) === preload) {
-          heroBackdropBitmapCache.delete(normalized);
-        }
-        return preloadImageSource(normalized).then((loaded) => ({ loaded, bitmap: null }));
-      }
-    );
+      return preloadImageSource(normalized).then((loaded) => ({ loaded, bitmap: null }));
+    }
+  );
   heroBackdropBitmapCache.set(normalized, preload);
   return preload;
 }
@@ -462,17 +673,36 @@ export function preloadHeroLogo(src) {
     entry.settled = true;
     return { loaded: true, src: objectUrl };
   };
-  if (typeof globalThis.Worker === "function") {
-    entry.promise = rescaleHomeLogoBlob(normalized, {
-      width: target.width,
-      height: target.height,
-      timeoutMs: HERO_IMAGE_PRELOAD_TIMEOUT_MS
+  const smallWidthThreshold = 1000;
+  const smallHeightThreshold = 500;
+  const worker = typeof globalThis.Worker === "function" ? getHeroBackdropWorker() : null;
+  if (worker) {
+    entry.promise = new Promise((resolve, reject) => {
+      const id = heroBackdropWorkerNextId++;
+      heroBackdropWorkerJobs.set(id, { resolve, reject, kind: "logo" });
+      try {
+        worker.postMessage({
+          id,
+          kind: "logo",
+          url: normalized,
+          targetWidth: target.width,
+          targetHeight: target.height,
+          maxSmallWidth: smallWidthThreshold,
+          maxSmallHeight: smallHeightThreshold,
+          timeoutMs: HERO_IMAGE_PRELOAD_TIMEOUT_MS
+        });
+      } catch (error) {
+        heroBackdropWorkerJobs.delete(id);
+        resetHeroBackdropWorker(error);
+        reject(error);
+      }
     })
-      .then((resized) => {
-        if (!resized) {
-          throw new Error("logo rescale skipped");
+      .then((result) => {
+        if (result?.skippedSmall || !result?.blob) {
+          entry.settled = true;
+          return fallbackSource(normalized);
         }
-        return finishRescaledBlob(resized);
+        return finishRescaledBlob(result.blob);
       })
       .catch(() => {
         entry.settled = true;
@@ -503,7 +733,7 @@ export function preloadHeroLogo(src) {
       if (!dimensions) {
         throw new Error("unsupported logo");
       }
-      if (dimensions.width <= target.width && dimensions.height <= target.height) {
+      if (dimensions.width <= smallWidthThreshold && (!dimensions.height || dimensions.height <= smallHeightThreshold)) {
         throw new Error("logo already small");
       }
       const bitmap = await globalThis.createImageBitmap(blob, {
@@ -543,6 +773,7 @@ export function resetHeroLogoRescaleCache() {
     }
   });
   heroLogoRescaleCache.clear();
+  resetHeroArtworkWorker();
 }
 
 export function preloadImageSource(src) {
@@ -620,17 +851,30 @@ export function preloadHeroAssets(hero, layoutMode = "modern") {
 }
 
 export function prepareHeroImageEnter(image, enterClass) {
-  // A reused image is already opaque. Without an immediate reset, changing src
-  // flashes the new artwork while CSS starts fading from 1 towards 0; the next
-  // animation frame then reverses that fade instead of entering from 0.
-  const transition = image.style.getPropertyValue("transition");
-  const priority = image.style.getPropertyPriority("transition");
+  // A reused image is already opaque. Suppress transitions while resetting to
+  // opacity 0 so Frame 1 commits the hidden enter state naturally without a
+  // synchronous offsetWidth layout flush, then restore on reveal/finalize.
+  if (!image.__heroTransitionSuppressed) {
+    image.__heroSavedTransition = {
+      value: image.style.getPropertyValue("transition"),
+      priority: image.style.getPropertyPriority("transition")
+    };
+    image.__heroTransitionSuppressed = true;
+  }
   image.style.setProperty("transition", "none", "important");
   image.classList.remove("is-visible");
   image.classList.add(enterClass);
-  void image.offsetWidth;
-  if (transition) {
-    image.style.setProperty("transition", transition, priority);
+}
+
+export function restoreHeroImageTransition(image) {
+  if (!image?.__heroTransitionSuppressed) {
+    return;
+  }
+  const saved = image.__heroSavedTransition;
+  delete image.__heroTransitionSuppressed;
+  delete image.__heroSavedTransition;
+  if (saved?.value) {
+    image.style.setProperty("transition", saved.value, saved.priority || "");
   } else {
     image.style.removeProperty("transition");
   }

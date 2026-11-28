@@ -2,6 +2,11 @@ import * as internals from "./homeScreenContext.js";
 import { getHeroEnrichDwellMs, isModernTvProfile } from "../../../platform/tvPerformancePolicy.js";
 import { getTvRuntimePerformanceProfile } from "../../../platform/tvRuntimePerformance.js";
 
+const MODERN_TV_HERO_ENRICH_SETTLE_DELAY_MS = 500;
+const MODERN_TV_HERO_PACE_QUIET_MS = 370;
+const MODERN_TV_HERO_BROWSE_WINDOW_MS = 1400;
+const MODERN_TV_HERO_BROWSE_SETTLE_DELAY_MS = 520;
+
 export function createHomeScreenMethods10() {
   const { MODERN_HOME_CONSTANTS, shouldEnrichModernHero, preloadHeroAssets, buildHeroIdentity } = internals;
 
@@ -28,23 +33,55 @@ export function createHomeScreenMethods10() {
       const now = Date.now();
       const previous = Number(this.lastModernHeroNavAt || 0);
       const isRapidNav = previous > 0 && now - previous < MODERN_HOME_CONSTANTS.heroRapidNavThresholdMs;
-      const delay = immediate ? 0 : this.getHeroFocusDelay({ rapid: isRapidNav });
+      const tvProfile = getTvRuntimePerformanceProfile();
+      let delay = immediate ? 0 : this.getHeroFocusDelay({ rapid: isRapidNav });
+      if (tvProfile?.isTvRuntime && !immediate && previous > 0 && now - previous < MODERN_TV_HERO_BROWSE_WINDOW_MS) {
+        delay = Math.max(delay, MODERN_TV_HERO_BROWSE_SETTLE_DELAY_MS);
+      }
       this.lastModernHeroNavAt = now;
       if (isRapidNav || immediate) {
         this.container?.querySelector(".home-modern-hero-card")?.classList.add("is-hero-focus-pending");
       }
-      const shouldWaitForCamera = deferUntilVerticalSettle || isModernTvProfile(getTvRuntimePerformanceProfile());
+      const shouldWaitForCamera = !immediate && (deferUntilVerticalSettle || isModernTvProfile(tvProfile));
+      // Legacy TVs commit the hero in 150-260 ms, sooner than the input window
+      // below: extending their preload would only start it after the commit.
+      const pacesAgainstTvInput = Boolean(tvProfile?.isTvRuntime && !tvProfile.isLegacyTvRuntime && !immediate);
+      const inputPaceAt = Number(this.lastHomeInputAt || 0);
+      const targetTrack = node?.closest?.(".home-track, .home-grid-track") || null;
+      const isCameraScrollActive = () => {
+        if (
+          typeof this.isModernHydrationScrollActive === "function"
+            ? Boolean(this.isModernHydrationScrollActive())
+            : Boolean(this.isModernVerticalScrollActive?.())
+        ) {
+          return true;
+        }
+        return Boolean(targetTrack && this.isScrollAnimationActive?.(targetTrack, "x"));
+      };
+      const getInputPaceQuietRemainingMs = () => {
+        if (!pacesAgainstTvInput || !(inputPaceAt > 0)) {
+          return 0;
+        }
+        return Math.max(0, MODERN_TV_HERO_PACE_QUIET_MS - (Date.now() - inputPaceAt));
+      };
+      const getCameraOrInputPollDelayMs = () => {
+        const quietRemainingMs = getInputPaceQuietRemainingMs();
+        if (shouldWaitForCamera && isCameraScrollActive()) {
+          return Math.max(MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs, quietRemainingMs);
+        }
+        return quietRemainingMs;
+      };
       const waitForVerticalSettle = (callback) => {
-        if (shouldWaitForCamera && this.isModernHydrationScrollActive()) {
-          this.heroBackdropPreloadTimer = setTimeout(
-            () => waitForVerticalSettle(callback),
-            MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs
-          );
+        const pollDelayMs = getCameraOrInputPollDelayMs();
+        if (pollDelayMs > 0) {
+          this.heroBackdropPreloadTimer = setTimeout(() => waitForVerticalSettle(callback), pollDelayMs);
           return;
         }
         callback();
       };
-      const preloadDelay = Math.max(0, Math.min(120, delay - 80));
+      const preloadDelay = pacesAgainstTvInput
+        ? Math.max(MODERN_TV_HERO_PACE_QUIET_MS, delay - 80)
+        : Math.max(0, Math.min(120, delay - 80));
       this.heroBackdropPreloadTimer = setTimeout(() => {
         this.heroBackdropPreloadTimer = null;
         waitForVerticalSettle(() => {
@@ -63,8 +100,9 @@ export function createHomeScreenMethods10() {
         });
       }, preloadDelay);
       const commitHeroWhenSettled = () => {
-        if (deferUntilVerticalSettle && this.isModernVerticalScrollActive()) {
-          this.heroFocusDelayTimer = setTimeout(commitHeroWhenSettled, MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs);
+        const pollDelayMs = getCameraOrInputPollDelayMs();
+        if (pollDelayMs > 0) {
+          this.heroFocusDelayTimer = setTimeout(commitHeroWhenSettled, pollDelayMs);
           return;
         }
         this.heroFocusDelayTimer = null;
@@ -91,12 +129,20 @@ export function createHomeScreenMethods10() {
           if (!latestHero || buildHeroIdentity(latestHero) !== scheduledHeroIdentity) {
             return;
           }
+          const activeTvProfile = getTvRuntimePerformanceProfile();
           const shouldEnrichHero = shouldEnrichModernHero(latestHero);
           // While the dwell runs the hero is a plain, complete catalog hero:
           // the enriching flag would keep the previous backdrop on screen.
-          const enrichDwellMs = shouldEnrichHero ? getHeroEnrichDwellMs(getTvRuntimePerformanceProfile()) : 0;
+          const enrichDwellMs = shouldEnrichHero ? getHeroEnrichDwellMs(activeTvProfile) : 0;
+          const postCommitEnrichDelayMs =
+            shouldEnrichHero && !enrichDwellMs && activeTvProfile?.isTvRuntime && !activeTvProfile.isLegacyTvRuntime && !immediate
+              ? MODERN_TV_HERO_ENRICH_SETTLE_DELAY_MS
+              : 0;
+          const effectiveEnrichDelayMs = enrichDwellMs || postCommitEnrichDelayMs;
           const focusedHero =
-            shouldEnrichHero && !enrichDwellMs ? { ...latestHero, heroMetaEnriching: true } : { ...latestHero, heroMetaEnriching: false };
+            shouldEnrichHero && !effectiveEnrichDelayMs
+              ? { ...latestHero, heroMetaEnriching: true }
+              : { ...latestHero, heroMetaEnriching: false };
 
           // Android publishes the newly focused preview as soon as focus settles;
           // metadata enrichment remains an independent background update. Waiting
@@ -110,14 +156,20 @@ export function createHomeScreenMethods10() {
           }
           this.applyHeroToDom();
 
-          if (shouldEnrichHero && enrichDwellMs) {
+          if (shouldEnrichHero && effectiveEnrichDelayMs > 0) {
             void preloadHeroAssets(focusedHero, "modern");
-            this.heroEnrichDwellTimer = setTimeout(() => {
+            const scheduleEnrichAfterCamera = () => {
               this.heroEnrichDwellTimer = null;
-              if (Number(this.heroFocusToken || 0) === focusToken) {
-                void this.enrichCurrentHeroAsync(focusedHero, focusToken, { deferCommit: true });
+              if (Number(this.heroFocusToken || 0) !== focusToken) {
+                return;
               }
-            }, enrichDwellMs);
+              if (shouldWaitForCamera && isCameraScrollActive()) {
+                this.heroEnrichDwellTimer = setTimeout(scheduleEnrichAfterCamera, MODERN_HOME_CONSTANTS.verticalScrollSettlePollMs);
+                return;
+              }
+              void this.enrichCurrentHeroAsync(focusedHero, focusToken, { deferCommit: true });
+            };
+            this.heroEnrichDwellTimer = setTimeout(scheduleEnrichAfterCamera, effectiveEnrichDelayMs);
             return;
           }
           if (shouldEnrichHero) {

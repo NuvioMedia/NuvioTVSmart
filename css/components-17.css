@@ -47,6 +47,7 @@
   overflow-x: hidden;
   scrollbar-width: none;
   scroll-padding-top: 0;
+  will-change: scroll-position;
   transition: opacity 480ms ease;
 }
 
@@ -138,10 +139,12 @@
   align-items: flex-end;
 }
 
-/* Hint the compositor only while the camera is actually moving; paying for a
-   promoted layer on every idle row would cost memory, especially on TV GPUs. */
-.home-screen-shell.home-layout-modern .home-track.is-camera-scrolling,
-.home-screen-shell.home-layout-modern .home-modern-rows-viewport.is-camera-scrolling {
+/* Keep unparked modern rows promoted so horizontal D-pad scrolling does not
+   re-rasterize the track on Frame 2; legacy/constrained runtimes opt out. */
+body:not(.legacy-webos):not(.webos-unpromoted-home-tracks):not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-track {
   will-change: scroll-position;
 }
 

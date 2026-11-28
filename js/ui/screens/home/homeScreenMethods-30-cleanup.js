@@ -1,6 +1,6 @@
 import * as internals from "./homeScreenContext.js";
 import { resetHomeArtworkRescaler } from "../../images/tvPosterRescaler.js";
-import { resetHeroLogoRescaleCache } from "./homeScreenHelpers-02-extract-release-date-text.js";
+import { resetHeroArtworkWorker, resetHeroLogoRescaleCache } from "./homeScreenHelpers-02-extract-release-date-text.js";
 
 export function createHomeScreenMethods30() {
   const { ScreenUtils, Platform } = internals;
@@ -78,10 +78,14 @@ export function createHomeScreenMethods30() {
       }
       this.endModernVerticalFastScroll({ land: false });
       this.stopHeroRotation();
+      // Leaving Home (another route, playback or sign-out) must not leave the
+      // hero decode worker parked next to the player's video buffer.
+      resetHeroArtworkWorker();
       if (this.heroDescriptionAutoScrollFrame) {
         cancelAnimationFrame(this.heroDescriptionAutoScrollFrame);
         this.heroDescriptionAutoScrollFrame = 0;
       }
+      this.clearHeroDescriptionAutoScrollTimer?.();
       this.heroDescriptionAutoScroller?.stop();
       this.heroDescriptionScrollHolding = false;
       this.cancelPendingHeroFocus();
@@ -109,6 +113,22 @@ export function createHomeScreenMethods30() {
         cancelAnimationFrame(this.homeTruncationFrame);
         this.homeTruncationFrame = null;
       }
+      if (this.homeHeroBoundsFrame) {
+        cancelAnimationFrame(this.homeHeroBoundsFrame);
+        this.homeHeroBoundsFrame = 0;
+      }
+      if (this.homeHeroBoundsSettleTimer) {
+        clearTimeout(this.homeHeroBoundsSettleTimer);
+        this.homeHeroBoundsSettleTimer = null;
+      }
+      if (this.collectionFocusGifTimer) {
+        clearTimeout(this.collectionFocusGifTimer);
+        this.collectionFocusGifTimer = null;
+      }
+      if (this.collectionFocusGifRaf) {
+        cancelAnimationFrame(this.collectionFocusGifRaf);
+        this.collectionFocusGifRaf = 0;
+      }
       if (this.homeLazyImageHydrationRaf) {
         cancelAnimationFrame(this.homeLazyImageHydrationRaf);
         this.homeLazyImageHydrationRaf = 0;
@@ -125,6 +145,10 @@ export function createHomeScreenMethods30() {
         clearTimeout(this.homeLazyImageNeighborTimer);
         this.homeLazyImageNeighborTimer = null;
       }
+      if (this.homeLazyImageQuietPrefetchTimer) {
+        clearTimeout(this.homeLazyImageQuietPrefetchTimer);
+        this.homeLazyImageQuietPrefetchTimer = null;
+      }
       if (this.homeLazyImageCommitRaf) {
         cancelAnimationFrame(this.homeLazyImageCommitRaf);
         this.homeLazyImageCommitRaf = 0;
@@ -134,6 +158,8 @@ export function createHomeScreenMethods30() {
       this.pendingHomeLazyImageAnchor = null;
       this.pendingHomeLazyImageFocusedRowOnly = false;
       this.pendingHomeLazyImageIncludeNeighborRows = false;
+      this.pendingHomeLazyImageSettleRefreshIndex = false;
+      this.pendingHomeLazyImageSettleViewportChanged = false;
       this.homeLazyImageHydrationNeedsFullScan = false;
       this.homeLazyImageHydrationNeedsIndexRefresh = false;
       this.homeLazyImageHydrationIndex = null;
