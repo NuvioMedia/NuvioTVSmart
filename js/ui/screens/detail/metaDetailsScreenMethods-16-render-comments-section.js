@@ -39,6 +39,11 @@ export function formatCommentTimestamp(createdAt, updatedAt, locale = "en") {
   }
 }
 
+// A failed company logo would otherwise become the transparent artwork
+// placeholder and leave a blank card. Show the company name instead, like
+// Android TV's CompanyLogosSection.
+const COMPANY_LOGO_ERROR_HANDLER = "var name=this.nextElementSibling;if(name){name.hidden=false;}this.remove();";
+
 export function createMetaDetailsScreenMethods16() {
   const {
     Router,
@@ -476,7 +481,7 @@ export function createMetaDetailsScreenMethods16() {
                    data-company-key="${escapeHtml(`${entityKind}:${company.tmdbId || company.name || ""}`)}"
                    data-company-name="${escapeHtml(company.name || "")}"
                    aria-label="${escapeHtml(company.name || title || "Company")}">
-            ${company.logo ? `<img src="${escapeHtml(company.logo)}" alt="${escapeHtml(company.name || "Company")}" loading="lazy" decoding="async" />` : `<span>${escapeHtml(company.name || "")}</span>`}
+            ${company.logo ? `<img src="${escapeHtml(company.logo)}" alt="${escapeHtml(company.name || "Company")}" loading="lazy" decoding="async" onerror="${COMPANY_LOGO_ERROR_HANDLER}" />${company.name ? `<span hidden>${escapeHtml(company.name)}</span>` : ""}` : `<span>${escapeHtml(company.name || "")}</span>`}
           </article>
         `
         )
