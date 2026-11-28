@@ -83,6 +83,14 @@ export function createHomeScreenMethods05() {
         }
       }
 
+      const titleNode = heroNode.querySelector(".home-hero-title-text");
+      const titleText = String(display.title || "");
+      const hasTitleText = Boolean(titleText.trim());
+      if (titleNode) {
+        titleNode.textContent = titleText;
+        titleNode.classList.toggle("is-hidden", Boolean(display.logo) || !hasTitleText);
+      }
+
       const logoNode = heroNode.querySelector(".home-hero-logo:not(.home-hero-logo-transition-ghost)");
       const brandNode = heroNode.querySelector(".home-hero-brand");
       if (display.logo) {
@@ -96,6 +104,8 @@ export function createHomeScreenMethods05() {
           insertedLogo.alt = display.title || "logo";
           insertedLogo.decoding = "async";
           insertedLogo.fetchPriority = "high";
+          insertedLogo.hidden = true;
+          insertedLogo.style?.setProperty?.("display", "none");
           brandNode.insertBefore(insertedLogo, brandNode.firstChild);
           // The logo belongs to the rendered hero, unlike temporary transition
           // ghosts. Let incremental refreshes reuse or remove it.
@@ -106,12 +116,6 @@ export function createHomeScreenMethods05() {
         }
       } else if (logoNode) {
         logoNode.remove();
-      }
-
-      const titleNode = heroNode.querySelector(".home-hero-title-text");
-      if (titleNode) {
-        titleNode.textContent = display.title || "Untitled";
-        titleNode.classList.toggle("is-hidden", Boolean(display.logo));
       }
 
       if (this.layoutMode === "modern") {

@@ -174,7 +174,12 @@ import { getContinueWatchingRenderItems, shouldAppendContinueWatchingItems } fro
 
 import { shouldProtectContinueWatchingDisplay } from "./continueWatchingLoadPolicy.js";
 
-import { buildHeroBackdropSources, buildImageFallbackErrorHandler, encodeHeroBackdropFallbacks } from "./homeImageHelpers.js";
+import {
+  buildHeroBackdropSources,
+  buildHeroLogoErrorHandler,
+  buildImageFallbackErrorHandler,
+  encodeHeroBackdropFallbacks
+} from "./homeImageHelpers.js";
 
 import {
   escapeAttribute,
@@ -215,6 +220,7 @@ export function buildHeroIndicators(items = [], activeItem) {
 
 export function renderHeroMarkup(layoutMode, heroItem, heroCandidates) {
   const display = buildHeroDisplayModel(heroItem, layoutMode);
+  const hasTitleText = Boolean(String(display.title || "").trim());
   const isInteractive = layoutMode !== "modern";
   return `
     <section class="home-hero home-hero-${escapeAttribute(layoutMode)}">
@@ -234,8 +240,8 @@ export function renderHeroMarkup(layoutMode, heroItem, heroCandidates) {
         </div>
         <div class="home-hero-copy">
           <div class="home-hero-brand">
-            ${display.logo ? `<img class="home-hero-logo" src="${escapeAttribute(display.logo)}" alt="${escapeAttribute(display.title)}" decoding="async" fetchpriority="high" />` : ""}
-            <h1 class="home-hero-title-text${display.logo ? " is-hidden" : ""}">${escapeHtml(display.title)}</h1>
+            ${display.logo ? `<img class="home-hero-logo" src="${escapeAttribute(display.logo)}" alt="${escapeAttribute(display.title)}" decoding="async" fetchpriority="high" onerror="${buildHeroLogoErrorHandler()}" />` : ""}
+            <h1 class="home-hero-title-text${display.logo || !hasTitleText ? " is-hidden" : ""}">${escapeHtml(display.title)}</h1>
           </div>
           <div class="home-hero-meta-primary${display.metaPrimary.length ? "" : " is-empty"}">${renderMetaTokens(display.metaPrimary)}</div>
           <div class="home-hero-chip-row${display.chips.length ? "" : " is-empty"}">${display.chips.map((chip) => `<span class="home-hero-chip">${escapeHtml(chip)}</span>`).join("")}</div>
