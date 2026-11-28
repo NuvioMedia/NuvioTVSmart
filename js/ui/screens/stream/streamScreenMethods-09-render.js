@@ -50,6 +50,7 @@ export function createStreamScreenMethods09() {
       this._filteredStreamsCache = null;
       const { isSeries, title, subtitle, episodeLabel, detailLine, resumeLabel } = this.getHeaderMeta();
       const backdrop = this.getBackdropUrl();
+      const safeBackdrop = backdrop ? escapeHtml(String(backdrop).replace(/'/g, "%27")) : "";
       const logo = this.params?.logo || "";
       const shellStableClass = this.hasRenderedStreamRouteShell ? " stable" : "";
       const chips = this.buildSourceChipMarkup();
@@ -132,7 +133,7 @@ export function createStreamScreenMethods09() {
             <div class="stream-route-content">
               <section class="stream-route-left">
                 <div class="stream-route-left-inner">
-                  ${logo ? `<img src="${logo}" class="stream-route-logo" alt="${escapeHtml(title)}" />` : `<h1 class="stream-route-title" dir="${contentTextDirection(title)}">${escapeHtml(title)}</h1>`}
+                  ${logo ? `<img src="${escapeHtml(logo)}" class="stream-route-logo" alt="${escapeHtml(title)}" />` : `<h1 class="stream-route-title" dir="${contentTextDirection(title)}">${escapeHtml(title)}</h1>`}
                   ${episodeLabel ? `<div class="stream-route-episode-code" dir="${contentTextDirection(episodeLabel)}">${escapeHtml(episodeLabel)}</div>` : ""}
                   ${subtitle ? `<div class="stream-route-subtitle" dir="${contentTextDirection(subtitle)}">${escapeHtml(subtitle)}</div>` : ""}
                   ${detailLine ? `<div class="stream-route-detail-line${isSeries ? "" : " is-info"}" dir="${contentTextDirection(detailLine)}">${escapeHtml(detailLine)}</div>` : !isSeries && subtitle ? `<div class="stream-route-detail-line" dir="${contentTextDirection(subtitle)}">${escapeHtml(subtitle)}</div>` : ""}
@@ -155,7 +156,7 @@ export function createStreamScreenMethods09() {
 
       const nextMarkup = `
           <div class="stream-route-shell${shellStableClass}${hasPendingForAllSources ? " is-loading" : ""}">
-            <div class="stream-route-backdrop"${backdrop ? ` style="background-image:url('${String(backdrop).replace(/'/g, "%27")}')"` : ""}></div>
+            <div class="stream-route-backdrop"${safeBackdrop ? ` style="background-image:url('${safeBackdrop}')"` : ""}></div>
             <div class="stream-route-backdrop-dim"></div>
             <div class="stream-route-left-gradient"></div>
             <div class="stream-route-right-gradient"></div>

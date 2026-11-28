@@ -274,17 +274,129 @@ function canDecodeHeroBackdropBitmap(src) {
 
 const HERO_BACKDROP_HEADER_SLICE_BYTES = 65536;
 
-// The worker reuses the header parsers the main-thread fallback uses, so a
-// source the worker trusts and the same source decoded in-thread can never
-// disagree about its natural size.
-const HERO_BACKDROP_WORKER_SOURCE = `
-const ascii = ${ascii.toString()};
-const uint16le = ${uint16le.toString()};
-const uint32le = ${uint32le.toString()};
-const webpLogoDimensions = ${webpLogoDimensions.toString()};
-const pngStillDimensions = ${pngStillDimensions.toString()};
-const jpegDimensions = ${jpegDimensions.toString()};
-const heroLogoDimensions = ${heroLogoDimensions.toString()};
+// Keep the Blob Worker 100% self-contained as literal source: interpolating
+// cross-calling module functions via Function.prototype.toString() breaks under
+// esbuild minification because internal calls get renamed to bundle-local
+// identifiers that do not exist inside the worker scope.
+export const HERO_BACKDROP_WORKER_SOURCE = `
+function ascii(bytes, offset, length) {
+  let text = "";
+  for (let index = 0; index < length; index += 1) {
+    text += String.fromCharCode(bytes[offset + index] || 0);
+  }
+  return text;
+}
+function uint16le(bytes, offset) {
+  return bytes[offset] | (bytes[offset + 1] << 8);
+}
+function uint32le(bytes, offset) {
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+}
+function pngStillDimensions(bytes) {
+  if (
+    !bytes ||
+    bytes.length < 24 ||
+    bytes[0] !== 0x89 ||
+    bytes[1] !== 0x50 ||
+    bytes[2] !== 0x4e ||
+    bytes[3] !== 0x47
+  ) {
+    return null;
+  }
+  let offset = 8;
+  while (offset + 8 <= bytes.length) {
+    const length =
+      ((bytes[offset] << 24) |
+        (bytes[offset + 1] << 16) |
+        (bytes[offset + 2] << 8) |
+        bytes[offset + 3]) >>>
+      0;
+    const type = String.fromCharCode(
+      bytes[offset + 4] || 0,
+      bytes[offset + 5] || 0,
+      bytes[offset + 6] || 0,
+      bytes[offset + 7] || 0
+    );
+    if (type === "acTL") {
+      return null;
+    }
+    if (type === "IDAT" || type === "IEND") {
+      break;
+    }
+    offset += 12 + length;
+  }
+  const width = ((bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19]) >>> 0;
+  const height = ((bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23]) >>> 0;
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+function jpegDimensions(bytes) {
+  if (!bytes || bytes.length < 10 || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
+    return null;
+  }
+  let offset = 2;
+  while (offset + 9 <= bytes.length) {
+    if (bytes[offset] !== 0xff) return null;
+    const marker = bytes[offset + 1];
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+      offset += 2;
+      continue;
+    }
+    if (marker === 0xda) return null;
+    const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+    if (length < 2 || offset + 2 + length > bytes.length) return null;
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      const height = (bytes[offset + 5] << 8) | bytes[offset + 6];
+      const width = (bytes[offset + 7] << 8) | bytes[offset + 8];
+      return width > 0 && height > 0 ? { width, height } : null;
+    }
+    offset += 2 + length;
+  }
+  return null;
+}
+function webpLogoDimensions(bytes) {
+  let offset = 12;
+  while (offset + 8 <= bytes.length) {
+    const type = ascii(bytes, offset, 4);
+    const size = uint32le(bytes, offset + 4);
+    const data = offset + 8;
+    if (type === "VP8X") {
+      if (bytes[data] & 0x02) {
+        return null;
+      }
+      return {
+        width: 1 + (bytes[data + 4] | (bytes[data + 5] << 8) | (bytes[data + 6] << 16)),
+        height: 1 + (bytes[data + 7] | (bytes[data + 8] << 8) | (bytes[data + 9] << 16))
+      };
+    }
+    if (type === "VP8L") {
+      const bits = uint32le(bytes, data + 1);
+      return { width: 1 + (bits & 0x3fff), height: 1 + ((bits >>> 14) & 0x3fff) };
+    }
+    if (type === "VP8 ") {
+      if (bytes[data + 3] !== 0x9d || bytes[data + 4] !== 0x01 || bytes[data + 5] !== 0x2a) {
+        return null;
+      }
+      return {
+        width: uint16le(bytes, data + 6) & 0x3fff,
+        height: uint16le(bytes, data + 8) & 0x3fff
+      };
+    }
+    offset = data + size + (size & 1);
+  }
+  return null;
+}
+function heroLogoDimensions(bytes) {
+  if (!bytes || bytes.length < 24) {
+    return null;
+  }
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    return pngStillDimensions(bytes);
+  }
+  if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") {
+    return webpLogoDimensions(bytes);
+  }
+  return jpegDimensions(bytes);
+}
 self.onmessage = async (event) => {
   const { id, kind, url, resizeWidth, targetWidth, targetHeight, maxSmallWidth, maxSmallHeight, timeoutMs } = event.data || {};
   const hasTimeout = Number(timeoutMs) > 0 && typeof AbortController === "function";

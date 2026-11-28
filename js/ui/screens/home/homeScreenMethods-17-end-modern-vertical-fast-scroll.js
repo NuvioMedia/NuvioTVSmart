@@ -13,10 +13,13 @@ export function createHomeScreenMethods17() {
         clearTimeout(this.modernVerticalFastScrollEndTimer);
         this.modernVerticalFastScrollEndTimer = null;
       }
+      state?.container?.classList?.remove?.("is-camera-scrolling");
       this.modernVerticalFastScrollState = null;
       if (land && state?.direction) {
         this.landModernVerticalFastScroll(state.direction);
-        this.scheduleHomeLazyImageHydration();
+        this.scheduleHomeLazyImageHydration(this.getCurrentFocusedNode?.() || null, {
+          deferUntilVerticalSettle: true
+        });
       }
     },
     canModernFastScroll(main, direction) {
@@ -87,6 +90,7 @@ export function createHomeScreenMethods17() {
         }
         state.raf = requestAnimationFrame(tick);
       };
+      main.classList?.add?.("is-camera-scrolling");
       this.modernVerticalFastScrollState = state;
       state.raf = requestAnimationFrame(tick);
       this.armModernVerticalFastScrollEndTimer();
@@ -111,6 +115,10 @@ export function createHomeScreenMethods17() {
         .map((rowNodes) => {
           const anchor = this.getMainFocusAnchor(rowNodes[0]);
           if (!anchor) {
+            return null;
+          }
+          const section = anchor.closest?.(".home-modern-row, .home-row, .home-row-continue");
+          if (section?.classList?.contains?.("home-row-parked")) {
             return null;
           }
           const rect = anchor.getBoundingClientRect();

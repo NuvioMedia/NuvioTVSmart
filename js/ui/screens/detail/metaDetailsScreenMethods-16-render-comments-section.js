@@ -476,7 +476,7 @@ export function createMetaDetailsScreenMethods16() {
                    data-company-key="${escapeHtml(`${entityKind}:${company.tmdbId || company.name || ""}`)}"
                    data-company-name="${escapeHtml(company.name || "")}"
                    aria-label="${escapeHtml(company.name || title || "Company")}">
-            ${company.logo ? `<img src="${company.logo}" alt="${escapeHtml(company.name || "Company")}" loading="lazy" decoding="async" />` : `<span>${escapeHtml(company.name || "")}</span>`}
+            ${company.logo ? `<img src="${escapeHtml(company.logo)}" alt="${escapeHtml(company.name || "Company")}" loading="lazy" decoding="async" />` : `<span>${escapeHtml(company.name || "")}</span>`}
           </article>
         `
         )
