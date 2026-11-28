@@ -16,6 +16,7 @@ export function createPlayerControllerMethods19() {
         this.webOsDtsAudioState.resumePlayback = false;
         this.webOsDtsAudioState.controlPaused = true;
       }
+      if (this.tizenDtsAudioState) this.tizenDtsAudioState.resumePlayback = false;
 
       this.stopProgressSaving();
       this.cancelProgressSyncAfterSeek();
@@ -48,6 +49,7 @@ export function createPlayerControllerMethods19() {
         this.webOsDtsAudioState.resumePlayback = true;
         this.webOsDtsAudioState.controlPaused = false;
       }
+      if (this.tizenDtsAudioState) this.tizenDtsAudioState.resumePlayback = true;
 
       this.cancelProgressSyncAfterSeek();
       this.flushCurrentProgress({ allowCloudSync: false });
@@ -111,6 +113,7 @@ export function createPlayerControllerMethods19() {
       this.cancelProxyRedirectObservation?.();
       this.cancelProxyRedirectObservation = null;
       this.stopWebOsDtsAudioTranscode({ resetFailures: true });
+      this.stopTizenDtsAudioTranscode({ resetFailures: true });
       this.stopWebOsPlaybackKeepAlive();
       this.stopWebOsServiceKeepAlive();
       if (!this.video) return;

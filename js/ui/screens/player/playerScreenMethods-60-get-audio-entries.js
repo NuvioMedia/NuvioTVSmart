@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { withTizenConvertibleAudioEntries } from "./tizenDtsAudioEntries.js";
 
 export function createPlayerScreenMethods60() {
   const {
@@ -58,6 +59,9 @@ export function createPlayerScreenMethods60() {
             }
           };
         });
+        if (Environment.isTizen()) {
+          entries = withTizenConvertibleAudioEntries(this, entries);
+        }
       } else {
         const dashAudioTracks = typeof PlayerController.getDashAudioTracks === "function" ? PlayerController.getDashAudioTracks() : [];
         if (dashAudioTracks.length) {
@@ -109,6 +113,9 @@ export function createPlayerScreenMethods60() {
                 }
               };
             });
+          } else if (Environment.isTizen() && PlayerController.isUsingAvPlay?.() && withTizenConvertibleAudioEntries(this, []).length) {
+            // AVPlay exposes no audio track when every track is DTS or TrueHD.
+            entries = withTizenConvertibleAudioEntries(this, []);
           } else {
             const conversion = Environment.isWebOS() ? PlayerController.webOsDtsAudioState : null;
             const projectedTracks = Boolean(conversion?.id && this.embeddedAudioTracks.length);
@@ -243,6 +250,10 @@ export function createPlayerScreenMethods60() {
       return true;
     },
     isAudioEntryPending(entry = {}) {
+      const tizenConversion = PlayerController.tizenDtsAudioState;
+      if (tizenConversion?.preparing && !tizenConversion.fallingBack) {
+        return Number(entry?.embeddedAudioTrackIndex) === Number(tizenConversion.targetIndex);
+      }
       const pending = this.pendingWebOsAudioSelection;
       if (!pending) {
         return false;

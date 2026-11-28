@@ -5,11 +5,13 @@ export function createPlayerControllerMethods09() {
   const { Platform, logTizenAvPlayDebug, isTizenAvPlayDebugEnabled } = internals;
 
   return {
-    playWithAvPlay(url, requestHeaders = {}, _sourceType = null, playToken = null) {
+    // `requestUrl` is the playback the session belongs to when AVPlay opens a
+    // local rewrite of it (Tizen DTS/TrueHD conversion).
+    playWithAvPlay(url, requestHeaders = {}, _sourceType = null, playToken = null, requestUrl = url) {
       if (!this.canUseAvPlay()) {
         return false;
       }
-      if (!this.isPlaybackRequestActive(playToken, url)) {
+      if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
         return false;
       }
 
@@ -48,7 +50,7 @@ export function createPlayerControllerMethods09() {
       try {
         avplay.setListener?.({
           onbufferingstart: () => {
-            if (!this.isPlaybackRequestActive(playToken, url)) {
+            if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
               return;
             }
             if (!this.avplayBufferingStartedAt) {
@@ -59,7 +61,7 @@ export function createPlayerControllerMethods09() {
             this.emitVideoEvent("waiting", { playbackEngine: this.playbackEngine });
           },
           onbufferingprogress: (percent) => {
-            if (!this.isPlaybackRequestActive(playToken, url)) {
+            if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
               return;
             }
             const numericPercent = Number(percent);
@@ -77,7 +79,7 @@ export function createPlayerControllerMethods09() {
             }
           },
           onbufferingcomplete: () => {
-            if (!this.isPlaybackRequestActive(playToken, url)) {
+            if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
               return;
             }
             if (this.avplayBufferingStartedAt) {
@@ -107,7 +109,7 @@ export function createPlayerControllerMethods09() {
             this.emitVideoEvent("canplay", { playbackEngine: this.playbackEngine });
           },
           oncurrentplaytime: (currentTimeMs) => {
-            if (!this.isPlaybackRequestActive(playToken, url)) {
+            if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
               return;
             }
             if (this.avplaySeekInFlight) {
@@ -122,7 +124,7 @@ export function createPlayerControllerMethods09() {
             this.emitVideoEvent("timeupdate", { playbackEngine: this.playbackEngine });
           },
           onstreamcompleted: () => {
-            if (!this.isPlaybackRequestActive(playToken, url)) {
+            if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
               return;
             }
             this.avplayEnded = true;
@@ -142,7 +144,7 @@ export function createPlayerControllerMethods09() {
             }
           },
           onsubtitlechange: (duration, subtitles, type, attributes) => {
-            if (!this.isPlaybackRequestActive(playToken, url)) {
+            if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
               return;
             }
             const diagnosticSelectionAt = Number(this.avplaySubtitleDiagnosticCallbackPendingAt || 0);
@@ -176,7 +178,7 @@ export function createPlayerControllerMethods09() {
             });
           },
           onerror: (errorValue) => {
-            if (!this.isPlaybackRequestActive(playToken, url)) {
+            if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
               return;
             }
             const avplayErrorDetail = this.getLastAvPlayErrorDiagnostic();
@@ -201,7 +203,7 @@ export function createPlayerControllerMethods09() {
             });
           },
           onerrormsg: (errorType, errorMessage) => {
-            if (!this.isPlaybackRequestActive(playToken, url)) {
+            if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
               return;
             }
             const detail = this.normalizeAvPlayErrorDiagnostic(errorType, errorMessage);
@@ -229,7 +231,7 @@ export function createPlayerControllerMethods09() {
       // that the file is ready, or nothing ever starts.
       const belongsToNativeSession = () => Boolean(this.avplayActive) && String(this.avplayUrl || "") === String(url || "").trim();
       const onPrepared = () => {
-        if (!this.isUsingAvPlay() || (!this.isPlaybackRequestActive(playToken, url) && !belongsToNativeSession())) {
+        if (!this.isUsingAvPlay() || (!this.isPlaybackRequestActive(playToken, requestUrl) && !belongsToNativeSession())) {
           return;
         }
         if (this.avplayPreparedHandled) {
@@ -261,7 +263,7 @@ export function createPlayerControllerMethods09() {
       };
 
       const onPrepareError = (errorValue) => {
-        if (!this.isPlaybackRequestActive(playToken, url)) {
+        if (!this.isPlaybackRequestActive(playToken, requestUrl)) {
           return;
         }
         const avplayErrorDetail = this.getLastAvPlayErrorDiagnostic();
@@ -286,7 +288,7 @@ export function createPlayerControllerMethods09() {
           if (this.avplayPreparedHandled || !this.isUsingAvPlay()) {
             return;
           }
-          if (!this.isPlaybackRequestActive(playToken, url) && !belongsToNativeSession()) {
+          if (!this.isPlaybackRequestActive(playToken, requestUrl) && !belongsToNativeSession()) {
             return;
           }
           if (String(this.getAvPlayState?.() || "").toUpperCase() === "READY") {

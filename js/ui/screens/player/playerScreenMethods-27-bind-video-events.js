@@ -58,6 +58,14 @@ export function createPlayerScreenMethods27() {
             this.updateLoadingVisibility();
           }
         ],
+        [
+          "tizenaudioconversionchanged",
+          () => {
+            this.invalidateTrackDialogCaches();
+            this.renderAudioDialog();
+            this.updateLoadingVisibility();
+          }
+        ],
         ["hlstrackschanged", onTrackListChanged],
         ["dashtrackschanged", onTrackListChanged]
       ];
