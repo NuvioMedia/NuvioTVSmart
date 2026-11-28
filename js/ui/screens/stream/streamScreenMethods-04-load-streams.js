@@ -297,6 +297,9 @@ export function createStreamScreenMethods04() {
             const prefIdx = visibleStreams.findIndex((s) => String(s?.id || "") === preferred);
             if (prefIdx >= 0) {
               initialIndex = prefIdx;
+              // prefIdx already indexes the new list; do not remap it by the
+              // streams of the previous eager render.
+              this.renderedStreamFocusStreams = null;
             }
           }
           const rowIndex = clamp(initialIndex, 0, this.streams.length - 1);

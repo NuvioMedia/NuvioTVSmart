@@ -27,12 +27,21 @@ export function createStreamScreenMethods09() {
       // New earlier sources replace the initial first result. Once the user
       // navigates (or returns from playback), retain the selected identity.
       const holdFirstResult = this.focusState?.zone === "card" && previousFocusedIndex === 0 && !this.streamUserMovedFocus;
+      // The eager (non-virtualized) list keeps the streams of its last render,
+      // so a late source sorted above the focused card cannot shift focus onto
+      // a different stream.
+      const previousFocusStreams = !previousVirtualModel && this.focusState?.zone === "card" ? this.renderedStreamFocusStreams : null;
+      const previousFocusKeys = previousVirtualModel
+        ? previousVirtualModel.keys
+        : previousFocusStreams?.length
+          ? this.getStreamVirtualKeys(previousFocusStreams)
+          : null;
       const previousFocusedKey =
-        previousVirtualModel &&
+        Array.isArray(previousFocusKeys) &&
         Number.isInteger(previousFocusedIndex) &&
         previousFocusedIndex >= 0 &&
-        previousFocusedIndex < previousVirtualModel.keys.length
-          ? previousVirtualModel.keys[previousFocusedIndex]
+        previousFocusedIndex < previousFocusKeys.length
+          ? previousFocusKeys[previousFocusedIndex]
           : "";
       if (previousVirtualModel && !holdFirstResult && !this.streamVirtualFocusReset && Number(this.listScrollTop || 0) > 0) {
         const previousAnchorIndex = findStreamVirtualIndex(previousVirtualModel.offsets, Number(this.listScrollTop || 0));
@@ -68,7 +77,7 @@ export function createStreamScreenMethods09() {
       // cards interactive while their images warm in the background; the card
       // renderer already has a text fallback for a missing logo.
       const virtualizedStreamList = Boolean(this.shouldUseStreamVirtualization(allStreams) && filtered.length);
-      if (virtualizedStreamList && previousFocusedKey && !holdFirstResult && !this.streamVirtualFocusReset) {
+      if (filtered.length && previousFocusedKey && !holdFirstResult && !this.streamVirtualFocusReset) {
         const nextKeys = this.getStreamVirtualKeys(filtered);
         const nextFocusedIndex = nextKeys.indexOf(previousFocusedKey);
         if (nextFocusedIndex >= 0) {
@@ -183,6 +192,7 @@ export function createStreamScreenMethods09() {
         this.focusedElement = null;
       }
 
+      this.renderedStreamFocusStreams = filtered;
       this.renderedStreamListStable = stableStreamList;
       this.renderedStreamListStreams = this.streams;
       this.renderedStreamListSourceChips = this.sourceChips;

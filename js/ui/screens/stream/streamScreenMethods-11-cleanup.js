@@ -32,6 +32,7 @@ export function createStreamScreenMethods11() {
       this.renderedMarkup = null;
       this.renderedStreamListStable = false;
       this.renderedStreamListStreams = null;
+      this.renderedStreamFocusStreams = null;
       this.renderedStreamListSourceChips = null;
       this.boundStreamListNode = null;
       this.streamFocusDomCache = null;
