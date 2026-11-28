@@ -38,6 +38,9 @@ export function createPlayerScreenMethods07() {
         ...(currentStream?.behaviorHints || {})
       };
 
+      const activePlaybackUrl = String(this.activePlaybackUrl || "").trim();
+      const computedLookup = this.subtitleLookupHash && this.subtitleLookupHash.url === activePlaybackUrl ? this.subtitleLookupHash : null;
+
       let videoId = null;
       if (type === "series") {
         const routeVideoId = String(this.params?.videoId || "").trim();
@@ -59,9 +62,21 @@ export function createPlayerScreenMethods07() {
         episode: this.params?.episode ?? null,
         title: this.params?.playerTitle || this.params?.itemTitle || null,
         year: this.params?.playerReleaseYear || this.params?.year || null,
-        videoHash: behaviorHints.videoHash || currentStream?.videoHash || rawStream.videoHash || this.params?.videoHash || null,
-        videoSize: behaviorHints.videoSize || currentStream?.videoSize || rawStream.videoSize || this.params?.videoSize || null,
-        filename: resolveStreamFilename(currentStream, this.initialFilenameStreamCandidate, this.params?.filename)
+        videoHash:
+          behaviorHints.videoHash ||
+          currentStream?.videoHash ||
+          rawStream.videoHash ||
+          computedLookup?.hash ||
+          this.params?.videoHash ||
+          null,
+        videoSize:
+          behaviorHints.videoSize ||
+          currentStream?.videoSize ||
+          rawStream.videoSize ||
+          computedLookup?.fileSize ||
+          this.params?.videoSize ||
+          null,
+        filename: resolveStreamFilename(currentStream, this.initialFilenameStreamCandidate, this.params?.filename, computedLookup?.filename)
       };
     },
     buildPlaybackIdentityContext() {

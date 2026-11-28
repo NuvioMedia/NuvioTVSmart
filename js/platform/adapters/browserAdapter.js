@@ -1,9 +1,14 @@
 import { isBackEvent, normalizeKeyEvent } from "../sharedKeys.js";
+import { installTitanRemote, isTitanOsUserAgent } from "../titanRemote.js";
 
 export const browserAdapter = {
   name: "browser",
 
-  init() {},
+  init() {
+    if (isTitanOsUserAgent(globalThis.navigator?.userAgent)) {
+      installTitanRemote();
+    }
+  },
 
   exitApp() {
     try {

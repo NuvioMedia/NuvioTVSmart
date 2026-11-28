@@ -299,14 +299,16 @@ function startEngineFsRuntime() {
     loadTizenMediaRuntime();
   } finally {
     restoreHttpGuard();
+    // AVPlay can expose text tracks without rendering them. Keep the fallback
+    // extractors (and the DTS/TrueHD audio conversion) beside the existing
+    // runtime so Tizen 4+ devices with the packaged web service can use them.
+    // They do not depend on the media runtime: on a UE50RU7400 (Node 4.4.3)
+    // the runtime throws ENOENT creating its downloads folder after 2710 is
+    // already listening, which used to leave this server unstarted.
+    require("./runtime/tx3g-subtitle-service.cjs").start();
+    diagnostic("subtitle service start requested", { port: process.env.PORT });
   }
   diagnostic("EngineFS runtime module loaded", { port: process.env.PORT });
-  // AVPlay can expose text tracks without rendering them. Keep the fallback
-  // extractors beside the existing runtime so Tizen 4+ devices with the
-  // packaged web service can render supported timed text through the app HTML
-  // overlay. Devices that cannot start the service retain native fallback.
-  require("./runtime/tx3g-subtitle-service.cjs").start();
-  diagnostic("subtitle service start requested", { port: process.env.PORT });
 }
 
 // Closing the listener before /removeAll completes makes the request fail, so

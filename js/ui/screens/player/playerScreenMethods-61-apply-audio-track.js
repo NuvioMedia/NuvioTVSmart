@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { applyTizenConvertibleAudioTrack } from "./tizenDtsAudioEntries.js";
 
 export function createPlayerScreenMethods61() {
   const {
@@ -41,6 +42,8 @@ export function createPlayerScreenMethods61() {
       }
 
       if (Number.isFinite(selectedEntry.avplayAudioTrackIndex)) {
+        // A supported AVPlay track replaces a pending Tizen DTS/TrueHD conversion.
+        PlayerController.stopTizenDtsAudioTranscode?.();
         const applied =
           typeof PlayerController.setAvPlayAudioTrack === "function"
             ? PlayerController.setAvPlayAudioTrack(selectedEntry.avplayAudioTrackIndex)
@@ -111,7 +114,14 @@ export function createPlayerScreenMethods61() {
       if (Number.isFinite(selectedEntry.embeddedAudioTrackIndex)) {
         const embeddedTrack = this.getEmbeddedAudioTrackByEmbeddedIndex(selectedEntry.embeddedAudioTrackIndex);
         let applied = false;
-        if (Environment.isTizen() && typeof PlayerController.isUsingAvPlay === "function" && PlayerController.isUsingAvPlay()) {
+        if (
+          Environment.isTizen() &&
+          PlayerController.isUsingAvPlay?.() &&
+          (selectedEntry.canTryAudioConversion || PlayerController.tizenDtsAudioState)
+        ) {
+          applied = applyTizenConvertibleAudioTrack(this, selectedEntry, { rememberSelection });
+          if (applied) return;
+        } else if (Environment.isTizen() && typeof PlayerController.isUsingAvPlay === "function" && PlayerController.isUsingAvPlay()) {
           const nativeTrackIndex = Number(embeddedTrack?.nativeTrackIndex);
           applied =
             typeof PlayerController.setAvPlayAudioTrack === "function" && Number.isFinite(nativeTrackIndex)
@@ -327,12 +337,13 @@ export function createPlayerScreenMethods61() {
                   const pending = this.isAudioEntryPending(entry);
                   const conversionFailed =
                     entry.canTryAudioConversion &&
-                    PlayerController.hasWebOsDtsAudioConversionFailed?.(
+                    (PlayerController.hasWebOsDtsAudioConversionFailed?.(
                       entry.track,
                       Number.isFinite(Number(entry.track?.nativeTrackIndex))
                         ? Number(entry.track.nativeTrackIndex)
                         : (entry.embeddedAudioTrackIndex ?? entry.audioTrackIndex)
-                    );
+                    ) ||
+                      PlayerController.hasTizenDtsAudioConversionFailed?.(entry.embeddedAudioTrackIndex));
                   const unsupportedText = entry.canTryAudioConversion
                     ? t(
                         "player_audio_conversion_warning",

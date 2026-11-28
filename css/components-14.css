@@ -101,9 +101,8 @@
   border: 2px solid transparent;
   background: transparent;
   overflow: visible;
-  transition:
-    transform 120ms ease-out,
-    border-color 120ms ease;
+  contain: layout style;
+  transition: transform 120ms ease-out;
 }
 
 .home-screen-shell .home-content-card.focused {
@@ -137,9 +136,9 @@
   background-color: transparent;
   overflow: hidden;
   transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease,
-    background-color 140ms ease;
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
 }
 
 .home-screen-shell .home-poster-card.focused .home-poster-frame {
@@ -385,10 +384,7 @@
     linear-gradient(145deg, #393939, #111);
   background-position: center;
   background-size: cover;
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease,
-    background-color 140ms ease;
+  transition: none;
 }
 
 .home-screen-shell .home-continue-bg {
@@ -403,7 +399,8 @@
 
 .home-screen-shell .home-continue-card-blur-next-up .home-continue-bg {
   filter: blur(12px);
-  transform: scale(1.08);
+  transform: translateZ(0) scale(1.08);
+  backface-visibility: hidden;
 }
 
 .home-screen-shell .home-continue-card.focused,
@@ -432,6 +429,56 @@
   border-radius: inherit;
   box-shadow: inset 0 0 0 var(--home-focus-ring) var(--secondary-color);
   pointer-events: none;
+}
+
+/* Pre-mount a GPU-composited opacity focus ring on modern non-constrained
+   unparked Continue Watching cards so focus moves animate smoothly without
+   repainting card tiles or re-blurring Next-Up artwork. */
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-continue-card:not(.home-continue-card-loading) {
+  position: relative;
+}
+
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-continue-card:not(.home-continue-card-loading)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border-radius: 24px;
+  box-shadow: inset 0 0 0 var(--home-focus-ring) var(--secondary-color);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateZ(0);
+  will-change: opacity;
+  transition: opacity 120ms ease;
+}
+
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-continue-card:not(.home-continue-card-loading).focused::after {
+  opacity: 1;
+}
+
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern
+  .home-row:not(.home-row-parked)
+  .home-continue-card:not(.home-continue-card-loading).focused
+  .home-continue-media {
+  background-color: transparent;
+}
+
+body:not(.performance-constrained)
+  .home-screen-shell.home-layout-modern:not(.depth-continue-watching)
+  .home-row:not(.home-row-parked)
+  .home-continue-card:not(.home-continue-card-loading).focused
+  .home-continue-media::before {
+  content: none;
 }
 
 .home-screen-shell .home-continue-media::after {

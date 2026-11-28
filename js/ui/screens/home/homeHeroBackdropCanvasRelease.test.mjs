@@ -113,7 +113,8 @@ test("animateHeroBackdropSwap zeroes backing store of removed canvases and abort
     setTimeout: (cb) => timers.push(cb),
     preloadHeroBackdrop: () =>
       Promise.resolve({ loaded: true, bitmap: { width: 1920, height: 1080 } }),
-    prepareHeroImageEnter: () => {}
+    prepareHeroImageEnter: () => {},
+    restoreHeroImageTransition: () => {}
   });
   vm.runInContext(helper03, context);
 

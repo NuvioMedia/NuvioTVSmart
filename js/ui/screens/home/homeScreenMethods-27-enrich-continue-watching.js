@@ -31,13 +31,19 @@ export function createHomeScreenMethods27() {
     isCloudContinueWatchingItem,
     needsContinueWatchingMetadataRefresh,
     applyCachedContinueWatchingEnrichment,
-    saveContinueWatchingEnrichment
+    saveContinueWatchingEnrichments
   } = internals;
 
   return {
     async enrichContinueWatching(items = [], options = {}) {
+      const shouldContinue = typeof options?.shouldContinue === "function" ? options.shouldContinue : null;
+      const pendingEnrichmentSaves = [];
       const [enrichedInProgressItems, nextUpItems] = await Promise.all([
         mapWithConcurrency(items || [], CW_MAX_ENRICHMENT_CONCURRENCY, async (item) => {
+          // A superseded Home load must not keep enriching or writing cache entries.
+          if (shouldContinue && !shouldContinue()) {
+            return item;
+          }
           if (isCloudContinueWatchingItem(item)) {
             return {
               ...item,
@@ -128,7 +134,7 @@ export function createHomeScreenMethods27() {
                 serverSeriesIdentityChecked:
                   resolvedMeta && isServerContentId(item.contentId) ? true : cachedItem.serverSeriesIdentityChecked === true
               };
-              saveContinueWatchingEnrichment(enriched);
+              pendingEnrichmentSaves.push(enriched);
               return enriched;
             }
           } catch (error) {
@@ -155,13 +161,22 @@ export function createHomeScreenMethods27() {
             episodeTitle: firstNonEmpty(cachedItem.episodeTitle, cachedItem.subtitle)
           };
         }),
-        this.buildNextUpItems({
-          allProgress: options?.allProgress || [],
-          inProgressItems: items || [],
-          nextUpProgressCandidates: options?.nextUpProgressCandidates || [],
-          watchedItems: options?.watchedItems || []
-        })
+        (async () => {
+          if (shouldContinue && !shouldContinue()) {
+            return [];
+          }
+          return this.buildNextUpItems({
+            allProgress: options?.allProgress || [],
+            inProgressItems: items || [],
+            nextUpProgressCandidates: options?.nextUpProgressCandidates || [],
+            watchedItems: options?.watchedItems || []
+          });
+        })()
       ]);
+
+      if (pendingEnrichmentSaves.length && (!shouldContinue || shouldContinue())) {
+        saveContinueWatchingEnrichments(pendingEnrichmentSaves);
+      }
 
       const inProgressItems = dedupeContinueWatchingInProgress(enrichedInProgressItems);
       const inProgressSeriesIds = new Set(

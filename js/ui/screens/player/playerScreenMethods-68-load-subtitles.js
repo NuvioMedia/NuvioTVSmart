@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./playerScreenContext.js";
+import { computeOpenSubtitlesHash } from "../../../core/player/openSubtitlesHash.js";
 
 export function createPlayerScreenMethods68() {
   const {
@@ -19,7 +20,31 @@ export function createPlayerScreenMethods68() {
       this.subtitleLoading = true;
 
       const sidecarSubtitles = this.collectStreamSidecarSubtitles();
-      const subtitleLookup = this.buildSubtitleLookupContext();
+      let subtitleLookup = this.buildSubtitleLookupContext();
+      const playbackUrl = String(this.activePlaybackUrl || "").trim();
+      const currentCandidate = typeof this.getCurrentStreamCandidate === "function" ? this.getCurrentStreamCandidate() : null;
+      // Android TV computes the OpenSubtitles hash only when the stream did not carry one,
+      // and sends it with the same subtitle request.
+      if (
+        subtitleLookup.id &&
+        subtitleLookup.type &&
+        !subtitleLookup.videoHash &&
+        playbackUrl &&
+        !this.isCurrentSourceLikelyHls?.(playbackUrl, currentCandidate) &&
+        !this.isCurrentSourceLikelyDash?.(playbackUrl, currentCandidate)
+      ) {
+        const computed = await computeOpenSubtitlesHash(
+          playbackUrl,
+          typeof this.getCurrentStreamRequestHeaders === "function" ? this.getCurrentStreamRequestHeaders(currentCandidate) : {}
+        );
+        if (requestToken === this.subtitleLoadToken && computed) {
+          this.subtitleLookupHash = { url: playbackUrl, ...computed };
+          subtitleLookup = this.buildSubtitleLookupContext();
+        }
+      }
+      if (requestToken !== this.subtitleLoadToken) {
+        return;
+      }
       try {
         this.subtitles = this.mergeSubtitleCandidates(sidecarSubtitles, []);
         this.refreshTrackDialogs();

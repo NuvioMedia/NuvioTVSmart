@@ -245,7 +245,7 @@ export async function httpRequest(url, options = {}) {
         if (response.status === 401 && includeSessionAuth && SessionStore.refreshToken) {
           const refreshed = await AuthManager.refreshSessionIfNeeded({ force: true });
           refreshFailedTransiently = AuthManager.wasLastSessionRefreshTransientFailure?.() === true;
-          if (refreshed && SessionStore.accessToken) {
+          if (refreshed && SessionStore.accessToken && !refreshFailedTransiently) {
             const retryInit = {
               ...fetchInit,
               method,

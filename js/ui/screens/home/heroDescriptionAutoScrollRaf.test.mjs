@@ -34,6 +34,7 @@ function setupHome() {
     registerHomeDomNodes: () => {},
     resetHomeArtworkRescaler: () => {},
     resetHeroLogoRescaleCache: () => {},
+    resetHeroArtworkWorker: () => {},
     createHeroDescriptionAutoScroller: () => ({
       apply: (node, enabled) => applyCalls.push({ node, enabled }),
       stop: () => {
@@ -81,6 +82,9 @@ function setupHome() {
     persistCurrentFocusState: stub,
     cancelInitialHomeLoadTimeout: stub,
     cancelScheduledRender: stub,
+    isLegacyTvRuntime: () => true,
+    shouldUseBoundedHomeImageHydration: () => true,
+    isModernHydrationScrollActive: () => false,
     cancelModernCameraFollow: stub,
     endModernVerticalFastScroll: stub,
     stopHeroRotation: stub,
@@ -162,6 +166,17 @@ test("a detached description never reaches the deferred apply", () => {
   flushFrames();
 
   assert.equal(applyCalls.length, 0);
+});
+
+test("cleanup clears the pending hero description input-settle timer", () => {
+  const { screen } = setupHome();
+
+  screen.lastHomeInputAt = Date.now();
+  screen.applyHeroDescriptionAutoScroll();
+  assert.ok(screen.heroDescriptionAutoScrollDelayTimer);
+
+  screen.cleanup();
+  assert.equal(screen.heroDescriptionAutoScrollDelayTimer, null);
 });
 
 test("cleanup cancels the pending hero description frame", () => {

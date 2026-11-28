@@ -9,12 +9,13 @@ import { mdbListRatingIcon } from "../../../core/util/mdbListRatingStatus.js";
 import { I18n } from "../../../i18n/index.js";
 import { escapeHtml } from "./homeUtils.js";
 
-export function getHeroMdbListRatings(hero, layoutMode = "modern") {
+export function getHeroMdbListRatings(hero, layoutMode = "modern", layoutPrefs = null) {
   const settings = MdbListSettingsStore.get();
   if (
     !settings.enabled ||
     !settings.showOnHero ||
-    (layoutMode === "modern" && !showHomeRatings(LayoutPreferences.get().homeImdbRatingsVisibility))
+    (layoutMode === "modern" &&
+      !showHomeRatings((layoutPrefs || LayoutPreferences.get())?.homeImdbRatingsVisibility))
   ) {
     return [];
   }
@@ -34,8 +35,8 @@ export function getHeroMdbListRatings(hero, layoutMode = "modern") {
     .map((provider) => ({ provider, value: Number(ratings[provider]) }));
 }
 
-export function renderHeroMdbListRatings(hero, layoutMode = "modern") {
-  const items = getHeroMdbListRatings(hero, layoutMode);
+export function renderHeroMdbListRatings(hero, layoutMode = "modern", layoutPrefs = null) {
+  const items = getHeroMdbListRatings(hero, layoutMode, layoutPrefs);
   if (!items.length) return "";
   const icons = {
     imdb: "assets/icons/imdb_logo_2016.svg",

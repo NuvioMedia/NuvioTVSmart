@@ -48,7 +48,9 @@ for (const target of homeMotionTargets) {
 // constrained rules above already freeze: otherwise modern Tizen keeps the
 // instant expansion and diverges from Android TV.
 assert.ok(
-  legacyTizen.includes(".legacy-tizen .focusable:not(.home-content-card)"),
+  legacyTizen.some((selector) =>
+    selector.startsWith(".legacy-tizen .focusable:not(.home-content-card)")
+  ),
   "the legacy-tizen instant-focus catch-all excludes Home content cards"
 );
 

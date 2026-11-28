@@ -67,6 +67,9 @@ function buildScreen({
     },
     resetHeroLogoRescaleCache() {
       calls.resetLogo += 1;
+    },
+    resetHeroArtworkWorker() {
+      calls.resetWorker = (calls.resetWorker || 0) + 1;
     }
   });
   context.globalThis = context;

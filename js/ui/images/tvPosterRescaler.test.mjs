@@ -533,3 +533,183 @@ test("the worker keeps the arrayBuffer path when the body has no reader", async 
   assert.equal(message.reason, "already small");
   assert.equal(buffered, true);
 });
+
+// Records the OffscreenCanvas options and how many image decodes overlap, so
+// the software-rasterization and per-worker serialization contracts stay put.
+function createInstrumentedWorker({
+  responseFor,
+  decodeSize = () => ({ width: 800, height: 1200 }),
+  encode = async () => ({ type: "image/jpeg" }),
+  fetchDelay = 0,
+  decodeDelay = 15
+}) {
+  const messages = [];
+  const contextCalls = [];
+  let activeDecodes = 0;
+  let maxActiveDecodes = 0;
+  let activeFetches = 0;
+  let maxActiveFetches = 0;
+  let closedBitmaps = 0;
+
+  const context = vm.createContext({
+    Blob,
+    setTimeout,
+    clearTimeout,
+    self: { postMessage: (message) => messages.push(message) },
+    fetch: async (url) => {
+      activeFetches += 1;
+      maxActiveFetches = Math.max(maxActiveFetches, activeFetches);
+      try {
+        if (fetchDelay) {
+          await new Promise((resolve) => setTimeout(resolve, fetchDelay));
+        }
+        return responseFor(url);
+      } finally {
+        activeFetches -= 1;
+      }
+    },
+    createImageBitmap: async (_blob, options) => {
+      activeDecodes += 1;
+      maxActiveDecodes = Math.max(maxActiveDecodes, activeDecodes);
+      try {
+        if (decodeDelay) {
+          await new Promise((resolve) => setTimeout(resolve, decodeDelay));
+        }
+        const size = decodeSize(options);
+        return {
+          width: size.width,
+          height: size.height,
+          close() {
+            closedBitmaps += 1;
+          }
+        };
+      } finally {
+        activeDecodes -= 1;
+      }
+    },
+    OffscreenCanvas: class OffscreenCanvas {
+      constructor(width, height) {
+        this.width = width;
+        this.height = height;
+      }
+      getContext(type, options) {
+        contextCalls.push({ type, options: { ...options } });
+        return { drawImage() {} };
+      }
+      convertToBlob(options) {
+        return encode(options);
+      }
+    }
+  });
+  vm.runInContext(WORKER_SOURCE, context);
+
+  return {
+    send: (data) => context.self.onmessage({ data }),
+    messages,
+    contextCalls,
+    maxActiveDecodes: () => maxActiveDecodes,
+    maxActiveFetches: () => maxActiveFetches,
+    closedBitmaps: () => closedBitmaps
+  };
+}
+
+function bytesResponse(bytes) {
+  return {
+    ok: true,
+    headers: { get: () => String(bytes.byteLength) },
+    body: null,
+    async arrayBuffer() {
+      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    }
+  };
+}
+
+test("poster and logo canvases request software rasterization", async () => {
+  const files = new Map([
+    ["https://cdn.example.com/poster.jpg", jpegWithDimensions(800, 1200)],
+    ["https://cdn.example.com/poster-alpha.webp", webpFile("VP8L", vp8lPayload(600, 900, true))],
+    ["https://cdn.example.com/logo.png", pngWithDimensions(1200, 400)]
+  ]);
+  const worker = createInstrumentedWorker({
+    responseFor: (url) => bytesResponse(files.get(url)),
+    decodeSize: (options) => ({ width: options?.resizeWidth || 800, height: 400 })
+  });
+
+  await worker.send({
+    id: 1,
+    url: "https://cdn.example.com/poster.jpg",
+    width: 220,
+    height: 338,
+    fit: "cover"
+  });
+  await worker.send({
+    id: 2,
+    url: "https://cdn.example.com/poster-alpha.webp",
+    width: 220,
+    height: 338,
+    fit: "cover"
+  });
+  await worker.send({
+    id: 3,
+    url: "https://cdn.example.com/logo.png",
+    width: 440,
+    height: 200,
+    fit: "contain",
+    kind: "logo"
+  });
+
+  assert.deepEqual(
+    worker.contextCalls.map((call) => call.options),
+    [
+      { alpha: false, willReadFrequently: true },
+      { alpha: true, willReadFrequently: true },
+      { alpha: true, willReadFrequently: true }
+    ]
+  );
+});
+
+test("the worker overlaps fetches but serializes decodes and closes every bitmap", async () => {
+  const worker = createInstrumentedWorker({
+    responseFor: () => bytesResponse(jpegWithDimensions(800, 1200)),
+    fetchDelay: 10
+  });
+
+  await Promise.all(
+    [11, 12, 13].map((id) =>
+      worker.send({
+        id,
+        url: `https://cdn.example.com/${id}.jpg`,
+        width: 220,
+        height: 338,
+        fit: "cover"
+      })
+    )
+  );
+
+  assert.equal(worker.maxActiveFetches(), 3, "fetches stay concurrent");
+  assert.equal(worker.maxActiveDecodes(), 1, "decodes run one at a time per worker");
+  assert.equal(worker.closedBitmaps(), 3, "every decoded bitmap is released");
+  assert.ok(worker.messages.every((message) => message.ok === true));
+});
+
+test("a failed encode still closes the decoded bitmap", async () => {
+  const worker = createInstrumentedWorker({
+    responseFor: () => bytesResponse(jpegWithDimensions(800, 1200)),
+    encode: async () => {
+      throw new Error("encode failed");
+    }
+  });
+
+  await worker.send({
+    id: 21,
+    url: "https://cdn.example.com/poster.jpg",
+    width: 220,
+    height: 338,
+    fit: "cover"
+  });
+
+  const [message] = worker.messages;
+  assert.equal(message.ok, false);
+  assert.equal(message.reason, "encode failed");
+  assert.equal(worker.closedBitmaps(), 1);
+});

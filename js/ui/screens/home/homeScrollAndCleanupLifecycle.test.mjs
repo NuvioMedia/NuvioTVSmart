@@ -176,6 +176,7 @@ test("cleanup clears continueWatchingReleaseTimer + active scroll animations, an
   let cancelAllScrollCalls = 0;
   const cancelledRafs = [];
   const stub = () => {};
+  let resetWorkerCalls = 0;
   const context = vm.createContext({
     internals: {
       ScreenUtils: { hide: stub },
@@ -186,6 +187,9 @@ test("cleanup clears continueWatchingReleaseTimer + active scroll animations, an
     },
     resetHeroLogoRescaleCache: () => {
       resetLogoCalls += 1;
+    },
+    resetHeroArtworkWorker: () => {
+      resetWorkerCalls += 1;
     },
     setTimeout,
     clearTimeout,
@@ -247,6 +251,7 @@ test("cleanup clears continueWatchingReleaseTimer + active scroll animations, an
   assert.equal(screen._mainVertRaf, null);
   assert.equal(screen._mainClassicVertRaf, null);
   assert.equal(screen._trackHorizRaf, null);
+  assert.equal(resetWorkerCalls, 1, "leaving Home must terminate the hero artwork worker");
 
   screen.continueWatchingReleaseTimer = setTimeout(() => {
     timerFired = true;

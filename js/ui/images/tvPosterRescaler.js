@@ -231,9 +231,22 @@ const jpegSize = ${jpegDimensions.toString()};
 const pngSize = ${pngStillDimensions.toString()};
 const resizeTarget = ${artworkResizeTarget.toString()};
 
+// Two slots per worker still overlap a fetch with the other job's decode, but
+// running both decodes at once doubles peak raster memory on a 2 GB panel and
+// makes the two jobs fight over the same cores. Only the decode/encode half is
+// serialized; the network stays concurrent.
+let decodeTail = Promise.resolve();
+const runExclusiveDecode = (task) => {
+  const next = decodeTail.then(task, task);
+  decodeTail = next.then(
+    () => {},
+    () => {}
+  );
+  return next;
+};
+
 self.onmessage = async (event) => {
   const { id, url, width, height, fit, kind, timeoutMs } = event.data || {};
-  let full = null;
   const hasTimeout = Number(timeoutMs) > 0 && typeof AbortController === "function";
   const controller = hasTimeout ? new AbortController() : null;
   const timer = controller ? setTimeout(() => controller.abort(), Number(timeoutMs)) : 0;
@@ -271,20 +284,29 @@ self.onmessage = async (event) => {
       if (dimensions.width <= width && dimensions.height <= height) {
         throw new Error("logo already small");
       }
-      full = await createImageBitmap(new Blob([bytes]), {
-        resizeWidth: Math.min(width, dimensions.width),
-        resizeQuality: "medium",
-        imageOrientation: "from-image"
+      const out = await runExclusiveDecode(async () => {
+        let decoded = null;
+        try {
+          decoded = await createImageBitmap(new Blob([bytes]), {
+            resizeWidth: Math.min(width, dimensions.width),
+            resizeQuality: "medium",
+            imageOrientation: "from-image"
+          });
+          // Enforce both width and height bounds while keeping transparent edges.
+          const scale = Math.min(width / decoded.width, height / decoded.height, 1);
+          const targetW = Math.max(1, Math.round(decoded.width * scale));
+          const targetH = Math.max(1, Math.round(decoded.height * scale));
+          const canvas = new OffscreenCanvas(targetW, targetH);
+          canvas
+            .getContext("2d", { alpha: true, willReadFrequently: true })
+            .drawImage(decoded, 0, 0, targetW, targetH);
+          return await canvas.convertToBlob({ type: "image/webp", quality: 0.92 });
+        } finally {
+          if (decoded) {
+            decoded.close();
+          }
+        }
       });
-      // Enforce both width and height bounds while keeping transparent edges.
-      const scale = Math.min(width / full.width, height / full.height, 1);
-      const targetW = Math.max(1, Math.round(full.width * scale));
-      const targetH = Math.max(1, Math.round(full.height * scale));
-      const canvas = new OffscreenCanvas(targetW, targetH);
-      canvas.getContext("2d", { alpha: true }).drawImage(full, 0, 0, targetW, targetH);
-      const out = await canvas.convertToBlob({ type: "image/webp", quality: 0.92 });
-      full.close();
-      full = null;
       self.postMessage({ id, ok: true, blob: out });
       return;
     }
@@ -367,30 +389,36 @@ self.onmessage = async (event) => {
     }
     const dimensions = jpeg ? jpegSize(view) : webp;
     const resize = dimensions ? resizeTarget(dimensions.width, dimensions.height, 1280) : null;
-    full = await createImageBitmap(
-      new Blob([view]),
-      resize ? { ...resize, resizeQuality: "low" } : undefined
-    );
-    if (full.width <= width && full.height <= height) {
-      // Already no larger than the card. Re-encoding would only lose quality.
-      throw new Error("already small");
-    }
     const alpha = Boolean(webp && webp.alpha);
-    const crop = sourceRect(full.width, full.height, width, height, fit);
-    const canvas = new OffscreenCanvas(width, height);
-    canvas.getContext("2d", { alpha }).drawImage(full, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
-    const out = await canvas.convertToBlob(
-      alpha
-        ? { type: "image/webp", quality: 0.85 }
-        : { type: "image/jpeg", quality: 0.82 }
-    );
-    full.close();
-    full = null;
+    const out = await runExclusiveDecode(async () => {
+      let decoded = null;
+      try {
+        decoded = await createImageBitmap(
+          new Blob([view]),
+          resize ? { ...resize, resizeQuality: "low" } : undefined
+        );
+        if (decoded.width <= width && decoded.height <= height) {
+          // Already no larger than the card. Re-encoding would only lose quality.
+          throw new Error("already small");
+        }
+        const crop = sourceRect(decoded.width, decoded.height, width, height, fit);
+        const canvas = new OffscreenCanvas(width, height);
+        canvas
+          .getContext("2d", { alpha, willReadFrequently: true })
+          .drawImage(decoded, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
+        return await canvas.convertToBlob(
+          alpha
+            ? { type: "image/webp", quality: 0.85 }
+            : { type: "image/jpeg", quality: 0.82 }
+        );
+      } finally {
+        if (decoded) {
+          decoded.close();
+        }
+      }
+    });
     self.postMessage({ id, ok: true, blob: out });
   } catch (error) {
-    if (full) {
-      full.close();
-    }
     self.postMessage({ id, ok: false, reason: String((error && error.message) || error) });
   } finally {
     if (timer) {

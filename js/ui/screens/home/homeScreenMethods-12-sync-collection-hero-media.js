@@ -291,16 +291,21 @@ export function createHomeScreenMethods12() {
       if (!container) {
         return;
       }
-      this.pauseTrailerLayer(container);
       this.homeTrailerLayerCleanupTimers ||= new WeakMap();
       const pendingCleanup = this.homeTrailerLayerCleanupTimers.get(container);
+      // Home mounts an empty trailer layer per poster: arming a timer on those
+      // would only run clearTrailerLayer on nothing after every focus move.
+      if (!pendingCleanup && !container.classList.contains("is-active") && !container.firstElementChild) {
+        return;
+      }
+      this.pauseTrailerLayer(container);
+      container.classList.remove("is-active");
+      this.scheduleTrailerLayerHide(container);
+      // Never slide a pending deadline: every later focus move calls this
+      // through collapseFocusedPoster, which used to keep the paused player
+      // alive for the whole navigation.
       if (pendingCleanup) {
-        if (pendingCleanup.idleId) {
-          globalThis.cancelIdleCallback?.(pendingCleanup.idleId);
-        }
-        if (pendingCleanup.timeoutId) {
-          clearTimeout(pendingCleanup.timeoutId);
-        }
+        return;
       }
       const cleanupState = { idleId: 0, timeoutId: 0, completed: false };
       const cleanup = () => {
@@ -326,8 +331,6 @@ export function createHomeScreenMethods12() {
         cleanup();
       }, getTrailerCleanupDelayMs(getTvRuntimePerformanceProfile()));
       this.homeTrailerLayerCleanupTimers.set(container, cleanupState);
-      container.classList.remove("is-active");
-      this.scheduleTrailerLayerHide(container);
     },
     refreshPendingHomeTrailerCleanup() {
       const layers = this.getHomeTrailerLayers(".home-poster-trailer-layer, .home-hero-trailer-layer");
