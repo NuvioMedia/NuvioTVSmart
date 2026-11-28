@@ -82,6 +82,7 @@ export function createHomeScreenMethods30() {
         cancelAnimationFrame(this.heroDescriptionAutoScrollFrame);
         this.heroDescriptionAutoScrollFrame = 0;
       }
+      this.clearHeroDescriptionAutoScrollTimer?.();
       this.heroDescriptionAutoScroller?.stop();
       this.heroDescriptionScrollHolding = false;
       this.cancelPendingHeroFocus();

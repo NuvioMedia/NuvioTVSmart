@@ -1,4 +1,4 @@
-import { IMDB_RATINGS_API_BASE_URL, IMDB_TAPFRAME_API_BASE_URL } from "../../config.js";
+import { IMDB_RATINGS_API_BASE_URL } from "../../config.js";
 import { withRequestTimeout } from "../../core/network/requestTimeout.js";
 import { alignEpisodeRatings } from "./episodeRatingsAlignment.js";
 
@@ -78,13 +78,6 @@ function toSeasonRatings(ratings) {
   return seasons;
 }
 
-function normalizeImdbId(value) {
-  const normalized = String(value || "")
-    .trim()
-    .split(":")[0];
-  return /^tt\d+$/i.test(normalized) ? normalized : "";
-}
-
 function normalizeTmdbId(value) {
   const normalized = Number(value || 0);
   return Number.isInteger(normalized) && normalized > 0 ? normalized : 0;
@@ -123,27 +116,15 @@ async function getExternalEpisodesById({ baseUrl, id, cacheKey }) {
   return request;
 }
 
-async function getExternalEpisodes(normalizedImdbId, normalizedTmdbId) {
-  if (normalizedImdbId) {
-    const primary = await getExternalEpisodesById({
-      baseUrl: IMDB_TAPFRAME_API_BASE_URL,
-      id: normalizedImdbId,
-      cacheKey: `imdb:${normalizedImdbId}`
-    });
-    if (primary.some((entry) => entry.rating != null)) {
-      return primary;
-    }
+async function getExternalEpisodes(normalizedTmdbId) {
+  if (!normalizedTmdbId) {
+    return [];
   }
-
-  if (normalizedTmdbId) {
-    return getExternalEpisodesById({
-      baseUrl: IMDB_RATINGS_API_BASE_URL,
-      id: normalizedTmdbId,
-      cacheKey: `tmdb:${normalizedTmdbId}`
-    });
-  }
-
-  return [];
+  return getExternalEpisodesById({
+    baseUrl: IMDB_RATINGS_API_BASE_URL,
+    id: normalizedTmdbId,
+    cacheKey: `tmdb:${normalizedTmdbId}`
+  });
 }
 
 export const imdbEpisodeRatingsRepository = {
@@ -151,13 +132,12 @@ export const imdbEpisodeRatingsRepository = {
    * Ratings by season in the add-on's own numbering: pass the add-on's episodes
    * (see addonEpisodeAirDates) so a split into other seasons still lines up.
    */
-  async getEpisodeRatings({ imdbId, tmdbId, addonEpisodes = [] } = {}) {
-    const normalizedImdbId = normalizeImdbId(imdbId);
+  async getEpisodeRatings({ tmdbId, addonEpisodes = [] } = {}) {
     const normalizedTmdbId = normalizeTmdbId(tmdbId);
-    if (!normalizedImdbId && !normalizedTmdbId) {
+    if (!normalizedTmdbId) {
       return {};
     }
-    const episodes = await getExternalEpisodes(normalizedImdbId, normalizedTmdbId);
+    const episodes = await getExternalEpisodes(normalizedTmdbId);
     return toSeasonRatings(alignEpisodeRatings(addonEpisodes, episodes));
   },
 
